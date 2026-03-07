@@ -20,6 +20,8 @@ import PeopleEsop from "./pages/PeopleEsop";
 import MarketingStrategy from "./pages/MarketingStrategy";
 import FinancialAnalytics from "./pages/FinancialAnalytics";
 import BrandReadiness from "./pages/BrandReadiness";
+import InterviewTracker from "./pages/InterviewTracker";
+import PlaybookProgress from "./pages/PlaybookProgress";
 
 function Router() {
   return (
@@ -38,6 +40,8 @@ function Router() {
       <Route path="/financial" component={FinancialAnalytics} />
       <Route path="/bcorp" component={BCorpIso} />
       <Route path="/foundation" component={FoundationImpact} />
+      <Route path="/interviews" component={InterviewTracker} />
+      <Route path="/playbook" component={PlaybookProgress} />
       <Route component={Home} />
     </Switch>
   );

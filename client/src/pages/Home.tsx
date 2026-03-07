@@ -20,9 +20,9 @@ import { exportPortfolioPdf } from "@/lib/exportPdf";
 const HERO_BG = "https://d2xsxph8kpxj0f.cloudfront.net/310419663031397390/ggmroLG8ezURUZiLzGveTG/ecoblend-hero-bg-4sozsAnSEGXN6NLMPzPbzp.webp";
 
 const statusColors: Record<string, string> = {
-  "Active": "#22c55e",
-  "Pre-Launch": "#f59e0b",
-  "Scaling": "#1d4ed8",
+  "Active": "#51AF37",
+  "Pre-Launch": "#F49C13",
+  "Scaling": "#3A97D3",
   "Paused": "#6b7280",
 };
 
@@ -30,7 +30,7 @@ function KpiCard({ label, value, sub, accent }: { label: string; value: string |
   return (
     <div className="bg-white rounded-xl border p-5 flex flex-col gap-1 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
       <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">{label}</span>
-      <span className="text-3xl font-bold" style={{ color: accent || "#1c1c1e", fontFamily: "'DM Mono', monospace" }}>{value}</span>
+      <span className="text-3xl font-bold" style={{ color: accent || "#1a2332", fontFamily: "'Prompt', sans-serif" }}>{value}</span>
       {sub && <span className="text-xs text-gray-400">{sub}</span>}
     </div>
   );
@@ -59,7 +59,7 @@ function VentureCard({
       <div className="flex items-start justify-between mb-3">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-lg font-bold" style={{ color: venture.color, fontFamily: "'DM Sans', sans-serif" }}>
+            <span className="text-lg font-bold" style={{ color: venture.color, fontFamily: "'Prompt', sans-serif" }}>
               {venture.name}
             </span>
             <Badge
@@ -201,13 +201,13 @@ export default function Home() {
         <div className="relative flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#22c55e15", color: "#22c55e" }}>
+              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#51AF3715", color: "#51AF37" }}>
                 EcoRace VBS
               </span>
               <span className="text-xs text-gray-400">·</span>
               <span className="text-xs text-gray-400 font-mono">H4 Lean Methodology</span>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+            <h1 className="text-2xl font-bold text-gray-900 mb-1" style={{ fontFamily: "'Prompt', sans-serif" }}>
               EcoBlend Analytics Dashboard
             </h1>
             <p className="text-sm text-gray-500 max-w-xl">
@@ -220,7 +220,7 @@ export default function Home() {
               variant="outline"
               className="gap-1.5 text-xs"
               onClick={() => navigate("/onboarding")}
-              style={{ borderColor: "#22c55e", color: "#22c55e" }}
+              style={{ borderColor: "#51AF37", color: "#51AF37" }}
             >
               <UserPlus size={13} /> Onboard Founder
             </Button>
@@ -229,7 +229,7 @@ export default function Home() {
               variant="outline"
               className="gap-1.5 text-xs"
               onClick={() => exportPortfolioPdf(ventures)}
-              style={{ borderColor: "#1d4ed8", color: "#1d4ed8" }}
+              style={{ borderColor: "#3A97D3", color: "#3A97D3" }}
             >
               <FileDown size={13} /> Export PDF
             </Button>
@@ -251,14 +251,14 @@ export default function Home() {
       <div className="p-8">
         {/* KPI row — live from context */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <KpiCard label="Active Ventures" value={stats.activeVentures} sub={`of ${stats.totalVentures} total`} accent="#22c55e" />
-          <KpiCard label="Avg VRL Stage" value={stats.avgVrl.toFixed(1)} sub="of 4 stages" accent="#22c55e" />
-          <KpiCard label="Avg TRL Level" value={stats.avgTrl.toFixed(1)} sub="of 9 levels" accent="#1d4ed8" />
+          <KpiCard label="Active Ventures" value={stats.activeVentures} sub={`of ${stats.totalVentures} total`} accent="#51AF37" />
+          <KpiCard label="Avg VRL Stage" value={stats.avgVrl.toFixed(1)} sub="of 4 stages" accent="#51AF37" />
+          <KpiCard label="Avg TRL Level" value={stats.avgTrl.toFixed(1)} sub="of 9 levels" accent="#3A97D3" />
           <KpiCard
             label="Milestones"
             value={`${stats.totalMilestonesCompleted}/${stats.totalMilestones}`}
             sub="completed"
-            accent="#f59e0b"
+            accent="#F49C13"
           />
         </div>
 
@@ -268,18 +268,18 @@ export default function Home() {
           <div className="bg-white rounded-2xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-base font-bold text-gray-900" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                <h2 className="text-base font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
                   Portfolio Analytics Hub
                 </h2>
                 <p className="text-xs text-gray-400 mt-0.5">Click a domain node to navigate · Click a venture to drill down</p>
               </div>
               <div className="flex items-center gap-3 text-xs text-gray-400">
                 <span className="flex items-center gap-1">
-                  <span className="w-3 h-0.5 rounded inline-block" style={{ background: "#22c55e" }} />
+                  <span className="w-3 h-0.5 rounded inline-block" style={{ background: "#51AF37" }} />
                   VRL
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="w-3 h-0.5 rounded inline-block" style={{ background: "#1d4ed8" }} />
+                  <span className="w-3 h-0.5 rounded inline-block" style={{ background: "#3A97D3" }} />
                   TRL
                 </span>
               </div>
@@ -295,7 +295,7 @@ export default function Home() {
           {/* Venture cards */}
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold text-gray-900" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+              <h2 className="text-base font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
                 Venture Portfolio
               </h2>
               <span className="text-xs text-gray-400 font-mono">{ventures.length} ventures tracked</span>

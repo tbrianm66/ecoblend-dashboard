@@ -1,15 +1,14 @@
+/* ============================================================
+   ECOBLEND BRAND DESIGN SYSTEM
+   Primary: Green #51AF37 | Blue #3A97D3 | Orange #F49C13
+   Yellow #f1c411 | Cream #f7e6d2 | Dark Navy #1a2332
+   Typography: Prompt (display) + Nunito (body)
+   ============================================================ */
+
 @import "tailwindcss";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
-
-/* ============================================================
-   ECOBLEND PRECISION INDUSTRIAL DESIGN SYSTEM
-   - White-dominant, sharp geometric, data-first
-   - VRL accent: EcoBlend Green (#22c55e)
-   - TRL accent: Deep Blue (#1d4ed8)
-   - Typography: DM Sans (headings) + DM Mono (data)
-   ============================================================ */
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
@@ -49,49 +48,55 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* EcoBlend custom tokens */
-  --color-vrl: #22c55e;
-  --color-trl: #1d4ed8;
-  --color-vrl-light: #dcfce7;
-  --color-trl-light: #dbeafe;
-  --color-vrl-dark: #15803d;
-  --color-trl-dark: #1e3a8a;
+  /* EcoBlend brand tokens */
+  --eb-green: #51AF37;
+  --eb-blue: #3A97D3;
+  --eb-orange: #F49C13;
+  --eb-yellow: #f1c411;
+  --eb-cream: #f7e6d2;
+  --eb-dark: #1a2332;
+  --eb-dark-mid: #243044;
+  --eb-green-dark: #2d9856;
+  --eb-blue-dark: #096ba7;
 }
 
 :root {
   --radius: 0.5rem;
-  --background: oklch(0.99 0 0);
-  --foreground: oklch(0.13 0.01 285);
+  --background: oklch(0.98 0.003 85);
+  --foreground: oklch(0.18 0.015 240);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.13 0.01 285);
+  --card-foreground: oklch(0.18 0.015 240);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.13 0.01 285);
-  --primary: oklch(0.52 0.19 142);
+  --popover-foreground: oklch(0.18 0.015 240);
+  /* EcoBlend Green as primary */
+  --primary: oklch(0.62 0.18 140);
   --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.97 0.002 286);
-  --secondary-foreground: oklch(0.4 0.01 285);
-  --muted: oklch(0.96 0.002 286);
-  --muted-foreground: oklch(0.55 0.015 286);
-  --accent: oklch(0.96 0.002 286);
-  --accent-foreground: oklch(0.13 0.01 285);
-  --destructive: oklch(0.58 0.24 27);
-  --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(0.91 0.004 286);
-  --input: oklch(0.91 0.004 286);
-  --ring: oklch(0.52 0.19 142);
-  --chart-1: oklch(0.52 0.19 142);
-  --chart-2: oklch(0.44 0.19 264);
-  --chart-3: oklch(0.65 0.15 142);
-  --chart-4: oklch(0.6 0.15 264);
-  --chart-5: oklch(0.75 0.1 142);
-  --sidebar: oklch(0.13 0.01 285);
-  --sidebar-foreground: oklch(0.97 0.002 286);
-  --sidebar-primary: oklch(0.52 0.19 142);
+  --secondary: oklch(0.95 0.005 85);
+  --secondary-foreground: oklch(0.3 0.015 240);
+  --muted: oklch(0.95 0.005 85);
+  --muted-foreground: oklch(0.52 0.012 240);
+  --accent: oklch(0.95 0.005 85);
+  --accent-foreground: oklch(0.18 0.015 240);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.90 0.006 85);
+  --input: oklch(0.90 0.006 85);
+  --ring: oklch(0.62 0.18 140);
+  /* Charts: EcoBlend brand colours */
+  --chart-1: oklch(0.62 0.18 140);   /* green */
+  --chart-2: oklch(0.60 0.15 230);   /* blue */
+  --chart-3: oklch(0.72 0.18 60);    /* orange */
+  --chart-4: oklch(0.82 0.18 90);    /* yellow */
+  --chart-5: oklch(0.88 0.06 80);    /* cream */
+  /* Sidebar: dark navy */
+  --sidebar: oklch(0.18 0.03 240);
+  --sidebar-foreground: oklch(0.92 0.005 85);
+  --sidebar-primary: oklch(0.62 0.18 140);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.22 0.015 285);
-  --sidebar-accent-foreground: oklch(0.97 0.002 286);
-  --sidebar-border: oklch(0.25 0.01 285);
-  --sidebar-ring: oklch(0.52 0.19 142);
+  --sidebar-accent: oklch(0.25 0.03 240);
+  --sidebar-accent-foreground: oklch(0.92 0.005 85);
+  --sidebar-border: oklch(0.28 0.03 240);
+  --sidebar-ring: oklch(0.62 0.18 140);
 }
 
 @layer base {
@@ -100,7 +105,11 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Nunito', 'Muli', sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Prompt', 'Avenir Next Condensed', sans-serif;
+    font-weight: 700;
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
@@ -113,9 +122,6 @@
   input[type="radio"]:not(:disabled) {
     @apply cursor-pointer;
   }
-  .font-mono {
-    font-family: 'DM Mono', monospace;
-  }
 }
 
 @layer components {
@@ -126,54 +132,90 @@
     padding-left: 1rem;
     padding-right: 1rem;
   }
+
   .flex {
     min-height: 0;
     min-width: 0;
   }
+
   @media (min-width: 640px) {
     .container {
       padding-left: 1.5rem;
       padding-right: 1.5rem;
     }
   }
+
   @media (min-width: 1024px) {
     .container {
       padding-left: 2rem;
       padding-right: 2rem;
-      max-width: 1440px;
+      max-width: 1280px;
     }
   }
-}
 
-/* EcoBlend custom animations */
-@keyframes spoke-draw {
-  from { stroke-dashoffset: 300; }
-  to { stroke-dashoffset: 0; }
-}
+  /* EcoBlend brand utility classes */
+  .eb-heading {
+    font-family: 'Prompt', 'Avenir Next Condensed', sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
 
-@keyframes node-appear {
-  from { opacity: 0; transform: scale(0.5); }
-  to { opacity: 1; transform: scale(1); }
-}
+  .eb-label {
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
 
-@keyframes hub-pulse {
-  0%, 100% { filter: drop-shadow(0 0 8px rgba(34, 197, 94, 0.3)); }
-  50% { filter: drop-shadow(0 0 20px rgba(34, 197, 94, 0.6)); }
-}
+  .eb-card {
+    background: white;
+    border-radius: 0.75rem;
+    border: 1px solid oklch(0.90 0.006 85);
+    box-shadow: 0 1px 3px rgba(26, 35, 50, 0.06);
+  }
 
-@keyframes ring-fill {
-  from { stroke-dashoffset: 283; }
-}
+  .eb-badge-green {
+    background: #51AF3715;
+    color: #51AF37;
+    border: 1px solid #51AF3730;
+    border-radius: 9999px;
+    padding: 0.15rem 0.6rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    font-family: 'Nunito', sans-serif;
+  }
 
-.spoke-line {
-  stroke-dasharray: 300;
-  animation: spoke-draw 0.8s ease-out forwards;
-}
+  .eb-badge-blue {
+    background: #3A97D315;
+    color: #3A97D3;
+    border: 1px solid #3A97D330;
+    border-radius: 9999px;
+    padding: 0.15rem 0.6rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    font-family: 'Nunito', sans-serif;
+  }
 
-.hub-pulse {
-  animation: hub-pulse 3s ease-in-out infinite;
-}
+  .eb-badge-orange {
+    background: #F49C1315;
+    color: #F49C13;
+    border: 1px solid #F49C1330;
+    border-radius: 9999px;
+    padding: 0.15rem 0.6rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    font-family: 'Nunito', sans-serif;
+  }
 
-.node-appear {
-  animation: node-appear 0.5s ease-out forwards;
+  .eb-badge-yellow {
+    background: #f1c41115;
+    color: #c9a200;
+    border: 1px solid #f1c41130;
+    border-radius: 9999px;
+    padding: 0.15rem 0.6rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    font-family: 'Nunito', sans-serif;
+  }
 }

@@ -91,7 +91,7 @@ export const ventures: Venture[] = [
     nominatedCharity: "EcoRace Foundation",
     charityFocus: "Vulnerable children & adults through technology",
     founder: "Internal VBS Team",
-    color: "#22c55e",
+    color: "#51AF37",
     investmentReady: false,
     description: "The central R&D laboratory and IP engine of the EcoRace VBS. Develops core material formulations, structures, and systems licensed to all spin-off ventures. Manages TRL progression for all portfolio technologies.",
     bmc: "IP licensing fees from spin-offs; R&D service contracts with external partners",
@@ -99,7 +99,7 @@ export const ventures: Venture[] = [
     risks: [
       { domain: "Technical", level: "Medium", mitigation: "Staged TRL gate reviews with EcoBlend R&D team" },
       { domain: "IP", level: "Low", mitigation: "Centralised IP registry with field-of-use licence agreements" },
-      { domain: "People", level: "Medium", mitigation: "ZINC VC stipend + ESOP for key R&D talent" },
+      { domain: "People", level: "Medium", mitigation: "Stipend + ESOP for key R&D talent" },
     ],
     milestones: [
       { label: "R&D Lab Established", completed: true, date: "Jan 2026" },
@@ -122,7 +122,7 @@ export const ventures: Venture[] = [
     nominatedCharity: "Clean Mobility Foundation",
     charityFocus: "Sustainable transport access for underserved communities",
     founder: "TBC — Founder Recruitment Open",
-    color: "#0891b2",
+    color: "#3A97D3",
     investmentReady: false,
     description: "A Tier 1 ingredient brand supplying eco-transport OEMs with advanced material formulations, lightweight structures, and sustainable systems. Targets bus, coach, and rail manufacturers seeking to reduce Scope 3 emissions and Total Cost of Ownership.",
     bmc: "B2B supply agreements with OEMs; material formulation licences; technical consultancy",
@@ -154,7 +154,7 @@ export const ventures: Venture[] = [
     nominatedCharity: "Arts Access Alliance",
     charityFocus: "Arts and cultural inclusion for disadvantaged youth",
     founder: "TBC — Founder Recruitment Open",
-    color: "#7c3aed",
+    color: "#F49C13",
     investmentReady: false,
     description: "A D2C eco-entertainment brand delivering sustainable products and solutions to the entertainment industry. Targets environmentally conscious consumers who refuse to compromise on performance. TONE is the primary internal IP validation vehicle for the VBS platform MVP.",
     bmc: "D2C product sales; subscription model; eco-certification licensing",
@@ -162,7 +162,7 @@ export const ventures: Venture[] = [
     risks: [
       { domain: "Business", level: "Medium", mitigation: "D2C validation via 50 customer interviews before product launch" },
       { domain: "Marketing", level: "High", mitigation: "VBS brand strategy; ingredient brand co-marketing" },
-      { domain: "Investment", level: "Medium", mitigation: "ZINC VC stipend; B Corp accreditation for ESG investors" },
+      { domain: "Investment", level: "Medium", mitigation: "VBS stipend; B Corp accreditation for ESG investors" },
     ],
     milestones: [
       { label: "BMC / MMC Drafted", completed: true, date: "Feb 2026" },
@@ -185,7 +185,7 @@ export const ventures: Venture[] = [
     nominatedCharity: "Sport for All Foundation",
     charityFocus: "Sport participation and youth wellbeing",
     founder: "TBC — Founder Recruitment Open",
-    color: "#dc2626",
+    color: "#f1c411",
     investmentReady: false,
     description: "A D2C eco-sports protection brand delivering high-performance, sustainable protective equipment. Targets athletes and sports consumers who demand both performance and environmental responsibility. Leverages EcoBlend material formulations for superior protection characteristics.",
     bmc: "D2C product sales; performance certification; athlete ambassador programme",
@@ -193,7 +193,7 @@ export const ventures: Venture[] = [
     risks: [
       { domain: "Technical", level: "High", mitigation: "EcoBlend R&D to validate material performance at TRL 5 before launch" },
       { domain: "Business", level: "Medium", mitigation: "D2C validation via athlete focus groups" },
-      { domain: "People", level: "Low", mitigation: "ZINC VC stipend for founder; ESOP for early team" },
+      { domain: "People", level: "Low", mitigation: "VBS stipend for founder; ESOP for early team" },
     ],
     milestones: [
       { label: "Sector Research Complete", completed: true, date: "Mar 2026" },
