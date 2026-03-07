@@ -17,10 +17,25 @@ import {
 type HypothesisStatus = "Validated" | "Invalidated" | "Partial" | "Pending";
 type InterviewStatus = "Scheduled" | "Completed" | "Cancelled";
 
+// BMC blocks: Key Partners, Key Activities, Key Resources, Value Propositions,
+//   Customer Relationships, Channels, Customer Segments, Cost Structure, Revenue Streams
+// MMC blocks: Mission, Beneficiaries, Value Created, Key Partners (Mission), Key Activities (Mission),
+//   Key Resources (Mission), Channels (Mission), Cost Structure (Mission), Revenue/Funding Streams
+type BmcBlock =
+  | "Value Propositions" | "Customer Segments" | "Channels" | "Customer Relationships"
+  | "Revenue Streams" | "Key Resources" | "Key Activities" | "Key Partners" | "Cost Structure";
+
+type MmcBlock =
+  | "Mission" | "Beneficiaries" | "Value Created" | "Key Partners (Mission)"
+  | "Key Activities (Mission)" | "Key Resources (Mission)" | "Channels (Mission)"
+  | "Cost Structure (Mission)" | "Funding Streams";
+
 interface Hypothesis {
   id: string;
   text: string;
   status: HypothesisStatus;
+  bmcBlock?: BmcBlock;
+  mmcBlock?: MmcBlock;
 }
 
 interface Interview {
@@ -240,34 +255,90 @@ function InterviewCard({
             </div>
           )}
 
-          {/* Hypotheses */}
+          {/* Hypotheses with BMC/MMC linking */}
           <div>
             <div
               className="text-xs font-bold uppercase tracking-widest mb-3"
               style={{ color: "#9ca3af", fontFamily: "'Nunito', sans-serif" }}
             >
-              Hypotheses — Click to cycle status
+              Hypotheses — Click status to cycle · Click canvas tag to link
             </div>
             <div className="space-y-2">
               {interview.hypotheses.map((h) => (
                 <div
                   key={h.id}
-                  className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors border"
-                  style={{ borderColor: `${HYPOTHESIS_STATUS_COLOURS[h.status]}30` }}
-                  onClick={() => toggleHypothesis(h.id)}
+                  className="p-3 rounded-lg border transition-colors"
+                  style={{ borderColor: `${HYPOTHESIS_STATUS_COLOURS[h.status]}30`, background: `${HYPOTHESIS_STATUS_COLOURS[h.status]}05` }}
                 >
-                  <HypothesisStatusIcon status={h.status} />
-                  <span className="text-sm flex-1" style={{ fontFamily: "'Nunito', sans-serif" }}>{h.text}</span>
-                  <span
-                    className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                    style={{
-                      background: `${HYPOTHESIS_STATUS_COLOURS[h.status]}15`,
-                      color: HYPOTHESIS_STATUS_COLOURS[h.status],
-                      fontFamily: "'Nunito', sans-serif",
-                    }}
+                  <div
+                    className="flex items-center gap-3 cursor-pointer"
+                    onClick={() => toggleHypothesis(h.id)}
                   >
-                    {h.status}
-                  </span>
+                    <HypothesisStatusIcon status={h.status} />
+                    <span className="text-sm flex-1" style={{ fontFamily: "'Nunito', sans-serif" }}>{h.text}</span>
+                    <span
+                      className="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0"
+                      style={{
+                        background: `${HYPOTHESIS_STATUS_COLOURS[h.status]}15`,
+                        color: HYPOTHESIS_STATUS_COLOURS[h.status],
+                        fontFamily: "'Nunito', sans-serif",
+                      }}
+                    >
+                      {h.status}
+                    </span>
+                  </div>
+                  {/* BMC / MMC block tags */}
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    <span className="text-xs text-gray-400" style={{ fontFamily: "'Nunito', sans-serif" }}>Links to:</span>
+                    {/* BMC block selector */}
+                    <select
+                      className="text-xs rounded-md border px-2 py-0.5 cursor-pointer"
+                      style={{
+                        borderColor: "#3A97D320",
+                        background: h.bmcBlock ? "#3A97D310" : "#f9fafb",
+                        color: h.bmcBlock ? "#1e40af" : "#9ca3af",
+                        fontFamily: "'Nunito', sans-serif",
+                      }}
+                      value={h.bmcBlock || ""}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => {
+                        const val = e.target.value as BmcBlock | "";
+                        const updated = interview.hypotheses.map(hh =>
+                          hh.id === h.id ? { ...hh, bmcBlock: val || undefined } : hh
+                        );
+                        onUpdate({ ...interview, hypotheses: updated });
+                      }}
+                    >
+                      <option value="">BMC Block…</option>
+                      {(["Value Propositions","Customer Segments","Channels","Customer Relationships","Revenue Streams","Key Resources","Key Activities","Key Partners","Cost Structure"] as BmcBlock[]).map(b => (
+                        <option key={b} value={b}>{b}</option>
+                      ))}
+                    </select>
+                    {/* MMC block selector */}
+                    <select
+                      className="text-xs rounded-md border px-2 py-0.5 cursor-pointer"
+                      style={{
+                        borderColor: "#51AF3720",
+                        background: h.mmcBlock ? "#51AF3710" : "#f9fafb",
+                        color: h.mmcBlock ? "#166534" : "#9ca3af",
+                        fontFamily: "'Nunito', sans-serif",
+                      }}
+                      value={h.mmcBlock || ""}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => {
+                        const val = e.target.value as MmcBlock | "";
+                        const updated = interview.hypotheses.map(hh =>
+                          hh.id === h.id ? { ...hh, mmcBlock: val || undefined } : hh
+                        );
+                        onUpdate({ ...interview, hypotheses: updated });
+                      }}
+                    >
+                      <option value="">MMC Block…</option>
+                      {(["Mission","Beneficiaries","Value Created","Key Partners (Mission)","Key Activities (Mission)","Key Resources (Mission)","Channels (Mission)","Cost Structure (Mission)","Funding Streams"] as MmcBlock[]).map(b => (
+                        <option key={b} value={b}>{b}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               ))}
             </div>

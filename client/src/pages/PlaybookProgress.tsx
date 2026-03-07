@@ -5,8 +5,8 @@
 // ============================================================
 
 import { useState } from "react";
-import { BookOpen, CheckCircle2, Circle, ChevronDown, ChevronUp, Lock } from "lucide-react";
-import { toast } from "sonner";
+import { BookOpen, CheckCircle2, Circle, ChevronDown, ChevronUp, Lock, Zap } from "lucide-react";
+import { useVentures } from "@/contexts/VentureContext";
 
 const VENTURE_OPTIONS = [
   { id: "ecoblend-rd", label: "EcoBlend R&D", color: "#51AF37" },
@@ -155,32 +155,6 @@ const buildPhases = (): PlaybookPhase[] => [
 
 type VentureProgress = Record<string, Record<string, boolean>>;
 
-const buildInitialProgress = (): VentureProgress => {
-  const progress: VentureProgress = {};
-  for (const v of VENTURE_OPTIONS) {
-    progress[v.id] = {};
-    const phases = buildPhases();
-    // Pre-populate some completed tasks for demo
-    if (v.id === "ecoblend-rd") {
-      for (const p of phases.slice(0, 1)) {
-        for (const t of p.tasks.slice(0, 10)) progress[v.id][t.id] = true;
-      }
-    } else if (v.id === "bebus") {
-      for (const p of phases.slice(0, 1)) {
-        for (const t of p.tasks.slice(0, 6)) progress[v.id][t.id] = true;
-      }
-    } else if (v.id === "tone") {
-      for (const p of phases.slice(0, 1)) {
-        for (const t of p.tasks.slice(0, 14)) progress[v.id][t.id] = true;
-      }
-      for (const t of phases[1].tasks.slice(0, 4)) progress[v.id][t.id] = true;
-    } else if (v.id === "real") {
-      for (const t of phases[0].tasks.slice(0, 3)) progress[v.id][t.id] = true;
-    }
-  }
-  return progress;
-};
-
 function PhaseCard({
   phase,
   ventureId,
@@ -191,7 +165,7 @@ function PhaseCard({
   phase: PlaybookPhase;
   ventureId: string;
   progress: VentureProgress;
-  onToggle: (ventureId: string, taskId: string) => void;
+  onToggle: (ventureId: string, taskId: string, phaseId: string, phaseTotalTasks: number, phaseNumber: number) => void;
   locked: boolean;
 }) {
   const [expanded, setExpanded] = useState(phase.number === 1);
@@ -274,7 +248,7 @@ function PhaseCard({
               <div
                 key={task.id}
                 className="flex items-start gap-3 p-3 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
-                onClick={() => onToggle(ventureId, task.id)}
+                onClick={() => onToggle(ventureId, task.id, phase.id, phase.tasks.length, phase.number)}
               >
                 {done
                   ? <CheckCircle2 size={16} className="mt-0.5 shrink-0" style={{ color: phase.color }} />
@@ -318,10 +292,12 @@ function PhaseCard({
 
 export default function PlaybookProgress() {
   const [selectedVenture, setSelectedVenture] = useState("tone");
-  const [progress, setProgress] = useState<VentureProgress>(buildInitialProgress());
+  const { playbookProgress, togglePlaybookTask, ventures } = useVentures();
   const phases = buildPhases();
 
+  const progress = playbookProgress as VentureProgress;
   const venture = VENTURE_OPTIONS.find(v => v.id === selectedVenture)!;
+  const ventureData = ventures.find(v => v.id === selectedVenture);
 
   const phaseCompletion = phases.map(phase => {
     const done = phase.tasks.filter(t => progress[selectedVenture]?.[t.id]).length;
@@ -335,15 +311,8 @@ export default function PlaybookProgress() {
   const currentPhaseIdx = phaseCompletion.findIndex(pc => pc.pct < 100);
   const currentPhase = currentPhaseIdx === -1 ? phases.length : currentPhaseIdx;
 
-  const handleToggle = (ventureId: string, taskId: string) => {
-    setProgress(prev => ({
-      ...prev,
-      [ventureId]: {
-        ...prev[ventureId],
-        [taskId]: !prev[ventureId]?.[taskId],
-      },
-    }));
-    toast.success("Task updated");
+  const handleToggle = (ventureId: string, taskId: string, phaseId: string, phaseTotalTasks: number, phaseNumber: number) => {
+    togglePlaybookTask(ventureId, taskId, phaseId, phaseTotalTasks, phaseNumber);
   };
 
   return (
@@ -368,9 +337,23 @@ export default function PlaybookProgress() {
               Playbook Progress Tracker
             </h1>
             <p className="text-sm text-gray-500 mt-1 max-w-xl">
-              Track each venture's progress through the four EcoBlend Playbook phases — from Fundamentals to Scaling — with task-level granularity.
+              Completing a phase automatically advances the venture's VRL stage on the Portfolio Dashboard.
             </p>
           </div>
+          {ventureData && (
+            <div
+              className="flex items-center gap-2 px-4 py-2 rounded-xl border"
+              style={{ background: "#f0fdf4", borderColor: "#86efac" }}
+            >
+              <Zap size={14} style={{ color: "#51AF37" }} />
+              <span className="text-sm font-bold" style={{ color: "#166534", fontFamily: "'Prompt', sans-serif" }}>
+                Live VRL: Stage {ventureData.vrl}
+              </span>
+              <span className="text-xs text-green-600" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                — auto-synced
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Venture selector */}

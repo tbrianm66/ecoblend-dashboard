@@ -35,22 +35,7 @@ const navItems = [
 ];
 
 // EcoBlend wavy logo mark as SVG
-function EcoBlendLogo() {
-  return (
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Layered wave stripes — EcoBlend brand identity */}
-      <rect width="36" height="36" rx="8" fill="#1a2332" />
-      {/* Wave 1 — Blue */}
-      <path d="M4 10 Q9 7 14 10 Q19 13 24 10 Q29 7 34 10" stroke="#3A97D3" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
-      {/* Wave 2 — Orange */}
-      <path d="M4 15 Q9 12 14 15 Q19 18 24 15 Q29 12 34 15" stroke="#F49C13" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
-      {/* Wave 3 — Green */}
-      <path d="M4 20 Q9 17 14 20 Q19 23 24 20 Q29 17 34 20" stroke="#51AF37" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
-      {/* Wave 4 — Yellow */}
-      <path d="M4 25 Q9 22 14 25 Q19 28 24 25 Q29 22 34 25" stroke="#f1c411" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
-    </svg>
-  );
-}
+const ECOBLEND_LOGO_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310419663031397390/ggmroLG8ezURUZiLzGveTG/ecoblend-logo_64dbd5ba.png";
 
 export default function Sidebar() {
   const [location] = useLocation();
@@ -61,22 +46,19 @@ export default function Sidebar() {
       style={{ background: "#1a2332", borderRight: "1px solid rgba(255,255,255,0.06)" }}
     >
       {/* Logo area */}
-      <div className="px-5 py-5 border-b" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
-        <div className="flex items-center gap-3">
-          <EcoBlendLogo />
-          <div>
-            <div
-              className="font-bold text-lg leading-tight"
-              style={{ fontFamily: "'Prompt', sans-serif", color: "white", letterSpacing: "-0.01em" }}
-            >
-              Eco<span style={{ color: "#51AF37" }}>Blend</span>
-            </div>
-            <div
-              className="text-xs"
-              style={{ color: "rgba(255,255,255,0.38)", fontFamily: "'Nunito', sans-serif", letterSpacing: "0.06em" }}
-            >
-              VBS Analytics
-            </div>
+      <div className="px-4 py-4 border-b" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
+        <div className="flex flex-col items-center gap-1">
+          <img
+            src={ECOBLEND_LOGO_URL}
+            alt="EcoBlend"
+            className="w-28 object-contain"
+            style={{ filter: "brightness(0) invert(1)" }}
+          />
+          <div
+            className="text-xs"
+            style={{ color: "rgba(255,255,255,0.38)", fontFamily: "'Nunito', sans-serif", letterSpacing: "0.08em", textTransform: "uppercase" }}
+          >
+            VBS Analytics
           </div>
         </div>
       </div>

@@ -2,10 +2,20 @@
 // ECOBLEND — VentureContext
 // Global editable state for all venture data.
 // Persists to localStorage so edits survive page refresh.
+// Includes Playbook progress state with auto-VRL advancement.
 // ============================================================
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { Venture, Milestone, ventures as initialVentures, portfolioStats } from "@/lib/data";
+import { toast } from "sonner";
+
+// ── Playbook phase thresholds for auto-VRL advancement ──────────────────────
+// Phase 1 (Fundamentals, tasks 1-17)  → 100% complete → advance to VRL 2
+// Phase 2 (Kickoff, tasks 18-43)      → 100% complete → advance to VRL 3
+// Phase 3 (Go-to-Market, tasks 44-75) → 100% complete → advance to VRL 4
+// Phase 4 (Scaling, tasks 76-100)     → 100% complete → VRL 4 maintained
+
+export type PlaybookProgress = Record<string, Record<string, boolean>>;
 
 interface VentureContextType {
   ventures: Venture[];
@@ -16,11 +26,19 @@ interface VentureContextType {
   addVenture: (venture: Venture) => void;
   stats: typeof portfolioStats;
   resetToDefaults: () => void;
+  // Playbook
+  playbookProgress: PlaybookProgress;
+  togglePlaybookTask: (ventureId: string, taskId: string, phaseId: string, phaseTotalTasks: number, phaseNumber: number) => void;
+  getVenturePlaybookPct: (ventureId: string) => number;
 }
 
 const VentureContext = createContext<VentureContextType | null>(null);
 
 const STORAGE_KEY = "ecoblend-ventures-v1";
+const PLAYBOOK_STORAGE_KEY = "ecoblend-playbook-v1";
+
+// Phase task counts (must match PlaybookProgress.tsx)
+const PHASE_TASK_COUNTS = [17, 26, 19, 15]; // phases 1-4
 
 function computeStats(ventures: Venture[]) {
   const active = ventures.filter(v => v.status === "Active" || v.status === "Scaling");
@@ -35,6 +53,51 @@ function computeStats(ventures: Venture[]) {
   };
 }
 
+// Derive VRL stage from playbook phase completion
+function deriveVrlFromPlaybook(ventureId: string, progress: PlaybookProgress): number | null {
+  const vp = progress[ventureId];
+  if (!vp) return null;
+
+  // Count completed tasks per phase using task ID prefixes
+  const phaseTaskIds = [
+    Array.from({ length: 17 }, (_, i) => `t${i + 1}`),
+    Array.from({ length: 26 }, (_, i) => `t${i + 18}`),
+    Array.from({ length: 19 }, (_, i) => `t${i + 44}`),
+    Array.from({ length: 15 }, (_, i) => `t${i + 76}`),
+  ];
+
+  const phaseComplete = phaseTaskIds.map((ids, idx) => {
+    const done = ids.filter(id => vp[id]).length;
+    return done >= PHASE_TASK_COUNTS[idx];
+  });
+
+  if (phaseComplete[3]) return 4;
+  if (phaseComplete[2]) return 4;
+  if (phaseComplete[1]) return 3;
+  if (phaseComplete[0]) return 2;
+  return 1;
+}
+
+function buildDefaultPlaybookProgress(): PlaybookProgress {
+  const VENTURE_IDS = ["ecoblend-rd", "bebus", "tone", "real"];
+  const progress: PlaybookProgress = {};
+  for (const id of VENTURE_IDS) {
+    progress[id] = {};
+    // Pre-populate demo data
+    if (id === "ecoblend-rd") {
+      for (let i = 1; i <= 10; i++) progress[id][`t${i}`] = true;
+    } else if (id === "bebus") {
+      for (let i = 1; i <= 6; i++) progress[id][`t${i}`] = true;
+    } else if (id === "tone") {
+      for (let i = 1; i <= 17; i++) progress[id][`t${i}`] = true;
+      for (let i = 18; i <= 21; i++) progress[id][`t${i}`] = true;
+    } else if (id === "real") {
+      for (let i = 1; i <= 3; i++) progress[id][`t${i}`] = true;
+    }
+  }
+  return progress;
+}
+
 export function VentureProvider({ children }: { children: ReactNode }) {
   const [ventures, setVentures] = useState<Venture[]>(() => {
     try {
@@ -45,12 +108,24 @@ export function VentureProvider({ children }: { children: ReactNode }) {
     }
   });
 
-  // Persist to localStorage on every change
-  useEffect(() => {
+  const [playbookProgress, setPlaybookProgress] = useState<PlaybookProgress>(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(ventures));
-    } catch {}
+      const stored = localStorage.getItem(PLAYBOOK_STORAGE_KEY);
+      return stored ? JSON.parse(stored) : buildDefaultPlaybookProgress();
+    } catch {
+      return buildDefaultPlaybookProgress();
+    }
+  });
+
+  // Persist ventures to localStorage
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(ventures)); } catch {}
   }, [ventures]);
+
+  // Persist playbook progress to localStorage
+  useEffect(() => {
+    try { localStorage.setItem(PLAYBOOK_STORAGE_KEY, JSON.stringify(playbookProgress)); } catch {}
+  }, [playbookProgress]);
 
   const updateVentureReadiness = useCallback((id: string, vrl: number, vrlPercent: number, trl: number, trlPercent: number) => {
     setVentures(prev => prev.map(v => {
@@ -89,8 +164,63 @@ export function VentureProvider({ children }: { children: ReactNode }) {
 
   const resetToDefaults = useCallback(() => {
     setVentures(initialVentures);
+    setPlaybookProgress(buildDefaultPlaybookProgress());
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(PLAYBOOK_STORAGE_KEY);
   }, []);
+
+  // Toggle a playbook task and auto-advance VRL if a phase is completed
+  const togglePlaybookTask = useCallback((
+    ventureId: string,
+    taskId: string,
+    _phaseId: string,
+    _phaseTotalTasks: number,
+    phaseNumber: number,
+  ) => {
+    setPlaybookProgress(prev => {
+      const updated: PlaybookProgress = {
+        ...prev,
+        [ventureId]: {
+          ...prev[ventureId],
+          [taskId]: !prev[ventureId]?.[taskId],
+        },
+      };
+
+      // Check if this toggle completes a phase → auto-advance VRL
+      const newVrl = deriveVrlFromPlaybook(ventureId, updated);
+      if (newVrl !== null) {
+        setVentures(vPrev => vPrev.map(v => {
+          if (v.id !== ventureId) return v;
+          const oldVrl = v.vrl;
+          if (newVrl > oldVrl) {
+            const vrlLabels = ["", "Fundamentals", "Kickoff", "Go-to-Market", "Scaling"];
+            toast.success(
+              `🎉 ${v.name} advanced to VRL ${newVrl} — ${vrlLabels[newVrl]}!`,
+              { duration: 4000 }
+            );
+            return { ...v, vrl: newVrl, vrlPercent: Math.min(100, newVrl * 25), investmentReady: newVrl >= 3 && v.trl >= 6 };
+          }
+          // If unchecking drops a phase below 100%, reduce VRL
+          if (newVrl < oldVrl) {
+            return { ...v, vrl: newVrl, vrlPercent: Math.min(100, newVrl * 25), investmentReady: newVrl >= 3 && v.trl >= 6 };
+          }
+          return v;
+        }));
+      }
+
+      return updated;
+    });
+
+    void phaseNumber; // suppress unused warning
+  }, []);
+
+  const getVenturePlaybookPct = useCallback((ventureId: string): number => {
+    const vp = playbookProgress[ventureId];
+    if (!vp) return 0;
+    const totalTasks = PHASE_TASK_COUNTS.reduce((a, b) => a + b, 0); // 77
+    const done = Object.values(vp).filter(Boolean).length;
+    return Math.round((done / totalTasks) * 100);
+  }, [playbookProgress]);
 
   const stats = computeStats(ventures);
 
@@ -104,6 +234,9 @@ export function VentureProvider({ children }: { children: ReactNode }) {
       addVenture,
       stats,
       resetToDefaults,
+      playbookProgress,
+      togglePlaybookTask,
+      getVenturePlaybookPct,
     }}>
       {children}
     </VentureContext.Provider>
