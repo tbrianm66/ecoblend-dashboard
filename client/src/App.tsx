@@ -14,6 +14,9 @@ import PlaceholderPage from "./pages/PlaceholderPage";
 import RiskManagement from "./pages/RiskManagement";
 import FounderOnboarding from "./pages/FounderOnboarding";
 import BCorpIso from "./pages/BCorpIso";
+import FoundationImpact from "./pages/FoundationImpact";
+import IpManagement from "./pages/IpManagement";
+import PeopleEsop from "./pages/PeopleEsop";
 
 function Router() {
   return (
@@ -26,12 +29,12 @@ function Router() {
       <Route path="/risk" component={RiskManagement} />
       <Route path="/onboarding" component={FounderOnboarding} />
       <Route path="/brand" component={PlaceholderPage} />
-      <Route path="/ip" component={PlaceholderPage} />
-      <Route path="/people" component={PlaceholderPage} />
+      <Route path="/ip" component={IpManagement} />
+      <Route path="/people" component={PeopleEsop} />
       <Route path="/marketing" component={PlaceholderPage} />
       <Route path="/financial" component={PlaceholderPage} />
       <Route path="/bcorp" component={BCorpIso} />
-      <Route path="/foundation" component={PlaceholderPage} />
+      <Route path="/foundation" component={FoundationImpact} />
       <Route component={Home} />
     </Switch>
   );
