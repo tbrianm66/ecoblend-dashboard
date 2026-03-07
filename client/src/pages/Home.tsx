@@ -155,6 +155,8 @@ export default function Home() {
   const [activeDomain, setActiveDomain] = useState("portfolio");
   const [, navigate] = useLocation();
   const { ventures, stats, resetToDefaults } = useVentures();
+  const portfolioBrands = ventures.filter(v => !v.isInternalLab);
+  const internalLab = ventures.find(v => v.isInternalLab);
   const [editingVenture, setEditingVenture] = useState<Venture | null>(null);
   const [milestonesVenture, setMilestonesVenture] = useState<Venture | null>(null);
 
@@ -305,11 +307,11 @@ export default function Home() {
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
-                Venture Portfolio
+                Portfolio Brands
               </h2>
-              <span className="text-xs text-gray-400 font-mono">{ventures.length} ventures tracked</span>
+              <span className="text-xs text-gray-400 font-mono">{portfolioBrands.length} brands tracked</span>
             </div>
-            {ventures.map((venture) => (
+            {portfolioBrands.map((venture) => (
               <VentureCard
                 key={venture.id}
                 venture={venture}
@@ -318,6 +320,21 @@ export default function Home() {
                 onEditMilestones={(e) => handleMilestonesClick(e, venture)}
               />
             ))}
+            {/* Internal Lab — shown separately */}
+            {internalLab && (
+              <div className="mt-2">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">Internal R&amp;D Lab</span>
+                  <div className="flex-1 h-px bg-gray-100" />
+                </div>
+                <VentureCard
+                  venture={internalLab}
+                  onClick={() => handleVentureClick(internalLab.id)}
+                  onEdit={(e) => handleEditClick(e, internalLab)}
+                  onEditMilestones={(e) => handleMilestonesClick(e, internalLab)}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

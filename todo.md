@@ -30,3 +30,8 @@
 ## In Progress
 - [x] Document upload on Legal Contract cards (S3 storage)
 - [x] Investor Pack PDF export (bundled readiness + legal summary)
+
+## New Features (Mar 2026)
+- [x] Correct venture brand identities: EcoBlend R&D → internal lab, EcoBlend → materials brand, TONE → eco-creative, REAL → sports protection
+- [x] Add PIPE venture (eco-water sport and performance brand)
+- [x] Add Brand Newsletter & PR module

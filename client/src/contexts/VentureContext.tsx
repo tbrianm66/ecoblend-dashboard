@@ -41,6 +41,8 @@ const PLAYBOOK_STORAGE_KEY = "ecoblend-playbook-v1";
 const PHASE_TASK_COUNTS = [17, 26, 19, 15]; // phases 1-4
 
 function computeStats(ventures: Venture[]) {
+  // Exclude internal lab from portfolio stats
+  ventures = ventures.filter(v => !v.isInternalLab);
   const active = ventures.filter(v => v.status === "Active" || v.status === "Scaling");
   return {
     totalVentures: ventures.length,
@@ -79,13 +81,15 @@ function deriveVrlFromPlaybook(ventureId: string, progress: PlaybookProgress): n
 }
 
 function buildDefaultPlaybookProgress(): PlaybookProgress {
-  const VENTURE_IDS = ["ecoblend-rd", "bebus", "tone", "real"];
+  const VENTURE_IDS = ["ecoblend-rd", "ecoblend", "bebus", "tone", "real", "pipe"];
   const progress: PlaybookProgress = {};
   for (const id of VENTURE_IDS) {
     progress[id] = {};
     // Pre-populate demo data
     if (id === "ecoblend-rd") {
       for (let i = 1; i <= 10; i++) progress[id][`t${i}`] = true;
+    } else if (id === "ecoblend") {
+      for (let i = 1; i <= 8; i++) progress[id][`t${i}`] = true;
     } else if (id === "bebus") {
       for (let i = 1; i <= 6; i++) progress[id][`t${i}`] = true;
     } else if (id === "tone") {
@@ -93,6 +97,8 @@ function buildDefaultPlaybookProgress(): PlaybookProgress {
       for (let i = 18; i <= 21; i++) progress[id][`t${i}`] = true;
     } else if (id === "real") {
       for (let i = 1; i <= 3; i++) progress[id][`t${i}`] = true;
+    } else if (id === "pipe") {
+      for (let i = 1; i <= 2; i++) progress[id][`t${i}`] = true;
     }
   }
   return progress;
