@@ -4,12 +4,13 @@
 // ============================================================
 
 import { useState, useEffect } from "react";
-import { ANALYTICS_DOMAINS, ventures } from "@/lib/data";
+import { ANALYTICS_DOMAINS, ventures as defaultVentures, Venture } from "@/lib/data";
 
 interface HubSpokeDiagramProps {
   onDomainClick: (domainId: string) => void;
   onVentureClick: (ventureId: string) => void;
   activeDomain: string;
+  ventures?: Venture[];
 }
 
 const CENTRE = { x: 400, y: 400 };
@@ -69,9 +70,10 @@ function DualRingGauge({ cx, cy, vrl, trl, color }: { cx: number; cy: number; vr
   );
 }
 
-export default function HubSpokeDiagram({ onDomainClick, onVentureClick, activeDomain }: HubSpokeDiagramProps) {
+export default function HubSpokeDiagram({ onDomainClick, onVentureClick, activeDomain, ventures: venturesProp }: HubSpokeDiagramProps) {
   const [animated, setAnimated] = useState(false);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+  const ventures = venturesProp ?? defaultVentures;
 
   useEffect(() => {
     const t = setTimeout(() => setAnimated(true), 100);
@@ -83,7 +85,7 @@ export default function HubSpokeDiagram({ onDomainClick, onVentureClick, activeD
 
   // Venture nodes placed in an outer ring
   const ventureRadius = 170;
-  const ventureAngleStep = 360 / ventures.length;
+  const ventureAngleStep = 360 / Math.max(ventures.length, 1);
 
   return (
     <div className="relative w-full" style={{ paddingBottom: "100%", maxWidth: 800, margin: "0 auto" }}>

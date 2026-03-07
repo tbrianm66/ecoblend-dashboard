@@ -1,15 +1,19 @@
 // ============================================================
 // ECOBLEND PORTFOLIO OVERVIEW PAGE
 // Design: Precision Industrial — hub-and-spoke + KPI cards
+// Uses VentureContext for live, editable data
 // ============================================================
 
 import { useState } from "react";
 import { useLocation } from "wouter";
 import HubSpokeDiagram from "@/components/HubSpokeDiagram";
-import { ventures, portfolioStats, VRL_STAGES, TRL_LEVELS } from "@/lib/data";
+import { VRL_STAGES, TRL_LEVELS, Venture } from "@/lib/data";
+import { useVentures } from "@/contexts/VentureContext";
+import EditReadinessModal from "@/components/EditReadinessModal";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { Pencil, UserPlus, RotateCcw } from "lucide-react";
 
 const HERO_BG = "https://d2xsxph8kpxj0f.cloudfront.net/310419663031397390/ggmroLG8ezURUZiLzGveTG/ecoblend-hero-bg-4sozsAnSEGXN6NLMPzPbzp.webp";
 
@@ -30,7 +34,15 @@ function KpiCard({ label, value, sub, accent }: { label: string; value: string |
   );
 }
 
-function VentureCard({ venture, onClick }: { venture: typeof ventures[0]; onClick: () => void }) {
+function VentureCard({
+  venture,
+  onClick,
+  onEdit,
+}: {
+  venture: Venture;
+  onClick: () => void;
+  onEdit: (e: React.MouseEvent) => void;
+}) {
   const vrlStage = VRL_STAGES[venture.vrl - 1];
   const trlLevel = TRL_LEVELS[venture.trl - 1];
 
@@ -56,12 +68,21 @@ function VentureCard({ venture, onClick }: { venture: typeof ventures[0]; onClic
           </div>
           <p className="text-xs text-gray-500">{venture.tagline}</p>
         </div>
-        <span
-          className="text-xs font-semibold px-2 py-1 rounded-full"
-          style={{ background: `${statusColors[venture.status]}15`, color: statusColors[venture.status] }}
-        >
-          {venture.status}
-        </span>
+        <div className="flex items-center gap-2">
+          <span
+            className="text-xs font-semibold px-2 py-1 rounded-full"
+            style={{ background: `${statusColors[venture.status]}15`, color: statusColors[venture.status] }}
+          >
+            {venture.status}
+          </span>
+          <button
+            onClick={onEdit}
+            className="w-7 h-7 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
+            title="Edit readiness scores"
+          >
+            <Pencil size={13} style={{ color: "#6b7280" }} />
+          </button>
+        </div>
       </div>
 
       {/* VRL Progress */}
@@ -69,9 +90,9 @@ function VentureCard({ venture, onClick }: { venture: typeof ventures[0]; onClic
         <div className="flex justify-between items-center mb-1">
           <span className="text-xs font-semibold text-gray-500 flex items-center gap-1">
             <span className="w-2 h-2 rounded-full inline-block" style={{ background: "#22c55e" }} />
-            VRL {venture.vrl} — {vrlStage.label}
+            VRL {venture.vrl} — {vrlStage?.label}
           </span>
-          <span className="text-xs font-mono text-gray-400">{Math.round((venture.vrl - 1 + venture.vrlPercent / 100) / 4 * 100)}%</span>
+          <span className="text-xs font-mono text-gray-400">{venture.vrlPercent}%</span>
         </div>
         <div className="w-full h-2 rounded-full bg-gray-100 overflow-hidden">
           <div
@@ -86,9 +107,9 @@ function VentureCard({ venture, onClick }: { venture: typeof ventures[0]; onClic
         <div className="flex justify-between items-center mb-1">
           <span className="text-xs font-semibold text-gray-500 flex items-center gap-1">
             <span className="w-2 h-2 rounded-full inline-block" style={{ background: "#1d4ed8" }} />
-            TRL {venture.trl} — {trlLevel.label}
+            TRL {venture.trl} — {trlLevel?.label}
           </span>
-          <span className="text-xs font-mono text-gray-400">{Math.round((venture.trl - 1 + venture.trlPercent / 100) / 9 * 100)}%</span>
+          <span className="text-xs font-mono text-gray-400">{venture.trlPercent}%</span>
         </div>
         <div className="w-full h-2 rounded-full bg-gray-100 overflow-hidden">
           <div
@@ -122,6 +143,8 @@ function VentureCard({ venture, onClick }: { venture: typeof ventures[0]; onClic
 export default function Home() {
   const [activeDomain, setActiveDomain] = useState("portfolio");
   const [, navigate] = useLocation();
+  const { ventures, stats, resetToDefaults } = useVentures();
+  const [editingVenture, setEditingVenture] = useState<Venture | null>(null);
 
   const handleDomainClick = (domainId: string) => {
     setActiveDomain(domainId);
@@ -133,13 +156,16 @@ export default function Home() {
     };
     if (routes[domainId] && routes[domainId] !== "/") {
       navigate(routes[domainId]);
-    } else {
-      toast.info("Module selected", { description: `Viewing ${domainId} analytics` });
     }
   };
 
   const handleVentureClick = (ventureId: string) => {
     navigate(`/venture/${ventureId}`);
+  };
+
+  const handleEditClick = (e: React.MouseEvent, venture: Venture) => {
+    e.stopPropagation();
+    setEditingVenture(venture);
   };
 
   return (
@@ -155,32 +181,56 @@ export default function Home() {
         }}
       >
         <div className="absolute inset-0" style={{ background: "rgba(255,255,255,0.88)" }} />
-        <div className="relative">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#22c55e15", color: "#22c55e" }}>
-              EcoRace VBS
-            </span>
-            <span className="text-xs text-gray-400">·</span>
-            <span className="text-xs text-gray-400 font-mono">H4 Lean Methodology</span>
+        <div className="relative flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#22c55e15", color: "#22c55e" }}>
+                EcoRace VBS
+              </span>
+              <span className="text-xs text-gray-400">·</span>
+              <span className="text-xs text-gray-400 font-mono">H4 Lean Methodology</span>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+              EcoBlend Analytics Dashboard
+            </h1>
+            <p className="text-sm text-gray-500 max-w-xl">
+              Dual-readiness portfolio intelligence — tracking Venture Readiness Level (VRL) and Technology Readiness Level (TRL) across all active ventures.
+            </p>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-            EcoBlend Analytics Dashboard
-          </h1>
-          <p className="text-sm text-gray-500 max-w-xl">
-            Dual-readiness portfolio intelligence — tracking Venture Readiness Level (VRL) and Technology Readiness Level (TRL) across all active ventures.
-          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 text-xs"
+              onClick={() => navigate("/onboarding")}
+              style={{ borderColor: "#22c55e", color: "#22c55e" }}
+            >
+              <UserPlus size={13} /> Onboard Founder
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 text-xs text-gray-400"
+              onClick={() => {
+                resetToDefaults();
+                toast.success("Data reset to defaults");
+              }}
+            >
+              <RotateCcw size={13} /> Reset Data
+            </Button>
+          </div>
         </div>
       </div>
 
       <div className="p-8">
-        {/* KPI row */}
+        {/* KPI row — live from context */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <KpiCard label="Active Ventures" value={portfolioStats.activeVentures} sub={`of ${portfolioStats.totalVentures} total`} accent="#22c55e" />
-          <KpiCard label="Avg VRL Stage" value={portfolioStats.avgVrl.toFixed(1)} sub="of 4 stages" accent="#22c55e" />
-          <KpiCard label="Avg TRL Level" value={portfolioStats.avgTrl.toFixed(1)} sub="of 9 levels" accent="#1d4ed8" />
+          <KpiCard label="Active Ventures" value={stats.activeVentures} sub={`of ${stats.totalVentures} total`} accent="#22c55e" />
+          <KpiCard label="Avg VRL Stage" value={stats.avgVrl.toFixed(1)} sub="of 4 stages" accent="#22c55e" />
+          <KpiCard label="Avg TRL Level" value={stats.avgTrl.toFixed(1)} sub="of 9 levels" accent="#1d4ed8" />
           <KpiCard
             label="Milestones"
-            value={`${portfolioStats.totalMilestonesCompleted}/${portfolioStats.totalMilestones}`}
+            value={`${stats.totalMilestonesCompleted}/${stats.totalMilestones}`}
             sub="completed"
             accent="#f59e0b"
           />
@@ -212,6 +262,7 @@ export default function Home() {
               onDomainClick={handleDomainClick}
               onVentureClick={handleVentureClick}
               activeDomain={activeDomain}
+              ventures={ventures}
             />
           </div>
 
@@ -228,11 +279,21 @@ export default function Home() {
                 key={venture.id}
                 venture={venture}
                 onClick={() => handleVentureClick(venture.id)}
+                onEdit={(e) => handleEditClick(e, venture)}
               />
             ))}
           </div>
         </div>
       </div>
+
+      {/* Edit Readiness Modal */}
+      {editingVenture && (
+        <EditReadinessModal
+          venture={editingVenture}
+          open={!!editingVenture}
+          onClose={() => setEditingVenture(null)}
+        />
+      )}
     </div>
   );
 }
