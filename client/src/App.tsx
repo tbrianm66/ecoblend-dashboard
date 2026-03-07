@@ -17,6 +17,9 @@ import BCorpIso from "./pages/BCorpIso";
 import FoundationImpact from "./pages/FoundationImpact";
 import IpManagement from "./pages/IpManagement";
 import PeopleEsop from "./pages/PeopleEsop";
+import MarketingStrategy from "./pages/MarketingStrategy";
+import FinancialAnalytics from "./pages/FinancialAnalytics";
+import BrandReadiness from "./pages/BrandReadiness";
 
 function Router() {
   return (
@@ -28,11 +31,11 @@ function Router() {
       <Route path="/investment" component={InvestmentReadiness} />
       <Route path="/risk" component={RiskManagement} />
       <Route path="/onboarding" component={FounderOnboarding} />
-      <Route path="/brand" component={PlaceholderPage} />
+      <Route path="/brand" component={BrandReadiness} />
       <Route path="/ip" component={IpManagement} />
       <Route path="/people" component={PeopleEsop} />
-      <Route path="/marketing" component={PlaceholderPage} />
-      <Route path="/financial" component={PlaceholderPage} />
+      <Route path="/marketing" component={MarketingStrategy} />
+      <Route path="/financial" component={FinancialAnalytics} />
       <Route path="/bcorp" component={BCorpIso} />
       <Route path="/foundation" component={FoundationImpact} />
       <Route component={Home} />
