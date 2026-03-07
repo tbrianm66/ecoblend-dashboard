@@ -3,10 +3,11 @@
 // Design: Precision Industrial — full VRL/TRL breakdown
 // ============================================================
 
+import { useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { ventures, VRL_STAGES, TRL_LEVELS } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, CheckCircle2, Circle, AlertTriangle, TrendingUp, FlaskConical } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Circle, AlertTriangle, TrendingUp, FlaskConical, LayoutGrid } from "lucide-react";
 
 const riskColors = { Low: "#22c55e", Medium: "#f59e0b", High: "#dc2626" };
 
@@ -190,15 +191,186 @@ export default function VentureDetail() {
 
         {/* BMC / MMC */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb", borderTop: "3px solid #22c55e" }}>
+          <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb", borderTop: "3px solid #51AF37" }}>
             <h3 className="font-bold text-gray-900 mb-2">Business Model Canvas (BMC)</h3>
             <p className="text-sm text-gray-600">{venture.bmc}</p>
           </div>
-          <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb", borderTop: "3px solid #1d4ed8" }}>
+          <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb", borderTop: "3px solid #3A97D3" }}>
             <h3 className="font-bold text-gray-900 mb-2">Mission Model Canvas (MMC)</h3>
             <p className="text-sm text-gray-600">{venture.mmc}</p>
           </div>
         </div>
+
+        {/* Canvas Evidence Summary */}
+        <CanvasEvidenceSummary ventureId={venture.id} ventureColor={venture.color} />
+      </div>
+    </div>
+  );
+}
+
+// ── Canvas Evidence Summary ──────────────────────────────────────────────────
+type BmcBlock = "Value Propositions" | "Customer Segments" | "Channels" | "Customer Relationships" | "Revenue Streams" | "Key Resources" | "Key Activities" | "Key Partners" | "Cost Structure";
+type MmcBlock = "Mission" | "Beneficiaries" | "Value Created" | "Key Partners (Mission)" | "Key Activities (Mission)" | "Key Resources (Mission)" | "Channels (Mission)" | "Cost Structure (Mission)" | "Funding Streams";
+type HypothesisStatus = "Validated" | "Invalidated" | "Partial" | "Pending";
+
+interface HypothesisEvidence {
+  text: string;
+  status: HypothesisStatus;
+  bmcBlock?: BmcBlock;
+  mmcBlock?: MmcBlock;
+}
+
+const BMC_BLOCKS: BmcBlock[] = ["Key Partners","Key Activities","Key Resources","Value Propositions","Customer Relationships","Channels","Customer Segments","Cost Structure","Revenue Streams"];
+const MMC_BLOCKS: MmcBlock[] = ["Mission","Beneficiaries","Value Created","Key Partners (Mission)","Key Activities (Mission)","Key Resources (Mission)","Channels (Mission)","Cost Structure (Mission)","Funding Streams"];
+
+const STATUS_COLOUR: Record<HypothesisStatus, string> = {
+  Validated: "#51AF37",
+  Invalidated: "#ef4444",
+  Partial: "#F49C13",
+  Pending: "#9ca3af",
+};
+
+const STATUS_BG: Record<HypothesisStatus, string> = {
+  Validated: "#f0fdf4",
+  Invalidated: "#fef2f2",
+  Partial: "#fffbeb",
+  Pending: "#f9fafb",
+};
+
+function getBlockStatus(hypotheses: HypothesisEvidence[]): HypothesisStatus {
+  if (!hypotheses.length) return "Pending";
+  if (hypotheses.every(h => h.status === "Validated")) return "Validated";
+  if (hypotheses.some(h => h.status === "Invalidated")) return "Invalidated";
+  if (hypotheses.some(h => h.status === "Validated" || h.status === "Partial")) return "Partial";
+  return "Pending";
+}
+
+function CanvasEvidenceSummary({ ventureId, ventureColor }: { ventureId: string; ventureColor: string }) {
+  const [activeCanvas, setActiveCanvas] = useState<"bmc" | "mmc">("bmc");
+  const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
+
+  // Pull hypotheses from localStorage (written by InterviewTracker)
+  const stored = localStorage.getItem("ecoblend-interviews-v1");
+  const allInterviews: Array<{ ventureId: string; hypotheses: HypothesisEvidence[] }> = stored ? JSON.parse(stored) : [];
+  const ventureInterviews = allInterviews.filter(i => i.ventureId === ventureId);
+  const allHypotheses: HypothesisEvidence[] = ventureInterviews.flatMap(i => i.hypotheses);
+
+  const blocks = activeCanvas === "bmc" ? BMC_BLOCKS : MMC_BLOCKS;
+  const blockKey = activeCanvas === "bmc" ? "bmcBlock" : "mmcBlock";
+
+  const blockMap: Record<string, HypothesisEvidence[]> = {};
+  blocks.forEach(b => { blockMap[b] = []; });
+  allHypotheses.forEach(h => {
+    const val = h[blockKey as keyof HypothesisEvidence] as string | undefined;
+    if (val && blockMap[val]) blockMap[val].push(h);
+  });
+
+  const selectedHypotheses = selectedBlock ? (blockMap[selectedBlock] || []) : [];
+
+  const validatedCount = blocks.filter(b => getBlockStatus(blockMap[b]) === "Validated").length;
+  const partialCount = blocks.filter(b => getBlockStatus(blockMap[b]) === "Partial").length;
+  const invalidatedCount = blocks.filter(b => getBlockStatus(blockMap[b]) === "Invalidated").length;
+
+  return (
+    <div className="bg-white rounded-xl border shadow-sm overflow-hidden" style={{ borderColor: "#e5e7eb" }}>
+      {/* Header */}
+      <div className="px-6 py-4 border-b flex items-center justify-between" style={{ borderColor: "#f3f4f6" }}>
+        <div className="flex items-center gap-2">
+          <LayoutGrid size={18} style={{ color: ventureColor }} />
+          <h3 className="font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>Canvas Evidence Summary</h3>
+          <span className="text-xs text-gray-400 ml-1">— Customer interview validation mapped to canvas blocks</span>
+        </div>
+        <div className="flex gap-1 p-1 rounded-lg" style={{ background: "#f3f4f6" }}>
+          {(["bmc", "mmc"] as const).map(c => (
+            <button
+              key={c}
+              onClick={() => { setActiveCanvas(c); setSelectedBlock(null); }}
+              className="px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider transition-all"
+              style={{
+                background: activeCanvas === c ? ventureColor : "transparent",
+                color: activeCanvas === c ? "white" : "#6b7280",
+                fontFamily: "'Nunito', sans-serif",
+              }}
+            >
+              {c.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Summary stats */}
+      <div className="grid grid-cols-4 divide-x" style={{ borderBottom: "1px solid #f3f4f6" }}>
+        {[
+          { label: "Total Blocks", value: blocks.length, color: "#6b7280" },
+          { label: "Validated", value: validatedCount, color: "#51AF37" },
+          { label: "Partial", value: partialCount, color: "#F49C13" },
+          { label: "Invalidated", value: invalidatedCount, color: "#ef4444" },
+        ].map(s => (
+          <div key={s.label} className="px-4 py-3 text-center">
+            <div className="text-xl font-bold" style={{ color: s.color, fontFamily: "'Prompt', sans-serif" }}>{s.value}</div>
+            <div className="text-xs text-gray-400" style={{ fontFamily: "'Nunito', sans-serif" }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex">
+        {/* Block grid */}
+        <div className="flex-1 p-6">
+          {allHypotheses.length === 0 && (
+            <div className="text-center py-8 text-gray-400 text-sm" style={{ fontFamily: "'Nunito', sans-serif" }}>
+              No interview hypotheses linked yet. Go to Interview Tracker and link hypotheses to canvas blocks.
+            </div>
+          )}
+          <div className="grid grid-cols-3 gap-3">
+            {blocks.map(block => {
+              const hyps = blockMap[block];
+              const status = getBlockStatus(hyps);
+              const isSelected = selectedBlock === block;
+              return (
+                <button
+                  key={block}
+                  onClick={() => setSelectedBlock(isSelected ? null : block)}
+                  className="text-left p-3 rounded-xl border-2 transition-all hover:shadow-md"
+                  style={{
+                    borderColor: isSelected ? ventureColor : `${STATUS_COLOUR[status]}40`,
+                    background: isSelected ? `${ventureColor}08` : STATUS_BG[status],
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold uppercase tracking-wider" style={{ color: STATUS_COLOUR[status], fontFamily: "'Nunito', sans-serif" }}>
+                      {status}
+                    </span>
+                    <span className="text-xs text-gray-400" style={{ fontFamily: "'Nunito', sans-serif" }}>{hyps.length} hyp.</span>
+                  </div>
+                  <div className="text-sm font-semibold text-gray-800" style={{ fontFamily: "'Nunito', sans-serif" }}>{block}</div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Hypothesis detail panel */}
+        {selectedBlock && (
+          <div className="w-72 border-l p-4 bg-gray-50" style={{ borderColor: "#f3f4f6" }}>
+            <div className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3" style={{ fontFamily: "'Nunito', sans-serif" }}>
+              {selectedBlock}
+            </div>
+            {selectedHypotheses.length === 0 ? (
+              <p className="text-xs text-gray-400" style={{ fontFamily: "'Nunito', sans-serif" }}>No hypotheses linked to this block yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {selectedHypotheses.map((h, i) => (
+                  <div key={i} className="p-3 rounded-lg border" style={{ borderColor: `${STATUS_COLOUR[h.status]}30`, background: STATUS_BG[h.status] }}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-bold" style={{ color: STATUS_COLOUR[h.status], fontFamily: "'Nunito', sans-serif" }}>{h.status}</span>
+                    </div>
+                    <p className="text-xs text-gray-700" style={{ fontFamily: "'Nunito', sans-serif" }}>{h.text}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

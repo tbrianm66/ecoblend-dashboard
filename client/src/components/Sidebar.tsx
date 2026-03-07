@@ -4,17 +4,20 @@
 // Typography: Prompt (headings) + Nunito (body)
 // ============================================================
 
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, TrendingUp, FlaskConical, ShieldAlert,
   DollarSign, Layers, Lock, Users, Megaphone, BarChart2,
-  Award, Heart, ChevronRight, Rocket, MessageSquare, BookOpen
+  Award, Heart, ChevronRight, Rocket, MessageSquare, BookOpen,
+  Bell, X, AlertTriangle, FileText
 } from "lucide-react";
+import { useVentures } from "@/contexts/VentureContext";
 
 const iconMap: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
   LayoutDashboard, TrendingUp, FlaskConical, ShieldAlert,
   DollarSign, Layers, Lock, Users, Megaphone, BarChart2,
-  Award, Heart, Rocket, MessageSquare, BookOpen,
+  Award, Heart, Rocket, MessageSquare, BookOpen, FileText,
 };
 
 const navItems = [
@@ -32,13 +35,50 @@ const navItems = [
   { id: "financial",   label: "Financial Analytics",   icon: "BarChart2",       href: "/financial" },
   { id: "bcorp",       label: "B Corp & ISO",          icon: "Award",           href: "/bcorp" },
   { id: "foundation",  label: "Foundation Impact",     icon: "Heart",           href: "/foundation" },
+  { id: "legal",       label: "Legal Contracts",        icon: "FileText",        href: "/legal" },
 ];
 
 // EcoBlend wavy logo mark as SVG
 const ECOBLEND_LOGO_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310419663031397390/ggmroLG8ezURUZiLzGveTG/ecoblend-logo_64dbd5ba.png";
 
+interface SyncAlert {
+  ventureName: string;
+  ventureColor: string;
+  vrl: number;
+  trl: number;
+  gap: number;
+  message: string;
+  severity: "high" | "medium";
+}
+
+function useVrlTrlAlerts(): SyncAlert[] {
+  const { ventures } = useVentures();
+  return ventures
+    .map((v): SyncAlert | null => {
+      const gap = Math.abs(v.vrl - Math.round(v.trl / 2.25)); // map TRL 1-9 to VRL 1-4 scale
+      const trlEquiv = Math.round(v.trl / 2.25);
+      const vrlAhead = v.vrl > trlEquiv + 1;
+      const trlAhead = trlEquiv > v.vrl + 1;
+      if (!vrlAhead && !trlAhead) return null;
+      return {
+        ventureName: v.name,
+        ventureColor: v.color,
+        vrl: v.vrl,
+        trl: v.trl,
+        gap,
+        message: vrlAhead
+          ? `Commercial readiness (VRL ${v.vrl}) is ahead of technology (TRL ${v.trl}). Accelerate R&D.`
+          : `Technology (TRL ${v.trl}) is ahead of commercial validation (VRL ${v.vrl}). Accelerate customer discovery.`,
+        severity: gap >= 2 ? "high" : "medium",
+      };
+    })
+    .filter((a): a is SyncAlert => a !== null);
+}
+
 export default function Sidebar() {
   const [location] = useLocation();
+  const [alertsOpen, setAlertsOpen] = useState(false);
+  const alerts = useVrlTrlAlerts();
 
   return (
     <aside
@@ -83,6 +123,60 @@ export default function Sidebar() {
             </span>
           </div>
         </Link>
+      </div>
+
+      {/* Notification bell */}
+      <div className="px-4 pb-2">
+        <button
+          onClick={() => setAlertsOpen(o => !o)}
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-150 relative"
+          style={{
+            background: alertsOpen ? "rgba(244,156,19,0.12)" : "rgba(255,255,255,0.04)",
+            border: `1px solid ${alerts.length > 0 ? "rgba(244,156,19,0.3)" : "rgba(255,255,255,0.08)"}`,
+            color: alerts.length > 0 ? "#F49C13" : "rgba(255,255,255,0.4)",
+          }}
+        >
+          <Bell size={14} />
+          <span className="text-xs font-semibold flex-1 text-left" style={{ fontFamily: "'Nunito', sans-serif" }}>
+            {alerts.length === 0 ? "All systems in sync" : `${alerts.length} sync alert${alerts.length > 1 ? "s" : ""}`}
+          </span>
+          {alerts.length > 0 && (
+            <span
+              className="text-xs font-bold px-1.5 py-0.5 rounded-full"
+              style={{ background: "#F49C13", color: "white", fontSize: "10px" }}
+            >
+              {alerts.length}
+            </span>
+          )}
+        </button>
+
+        {/* Alert panel */}
+        {alertsOpen && (
+          <div
+            className="mt-2 rounded-xl overflow-hidden"
+            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+          >
+            <div className="flex items-center justify-between px-3 py-2 border-b" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
+              <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)", fontFamily: "'Nunito', sans-serif" }}>VRL / TRL Sync Alerts</span>
+              <button onClick={() => setAlertsOpen(false)}><X size={12} style={{ color: "rgba(255,255,255,0.3)" }} /></button>
+            </div>
+            {alerts.length === 0 ? (
+              <div className="px-3 py-3 text-xs" style={{ color: "rgba(255,255,255,0.35)", fontFamily: "'Nunito', sans-serif" }}>All ventures are in sync.</div>
+            ) : (
+              <div className="divide-y" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+                {alerts.map((a: SyncAlert, i: number) => (
+                  <div key={i} className="px-3 py-2.5">
+                    <div className="flex items-center gap-2 mb-1">
+                      <AlertTriangle size={11} style={{ color: a.severity === "high" ? "#ef4444" : "#F49C13", flexShrink: 0 }} />
+                      <span className="text-xs font-bold" style={{ color: a.ventureColor, fontFamily: "'Nunito', sans-serif" }}>{a.ventureName}</span>
+                    </div>
+                    <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.45)", fontFamily: "'Nunito', sans-serif" }}>{a.message}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Nav section label */}

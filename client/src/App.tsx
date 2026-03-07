@@ -22,6 +22,7 @@ import FinancialAnalytics from "./pages/FinancialAnalytics";
 import BrandReadiness from "./pages/BrandReadiness";
 import InterviewTracker from "./pages/InterviewTracker";
 import PlaybookProgress from "./pages/PlaybookProgress";
+import LegalContracts from "./pages/LegalContracts";
 
 function Router() {
   return (
@@ -42,6 +43,7 @@ function Router() {
       <Route path="/foundation" component={FoundationImpact} />
       <Route path="/interviews" component={InterviewTracker} />
       <Route path="/playbook" component={PlaybookProgress} />
+      <Route path="/legal" component={LegalContracts} />
       <Route component={Home} />
     </Switch>
   );
