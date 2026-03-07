@@ -10,10 +10,12 @@ import HubSpokeDiagram from "@/components/HubSpokeDiagram";
 import { VRL_STAGES, TRL_LEVELS, Venture } from "@/lib/data";
 import { useVentures } from "@/contexts/VentureContext";
 import EditReadinessModal from "@/components/EditReadinessModal";
+import MilestoneEditModal from "@/components/MilestoneEditModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Pencil, UserPlus, RotateCcw } from "lucide-react";
+import { Pencil, UserPlus, RotateCcw, ListChecks, FileDown } from "lucide-react";
+import { exportPortfolioPdf } from "@/lib/exportPdf";
 
 const HERO_BG = "https://d2xsxph8kpxj0f.cloudfront.net/310419663031397390/ggmroLG8ezURUZiLzGveTG/ecoblend-hero-bg-4sozsAnSEGXN6NLMPzPbzp.webp";
 
@@ -38,10 +40,12 @@ function VentureCard({
   venture,
   onClick,
   onEdit,
+  onEditMilestones,
 }: {
   venture: Venture;
   onClick: () => void;
   onEdit: (e: React.MouseEvent) => void;
+  onEditMilestones: (e: React.MouseEvent) => void;
 }) {
   const vrlStage = VRL_STAGES[venture.vrl - 1];
   const trlLevel = TRL_LEVELS[venture.trl - 1];
@@ -81,6 +85,13 @@ function VentureCard({
             title="Edit readiness scores"
           >
             <Pencil size={13} style={{ color: "#6b7280" }} />
+          </button>
+          <button
+            onClick={onEditMilestones}
+            className="w-7 h-7 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
+            title="Edit milestones"
+          >
+            <ListChecks size={13} style={{ color: "#6b7280" }} />
           </button>
         </div>
       </div>
@@ -145,6 +156,7 @@ export default function Home() {
   const [, navigate] = useLocation();
   const { ventures, stats, resetToDefaults } = useVentures();
   const [editingVenture, setEditingVenture] = useState<Venture | null>(null);
+  const [milestonesVenture, setMilestonesVenture] = useState<Venture | null>(null);
 
   const handleDomainClick = (domainId: string) => {
     setActiveDomain(domainId);
@@ -166,6 +178,11 @@ export default function Home() {
   const handleEditClick = (e: React.MouseEvent, venture: Venture) => {
     e.stopPropagation();
     setEditingVenture(venture);
+  };
+
+  const handleMilestonesClick = (e: React.MouseEvent, venture: Venture) => {
+    e.stopPropagation();
+    setMilestonesVenture(venture);
   };
 
   return (
@@ -206,6 +223,15 @@ export default function Home() {
               style={{ borderColor: "#22c55e", color: "#22c55e" }}
             >
               <UserPlus size={13} /> Onboard Founder
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 text-xs"
+              onClick={() => exportPortfolioPdf(ventures)}
+              style={{ borderColor: "#1d4ed8", color: "#1d4ed8" }}
+            >
+              <FileDown size={13} /> Export PDF
             </Button>
             <Button
               size="sm"
@@ -280,6 +306,7 @@ export default function Home() {
                 venture={venture}
                 onClick={() => handleVentureClick(venture.id)}
                 onEdit={(e) => handleEditClick(e, venture)}
+                onEditMilestones={(e) => handleMilestonesClick(e, venture)}
               />
             ))}
           </div>
@@ -292,6 +319,15 @@ export default function Home() {
           venture={editingVenture}
           open={!!editingVenture}
           onClose={() => setEditingVenture(null)}
+        />
+      )}
+
+      {/* Milestone Edit Modal */}
+      {milestonesVenture && (
+        <MilestoneEditModal
+          venture={milestonesVenture}
+          open={!!milestonesVenture}
+          onClose={() => setMilestonesVenture(null)}
         />
       )}
     </div>

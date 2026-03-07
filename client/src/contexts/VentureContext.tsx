@@ -5,12 +5,13 @@
 // ============================================================
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
-import { Venture, ventures as initialVentures, portfolioStats } from "@/lib/data";
+import { Venture, Milestone, ventures as initialVentures, portfolioStats } from "@/lib/data";
 
 interface VentureContextType {
   ventures: Venture[];
   updateVentureReadiness: (id: string, vrl: number, vrlPercent: number, trl: number, trlPercent: number) => void;
   updateMilestone: (ventureId: string, milestoneIndex: number, completed: boolean) => void;
+  updateAllMilestones: (ventureId: string, milestones: Milestone[]) => void;
   updateRiskLevel: (ventureId: string, domain: string, level: "Low" | "Medium" | "High") => void;
   addVenture: (venture: Venture) => void;
   stats: typeof portfolioStats;
@@ -67,6 +68,13 @@ export function VentureProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const updateAllMilestones = useCallback((ventureId: string, milestones: Milestone[]) => {
+    setVentures(prev => prev.map(v => {
+      if (v.id !== ventureId) return v;
+      return { ...v, milestones };
+    }));
+  }, []);
+
   const updateRiskLevel = useCallback((ventureId: string, domain: string, level: "Low" | "Medium" | "High") => {
     setVentures(prev => prev.map(v => {
       if (v.id !== ventureId) return v;
@@ -91,6 +99,7 @@ export function VentureProvider({ children }: { children: ReactNode }) {
       ventures,
       updateVentureReadiness,
       updateMilestone,
+      updateAllMilestones,
       updateRiskLevel,
       addVenture,
       stats,

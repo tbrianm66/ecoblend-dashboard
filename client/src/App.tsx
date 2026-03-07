@@ -13,6 +13,7 @@ import InvestmentReadiness from "./pages/InvestmentReadiness";
 import PlaceholderPage from "./pages/PlaceholderPage";
 import RiskManagement from "./pages/RiskManagement";
 import FounderOnboarding from "./pages/FounderOnboarding";
+import BCorpIso from "./pages/BCorpIso";
 
 function Router() {
   return (
@@ -29,7 +30,7 @@ function Router() {
       <Route path="/people" component={PlaceholderPage} />
       <Route path="/marketing" component={PlaceholderPage} />
       <Route path="/financial" component={PlaceholderPage} />
-      <Route path="/bcorp" component={PlaceholderPage} />
+      <Route path="/bcorp" component={BCorpIso} />
       <Route path="/foundation" component={PlaceholderPage} />
       <Route component={Home} />
     </Switch>
