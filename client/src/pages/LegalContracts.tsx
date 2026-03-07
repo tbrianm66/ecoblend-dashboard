@@ -1,17 +1,19 @@
-// ECOBLEND LEGAL CONTRACTS MODULE
+// ============================================================
+// LEGAL CONTRACTS MODULE — EcoBlend VBS Dashboard
 // Brand: EcoBlend — Green #51AF37, Blue #3A97D3, Orange #F49C13, Navy #1a2332
 // Typography: Prompt (headings) + Nunito (body)
 // ============================================================
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
 import {
   FileText, Plus, CheckCircle2, Clock, AlertTriangle, XCircle,
   Users, Lock, Handshake, Heart, TrendingUp, ChevronDown, ChevronUp,
-  Download, Eye, Trash2, Edit3
+  Download, Eye, Trash2, Edit3, Upload, Paperclip, Loader2, File
 } from "lucide-react";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -54,7 +56,7 @@ const STATUS_COLOURS: Record<ContractStatus, string> = {
   Terminated:     "#dc2626",
 };
 
-const CATEGORY_ICONS: Record<ContractCategory, React.ComponentType<{ size?: number }>> = {
+const CATEGORY_ICONS: Record<ContractCategory, React.ComponentType<{ size?: number; style?: React.CSSProperties }>> = {
   "Founder Agreement":   Users,
   "IP Licence":          Lock,
   "OEM Partnership":     Handshake,
@@ -201,6 +203,188 @@ function saveContracts(contracts: Contract[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(contracts));
 }
 
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+// ── Document Upload Panel ─────────────────────────────────────────────────────
+function DocumentPanel({ contractId, contractTitle, catColor }: { contractId: string; contractTitle: string; catColor: string }) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const utils = trpc.useUtils();
+
+  const { data: docs = [], isLoading } = trpc.contracts.getDocuments.useQuery({ contractId });
+
+  const uploadMutation = trpc.contracts.uploadDocument.useMutation({
+    onSuccess: () => {
+      utils.contracts.getDocuments.invalidate({ contractId });
+      toast.success("Document uploaded successfully");
+      setUploading(false);
+    },
+    onError: (err) => {
+      toast.error(`Upload failed: ${err.message}`);
+      setUploading(false);
+    },
+  });
+
+  const deleteMutation = trpc.contracts.deleteDocument.useMutation({
+    onSuccess: () => {
+      utils.contracts.getDocuments.invalidate({ contractId });
+      toast.success("Document removed");
+    },
+    onError: (err) => {
+      toast.error(`Delete failed: ${err.message}`);
+    },
+  });
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
+    if (file.size > MAX_SIZE) {
+      toast.error("File too large. Maximum size is 10 MB.");
+      return;
+    }
+
+    const ALLOWED_TYPES = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "text/plain",
+      "image/png",
+      "image/jpeg",
+    ];
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      toast.error("Unsupported file type. Please upload PDF, DOCX, DOC, TXT, PNG, or JPG.");
+      return;
+    }
+
+    setUploading(true);
+
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = (reader.result as string).split(",")[1];
+      uploadMutation.mutate({
+        contractId,
+        contractTitle,
+        fileName: file.name,
+        mimeType: file.type,
+        fileSizeBytes: file.size,
+        base64Data: base64,
+        uploadedBy: "Dashboard User",
+      });
+    };
+    reader.onerror = () => {
+      toast.error("Failed to read file");
+      setUploading(false);
+    };
+    reader.readAsDataURL(file);
+
+    // Reset input
+    e.target.value = "";
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <div className="text-xs font-bold uppercase tracking-widest text-gray-400 flex items-center gap-1.5" style={{ fontFamily: "'Nunito', sans-serif" }}>
+          <Paperclip size={11} />
+          Attachments {docs.length > 0 && <span className="ml-1 px-1.5 py-0.5 rounded-full text-white text-xs" style={{ background: catColor }}>{docs.length}</span>}
+        </div>
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all hover:opacity-80 disabled:opacity-50"
+          style={{ background: `${catColor}12`, color: catColor, fontFamily: "'Nunito', sans-serif" }}
+        >
+          {uploading ? <Loader2 size={11} className="animate-spin" /> : <Upload size={11} />}
+          {uploading ? "Uploading…" : "Attach File"}
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          className="hidden"
+          accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg"
+          onChange={handleFileChange}
+        />
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center gap-2 text-xs text-gray-400 py-2" style={{ fontFamily: "'Nunito', sans-serif" }}>
+          <Loader2 size={12} className="animate-spin" /> Loading attachments…
+        </div>
+      ) : docs.length === 0 ? (
+        <div
+          className="border-2 border-dashed rounded-lg py-4 text-center cursor-pointer hover:opacity-80 transition-opacity"
+          style={{ borderColor: `${catColor}30` }}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <Upload size={16} style={{ color: catColor, margin: "0 auto 4px" }} />
+          <p className="text-xs text-gray-400" style={{ fontFamily: "'Nunito', sans-serif" }}>
+            Drop a PDF or DOCX here, or click to browse
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {docs.map((doc) => (
+            <div
+              key={doc.id}
+              className="flex items-center gap-3 p-2.5 rounded-lg border"
+              style={{ borderColor: "#e5e7eb", background: "white" }}
+            >
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ background: `${catColor}12` }}
+              >
+                <File size={14} style={{ color: catColor }} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-semibold text-gray-800 truncate" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                  {doc.fileName}
+                </div>
+                <div className="text-xs text-gray-400" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                  {formatFileSize(doc.fileSizeBytes)} · {new Date(doc.createdAt).toLocaleDateString("en-GB")}
+                </div>
+              </div>
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <a
+                  href={doc.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors"
+                  title="View document"
+                >
+                  <Eye size={13} style={{ color: "#6b7280" }} />
+                </a>
+                <a
+                  href={doc.fileUrl}
+                  download={doc.fileName}
+                  className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors"
+                  title="Download document"
+                >
+                  <Download size={13} style={{ color: "#6b7280" }} />
+                </a>
+                <button
+                  onClick={() => deleteMutation.mutate({ id: doc.id })}
+                  className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-red-50 transition-colors"
+                  title="Remove document"
+                >
+                  <Trash2 size={13} style={{ color: "#ef4444" }} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── ContractCard ─────────────────────────────────────────────────────────────
 function ContractCard({
   contract,
@@ -336,31 +520,22 @@ function ContractCard({
             </div>
           )}
 
-          {/* Actions */}
-          <div className="flex items-center gap-2 pt-1">
+          {/* Document attachments */}
+          <div className="border-t pt-4" style={{ borderColor: "#f3f4f6" }}>
+            <DocumentPanel contractId={contract.id} contractTitle={contract.title} catColor={catColor} />
+          </div>
+
+          {/* Remove contract */}
+          <div className="flex items-center justify-end pt-1">
             <button
               className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all hover:opacity-80"
-              style={{ background: `${catColor}10`, color: catColor, fontFamily: "'Nunito', sans-serif" }}
-              onClick={() => toast.info("Document viewer coming soon")}
-            >
-              <Eye size={12} /> View Document
-            </button>
-            <button
-              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all hover:opacity-80"
-              style={{ background: "#f3f4f6", color: "#6b7280", fontFamily: "'Nunito', sans-serif" }}
-              onClick={() => toast.info("Download feature coming soon")}
-            >
-              <Download size={12} /> Download
-            </button>
-            <button
-              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all hover:opacity-80 ml-auto"
               style={{ background: "#fef2f2", color: "#ef4444", fontFamily: "'Nunito', sans-serif" }}
               onClick={() => {
                 onDelete(contract.id);
                 toast.success("Contract removed");
               }}
             >
-              <Trash2 size={12} /> Remove
+              <Trash2 size={12} /> Remove Contract
             </button>
           </div>
         </div>
@@ -574,7 +749,7 @@ export default function LegalContracts() {
               Legal Contracts
             </h1>
             <p className="text-sm text-gray-500 mt-1" style={{ fontFamily: "'Nunito', sans-serif" }}>
-              Founder agreements, IP licences, OEM partnerships, charity MoUs, and investor term sheets across the portfolio.
+              Founder agreements, IP licences, OEM partnerships, charity MoUs, and investor term sheets. Expand any card to attach documents.
             </p>
           </div>
           <Button

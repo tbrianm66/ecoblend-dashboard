@@ -14,8 +14,8 @@ import MilestoneEditModal from "@/components/MilestoneEditModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Pencil, UserPlus, RotateCcw, ListChecks, FileDown } from "lucide-react";
-import { exportPortfolioPdf } from "@/lib/exportPdf";
+import { Pencil, UserPlus, RotateCcw, ListChecks, FileDown, Briefcase } from "lucide-react";
+import { exportPortfolioPdf, exportInvestorPack } from "@/lib/exportPdf";
 
 const HERO_BG = "https://d2xsxph8kpxj0f.cloudfront.net/310419663031397390/ggmroLG8ezURUZiLzGveTG/ecoblend-hero-bg-4sozsAnSEGXN6NLMPzPbzp.webp";
 
@@ -232,6 +232,15 @@ export default function Home() {
               style={{ borderColor: "#3A97D3", color: "#3A97D3" }}
             >
               <FileDown size={13} /> Export PDF
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 text-xs"
+              onClick={() => exportInvestorPack(ventures)}
+              style={{ borderColor: "#8b5cf6", color: "#8b5cf6" }}
+            >
+              <Briefcase size={13} /> Investor Pack
             </Button>
             <Button
               size="sm"
