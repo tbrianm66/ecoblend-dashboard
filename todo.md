@@ -35,3 +35,8 @@
 - [x] Correct venture brand identities: EcoBlend R&D → internal lab, EcoBlend → materials brand, TONE → eco-creative, REAL → sports protection
 - [x] Add PIPE venture (eco-water sport and performance brand)
 - [x] Add Brand Newsletter & PR module
+
+## Sprint 3 (Mar 2026)
+- [x] Link Investment Readiness to Financial Analytics (funding ask, gap, burn rate, runway per brand)
+- [x] Specialist Services marketplace module (task tagging, directory, commission flow, status tracking)
+- [x] Add Specialist Services to sidebar navigation

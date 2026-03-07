@@ -24,6 +24,7 @@ import InterviewTracker from "./pages/InterviewTracker";
 import PlaybookProgress from "./pages/PlaybookProgress";
 import LegalContracts from "./pages/LegalContracts";
 import BrandPR from "./pages/BrandPR";
+import SpecialistServices from "./pages/SpecialistServices";
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
@@ -46,6 +47,7 @@ function Router() {
       <Route path="/playbook" component={PlaybookProgress} />
       <Route path="/legal" component={LegalContracts} />
       <Route path="/pr" component={BrandPR} />
+      <Route path="/specialists" component={SpecialistServices} />
       <Route component={Home} />
     </Switch>
   );
