@@ -40,3 +40,14 @@
 - [x] Link Investment Readiness to Financial Analytics (funding ask, gap, burn rate, runway per brand)
 - [x] Specialist Services marketplace module (task tagging, directory, commission flow, status tracking)
 - [x] Add Specialist Services to sidebar navigation
+
+## Sprint 4 — EVIP Maturity Improvements (Mar 2026)
+- [x] Migrate ventures, milestones, risks, venture_scores to database
+- [x] Migrate customer interviews to database
+- [x] Migrate financial snapshots to database
+- [x] Build Opportunity Pipeline module (intake, scoring, stage advancement)
+- [x] Stage gate enforcement — VRL advancement requires evidence
+- [x] Experiment log per venture (TRL evidence tracking)
+- [x] AI interview summarisation using built-in LLM
+- [x] Founder profiles table and Founder Capability Score
+- [x] Update all pages to read from database (replace static data.ts)

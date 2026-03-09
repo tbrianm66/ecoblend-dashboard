@@ -25,6 +25,9 @@ import PlaybookProgress from "./pages/PlaybookProgress";
 import LegalContracts from "./pages/LegalContracts";
 import BrandPR from "./pages/BrandPR";
 import SpecialistServices from "./pages/SpecialistServices";
+import OpportunityPipeline from "./pages/OpportunityPipeline";
+import ExperimentLog from "./pages/ExperimentLog";
+import FounderProfiles from "./pages/FounderProfiles";
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
@@ -48,6 +51,9 @@ function Router() {
       <Route path="/legal" component={LegalContracts} />
       <Route path="/pr" component={BrandPR} />
       <Route path="/specialists" component={SpecialistServices} />
+      <Route path="/pipeline" component={OpportunityPipeline} />
+      <Route path="/experiments" component={ExperimentLog} />
+      <Route path="/founders" component={FounderProfiles} />
       <Route component={Home} />
     </Switch>
   );

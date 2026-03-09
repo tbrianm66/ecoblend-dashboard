@@ -10,7 +10,8 @@ import {
   LayoutDashboard, TrendingUp, FlaskConical, ShieldAlert,
   DollarSign, Layers, Lock, Users, Megaphone, BarChart2,
   Award, Heart, ChevronRight, Rocket, MessageSquare, BookOpen,
-  Bell, X, AlertTriangle, FileText, Newspaper, Briefcase
+  Bell, X, AlertTriangle, FileText, Newspaper, Briefcase,
+  Lightbulb, TestTube2, UserCircle2
 } from "lucide-react";
 import { useVentures } from "@/contexts/VentureContext";
 
@@ -18,6 +19,7 @@ const iconMap: Record<string, React.ComponentType<{ size?: number; className?: s
   LayoutDashboard, TrendingUp, FlaskConical, ShieldAlert,
   DollarSign, Layers, Lock, Users, Megaphone, BarChart2,
   Award, Heart, Rocket, MessageSquare, BookOpen, FileText, Newspaper, Briefcase,
+  Lightbulb, TestTube2, UserCircle2,
 };
 
 const navItems = [
@@ -38,6 +40,9 @@ const navItems = [
   { id: "legal",       label: "Legal Contracts",        icon: "FileText",        href: "/legal" },
   { id: "pr",          label: "Brand PR & Newsletter",  icon: "Newspaper",       href: "/pr" },
   { id: "specialists", label: "Specialist Services",    icon: "Briefcase",       href: "/specialists" },
+  { id: "pipeline",    label: "Opportunity Pipeline",  icon: "Lightbulb",       href: "/pipeline" },
+  { id: "experiments", label: "Experiment Log",         icon: "TestTube2",       href: "/experiments" },
+  { id: "founders",    label: "Founder Profiles",       icon: "UserCircle2",     href: "/founders" },
 ];
 
 // EcoBlend wavy logo mark as SVG
