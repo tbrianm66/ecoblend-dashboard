@@ -277,9 +277,9 @@ export default function FoundationImpact() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto bg-gray-50">
       {/* Header */}
-      <div className="px-8 py-7 border-b bg-white" style={{ borderColor: "#e5e7eb" }}>
+      <div className="vos-page-header">
         <div className="flex items-center gap-2 mb-1">
           <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#ec489915", color: "#ec4899" }}>
             Social Impact

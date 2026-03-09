@@ -227,16 +227,15 @@ export default function FounderOnboarding() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto" style={{ background: "#f9fafb" }}>
+    <div className="flex-1 overflow-y-auto bg-gray-50">
       {/* Header */}
-      <div className="px-8 py-6 border-b bg-white" style={{ borderColor: "#e5e7eb" }}>
+      <div className="vos-page-header">
         <div className="flex items-center gap-3 mb-1">
-          <Rocket size={20} style={{ color: "#22c55e" }} />
-          <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-            Founder Onboarding Wizard
-          </h1>
+          <Rocket size={16} style={{ color: "#22c55e" }} />
+          <span className="vos-badge vos-badge-success" style={{ fontSize: "0.65rem" }}>Onboarding</span>
         </div>
-        <p className="text-sm text-gray-500">EcoRace VBS · H4 Lean Methodology · 100tasks.com Playbook</p>
+        <h1 className="vos-page-title mb-1">Founder Onboarding Wizard</h1>
+        <p className="text-sm text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>EcoRace VBS · H4 Lean Methodology · 100tasks.com Playbook</p>
       </div>
 
       <div className="max-w-2xl mx-auto p-8">

@@ -90,20 +90,15 @@ export default function FinancialAnalytics() {
   const forecastColors = ["#22c55e", "#1d4ed8", "#7c3aed", "#f59e0b"];
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto bg-gray-50">
       {/* Header */}
-      <div className="px-8 py-7 border-b bg-white" style={{ borderColor: "#e5e7eb" }}>
+      <div className="vos-page-header">
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#22c55e15", color: "#22c55e" }}>
-            Finance
-          </span>
-          <span className="text-xs text-gray-400">·</span>
-          <span className="text-xs text-gray-400 font-mono">Revenue, Burn Rate & ESOP Dilution</span>
+          <DollarSign size={16} style={{ color: "#22c55e" }} />
+          <span className="vos-badge vos-badge-success" style={{ fontSize: "0.65rem" }}>Finance</span>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-          Financial Analytics
-        </h1>
-        <p className="text-sm text-gray-500 max-w-xl">
+        <h1 className="vos-page-title mb-1">Financial Analytics</h1>
+        <p className="text-sm text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>
           Portfolio-level financial health: 12-month revenue forecast, monthly burn rates, cash runway, and ESOP equity dilution modelling across all ventures.
         </p>
       </div>
@@ -118,22 +113,20 @@ export default function FinancialAnalytics() {
             { label: "Investment Raised", value: `£${(totalInvestment / 1000).toFixed(0)}k`, sub: "total to date", color: "#1d4ed8", icon: DollarSign },
             { label: "Avg Cash Runway", value: `${avgRunway}m`, sub: "across portfolio", color: "#f59e0b", icon: AlertTriangle },
           ].map(kpi => (
-            <div key={kpi.label} className="bg-white rounded-xl border p-5 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `${kpi.color}15` }}>
-                  <kpi.icon size={14} style={{ color: kpi.color }} />
-                </div>
-                <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">{kpi.label}</span>
+            <div key={kpi.label} className="vos-metric">
+              <div className="flex items-center gap-2 mb-1">
+                <kpi.icon size={13} style={{ color: kpi.color }} />
+                <span className="vos-metric-label">{kpi.label}</span>
               </div>
-              <div className="text-3xl font-bold font-mono" style={{ color: kpi.color }}>{kpi.value}</div>
-              <div className="text-xs text-gray-400 mt-0.5">{kpi.sub}</div>
+              <span className="vos-metric-value" style={{ color: kpi.color }}>{kpi.value}</span>
+              <span className="vos-metric-sub">{kpi.sub}</span>
             </div>
           ))}
         </div>
 
         {/* 12-month Revenue Forecast */}
-        <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
-          <h2 className="text-sm font-bold text-gray-900 mb-4" style={{ fontFamily: "'DM Sans', sans-serif" }}>12-Month Revenue Forecast</h2>
+        <div className="vos-panel p-6">
+          <h2 className="vos-section-title mb-4">12-Month Revenue Forecast</h2>
           <ResponsiveContainer width="100%" height={260}>
             <AreaChart data={REVENUE_FORECAST}>
               <defs>
@@ -159,8 +152,8 @@ export default function FinancialAnalytics() {
         {/* Burn Rate + Runway */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Burn bar chart */}
-          <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
-            <h2 className="text-sm font-bold text-gray-900 mb-4" style={{ fontFamily: "'DM Sans', sans-serif" }}>Monthly Burn Rate by Venture</h2>
+          <div className="vos-panel p-6">
+            <h2 className="vos-section-title mb-4">Monthly Burn Rate by Venture</h2>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={BURN_DATA} layout="vertical" barSize={16}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" horizontal={false} />
@@ -175,8 +168,8 @@ export default function FinancialAnalytics() {
           </div>
 
           {/* Runway cards */}
-          <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
-            <h2 className="text-sm font-bold text-gray-900 mb-4" style={{ fontFamily: "'DM Sans', sans-serif" }}>Cash Runway & Investment Progress</h2>
+          <div className="vos-panel p-6">
+            <h2 className="vos-section-title mb-4">Cash Runway & Investment Progress</h2>
             <div className="space-y-4">
               {VENTURES.map(v => (
                 <div key={v.id}>
@@ -198,8 +191,8 @@ export default function FinancialAnalytics() {
         </div>
 
         {/* ESOP Dilution Modelling */}
-        <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
-          <h2 className="text-sm font-bold text-gray-900 mb-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>ESOP Equity Dilution Model</h2>
+        <div className="vos-panel p-6">
+          <h2 className="vos-section-title mb-1">ESOP Equity Dilution Model</h2>
           <p className="text-xs text-gray-400 mb-4">Indicative equity split per venture: Founder/Team equity, ESOP pool allocation, and investor equity.</p>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={ESOP_DATA} barSize={40}>
@@ -231,9 +224,9 @@ export default function FinancialAnalytics() {
         </div>
 
         {/* Revenue vs Target table */}
-        <div className="bg-white rounded-xl border shadow-sm overflow-hidden" style={{ borderColor: "#e5e7eb" }}>
-          <div className="px-6 py-4 border-b" style={{ borderColor: "#e5e7eb" }}>
-            <h2 className="text-sm font-bold text-gray-900" style={{ fontFamily: "'DM Sans', sans-serif" }}>Revenue vs Target Summary</h2>
+        <div className="vos-panel overflow-hidden">
+          <div className="px-6 py-4 border-b" style={{ borderColor: "#f3f4f6" }}>
+            <h2 className="vos-section-title">Revenue vs Target Summary</h2>
           </div>
           <table className="w-full">
             <thead>

@@ -156,20 +156,17 @@ export default function ExperimentLog() {
   const pendingCount = experiments.filter(e => e.outcome === "Pending").length;
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto bg-gray-50">
       {/* Header */}
-      <div className="px-8 py-6 border-b bg-white" style={{ borderColor: "#e5e7eb" }}>
+      <div className="vos-page-header">
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#dbeafe", color: "#1d4ed8" }}>
-                TRL Evidence Log
-              </span>
+              <FlaskConical size={16} style={{ color: "#1d4ed8" }} />
+              <span className="vos-badge" style={{ background: "#dbeafe", color: "#1d4ed8", fontSize: "0.65rem" }}>TRL Evidence Log</span>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
-              Experiment Log
-            </h1>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <h1 className="vos-page-title mb-1">Experiment Log</h1>
+            <p className="text-sm text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>
               Log experiments and tests that justify TRL advancement. Stage gates require at least one passing experiment per level.
             </p>
           </div>

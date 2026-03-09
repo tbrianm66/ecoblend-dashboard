@@ -316,42 +316,24 @@ export default function PlaybookProgress() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto bg-gray-50">
       {/* Header */}
-      <div className="px-8 py-6 border-b bg-white" style={{ borderColor: "#e5e7eb" }}>
+      <div className="vos-page-header">
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <BookOpen size={18} style={{ color: "#51AF37" }} />
-              <span
-                className="text-xs font-bold uppercase tracking-widest"
-                style={{ color: "#51AF37", fontFamily: "'Nunito', sans-serif" }}
-              >
-                EcoBlend Playbook
-              </span>
+              <BookOpen size={16} style={{ color: "#51AF37" }} />
+              <span className="vos-badge vos-badge-success" style={{ fontSize: "0.65rem" }}>EcoBlend Playbook</span>
             </div>
-            <h1
-              className="text-2xl font-bold text-gray-900"
-              style={{ fontFamily: "'Prompt', sans-serif" }}
-            >
-              Playbook Progress Tracker
-            </h1>
-            <p className="text-sm text-gray-500 mt-1 max-w-xl">
+            <h1 className="vos-page-title mb-1">Playbook Progress Tracker</h1>
+            <p className="text-sm text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>
               Completing a phase automatically advances the venture's VRL stage on the Portfolio Dashboard.
             </p>
           </div>
           {ventureData && (
-            <div
-              className="flex items-center gap-2 px-4 py-2 rounded-xl border"
-              style={{ background: "#f0fdf4", borderColor: "#86efac" }}
-            >
-              <Zap size={14} style={{ color: "#51AF37" }} />
-              <span className="text-sm font-bold" style={{ color: "#166534", fontFamily: "'Prompt', sans-serif" }}>
-                Live VRL: Stage {ventureData.vrl}
-              </span>
-              <span className="text-xs text-green-600" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                — auto-synced
-              </span>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border" style={{ background: "#f0fdf4", borderColor: "#86efac" }}>
+              <Zap size={13} style={{ color: "#51AF37" }} />
+              <span className="text-xs font-bold" style={{ color: "#166534" }}>Live VRL: Stage {ventureData.vrl} — auto-synced</span>
             </div>
           )}
         </div>

@@ -45,43 +45,39 @@ function RiskBadge({ level }: { level: string }) {
 
 export default function RiskManagement() {
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="px-8 py-6 border-b bg-white" style={{ borderColor: "#e5e7eb" }}>
-        <div className="flex items-center gap-3 mb-1">
-          <ShieldAlert size={20} style={{ color: "#dc2626" }} />
-          <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-            Risk Management
-          </h1>
+    <div className="flex-1 overflow-y-auto bg-gray-50">
+      <div className="vos-page-header">
+        <div className="flex items-center gap-2 mb-1">
+          <ShieldAlert size={16} style={{ color: "#dc2626" }} />
+          <span className="vos-badge vos-badge-danger" style={{ fontSize: "0.65rem" }}>Risk</span>
         </div>
-        <p className="text-sm text-gray-500">Portfolio-wide risk tracking across Business, Technical, Financial, Marketing, Investment, People, and IP domains</p>
+        <h1 className="vos-page-title mb-1">Risk Management</h1>
+        <p className="text-sm text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>Portfolio-wide risk tracking across Business, Technical, Financial, Marketing, Investment, People, and IP domains</p>
       </div>
 
       <div className="p-8 space-y-8">
         {/* Risk summary KPIs */}
         <div className="grid grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl border p-5 shadow-sm text-center" style={{ borderColor: "#e5e7eb", borderTop: "3px solid #dc2626" }}>
-            <div className="text-3xl font-bold font-mono mb-1" style={{ color: "#dc2626" }}>
-              {ventures.reduce((acc, v) => acc + v.risks.filter(r => r.level === "High").length, 0)}
-            </div>
-            <div className="text-xs text-gray-400 uppercase tracking-widest">High Risk Items</div>
+          <div className="vos-metric" style={{ borderTop: "3px solid #dc2626" }}>
+            <span className="vos-metric-label">High Risk Items</span>
+            <span className="vos-metric-value" style={{ color: "#dc2626" }}>{ventures.reduce((acc, v) => acc + v.risks.filter(r => r.level === "High").length, 0)}</span>
+            <span className="vos-metric-sub">requires immediate action</span>
           </div>
-          <div className="bg-white rounded-xl border p-5 shadow-sm text-center" style={{ borderColor: "#e5e7eb", borderTop: "3px solid #f59e0b" }}>
-            <div className="text-3xl font-bold font-mono mb-1" style={{ color: "#f59e0b" }}>
-              {ventures.reduce((acc, v) => acc + v.risks.filter(r => r.level === "Medium").length, 0)}
-            </div>
-            <div className="text-xs text-gray-400 uppercase tracking-widest">Medium Risk Items</div>
+          <div className="vos-metric" style={{ borderTop: "3px solid #f59e0b" }}>
+            <span className="vos-metric-label">Medium Risk Items</span>
+            <span className="vos-metric-value" style={{ color: "#f59e0b" }}>{ventures.reduce((acc, v) => acc + v.risks.filter(r => r.level === "Medium").length, 0)}</span>
+            <span className="vos-metric-sub">monitor closely</span>
           </div>
-          <div className="bg-white rounded-xl border p-5 shadow-sm text-center" style={{ borderColor: "#e5e7eb", borderTop: "3px solid #22c55e" }}>
-            <div className="text-3xl font-bold font-mono mb-1" style={{ color: "#22c55e" }}>
-              {ventures.reduce((acc, v) => acc + v.risks.filter(r => r.level === "Low").length, 0)}
-            </div>
-            <div className="text-xs text-gray-400 uppercase tracking-widest">Low Risk Items</div>
+          <div className="vos-metric" style={{ borderTop: "3px solid #22c55e" }}>
+            <span className="vos-metric-label">Low Risk Items</span>
+            <span className="vos-metric-value" style={{ color: "#22c55e" }}>{ventures.reduce((acc, v) => acc + v.risks.filter(r => r.level === "Low").length, 0)}</span>
+            <span className="vos-metric-sub">under control</span>
           </div>
         </div>
 
         {/* Risk distribution chart */}
-        <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
-          <h3 className="font-bold text-gray-900 mb-4">Risk Distribution by Venture</h3>
+        <div className="vos-panel p-6">
+          <h3 className="vos-section-title mb-4">Risk Distribution by Venture</h3>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={riskSummary} barSize={32}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
@@ -97,8 +93,8 @@ export default function RiskManagement() {
         </div>
 
         {/* Risk Heatmap Table */}
-        <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
-          <h3 className="font-bold text-gray-900 mb-4">Portfolio Risk Heatmap</h3>
+        <div className="vos-panel p-6">
+          <h3 className="vos-section-title mb-4">Portfolio Risk Heatmap</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -131,8 +127,8 @@ export default function RiskManagement() {
         </div>
 
         {/* Full risk register */}
-        <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
-          <h3 className="font-bold text-gray-900 mb-4">Full Risk Register</h3>
+        <div className="vos-panel p-6">
+          <h3 className="vos-section-title mb-4">Full Risk Register</h3>
           <div className="space-y-6">
             {ventures.map(v => (
               <div key={v.id}>

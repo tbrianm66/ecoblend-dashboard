@@ -56,3 +56,17 @@
 - [x] Redesign sidebar with grouped navigation sections
 - [x] Redesign Portfolio Overview (lifecycle indicator, funding status, Apple-style KPI tiles)
 - [x] Apply design system to VRL, TRL, Investment Readiness, Venture Detail pages
+
+## Sprint 6 — VOS Design System Full Rollout (Mar 2026) ✓
+- [x] Apply VOS to Financial Analytics page
+- [x] Apply VOS to Risk Management page
+- [x] Apply VOS to Brand PR & Newsletter page
+- [x] Apply VOS to Specialist Services page
+- [x] Apply VOS to Opportunity Pipeline page
+- [x] Apply VOS to Experiment Log page
+- [x] Apply VOS to Founder Profiles page
+- [x] Apply VOS to Interview Tracker page
+- [x] Apply VOS to Legal Contracts page
+- [x] Apply VOS to EcoBlend Playbook page
+- [x] Apply VOS to Venture Detail page
+- [x] Apply VOS to Onboarding page

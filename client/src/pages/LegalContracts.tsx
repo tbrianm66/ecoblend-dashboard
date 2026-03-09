@@ -734,30 +734,27 @@ export default function LegalContracts() {
   const expiredCount = contracts.filter(c => c.status === "Expired" || c.status === "Terminated").length;
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto bg-gray-50">
       {/* Header */}
-      <div className="px-8 py-6 border-b bg-white" style={{ borderColor: "#e5e7eb" }}>
-        <div className="flex items-center justify-between">
+      <div className="vos-page-header">
+        <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <FileText size={18} style={{ color: "#51AF37" }} />
-              <span className="text-xs font-bold uppercase tracking-widest text-gray-400" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                EcoRace VBS · Stakeholder Management
-              </span>
+              <FileText size={16} style={{ color: "#51AF37" }} />
+              <span className="vos-badge vos-badge-success" style={{ fontSize: "0.65rem" }}>Legal</span>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
-              Legal Contracts
-            </h1>
-            <p className="text-sm text-gray-500 mt-1" style={{ fontFamily: "'Nunito', sans-serif" }}>
+            <h1 className="vos-page-title mb-1">Legal Contracts</h1>
+            <p className="text-sm text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>
               Founder agreements, IP licences, OEM partnerships, charity MoUs, and investor term sheets. Expand any card to attach documents.
             </p>
           </div>
           <Button
             onClick={() => setAddOpen(true)}
-            className="flex items-center gap-2"
-            style={{ background: "#51AF37", color: "white", fontFamily: "'Nunito', sans-serif" }}
+            className="flex items-center gap-2 text-xs"
+            size="sm"
+            style={{ background: "#51AF37", color: "white" }}
           >
-            <Plus size={15} /> Add Contract
+            <Plus size={13} /> Add Contract
           </Button>
         </div>
       </div>
@@ -766,19 +763,20 @@ export default function LegalContracts() {
         {/* KPI row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: "Active", value: activeCount, color: "#51AF37", icon: CheckCircle2 },
-            { label: "Under Review", value: reviewCount, color: "#F49C13", icon: Clock },
-            { label: "Draft", value: draftCount, color: "#9ca3af", icon: Edit3 },
-            { label: "Expired / Terminated", value: expiredCount, color: "#ef4444", icon: XCircle },
+            { label: "Active", value: activeCount, sub: "contracts", color: "#51AF37", icon: CheckCircle2 },
+            { label: "Under Review", value: reviewCount, sub: "pending sign-off", color: "#F49C13", icon: Clock },
+            { label: "Draft", value: draftCount, sub: "in progress", color: "#9ca3af", icon: Edit3 },
+            { label: "Expired / Terminated", value: expiredCount, sub: "closed", color: "#ef4444", icon: XCircle },
           ].map(stat => {
             const Icon = stat.icon;
             return (
-              <div key={stat.label} className="bg-white rounded-xl border p-5 shadow-sm" style={{ borderColor: "#e5e7eb", borderTop: `3px solid ${stat.color}` }}>
-                <div className="flex items-center gap-2 mb-2">
-                  <Icon size={15} style={{ color: stat.color }} />
-                  <span className="text-xs font-bold uppercase tracking-wider text-gray-400" style={{ fontFamily: "'Nunito', sans-serif" }}>{stat.label}</span>
+              <div key={stat.label} className="vos-metric" style={{ borderTop: `3px solid ${stat.color}` }}>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Icon size={12} style={{ color: stat.color }} />
+                  <span className="vos-metric-label">{stat.label}</span>
                 </div>
-                <div className="text-3xl font-bold" style={{ color: stat.color, fontFamily: "'Prompt', sans-serif" }}>{stat.value}</div>
+                <span className="vos-metric-value" style={{ color: stat.color }}>{stat.value}</span>
+                <span className="vos-metric-sub">{stat.sub}</span>
               </div>
             );
           })}

@@ -306,39 +306,30 @@ export default function BrandPR() {
   const positiveCoverage = mediaCoverage.filter(m => m.sentiment === "Positive").length;
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto bg-gray-50">
       {/* Header */}
-      <div className="px-8 py-7 border-b" style={{ borderColor: "#e5e7eb", background: "linear-gradient(135deg, #f0fdf4 0%, #eff6ff 100%)" }}>
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#51AF3715", color: "#51AF37" }}>
-                EcoRace Studio
-              </span>
-              <span className="text-xs text-gray-400">·</span>
-              <span className="text-xs text-gray-400 font-mono">Brand PR & Newsletter</span>
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-1" style={{ fontFamily: "'Prompt', sans-serif" }}>
-              Brand PR & Newsletter Hub
-            </h1>
-            <p className="text-sm text-gray-500 max-w-xl">
-              Manage press releases, newsletter campaigns, and media coverage tracking across all EcoRace Studio portfolio brands.
-            </p>
-          </div>
+      <div className="vos-page-header">
+        <div className="flex items-center gap-2 mb-1">
+          <Newspaper size={16} style={{ color: "#51AF37" }} />
+          <span className="vos-badge vos-badge-success" style={{ fontSize: "0.65rem" }}>Brand PR</span>
         </div>
+        <h1 className="vos-page-title mb-1">Brand PR & Newsletter Hub</h1>
+        <p className="text-sm text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>
+          Manage press releases, newsletter campaigns, and media coverage tracking across all EcoRace Studio portfolio brands.
+        </p>
 
         {/* KPI row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
           {[
-            { label: "Press Releases", value: pressReleases.length, sub: `${publishedPR} published`, color: "#51AF37", bg: "#f0fdf4" },
-            { label: "Newsletters", value: newsletters.length, sub: `${sentNL} sent`, color: "#3A97D3", bg: "#eff6ff" },
-            { label: "Media Coverage", value: mediaCoverage.length, sub: `${positiveCoverage} positive`, color: "#8b5cf6", bg: "#f5f3ff" },
-            { label: "Brands Active", value: ventures.filter(v => v.status === "Active").length, sub: "in portfolio", color: "#F49C13", bg: "#fffbeb" },
+            { label: "Press Releases", value: pressReleases.length, sub: `${publishedPR} published`, color: "#51AF37" },
+            { label: "Newsletters", value: newsletters.length, sub: `${sentNL} sent`, color: "#3A97D3" },
+            { label: "Media Coverage", value: mediaCoverage.length, sub: `${positiveCoverage} positive`, color: "#8b5cf6" },
+            { label: "Brands Active", value: ventures.filter(v => v.status === "Active").length, sub: "in portfolio", color: "#F49C13" },
           ].map(k => (
-            <div key={k.label} className="rounded-xl border p-4 shadow-sm" style={{ background: k.bg, borderColor: "#e5e7eb" }}>
-              <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: k.color }}>{k.label}</span>
-              <div className="text-3xl font-bold mt-1" style={{ color: "#1a2332", fontFamily: "'Prompt', sans-serif" }}>{k.value}</div>
-              <div className="text-xs text-gray-400 mt-0.5">{k.sub}</div>
+            <div key={k.label} className="vos-metric">
+              <span className="vos-metric-label">{k.label}</span>
+              <span className="vos-metric-value" style={{ color: k.color }}>{k.value}</span>
+              <span className="vos-metric-sub">{k.sub}</span>
             </div>
           ))}
         </div>

@@ -244,9 +244,9 @@ export default function BCorpIso() {
   const iso26000Pct = Math.round((iso26000.filter(i => i.completed).length / iso26000.length) * 100);
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto bg-gray-50">
       {/* Header */}
-      <div className="px-8 py-7 border-b bg-white" style={{ borderColor: "#e5e7eb" }}>
+      <div className="vos-page-header">
         <div className="flex items-center gap-2 mb-1">
           <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#f59e0b15", color: "#f59e0b" }}>
             Accreditation

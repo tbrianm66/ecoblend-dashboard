@@ -220,20 +220,17 @@ export default function InterviewTracker() {
   const vrlCoverage = new Set(interviews.map(i => i.vrlStageRelevant).filter(Boolean)).size;
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto bg-gray-50">
       {/* Header */}
-      <div className="px-8 py-6 border-b bg-white" style={{ borderColor: "#e5e7eb" }}>
+      <div className="vos-page-header">
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#f0fdf4", color: "#16a34a" }}>
-                Customer Discovery
-              </span>
+              <MessageSquare size={16} style={{ color: "#16a34a" }} />
+              <span className="vos-badge vos-badge-success" style={{ fontSize: "0.65rem" }}>Customer Discovery</span>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
-              Interview Tracker
-            </h1>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <h1 className="vos-page-title mb-1">Interview Tracker</h1>
+            <p className="text-sm text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>
               Log customer discovery interviews. Paste transcripts to generate AI-powered structured summaries.
             </p>
           </div>
@@ -249,13 +246,14 @@ export default function InterviewTracker() {
 
         <div className="grid grid-cols-3 gap-4 mt-5">
           {[
-            { label: "Interviews Logged", value: totalInterviews, color: "#16a34a" },
-            { label: "AI Summaries", value: withAiSummary, color: "#7c3aed" },
-            { label: "VRL Stages Covered", value: `${vrlCoverage}/4`, color: "#3A97D3" },
+            { label: "Interviews Logged", value: totalInterviews, sub: "discovery sessions", color: "#16a34a" },
+            { label: "AI Summaries", value: withAiSummary, sub: "auto-generated", color: "#7c3aed" },
+            { label: "VRL Stages Covered", value: `${vrlCoverage}/4`, sub: "stages validated", color: "#3A97D3" },
           ].map(k => (
-            <div key={k.label} className="bg-gray-50 rounded-lg p-3 border" style={{ borderColor: "#e5e7eb" }}>
-              <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">{k.label}</div>
-              <div className="text-2xl font-bold" style={{ color: k.color }}>{k.value}</div>
+            <div key={k.label} className="vos-metric">
+              <span className="vos-metric-label">{k.label}</span>
+              <span className="vos-metric-value" style={{ color: k.color }}>{k.value}</span>
+              <span className="vos-metric-sub">{k.sub}</span>
             </div>
           ))}
         </div>

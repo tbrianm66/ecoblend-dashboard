@@ -357,39 +357,30 @@ export default function SpecialistServices() {
   const openTasks = SERVICE_TASKS.filter(t => !commissions.find(c => c.taskId === t.id && c.status !== "Cancelled")).length;
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto bg-gray-50">
       {/* Header */}
-      <div className="px-8 py-7 border-b" style={{ borderColor: "#e5e7eb", background: "linear-gradient(135deg, #f5f3ff 0%, #eff6ff 100%)" }}>
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#8b5cf615", color: "#8b5cf6" }}>
-                EcoRace Studio
-              </span>
-              <span className="text-xs text-gray-400">·</span>
-              <span className="text-xs text-gray-400 font-mono">Revenue Platform</span>
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-1" style={{ fontFamily: "'Prompt', sans-serif" }}>
-              Specialist Services
-            </h1>
-            <p className="text-sm text-gray-500 max-w-xl">
-              Connect Playbook tasks to vetted specialists. EcoRace Studio earns a platform referral fee on every commissioned engagement.
-            </p>
-          </div>
+      <div className="vos-page-header">
+        <div className="flex items-center gap-2 mb-1">
+          <Briefcase size={16} style={{ color: "#8b5cf6" }} />
+          <span className="vos-badge" style={{ background: "#8b5cf615", color: "#8b5cf6", fontSize: "0.65rem" }}>Revenue Platform</span>
         </div>
+        <h1 className="vos-page-title mb-1">Specialist Services</h1>
+        <p className="text-sm text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>
+          Connect Playbook tasks to vetted specialists. EcoRace Studio earns a platform referral fee on every commissioned engagement.
+        </p>
 
         {/* KPI row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
           {[
-            { label: "Open Tasks", value: openTasks, sub: "awaiting specialist", color: "#8b5cf6", bg: "#f5f3ff" },
-            { label: "Specialists", value: SPECIALISTS.length, sub: "vetted & available", color: "#3A97D3", bg: "#eff6ff" },
-            { label: "Commissioned", value: totalCommissioned, sub: "engagements active", color: "#f59e0b", bg: "#fffbeb" },
-            { label: "Completed", value: totalComplete, sub: "jobs delivered", color: "#51AF37", bg: "#f0fdf4" },
+            { label: "Open Tasks", value: openTasks, sub: "awaiting specialist", color: "#8b5cf6" },
+            { label: "Specialists", value: SPECIALISTS.length, sub: "vetted & available", color: "#3A97D3" },
+            { label: "Commissioned", value: totalCommissioned, sub: "engagements active", color: "#f59e0b" },
+            { label: "Completed", value: totalComplete, sub: "jobs delivered", color: "#51AF37" },
           ].map(k => (
-            <div key={k.label} className="rounded-xl border p-4 shadow-sm" style={{ background: k.bg, borderColor: "#e5e7eb" }}>
-              <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: k.color }}>{k.label}</span>
-              <div className="text-3xl font-bold mt-1" style={{ color: "#1a2332", fontFamily: "'Prompt', sans-serif" }}>{k.value}</div>
-              <div className="text-xs text-gray-400 mt-0.5">{k.sub}</div>
+            <div key={k.label} className="vos-metric">
+              <span className="vos-metric-label">{k.label}</span>
+              <span className="vos-metric-value" style={{ color: k.color }}>{k.value}</span>
+              <span className="vos-metric-sub">{k.sub}</span>
             </div>
           ))}
         </div>

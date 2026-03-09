@@ -22,8 +22,8 @@ export default function PlaceholderPage() {
   const meta = PAGE_META[location] || { title: "Analytics Module", description: "This module is under development.", color: "#6b7280" };
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="px-8 py-6 border-b bg-white" style={{ borderColor: "#e5e7eb" }}>
+    <div className="flex-1 overflow-y-auto bg-gray-50">
+      <div className="vos-page-header">
         <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'DM Sans', sans-serif", color: meta.color }}>
           {meta.title}
         </h1>

@@ -31,29 +31,24 @@ export default function VentureDetail() {
   const trlPct = ((venture.trl - 1) / 9 + venture.trlPercent / 900) * 100;
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto bg-gray-50">
       {/* Header */}
-      <div className="px-8 py-6 border-b bg-white" style={{ borderColor: "#e5e7eb" }}>
+      <div className="vos-page-header">
         <button
           onClick={() => navigate("/")}
-          className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-700 mb-4 transition-colors"
+          className="flex items-center gap-2 text-xs text-gray-400 hover:text-gray-700 mb-4 transition-colors"
         >
-          <ArrowLeft size={16} /> Back to Portfolio
+          <ArrowLeft size={14} /> Back to Portfolio
         </button>
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-2xl font-bold" style={{ color: venture.color, fontFamily: "'DM Sans', sans-serif" }}>
-                {venture.name}
-              </h1>
-              <Badge variant="outline" style={{ borderColor: venture.color, color: venture.color }}>
-                {venture.channel}
-              </Badge>
-              <Badge variant="outline" style={{ borderColor: "#e5e7eb", color: "#6b7280" }}>
-                {venture.status}
-              </Badge>
+              <div className="w-3 h-3 rounded-full" style={{ background: venture.color }} />
+              <h1 className="vos-page-title" style={{ color: venture.color }}>{venture.name}</h1>
+              <span className="vos-badge" style={{ background: `${venture.color}15`, color: venture.color, fontSize: "0.65rem" }}>{venture.channel}</span>
+              <span className="vos-badge" style={{ background: "#f3f4f6", color: "#6b7280", fontSize: "0.65rem" }}>{venture.status}</span>
             </div>
-            <p className="text-sm text-gray-500 max-w-2xl">{venture.description}</p>
+            <p className="text-sm text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>{venture.description}</p>
           </div>
           <div className="text-right">
             <div className="text-xs text-gray-400 mb-1">Nominated Charity</div>

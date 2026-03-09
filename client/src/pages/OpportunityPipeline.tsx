@@ -202,20 +202,17 @@ export default function OpportunityPipeline() {
   const rejected = opps.filter(o => o.status === "Rejected");
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto bg-gray-50">
       {/* Header */}
-      <div className="px-8 py-6 border-b bg-white" style={{ borderColor: "#e5e7eb" }}>
+      <div className="vos-page-header">
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#ede9fe", color: "#7c3aed" }}>
-                Opportunity Pipeline
-              </span>
+              <Lightbulb size={16} style={{ color: "#7c3aed" }} />
+              <span className="vos-badge" style={{ background: "#ede9fe", color: "#7c3aed", fontSize: "0.65rem" }}>Pipeline</span>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
-              Venture Opportunity Pipeline
-            </h1>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <h1 className="vos-page-title mb-1">Venture Opportunity Pipeline</h1>
+            <p className="text-sm text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>
               Identify, score, and advance new venture opportunities through the EcoRace Studio intake process.
             </p>
           </div>
@@ -232,14 +229,15 @@ export default function OpportunityPipeline() {
         {/* KPI strip */}
         <div className="grid grid-cols-4 gap-4 mt-5">
           {[
-            { label: "Total Opportunities", value: stats.total, color: "#7c3aed" },
-            { label: "Approved", value: stats.approved, color: "#10b981" },
-            { label: "Converted to Venture", value: stats.converted, color: "#3b82f6" },
-            { label: "Avg Score", value: `${stats.avgScore}/40`, color: "#f59e0b" },
+            { label: "Total Opportunities", value: stats.total, sub: "in pipeline", color: "#7c3aed" },
+            { label: "Approved", value: stats.approved, sub: "ready to launch", color: "#10b981" },
+            { label: "Converted", value: stats.converted, sub: "to active venture", color: "#3b82f6" },
+            { label: "Avg Score", value: `${stats.avgScore}/40`, sub: "scoring matrix", color: "#f59e0b" },
           ].map(k => (
-            <div key={k.label} className="bg-gray-50 rounded-lg p-3 border" style={{ borderColor: "#e5e7eb" }}>
-              <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">{k.label}</div>
-              <div className="text-2xl font-bold" style={{ color: k.color }}>{k.value}</div>
+            <div key={k.label} className="vos-metric">
+              <span className="vos-metric-label">{k.label}</span>
+              <span className="vos-metric-value" style={{ color: k.color }}>{k.value}</span>
+              <span className="vos-metric-sub">{k.sub}</span>
             </div>
           ))}
         </div>
