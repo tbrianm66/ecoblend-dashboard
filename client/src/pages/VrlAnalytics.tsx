@@ -31,15 +31,14 @@ const radarData = VRL_STAGES.map(stage => {
 
 export default function VrlAnalytics() {
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="px-8 py-6 border-b bg-white" style={{ borderColor: "#e5e7eb" }}>
-        <div className="flex items-center gap-3 mb-1">
-          <TrendingUp size={20} style={{ color: "#22c55e" }} />
-          <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-            Venture Readiness Level Analytics
-          </h1>
+    <div className="flex-1 overflow-y-auto bg-gray-50">
+      <div className="vos-page-header">
+        <div className="flex items-center gap-2 mb-1">
+          <TrendingUp size={16} style={{ color: "#51AF37" }} />
+          <span className="vos-badge vos-badge-success" style={{ fontSize: "0.65rem" }}>VRL Analytics</span>
         </div>
-        <p className="text-sm text-gray-500">Commercial progress tracking across all VBS portfolio ventures — 4 stages, 100 tasks</p>
+        <h1 className="vos-page-title mb-1">Venture Readiness Level</h1>
+        <p className="text-sm text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>Commercial progress tracking across all VBS portfolio ventures — 4 stages, 100 tasks</p>
       </div>
 
       <div className="p-8 space-y-8">
@@ -48,18 +47,18 @@ export default function VrlAnalytics() {
           {VRL_STAGES.map(stage => {
             const count = ventures.filter(v => v.vrl === stage.id).length;
             return (
-              <div key={stage.id} className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb", borderTop: "3px solid #22c55e" }}>
-                <div className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">VRL {stage.id}</div>
-                <div className="text-2xl font-bold font-mono" style={{ color: "#22c55e" }}>{count}</div>
-                <div className="text-sm font-medium text-gray-700">{stage.label}</div>
-                <div className="text-xs text-gray-400 mt-1">{stage.tasks}</div>
+              <div key={stage.id} className="vos-metric" style={{ borderTop: "3px solid #51AF37" }}>
+                <span className="vos-metric-label">VRL {stage.id}</span>
+                <span className="vos-metric-value" style={{ color: "#51AF37" }}>{count}</span>
+                <span className="text-sm font-medium text-gray-700" style={{ fontFamily: "'Inter', sans-serif" }}>{stage.label}</span>
+                <span className="vos-metric-sub">{stage.tasks}</span>
               </div>
             );
           })}
         </div>
 
         {/* VRL Progress Bar Chart */}
-        <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
+        <div className="vos-panel p-6">
           <h3 className="font-bold text-gray-900 mb-4">Overall VRL Progress by Venture</h3>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={vrlData} barSize={40}>
@@ -80,8 +79,8 @@ export default function VrlAnalytics() {
         </div>
 
         {/* VRL Radar Chart */}
-        <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
-          <h3 className="font-bold text-gray-900 mb-4">VRL Stage Completion Radar</h3>
+        <div className="vos-panel p-6">
+          <h3 className="vos-section-title mb-4">VRL Completion Radar</h3>
           <ResponsiveContainer width="100%" height={320}>
             <RadarChart data={radarData}>
               <PolarGrid stroke="#f3f4f6" />
@@ -96,8 +95,8 @@ export default function VrlAnalytics() {
         </div>
 
         {/* VRL Stage Detail Table */}
-        <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
-          <h3 className="font-bold text-gray-900 mb-4">VRL Stage Definitions</h3>
+        <div className="vos-panel p-6">
+          <h3 className="vos-section-title mb-4">Stage Distribution</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

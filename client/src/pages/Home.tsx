@@ -1,7 +1,8 @@
 // ============================================================
-// ECOBLEND PORTFOLIO OVERVIEW PAGE
-// Design: Precision Industrial — hub-and-spoke + KPI cards
-// Uses VentureContext for live, editable data
+// VENTURE OS — PORTFOLIO OVERVIEW
+// Design: Apple-style clarity · Deference · Depth
+// Typography: 34/28/20/16/12px scale
+// Spacing: 8px grid (8/16/24/40px)
 // ============================================================
 
 import { useState } from "react";
@@ -11,36 +12,110 @@ import { VRL_STAGES, TRL_LEVELS, Venture } from "@/lib/data";
 import { useVentures } from "@/contexts/VentureContext";
 import EditReadinessModal from "@/components/EditReadinessModal";
 import MilestoneEditModal from "@/components/MilestoneEditModal";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Pencil, UserPlus, RotateCcw, ListChecks, FileDown, Briefcase } from "lucide-react";
+import {
+  Pencil, ListChecks, FileDown, Briefcase, RotateCcw,
+  TrendingUp, FlaskConical, CheckCircle2, Circle,
+  ArrowRight, Zap
+} from "lucide-react";
 import { exportPortfolioPdf, exportInvestorPack } from "@/lib/exportPdf";
 
 const HERO_BG = "https://d2xsxph8kpxj0f.cloudfront.net/310419663031397390/ggmroLG8ezURUZiLzGveTG/ecoblend-hero-bg-4sozsAnSEGXN6NLMPzPbzp.webp";
 
-const statusColors: Record<string, string> = {
-  "Active": "#51AF37",
-  "Pre-Launch": "#F49C13",
-  "Scaling": "#3A97D3",
-  "Paused": "#6b7280",
+// Venture lifecycle stages from the design brief
+const LIFECYCLE_STAGES = ["Idea", "Validation", "MVP", "Market Entry", "Scale"];
+
+const statusConfig: Record<string, { bg: string; color: string; dot: string }> = {
+  "Active":      { bg: "#e8f7e3", color: "#2d9856", dot: "#51AF37" },
+  "Pre-Launch":  { bg: "#fef3dc", color: "#b45309", dot: "#F49C13" },
+  "Scaling":     { bg: "#e0f0fb", color: "#096ba7", dot: "#3A97D3" },
+  "Paused":      { bg: "#f3f4f6", color: "#6b7280", dot: "#9ca3af" },
 };
 
-function KpiCard({ label, value, sub, accent }: { label: string; value: string | number; sub?: string; accent?: string }) {
+function lifecycleStageFromVrl(vrl: number): string {
+  if (vrl <= 1) return "Idea";
+  if (vrl <= 2) return "Validation";
+  if (vrl <= 3) return "MVP";
+  if (vrl <= 4) return "Market Entry";
+  return "Scale";
+}
+
+// ── Metric Tile (Apple-style: label / large value / sub) ──────────────────
+function MetricTile({
+  label, value, sub, accent, icon: Icon,
+}: {
+  label: string;
+  value: string | number;
+  sub?: string;
+  accent?: string;
+  icon?: React.ComponentType<{ size?: number; style?: React.CSSProperties }>;
+}) {
   return (
-    <div className="bg-white rounded-xl border p-5 flex flex-col gap-1 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
-      <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">{label}</span>
-      <span className="text-3xl font-bold" style={{ color: accent || "#1a2332", fontFamily: "'Prompt', sans-serif" }}>{value}</span>
-      {sub && <span className="text-xs text-gray-400">{sub}</span>}
+    <div className="vos-metric group hover:shadow-sm transition-shadow duration-150">
+      <div className="flex items-start justify-between">
+        <span className="vos-metric-label">{label}</span>
+        {Icon && (
+          <span className="opacity-30 group-hover:opacity-60 transition-opacity">
+            <Icon size={14} style={{ color: accent ?? "#6b7280" }} />
+          </span>
+        )}
+      </div>
+      <span className="vos-metric-value" style={{ color: accent ?? "#1a2332" }}>{value}</span>
+      {sub && <span className="vos-metric-sub">{sub}</span>}
     </div>
   );
 }
 
+// ── Lifecycle progress strip ───────────────────────────────────────────────
+function LifecycleStrip({ currentStage }: { currentStage: string }) {
+  const idx = LIFECYCLE_STAGES.indexOf(currentStage);
+  return (
+    <div className="flex items-center gap-0 mt-2">
+      {LIFECYCLE_STAGES.map((stage, i) => {
+        const done = i < idx;
+        const active = i === idx;
+        return (
+          <div key={stage} className="flex items-center">
+            <div
+              className="flex items-center gap-1 px-2 py-0.5 rounded"
+              style={{
+                background: active ? "#51AF3718" : done ? "#51AF370a" : "transparent",
+                border: active ? "1px solid #51AF3740" : "1px solid transparent",
+              }}
+            >
+              {done ? (
+                <CheckCircle2 size={9} style={{ color: "#51AF37" }} />
+              ) : active ? (
+                <Zap size={9} style={{ color: "#51AF37" }} />
+              ) : (
+                <Circle size={9} style={{ color: "#d1d5db" }} />
+              )}
+              <span
+                className="text-xs font-medium"
+                style={{
+                  color: active ? "#2d9856" : done ? "#51AF37" : "#9ca3af",
+                  fontSize: "0.65rem",
+                  fontFamily: "'Inter', sans-serif",
+                  fontWeight: active ? 700 : 500,
+                }}
+              >
+                {stage}
+              </span>
+            </div>
+            {i < LIFECYCLE_STAGES.length - 1 && (
+              <ArrowRight size={8} style={{ color: i < idx ? "#51AF3760" : "#e5e7eb", margin: "0 1px" }} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Venture Card ───────────────────────────────────────────────────────────
 function VentureCard({
-  venture,
-  onClick,
-  onEdit,
-  onEditMilestones,
+  venture, onClick, onEdit, onEditMilestones,
 }: {
   venture: Venture;
   onClick: () => void;
@@ -49,108 +124,135 @@ function VentureCard({
 }) {
   const vrlStage = VRL_STAGES[venture.vrl - 1];
   const trlLevel = TRL_LEVELS[venture.trl - 1];
+  const status = statusConfig[venture.status] ?? statusConfig["Paused"];
+  const lifecycleStage = lifecycleStageFromVrl(venture.vrl);
+  const milestoneDone = venture.milestones.filter(m => m.completed).length;
 
   return (
     <div
-      className="bg-white rounded-xl border p-5 cursor-pointer hover:shadow-md transition-all duration-200 group"
-      style={{ borderColor: "#e5e7eb", borderLeft: `4px solid ${venture.color}` }}
+      className="vos-card cursor-pointer group transition-all duration-150"
+      style={{ borderLeft: `3px solid ${venture.color}` }}
       onClick={onClick}
     >
-      <div className="flex items-start justify-between mb-3">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-lg font-bold" style={{ color: venture.color, fontFamily: "'Prompt', sans-serif" }}>
-              {venture.name}
-            </span>
-            <Badge
-              variant="outline"
-              className="text-xs"
-              style={{ borderColor: venture.color, color: venture.color, background: `${venture.color}10` }}
-            >
-              {venture.channel}
-            </Badge>
+      <div className="p-4">
+        {/* ── Header row ── */}
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex-1 min-w-0">
+            {/* Brand name + channel tag */}
+            <div className="flex items-center gap-2 mb-0.5">
+              <span
+                className="font-bold truncate"
+                style={{ color: venture.color, fontFamily: "'Prompt', sans-serif", fontSize: "1rem" }}
+              >
+                {venture.name}
+              </span>
+              <span
+                className="vos-badge vos-badge-neutral shrink-0"
+                style={{ fontSize: "0.65rem" }}
+              >
+                {venture.channel}
+              </span>
+            </div>
+            {/* Tagline */}
+            <p className="text-xs text-gray-400 truncate" style={{ fontFamily: "'Inter', sans-serif" }}>
+              {venture.tagline}
+            </p>
           </div>
-          <p className="text-xs text-gray-500">{venture.tagline}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span
-            className="text-xs font-semibold px-2 py-1 rounded-full"
-            style={{ background: `${statusColors[venture.status]}15`, color: statusColors[venture.status] }}
-          >
-            {venture.status}
-          </span>
-          <button
-            onClick={onEdit}
-            className="w-7 h-7 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
-            title="Edit readiness scores"
-          >
-            <Pencil size={13} style={{ color: "#6b7280" }} />
-          </button>
-          <button
-            onClick={onEditMilestones}
-            className="w-7 h-7 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
-            title="Edit milestones"
-          >
-            <ListChecks size={13} style={{ color: "#6b7280" }} />
-          </button>
-        </div>
-      </div>
 
-      {/* VRL Progress */}
-      <div className="mb-3">
-        <div className="flex justify-between items-center mb-1">
-          <span className="text-xs font-semibold text-gray-500 flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full inline-block" style={{ background: "#22c55e" }} />
-            VRL {venture.vrl} — {vrlStage?.label}
-          </span>
-          <span className="text-xs font-mono text-gray-400">{venture.vrlPercent}%</span>
+          {/* Status + actions */}
+          <div className="flex items-center gap-1.5 ml-3 shrink-0">
+            <span
+              className="vos-badge"
+              style={{ background: status.bg, color: status.color, fontSize: "0.65rem" }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full mr-1 inline-block" style={{ background: status.dot }} />
+              {venture.status}
+            </span>
+            <button
+              onClick={onEdit}
+              className="w-6 h-6 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
+              title="Edit readiness"
+            >
+              <Pencil size={11} className="text-gray-400" />
+            </button>
+            <button
+              onClick={onEditMilestones}
+              className="w-6 h-6 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
+              title="Edit milestones"
+            >
+              <ListChecks size={11} className="text-gray-400" />
+            </button>
+          </div>
         </div>
-        <div className="w-full h-2 rounded-full bg-gray-100 overflow-hidden">
-          <div
-            className="h-full rounded-full transition-all duration-700"
-            style={{ width: `${((venture.vrl - 1) / 4 + venture.vrlPercent / 400) * 100}%`, background: "#22c55e" }}
-          />
-        </div>
-      </div>
 
-      {/* TRL Progress */}
-      <div className="mb-3">
-        <div className="flex justify-between items-center mb-1">
-          <span className="text-xs font-semibold text-gray-500 flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full inline-block" style={{ background: "#1d4ed8" }} />
-            TRL {venture.trl} — {trlLevel?.label}
-          </span>
-          <span className="text-xs font-mono text-gray-400">{venture.trlPercent}%</span>
+        {/* ── Dual readiness bars ── */}
+        <div className="space-y-2 mb-3">
+          {/* VRL */}
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <span className="flex items-center gap-1.5 text-xs font-medium text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>
+                <TrendingUp size={10} style={{ color: "#51AF37" }} />
+                VRL {venture.vrl} — {vrlStage?.label}
+              </span>
+              <span className="text-xs font-mono text-gray-400">{venture.vrlPercent}%</span>
+            </div>
+            <div className="vos-progress-track">
+              <div
+                className="vos-progress-fill"
+                style={{
+                  width: `${((venture.vrl - 1) / 4 + venture.vrlPercent / 400) * 100}%`,
+                  background: "#51AF37",
+                }}
+              />
+            </div>
+          </div>
+          {/* TRL */}
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <span className="flex items-center gap-1.5 text-xs font-medium text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>
+                <FlaskConical size={10} style={{ color: "#3A97D3" }} />
+                TRL {venture.trl} — {trlLevel?.label}
+              </span>
+              <span className="text-xs font-mono text-gray-400">{venture.trlPercent}%</span>
+            </div>
+            <div className="vos-progress-track">
+              <div
+                className="vos-progress-fill"
+                style={{
+                  width: `${((venture.trl - 1) / 9 + venture.trlPercent / 900) * 100}%`,
+                  background: "#3A97D3",
+                }}
+              />
+            </div>
+          </div>
         </div>
-        <div className="w-full h-2 rounded-full bg-gray-100 overflow-hidden">
-          <div
-            className="h-full rounded-full transition-all duration-700"
-            style={{ width: `${((venture.trl - 1) / 9 + venture.trlPercent / 900) * 100}%`, background: "#1d4ed8" }}
-          />
-        </div>
-      </div>
 
-      {/* Milestones */}
-      <div className="flex items-center gap-2 mt-2">
-        <span className="text-xs text-gray-400">Milestones:</span>
-        <div className="flex gap-1">
-          {venture.milestones.map((m, i) => (
-            <div
-              key={i}
-              className="w-2.5 h-2.5 rounded-full"
-              style={{ background: m.completed ? venture.color : "#e5e7eb" }}
-              title={m.label}
-            />
-          ))}
+        {/* ── Milestone dots ── */}
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-xs text-gray-400" style={{ fontFamily: "'Inter', sans-serif" }}>Milestones</span>
+          <div className="flex gap-1">
+            {venture.milestones.map((m, i) => (
+              <div
+                key={i}
+                className="w-2 h-2 rounded-full"
+                style={{ background: m.completed ? venture.color : "#e5e7eb" }}
+                title={m.label}
+              />
+            ))}
+          </div>
+          <span className="text-xs text-gray-400 ml-auto font-mono" style={{ fontFamily: "'Inter', sans-serif" }}>
+            {milestoneDone}/{venture.milestones.length}
+          </span>
         </div>
-        <span className="text-xs text-gray-400 ml-auto">
-          {venture.milestones.filter(m => m.completed).length}/{venture.milestones.length} done
-        </span>
+
+        {/* ── Lifecycle strip ── */}
+        <LifecycleStrip currentStage={lifecycleStage} />
       </div>
     </div>
   );
 }
 
+// ── Main Page ──────────────────────────────────────────────────────────────
 export default function Home() {
   const [activeDomain, setActiveDomain] = useState("portfolio");
   const [, navigate] = useLocation();
@@ -168,130 +270,145 @@ export default function Home() {
       people: "/people", marketing: "/marketing", financial: "/financial",
       bcorp: "/bcorp", foundation: "/foundation",
     };
-    if (routes[domainId] && routes[domainId] !== "/") {
-      navigate(routes[domainId]);
-    }
+    if (routes[domainId] && routes[domainId] !== "/") navigate(routes[domainId]);
   };
 
-  const handleVentureClick = (ventureId: string) => {
-    navigate(`/venture/${ventureId}`);
-  };
-
-  const handleEditClick = (e: React.MouseEvent, venture: Venture) => {
-    e.stopPropagation();
-    setEditingVenture(venture);
-  };
-
-  const handleMilestonesClick = (e: React.MouseEvent, venture: Venture) => {
-    e.stopPropagation();
-    setMilestonesVenture(venture);
-  };
+  const handleVentureClick = (ventureId: string) => navigate(`/venture/${ventureId}`);
+  const handleEditClick = (e: React.MouseEvent, v: Venture) => { e.stopPropagation(); setEditingVenture(v); };
+  const handleMilestonesClick = (e: React.MouseEvent, v: Venture) => { e.stopPropagation(); setMilestonesVenture(v); };
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      {/* Hero header */}
+    <div className="flex-1 overflow-y-auto bg-gray-50">
+
+      {/* ── Page header (Apple-style: content-first, minimal chrome) ── */}
       <div
-        className="relative px-8 py-8 border-b"
-        style={{
-          backgroundImage: `url(${HERO_BG})`,
-          backgroundSize: "cover",
-          backgroundPosition: "right center",
-          borderColor: "#e5e7eb",
-        }}
+        className="relative border-b bg-white"
+        style={{ borderColor: "#e5e7eb" }}
       >
-        <div className="absolute inset-0" style={{ background: "rgba(255,255,255,0.88)" }} />
-        <div className="relative flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#51AF3715", color: "#51AF37" }}>
-                EcoRace VBS
-              </span>
-              <span className="text-xs text-gray-400">·</span>
-              <span className="text-xs text-gray-400 font-mono">H4 Lean Methodology</span>
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-1" style={{ fontFamily: "'Prompt', sans-serif" }}>
-              EcoBlend Analytics Dashboard
-            </h1>
-            <p className="text-sm text-gray-500 max-w-xl">
-              Dual-readiness portfolio intelligence — tracking Venture Readiness Level (VRL) and Technology Readiness Level (TRL) across all active ventures.
-            </p>
+        {/* Subtle hero tint */}
+        <div
+          className="absolute inset-0 opacity-10"
+          style={{
+            backgroundImage: `url(${HERO_BG})`,
+            backgroundSize: "cover",
+            backgroundPosition: "right center",
+          }}
+        />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to right, rgba(255,255,255,1) 55%, rgba(255,255,255,0.92))" }} />
+
+        <div className="relative px-8 py-6">
+          {/* Breadcrumb / context */}
+          <div className="flex items-center gap-2 mb-2">
+            <span
+              className="vos-badge vos-badge-success"
+              style={{ fontSize: "0.65rem", letterSpacing: "0.07em" }}
+            >
+              EcoRace VBS
+            </span>
+            <span className="text-gray-300">·</span>
+            <span className="text-xs text-gray-400" style={{ fontFamily: "'Inter', sans-serif" }}>
+              H4 Lean Methodology
+            </span>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              className="gap-1.5 text-xs"
-              onClick={() => navigate("/onboarding")}
-              style={{ borderColor: "#51AF37", color: "#51AF37" }}
-            >
-              <UserPlus size={13} /> Onboard Founder
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="gap-1.5 text-xs"
-              onClick={() => exportPortfolioPdf(ventures)}
-              style={{ borderColor: "#3A97D3", color: "#3A97D3" }}
-            >
-              <FileDown size={13} /> Export PDF
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="gap-1.5 text-xs"
-              onClick={() => exportInvestorPack(ventures)}
-              style={{ borderColor: "#8b5cf6", color: "#8b5cf6" }}
-            >
-              <Briefcase size={13} /> Investor Pack
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="gap-1.5 text-xs text-gray-400"
-              onClick={() => {
-                resetToDefaults();
-                toast.success("Data reset to defaults");
-              }}
-            >
-              <RotateCcw size={13} /> Reset Data
-            </Button>
+
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              {/* 28px Title per design brief */}
+              <h1
+                className="vos-page-title mb-1"
+                style={{ fontSize: "1.75rem" }}
+              >
+                EcoBlend Analytics Dashboard
+              </h1>
+              <p className="text-sm text-gray-500 max-w-xl" style={{ fontFamily: "'Inter', sans-serif" }}>
+                Dual-readiness portfolio intelligence — tracking Venture Readiness Level (VRL) and Technology Readiness Level (TRL) across all active ventures.
+              </p>
+            </div>
+
+            {/* Action panel */}
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 text-xs h-8"
+                onClick={() => exportPortfolioPdf(ventures)}
+                style={{ borderColor: "#3A97D3", color: "#3A97D3", borderRadius: "8px" }}
+              >
+                <FileDown size={12} /> Export PDF
+              </Button>
+              <Button
+                size="sm"
+                className="gap-1.5 text-xs h-8"
+                onClick={() => exportInvestorPack(ventures)}
+                style={{ background: "#8b5cf6", color: "white", borderRadius: "8px" }}
+              >
+                <Briefcase size={12} /> Investor Pack
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 text-xs h-8 text-gray-400"
+                onClick={() => { resetToDefaults(); toast.success("Data reset to defaults"); }}
+                style={{ borderRadius: "8px" }}
+              >
+                <RotateCcw size={12} /> Reset
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="p-8">
-        {/* KPI row — live from context */}
+      <div className="px-8 py-6">
+        {/* ── KPI Metric Tiles (Apple-style: label / large value / sub) ── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <KpiCard label="Active Ventures" value={stats.activeVentures} sub={`of ${stats.totalVentures} total`} accent="#51AF37" />
-          <KpiCard label="Avg VRL Stage" value={stats.avgVrl.toFixed(1)} sub="of 4 stages" accent="#51AF37" />
-          <KpiCard label="Avg TRL Level" value={stats.avgTrl.toFixed(1)} sub="of 9 levels" accent="#3A97D3" />
-          <KpiCard
+          <MetricTile
+            label="Active Ventures"
+            value={stats.activeVentures}
+            sub={`of ${stats.totalVentures} total`}
+            accent="#51AF37"
+            icon={TrendingUp}
+          />
+          <MetricTile
+            label="Avg VRL Stage"
+            value={stats.avgVrl.toFixed(1)}
+            sub="of 4 stages"
+            accent="#51AF37"
+            icon={TrendingUp}
+          />
+          <MetricTile
+            label="Avg TRL Level"
+            value={stats.avgTrl.toFixed(1)}
+            sub="of 9 levels"
+            accent="#3A97D3"
+            icon={FlaskConical}
+          />
+          <MetricTile
             label="Milestones"
             value={`${stats.totalMilestonesCompleted}/${stats.totalMilestones}`}
             sub="completed"
             accent="#F49C13"
+            icon={CheckCircle2}
           />
         </div>
 
-        {/* Main content: Hub diagram + Venture cards */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
+        {/* ── Main grid: Hub diagram + Venture cards ── */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+
           {/* Hub-and-spoke diagram */}
-          <div className="bg-white rounded-2xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
-            <div className="flex items-center justify-between mb-4">
+          <div className="vos-panel p-5">
+            <div className="flex items-start justify-between mb-4">
               <div>
-                <h2 className="text-base font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
-                  Portfolio Analytics Hub
-                </h2>
-                <p className="text-xs text-gray-400 mt-0.5">Click a domain node to navigate · Click a venture to drill down</p>
+                <h2 className="vos-section-title">Portfolio Analytics Hub</h2>
+                <p className="text-xs text-gray-400 mt-0.5" style={{ fontFamily: "'Inter', sans-serif" }}>
+                  Click a domain node to navigate · Click a venture to drill down
+                </p>
               </div>
-              <div className="flex items-center gap-3 text-xs text-gray-400">
-                <span className="flex items-center gap-1">
-                  <span className="w-3 h-0.5 rounded inline-block" style={{ background: "#51AF37" }} />
-                  VRL
+              <div className="flex items-center gap-3">
+                <span className="flex items-center gap-1.5 text-xs text-gray-400" style={{ fontFamily: "'Inter', sans-serif" }}>
+                  <span className="w-3 h-0.5 rounded inline-block" style={{ background: "#51AF37" }} /> VRL
                 </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-3 h-0.5 rounded inline-block" style={{ background: "#3A97D3" }} />
-                  TRL
+                <span className="flex items-center gap-1.5 text-xs text-gray-400" style={{ fontFamily: "'Inter', sans-serif" }}>
+                  <span className="w-3 h-0.5 rounded inline-block" style={{ background: "#3A97D3" }} /> TRL
                 </span>
               </div>
             </div>
@@ -304,13 +421,17 @@ export default function Home() {
           </div>
 
           {/* Venture cards */}
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
-                Portfolio Brands
-              </h2>
-              <span className="text-xs text-gray-400 font-mono">{portfolioBrands.length} brands tracked</span>
+              <h2 className="vos-section-title">Portfolio Brands</h2>
+              <span
+                className="text-xs text-gray-400 font-mono"
+                style={{ fontFamily: "'Inter', sans-serif" }}
+              >
+                {portfolioBrands.length} brands tracked
+              </span>
             </div>
+
             {portfolioBrands.map((venture) => (
               <VentureCard
                 key={venture.id}
@@ -320,11 +441,17 @@ export default function Home() {
                 onEditMilestones={(e) => handleMilestonesClick(e, venture)}
               />
             ))}
-            {/* Internal Lab — shown separately */}
+
+            {/* Internal Lab — separated */}
             {internalLab && (
               <div className="mt-2">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">Internal R&amp;D Lab</span>
+                  <span
+                    className="text-xs font-semibold uppercase tracking-widest text-gray-400"
+                    style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.65rem" }}
+                  >
+                    Internal R&amp;D Lab
+                  </span>
                   <div className="flex-1 h-px bg-gray-100" />
                 </div>
                 <VentureCard
@@ -339,7 +466,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Edit Readiness Modal */}
+      {/* Modals */}
       {editingVenture && (
         <EditReadinessModal
           venture={editingVenture}
@@ -347,8 +474,6 @@ export default function Home() {
           onClose={() => setEditingVenture(null)}
         />
       )}
-
-      {/* Milestone Edit Modal */}
       {milestonesVenture && (
         <MilestoneEditModal
           venture={milestonesVenture}

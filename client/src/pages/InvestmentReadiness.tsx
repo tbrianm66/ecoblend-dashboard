@@ -99,23 +99,22 @@ export default function InvestmentReadiness() {
   });
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto bg-gray-50">
       {/* Header */}
-      <div className="px-8 py-6 border-b" style={{ borderColor: "#e5e7eb", background: "linear-gradient(135deg, #fffbeb 0%, #f0fdf4 100%)" }}>
-        <div className="flex items-center gap-3 mb-1">
-          <DollarSign size={20} style={{ color: "#f59e0b" }} />
-          <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
-            Investment Readiness
-          </h1>
+      <div className="vos-page-header">
+        <div className="flex items-center gap-2 mb-1">
+          <DollarSign size={16} style={{ color: "#f59e0b" }} />
+          <span className="vos-badge vos-badge-warning" style={{ fontSize: "0.65rem" }}>Investment Readiness</span>
         </div>
-        <p className="text-sm text-gray-500">Dual-readiness scoring linked to live financial data — VRL × TRL matrix + funding pipeline</p>
+        <h1 className="vos-page-title mb-1">Investment Readiness</h1>
+        <p className="text-sm text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>Dual-readiness scoring linked to live financial data — VRL × TRL matrix + funding pipeline</p>
       </div>
 
       <div className="p-8 space-y-8">
 
         {/* ── Portfolio Funding Summary KPIs ── */}
         <div>
-          <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">Portfolio Funding Overview</h2>
+          <h2 className="vos-section-title mb-4">Portfolio Funding Overview</h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               { label: "Total Funding Ask", value: fmt(totalAsk), sub: "across all brands", color: "#f59e0b", icon: Target },
@@ -123,10 +122,10 @@ export default function InvestmentReadiness() {
               { label: "Funding Gap", value: fmt(totalGap), sub: "still required", color: "#ef4444", icon: AlertTriangle },
               { label: "Combined Burn", value: fmt(totalBurn) + "/mo", sub: "across portfolio", color: "#3A97D3", icon: Zap },
             ].map(k => (
-              <div key={k.label} className="bg-white rounded-xl border p-5 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
-                <div className="flex items-center gap-2 mb-2">
-                  <k.icon size={15} style={{ color: k.color }} />
-                  <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">{k.label}</span>
+              <div key={k.label} className="vos-metric">
+                <div className="flex items-center gap-2 mb-1">
+                  <k.icon size={13} style={{ color: k.color }} />
+                  <span className="vos-metric-label">{k.label}</span>
                 </div>
                 <div className="text-2xl font-bold" style={{ color: k.color, fontFamily: "'Prompt', sans-serif" }}>{k.value}</div>
                 <div className="text-xs text-gray-400 mt-0.5">{k.sub}</div>
@@ -137,7 +136,7 @@ export default function InvestmentReadiness() {
 
         {/* ── Per-Brand Funding Cards ── */}
         <div>
-          <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">Brand Funding Pipeline</h2>
+          <h2 className="vos-section-title mb-4">Brand Funding Pipeline</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
             {ventures.map(v => {
               const f = BRAND_FINANCIALS[v.id] ?? { monthlyBurn: 0, cashRunway: 0, revenueActual: 0, revenueTarget: 0, investmentRaised: 0, investmentTarget: 0 };
@@ -147,8 +146,8 @@ export default function InvestmentReadiness() {
               return (
                 <div
                   key={v.id}
-                  className="bg-white rounded-xl border p-5 shadow-sm cursor-pointer hover:shadow-md transition-all"
-                  style={{ borderColor: "#e5e7eb", borderLeft: `4px solid ${v.color}` }}
+                  className="vos-card p-5 cursor-pointer"
+                  style={{ borderLeft: `3px solid ${v.color}` }}
                   onClick={() => navigate(`/venture/${v.id}`)}
                 >
                   <div className="flex items-start justify-between mb-3">
@@ -202,8 +201,8 @@ export default function InvestmentReadiness() {
         </div>
 
         {/* ── Funding Bar Chart ── */}
-        <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
-          <h3 className="font-bold text-gray-900 mb-1" style={{ fontFamily: "'Prompt', sans-serif" }}>Funding Raised vs. Gap — by Brand</h3>
+        <div className="vos-panel p-6">
+          <h3 className="vos-section-title mb-1">Funding Raised vs. Gap — by Brand</h3>
           <p className="text-xs text-gray-400 mb-4">Stacked view of capital raised and remaining funding gap per portfolio brand</p>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={fundingBarData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
@@ -223,8 +222,8 @@ export default function InvestmentReadiness() {
         </div>
 
         {/* ── VRL × TRL Scatter Plot ── */}
-        <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
-          <h3 className="font-bold text-gray-900 mb-1" style={{ fontFamily: "'Prompt', sans-serif" }}>Dual-Readiness Matrix — VRL × TRL</h3>
+        <div className="vos-panel p-6">
+          <h3 className="vos-section-title mb-1">Dual-Readiness Matrix — VRL × TRL</h3>
           <p className="text-xs text-gray-400 mb-4">Brands in the top-right quadrant (VRL ≥ 3, TRL ≥ 6) are approaching investment readiness</p>
           <ResponsiveContainer width="100%" height={320}>
             <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
@@ -278,8 +277,8 @@ export default function InvestmentReadiness() {
         </div>
 
         {/* ── Investment Criteria ── */}
-        <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
-          <h3 className="font-bold text-gray-900 mb-4" style={{ fontFamily: "'Prompt', sans-serif" }}>Investment Readiness Criteria</h3>
+        <div className="vos-panel p-6">
+          <h3 className="vos-section-title mb-4">Investment Readiness Criteria</h3>
           <div className="space-y-3">
             {INVESTMENT_CRITERIA.map((c, i) => (
               <div key={i} className="flex items-start gap-3 p-3 rounded-lg" style={{ background: "#f9fafb" }}>

@@ -51,3 +51,8 @@
 - [x] AI interview summarisation using built-in LLM
 - [x] Founder profiles table and Founder Capability Score
 - [x] Update all pages to read from database (replace static data.ts)
+## Sprint 5 — UX/UI Redesign (Mar 2026) ✓OS Design Blueprint)
+- [x] Update global design tokens (typography 34/28/20/16/12px, 8px grid, border radius, colour system)
+- [x] Redesign sidebar with grouped navigation sections
+- [x] Redesign Portfolio Overview (lifecycle indicator, funding status, Apple-style KPI tiles)
+- [x] Apply design system to VRL, TRL, Investment Readiness, Venture Detail pages

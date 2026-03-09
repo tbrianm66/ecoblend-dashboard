@@ -1,7 +1,8 @@
 // ============================================================
-// ECOBLEND SIDEBAR NAVIGATION
-// Brand: EcoBlend — Dark Navy #1a2332, Green #51AF37, Blue #3A97D3
-// Typography: Prompt (headings) + Nunito (body)
+// VENTURE OS SIDEBAR — Grouped Navigation
+// Design: Apple-style clarity · Grouped sections per blueprint
+// Groups: Dashboard · Ventures · Research · Analytics ·
+//         Collaboration · Governance
 // ============================================================
 
 import { useState } from "react";
@@ -11,41 +12,100 @@ import {
   DollarSign, Layers, Lock, Users, Megaphone, BarChart2,
   Award, Heart, ChevronRight, Rocket, MessageSquare, BookOpen,
   Bell, X, AlertTriangle, FileText, Newspaper, Briefcase,
-  Lightbulb, TestTube2, UserCircle2
+  Lightbulb, TestTube2, UserCircle2, FolderOpen, Globe,
+  Building2, ChevronDown
 } from "lucide-react";
 import { useVentures } from "@/contexts/VentureContext";
 
+type IconName = string;
 const iconMap: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
   LayoutDashboard, TrendingUp, FlaskConical, ShieldAlert,
   DollarSign, Layers, Lock, Users, Megaphone, BarChart2,
-  Award, Heart, Rocket, MessageSquare, BookOpen, FileText, Newspaper, Briefcase,
-  Lightbulb, TestTube2, UserCircle2,
+  Award, Heart, Rocket, MessageSquare, BookOpen, FileText,
+  Newspaper, Briefcase, Lightbulb, TestTube2, UserCircle2,
+  FolderOpen, Globe, Building2,
 };
 
-const navItems = [
-  { id: "portfolio",   label: "Portfolio Overview",    icon: "LayoutDashboard", href: "/" },
-  { id: "playbook",    label: "EcoBlend Playbook",     icon: "BookOpen",        href: "/playbook" },
-  { id: "interviews",  label: "Interview Tracker",     icon: "MessageSquare",   href: "/interviews" },
-  { id: "vrl",         label: "VRL Analytics",         icon: "TrendingUp",      href: "/vrl" },
-  { id: "trl",         label: "TRL Analytics",         icon: "FlaskConical",    href: "/trl" },
-  { id: "risk",        label: "Risk Management",       icon: "ShieldAlert",     href: "/risk" },
-  { id: "investment",  label: "Investment Readiness",  icon: "DollarSign",      href: "/investment" },
-  { id: "brand",       label: "Brand Readiness",       icon: "Layers",          href: "/brand" },
-  { id: "ip",          label: "IP Management",         icon: "Lock",            href: "/ip" },
-  { id: "people",      label: "People & ESOP",         icon: "Users",           href: "/people" },
-  { id: "marketing",   label: "Marketing Strategy",    icon: "Megaphone",       href: "/marketing" },
-  { id: "financial",   label: "Financial Analytics",   icon: "BarChart2",       href: "/financial" },
-  { id: "bcorp",       label: "B Corp & ISO",          icon: "Award",           href: "/bcorp" },
-  { id: "foundation",  label: "Foundation Impact",     icon: "Heart",           href: "/foundation" },
-  { id: "legal",       label: "Legal Contracts",        icon: "FileText",        href: "/legal" },
-  { id: "pr",          label: "Brand PR & Newsletter",  icon: "Newspaper",       href: "/pr" },
-  { id: "specialists", label: "Specialist Services",    icon: "Briefcase",       href: "/specialists" },
-  { id: "pipeline",    label: "Opportunity Pipeline",  icon: "Lightbulb",       href: "/pipeline" },
-  { id: "experiments", label: "Experiment Log",         icon: "TestTube2",       href: "/experiments" },
-  { id: "founders",    label: "Founder Profiles",       icon: "UserCircle2",     href: "/founders" },
+interface NavItem {
+  id: string;
+  label: string;
+  icon: IconName;
+  href: string;
+}
+
+interface NavGroup {
+  id: string;
+  label: string;
+  items: NavItem[];
+  defaultOpen?: boolean;
+}
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    id: "dashboard",
+    label: "Dashboard",
+    defaultOpen: true,
+    items: [
+      { id: "portfolio",   label: "Portfolio Overview",   icon: "LayoutDashboard", href: "/" },
+      { id: "pipeline",    label: "Opportunity Pipeline", icon: "Lightbulb",       href: "/pipeline" },
+      { id: "onboarding",  label: "Onboard Founder",      icon: "Rocket",          href: "/onboarding" },
+    ],
+  },
+  {
+    id: "ventures",
+    label: "Ventures",
+    defaultOpen: true,
+    items: [
+      { id: "vrl",         label: "VRL Analytics",        icon: "TrendingUp",      href: "/vrl" },
+      { id: "trl",         label: "TRL Analytics",        icon: "FlaskConical",    href: "/trl" },
+      { id: "experiments", label: "Experiment Log",        icon: "TestTube2",       href: "/experiments" },
+      { id: "playbook",    label: "EcoBlend Playbook",    icon: "BookOpen",        href: "/playbook" },
+      { id: "founders",    label: "Founder Profiles",     icon: "UserCircle2",     href: "/founders" },
+    ],
+  },
+  {
+    id: "research",
+    label: "Research",
+    defaultOpen: false,
+    items: [
+      { id: "interviews",  label: "Interview Tracker",    icon: "MessageSquare",   href: "/interviews" },
+      { id: "brand",       label: "Brand Readiness",      icon: "Layers",          href: "/brand" },
+      { id: "marketing",   label: "Marketing Strategy",   icon: "Megaphone",       href: "/marketing" },
+      { id: "pr",          label: "Brand PR & Newsletter",icon: "Newspaper",       href: "/pr" },
+    ],
+  },
+  {
+    id: "analytics",
+    label: "Analytics",
+    defaultOpen: false,
+    items: [
+      { id: "investment",  label: "Investment Readiness", icon: "DollarSign",      href: "/investment" },
+      { id: "financial",   label: "Financial Analytics",  icon: "BarChart2",       href: "/financial" },
+      { id: "risk",        label: "Risk Management",      icon: "ShieldAlert",     href: "/risk" },
+    ],
+  },
+  {
+    id: "collaboration",
+    label: "Collaboration",
+    defaultOpen: false,
+    items: [
+      { id: "specialists", label: "Specialist Services",  icon: "Briefcase",       href: "/specialists" },
+      { id: "people",      label: "People & ESOP",        icon: "Users",           href: "/people" },
+    ],
+  },
+  {
+    id: "governance",
+    label: "Governance",
+    defaultOpen: false,
+    items: [
+      { id: "legal",       label: "Legal Contracts",      icon: "FileText",        href: "/legal" },
+      { id: "ip",          label: "IP Management",        icon: "Lock",            href: "/ip" },
+      { id: "bcorp",       label: "B Corp & ISO",         icon: "Award",           href: "/bcorp" },
+      { id: "foundation",  label: "Foundation Impact",    icon: "Heart",           href: "/foundation" },
+    ],
+  },
 ];
 
-// EcoBlend wavy logo mark as SVG
 const ECOBLEND_LOGO_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310419663031397390/ggmroLG8ezURUZiLzGveTG/ecoblend-logo_64dbd5ba.png";
 
 interface SyncAlert {
@@ -62,7 +122,7 @@ function useVrlTrlAlerts(): SyncAlert[] {
   const { ventures } = useVentures();
   return ventures
     .map((v): SyncAlert | null => {
-      const gap = Math.abs(v.vrl - Math.round(v.trl / 2.25)); // map TRL 1-9 to VRL 1-4 scale
+      const gap = Math.abs(v.vrl - Math.round(v.trl / 2.25));
       const trlEquiv = Math.round(v.trl / 2.25);
       const vrlAhead = v.vrl > trlEquiv + 1;
       const trlAhead = trlEquiv > v.vrl + 1;
@@ -82,6 +142,78 @@ function useVrlTrlAlerts(): SyncAlert[] {
     .filter((a): a is SyncAlert => a !== null);
 }
 
+function NavGroupSection({ group, location }: { group: NavGroup; location: string }) {
+  const isGroupActive = group.items.some(
+    item => location === item.href || (item.href !== "/" && location.startsWith(item.href))
+  );
+  const [open, setOpen] = useState(group.defaultOpen || isGroupActive);
+
+  return (
+    <div className="mb-1">
+      {/* Group header */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-3 py-1.5 rounded-md transition-colors duration-100"
+        style={{ color: "rgba(255,255,255,0.35)" }}
+      >
+        <span
+          className="text-xs font-bold uppercase tracking-widest"
+          style={{ fontFamily: "'Inter', sans-serif", letterSpacing: "0.09em" }}
+        >
+          {group.label}
+        </span>
+        <ChevronDown
+          size={11}
+          style={{
+            transform: open ? "rotate(0deg)" : "rotate(-90deg)",
+            transition: "transform 0.15s ease",
+            color: "rgba(255,255,255,0.25)",
+          }}
+        />
+      </button>
+
+      {/* Group items */}
+      {open && (
+        <div className="mt-0.5">
+          {group.items.map((item) => {
+            const Icon = iconMap[item.icon];
+            const isActive =
+              location === item.href ||
+              (item.href !== "/" && location.startsWith(item.href));
+
+            return (
+              <Link key={item.id} href={item.href}>
+                <div
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg mb-0.5 transition-all duration-100"
+                  style={{
+                    background: isActive ? "rgba(81,175,55,0.13)" : "transparent",
+                    borderLeft: isActive ? "2px solid #51AF37" : "2px solid transparent",
+                    color: isActive ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.48)",
+                    paddingLeft: isActive ? "calc(0.75rem - 2px)" : "0.75rem",
+                  }}
+                >
+                  {Icon && (
+                    <span style={{ color: isActive ? "#51AF37" : "rgba(255,255,255,0.35)", flexShrink: 0, display: "flex" }}>
+                      <Icon size={14} />
+                    </span>
+                  )}
+                  <span
+                    className="text-sm font-medium flex-1 truncate"
+                    style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.8125rem" }}
+                  >
+                    {item.label}
+                  </span>
+                  {isActive && <ChevronRight size={11} style={{ color: "#51AF37", flexShrink: 0 }} />}
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Sidebar() {
   const [location] = useLocation();
   const [alertsOpen, setAlertsOpen] = useState(false);
@@ -89,95 +221,82 @@ export default function Sidebar() {
 
   return (
     <aside
-      className="w-64 min-h-screen flex flex-col"
-      style={{ background: "#1a2332", borderRight: "1px solid rgba(255,255,255,0.06)" }}
+      className="w-60 min-h-screen flex flex-col shrink-0"
+      style={{ background: "#1a2332", borderRight: "1px solid rgba(255,255,255,0.05)" }}
     >
-      {/* Logo area */}
-      <div className="px-4 py-4 border-b" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
-        <div className="flex flex-col items-center gap-1">
+      {/* ── Logo ── */}
+      <div className="px-4 py-5 border-b" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+        <div className="flex flex-col items-center gap-1.5">
           <img
             src={ECOBLEND_LOGO_URL}
             alt="EcoBlend"
-            className="w-28 object-contain"
+            className="w-24 object-contain"
             style={{ filter: "brightness(0) invert(1)" }}
           />
           <div
-            className="text-xs"
-            style={{ color: "rgba(255,255,255,0.38)", fontFamily: "'Nunito', sans-serif", letterSpacing: "0.08em", textTransform: "uppercase" }}
+            className="text-xs font-semibold tracking-widest uppercase"
+            style={{ color: "rgba(255,255,255,0.28)", fontFamily: "'Inter', sans-serif", fontSize: "0.6rem" }}
           >
-            VBS Analytics
+            Venture Intelligence Platform
           </div>
         </div>
       </div>
 
-      {/* Onboard Founder CTA */}
-      <div className="px-4 pt-4 pb-2">
-        <Link href="/onboarding">
-          <div
-            className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-all duration-150"
-            style={{
-              background: location === "/onboarding" ? "rgba(81,175,55,0.22)" : "rgba(81,175,55,0.10)",
-              border: "1px solid rgba(81,175,55,0.25)",
-              color: "#51AF37",
-            }}
-          >
-            <Rocket size={15} />
-            <span
-              className="text-sm font-bold"
-              style={{ fontFamily: "'Prompt', sans-serif", letterSpacing: "0.01em" }}
-            >
-              Onboard Founder
-            </span>
-          </div>
-        </Link>
-      </div>
-
-      {/* Notification bell */}
-      <div className="px-4 pb-2">
+      {/* ── Sync alert banner ── */}
+      <div className="px-3 pt-3 pb-1">
         <button
           onClick={() => setAlertsOpen(o => !o)}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-150 relative"
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-150"
           style={{
-            background: alertsOpen ? "rgba(244,156,19,0.12)" : "rgba(255,255,255,0.04)",
-            border: `1px solid ${alerts.length > 0 ? "rgba(244,156,19,0.3)" : "rgba(255,255,255,0.08)"}`,
-            color: alerts.length > 0 ? "#F49C13" : "rgba(255,255,255,0.4)",
+            background: alertsOpen ? "rgba(244,156,19,0.10)" : "rgba(255,255,255,0.04)",
+            border: `1px solid ${alerts.length > 0 ? "rgba(244,156,19,0.28)" : "rgba(255,255,255,0.07)"}`,
+            color: alerts.length > 0 ? "#F49C13" : "rgba(255,255,255,0.35)",
           }}
         >
-          <Bell size={14} />
-          <span className="text-xs font-semibold flex-1 text-left" style={{ fontFamily: "'Nunito', sans-serif" }}>
+          <Bell size={13} />
+          <span className="text-xs font-medium flex-1 text-left" style={{ fontFamily: "'Inter', sans-serif" }}>
             {alerts.length === 0 ? "All systems in sync" : `${alerts.length} sync alert${alerts.length > 1 ? "s" : ""}`}
           </span>
           {alerts.length > 0 && (
             <span
               className="text-xs font-bold px-1.5 py-0.5 rounded-full"
-              style={{ background: "#F49C13", color: "white", fontSize: "10px" }}
+              style={{ background: "#F49C13", color: "white", fontSize: "9px" }}
             >
               {alerts.length}
             </span>
           )}
         </button>
 
-        {/* Alert panel */}
         {alertsOpen && (
           <div
             className="mt-2 rounded-xl overflow-hidden"
-            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}
           >
-            <div className="flex items-center justify-between px-3 py-2 border-b" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
-              <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)", fontFamily: "'Nunito', sans-serif" }}>VRL / TRL Sync Alerts</span>
-              <button onClick={() => setAlertsOpen(false)}><X size={12} style={{ color: "rgba(255,255,255,0.3)" }} /></button>
+            <div className="flex items-center justify-between px-3 py-2 border-b" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+              <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.35)", fontFamily: "'Inter', sans-serif", fontSize: "0.6rem" }}>
+                VRL / TRL Sync Alerts
+              </span>
+              <button onClick={() => setAlertsOpen(false)}>
+                <X size={11} style={{ color: "rgba(255,255,255,0.28)" }} />
+              </button>
             </div>
             {alerts.length === 0 ? (
-              <div className="px-3 py-3 text-xs" style={{ color: "rgba(255,255,255,0.35)", fontFamily: "'Nunito', sans-serif" }}>All ventures are in sync.</div>
+              <div className="px-3 py-3 text-xs" style={{ color: "rgba(255,255,255,0.3)", fontFamily: "'Inter', sans-serif" }}>
+                All ventures are in sync.
+              </div>
             ) : (
-              <div className="divide-y" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+              <div>
                 {alerts.map((a: SyncAlert, i: number) => (
-                  <div key={i} className="px-3 py-2.5">
-                    <div className="flex items-center gap-2 mb-1">
-                      <AlertTriangle size={11} style={{ color: a.severity === "high" ? "#ef4444" : "#F49C13", flexShrink: 0 }} />
-                      <span className="text-xs font-bold" style={{ color: a.ventureColor, fontFamily: "'Nunito', sans-serif" }}>{a.ventureName}</span>
+                  <div key={i} className="px-3 py-2.5 border-b last:border-0" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <AlertTriangle size={10} style={{ color: a.severity === "high" ? "#ef4444" : "#F49C13", flexShrink: 0 }} />
+                      <span className="text-xs font-semibold" style={{ color: a.ventureColor, fontFamily: "'Inter', sans-serif" }}>
+                        {a.ventureName}
+                      </span>
                     </div>
-                    <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.45)", fontFamily: "'Nunito', sans-serif" }}>{a.message}</p>
+                    <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.38)", fontFamily: "'Inter', sans-serif", fontSize: "0.7rem" }}>
+                      {a.message}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -186,65 +305,30 @@ export default function Sidebar() {
         )}
       </div>
 
-      {/* Nav section label */}
-      <div className="px-5 pt-3 pb-1">
-        <span
-          className="text-xs font-bold uppercase tracking-widest"
-          style={{ color: "rgba(255,255,255,0.25)", fontFamily: "'Nunito', sans-serif" }}
-        >
-          Analytics Modules
-        </span>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 px-3 pb-4 overflow-y-auto">
-        {navItems.map((item) => {
-          const Icon = iconMap[item.icon];
-          const isActive =
-            location === item.href ||
-            (item.href !== "/" && location.startsWith(item.href));
-
-          return (
-            <Link key={item.id} href={item.href}>
-              <div
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg mb-0.5 group transition-all duration-150`}
-                style={{
-                  background: isActive ? "rgba(81,175,55,0.12)" : "transparent",
-                  borderLeft: isActive ? "2px solid #51AF37" : "2px solid transparent",
-                  color: isActive ? "white" : "rgba(255,255,255,0.5)",
-                }}
-              >
-                {Icon && (
-                  <span style={{ color: isActive ? "#51AF37" : undefined, flexShrink: 0, display: "flex" }}>
-                    <Icon size={15} />
-                  </span>
-                )}
-                <span
-                  className="text-sm font-medium flex-1"
-                  style={{ fontFamily: "'Nunito', sans-serif" }}
-                >
-                  {item.label}
-                </span>
-                {isActive && <ChevronRight size={13} style={{ color: "#51AF37" }} />}
-              </div>
-            </Link>
-          );
-        })}
+      {/* ── Grouped navigation ── */}
+      <nav className="flex-1 px-2 py-3 overflow-y-auto">
+        {NAV_GROUPS.map(group => (
+          <NavGroupSection key={group.id} group={group} location={location} />
+        ))}
       </nav>
 
-      {/* Footer */}
-      <div className="px-5 py-4 border-t" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
-        <div
-          className="text-xs font-semibold"
-          style={{ color: "rgba(255,255,255,0.28)", fontFamily: "'Nunito', sans-serif" }}
-        >
-          EcoRace VBS Platform
-        </div>
-        <div
-          className="text-xs mt-0.5"
-          style={{ color: "rgba(255,255,255,0.18)", fontFamily: "'Nunito', sans-serif" }}
-        >
-          MVP v1.0 · H4 Methodology
+      {/* ── Footer ── */}
+      <div className="px-4 py-3 border-t" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+        <div className="flex items-center gap-2">
+          <div
+            className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold"
+            style={{ background: "rgba(81,175,55,0.15)", color: "#51AF37" }}
+          >
+            E
+          </div>
+          <div>
+            <div className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.5)", fontFamily: "'Inter', sans-serif", fontSize: "0.7rem" }}>
+              EcoRace Studio
+            </div>
+            <div className="text-xs" style={{ color: "rgba(255,255,255,0.22)", fontFamily: "'Inter', sans-serif", fontSize: "0.65rem" }}>
+              VIP v1.0 · H4 Lean
+            </div>
+          </div>
         </div>
       </div>
     </aside>

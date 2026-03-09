@@ -33,15 +33,14 @@ const valleyData = TRL_LEVELS.map(l => ({
 
 export default function TrlAnalytics() {
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="px-8 py-6 border-b bg-white" style={{ borderColor: "#e5e7eb" }}>
-        <div className="flex items-center gap-3 mb-1">
-          <FlaskConical size={20} style={{ color: "#1d4ed8" }} />
-          <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-            Technology Readiness Level Analytics
-          </h1>
+    <div className="flex-1 overflow-y-auto bg-gray-50">
+      <div className="vos-page-header">
+        <div className="flex items-center gap-2 mb-1">
+          <FlaskConical size={16} style={{ color: "#3A97D3" }} />
+          <span className="vos-badge vos-badge-blue" style={{ fontSize: "0.65rem" }}>TRL Analytics</span>
         </div>
-        <p className="text-sm text-gray-500">Technical maturity tracking across all EcoBlend R&D ventures — NASA/EU Horizon 9-level framework</p>
+        <h1 className="vos-page-title mb-1">Technology Readiness Level</h1>
+        <p className="text-sm text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>Technical maturity tracking across all EcoBlend R&D ventures — NASA/EU Horizon 9-level framework</p>
       </div>
 
       <div className="p-8 space-y-8">
@@ -73,8 +72,8 @@ export default function TrlAnalytics() {
         <p className="text-xs text-amber-600 font-medium">⚠ TRL 4–7 represents the "Valley of Death" — where EcoBlend R&D provides critical bridge support</p>
 
         {/* TRL Progress Chart */}
-        <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
-          <h3 className="font-bold text-gray-900 mb-4">Overall TRL Progress by Venture</h3>
+        <div className="vos-panel p-6">
+          <h3 className="vos-section-title mb-4">Overall TRL Progress by Venture</h3>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={trlData} barSize={40}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
@@ -94,8 +93,8 @@ export default function TrlAnalytics() {
         </div>
 
         {/* Valley of Death Chart */}
-        <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
-          <h3 className="font-bold text-gray-900 mb-1">The "Valley of Death" — Funding vs. Risk Profile</h3>
+        <div className="vos-panel p-6">
+          <h3 className="vos-section-title mb-1">The "Valley of Death" — Funding vs. Risk Profile</h3>
           <p className="text-xs text-gray-400 mb-4">EcoBlend R&D bridges the critical TRL 4–7 gap where traditional funding dries up and execution risk peaks</p>
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={valleyData}>
@@ -111,8 +110,8 @@ export default function TrlAnalytics() {
         </div>
 
         {/* TRL Level Definitions */}
-        <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
-          <h3 className="font-bold text-gray-900 mb-4">TRL Level Definitions (NASA/EU Horizon Standard)</h3>
+        <div className="vos-panel p-6">
+          <h3 className="vos-section-title mb-4">TRL Level Definitions (NASA/EU Horizon Standard)</h3>
           <div className="space-y-2">
             {TRL_LEVELS.map(level => {
               const isValley = level.id >= 4 && level.id <= 7;
