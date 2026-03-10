@@ -214,3 +214,110 @@ export const contractDocuments = mysqlTable("contract_documents", {
 
 export type ContractDocument = typeof contractDocuments.$inferSelect;
 export type InsertContractDocument = typeof contractDocuments.$inferInsert;
+
+// ── Research Papers ───────────────────────────────────────────────────────────
+export const researchPapers = mysqlTable("research_papers", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 512 }).notNull(),
+  authors: text("authors").notNull(),               // comma-separated author names
+  journal: varchar("journal", { length: 255 }),
+  year: int("year"),
+  doi: varchar("doi", { length: 255 }),
+  url: text("url"),
+  abstract: text("abstract"),
+  keywords: text("keywords"),                        // comma-separated
+  category: mysqlEnum("category", [
+    "VRL Framework", "TRL Framework", "Lean Methodology", "Social Enterprise",
+    "Impact Investing", "Circular Economy", "Sports Technology", "Eco Materials",
+    "Venture Building", "University Spin-out", "Other"
+  ]).default("Other"),
+  evidenceType: mysqlEnum("evidenceType", [
+    "Peer Reviewed", "Conference Paper", "Thesis", "Industry Report",
+    "Government Report", "Book Chapter", "Working Paper"
+  ]).default("Peer Reviewed"),
+  relevanceScore: int("relevanceScore").default(5),  // 1–10
+  ventureIds: text("ventureIds"),                    // comma-separated venture IDs this paper supports
+  trlLevelsSupported: text("trlLevelsSupported"),    // comma-separated TRL levels e.g. "3,4,5"
+  vrlStagesSupported: text("vrlStagesSupported"),    // comma-separated VRL stages e.g. "1,2"
+  notes: text("notes"),
+  addedBy: varchar("addedBy", { length: 128 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ResearchPaper = typeof researchPapers.$inferSelect;
+export type InsertResearchPaper = typeof researchPapers.$inferInsert;
+
+// ── Fellow Researchers ────────────────────────────────────────────────────────
+export const fellowResearchers = mysqlTable("fellow_researchers", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 128 }).notNull(),
+  title: varchar("title", { length: 255 }),          // academic title / role
+  institution: varchar("institution", { length: 255 }),
+  department: varchar("department", { length: 255 }),
+  specialisation: text("specialisation"),
+  email: varchar("email", { length: 320 }),
+  linkedIn: varchar("linkedIn", { length: 255 }),
+  orcid: varchar("orcid", { length: 64 }),           // ORCID researcher ID
+  collaborationType: mysqlEnum("collaborationType", [
+    "Academic Advisor", "Co-Researcher", "Industry Fellow",
+    "Visiting Scholar", "PhD Supervisor", "Peer Reviewer", "Consultant"
+  ]).default("Academic Advisor"),
+  status: mysqlEnum("status", ["Active", "Prospective", "Past"]).default("Active"),
+  ventureIds: text("ventureIds"),                    // ventures they support
+  bio: text("bio"),
+  publications: int("publications").default(0),      // count of relevant publications
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type FellowResearcher = typeof fellowResearchers.$inferSelect;
+export type InsertFellowResearcher = typeof fellowResearchers.$inferInsert;
+
+// ── University Partnerships ───────────────────────────────────────────────────
+export const universityPartnerships = mysqlTable("university_partnerships", {
+  id: int("id").autoincrement().primaryKey(),
+  universityName: varchar("universityName", { length: 255 }).notNull(),
+  country: varchar("country", { length: 128 }),
+  department: varchar("department", { length: 255 }),
+  contactName: varchar("contactName", { length: 128 }),
+  contactEmail: varchar("contactEmail", { length: 320 }),
+  partnershipType: mysqlEnum("partnershipType", [
+    "Research Collaboration", "Spin-out Support", "Knowledge Transfer",
+    "Student Placement", "Grant Co-applicant", "Advisory Board", "MoU"
+  ]).default("Research Collaboration"),
+  status: mysqlEnum("status", ["Active", "Prospective", "Completed", "Paused"]).default("Prospective"),
+  startDate: varchar("startDate", { length: 32 }),
+  endDate: varchar("endDate", { length: 32 }),
+  description: text("description"),
+  ventureIds: text("ventureIds"),
+  fundingLinked: boolean("fundingLinked").default(false),
+  fundingAmount: int("fundingAmount").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UniversityPartnership = typeof universityPartnerships.$inferSelect;
+export type InsertUniversityPartnership = typeof universityPartnerships.$inferInsert;
+
+// ── Evidence Claims ───────────────────────────────────────────────────────────
+// Links research papers to specific VRL/TRL claims for a venture
+export const evidenceClaims = mysqlTable("evidence_claims", {
+  id: int("id").autoincrement().primaryKey(),
+  ventureId: varchar("ventureId", { length: 64 }).notNull(),
+  paperId: int("paperId"),                           // FK to research_papers
+  claimText: text("claimText").notNull(),            // the specific claim being evidenced
+  claimType: mysqlEnum("claimType", [
+    "Market Validation", "Technology Feasibility", "Social Impact",
+    "Competitive Advantage", "Regulatory Compliance", "Financial Model",
+    "Team Capability", "Methodology Support"
+  ]).default("Market Validation"),
+  trlLevel: int("trlLevel"),                         // TRL level this claim supports
+  vrlStage: int("vrlStage"),                         // VRL stage this claim supports
+  strength: mysqlEnum("strength", ["Strong", "Moderate", "Weak"]).default("Moderate"),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type EvidenceClaim = typeof evidenceClaims.$inferSelect;
+export type InsertEvidenceClaim = typeof evidenceClaims.$inferInsert;

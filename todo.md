@@ -70,3 +70,15 @@
 - [x] Apply VOS to EcoBlend Playbook page
 - [x] Apply VOS to Venture Detail page
 - [x] Apply VOS to Onboarding page
+
+## Sprint 7 — Brand Logos & Academic Research (Mar 2026)
+- [ ] Upload BEBUS, TONE, EcoBlend, REAL, PIPE logos to CDN
+- [ ] Integrate brand logos into venture cards (Portfolio Overview)
+- [ ] Integrate brand logos into hub-spoke diagram nodes
+- [ ] Integrate brand logos into Venture Detail header
+- [x] Build Academic Research & Evidence module (citations, papers, researcher profiles, evidence mapping)
+- [x] Add Academic Research to sidebar navigation
+- [x] Database-backed Academic Research: research papers, fellow researchers, university partnerships, evidence claims
+- [x] Full CRUD with add/delete dialogs for all four entities
+- [x] Evidence map overview showing claim coverage per venture
+- [x] Vitest coverage for all 8 academic procedures (94 tests total passing)

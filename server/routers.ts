@@ -46,6 +46,24 @@ import {
   getLatestFinancialSnapshot,
   getAllLatestFinancialSnapshots,
   upsertFinancialSnapshot,
+  getAllResearchPapers,
+  getResearchPaperById,
+  insertResearchPaper,
+  updateResearchPaper,
+  deleteResearchPaper,
+  getAllFellowResearchers,
+  insertFellowResearcher,
+  updateFellowResearcher,
+  deleteFellowResearcher,
+  getAllUniversityPartnerships,
+  insertUniversityPartnership,
+  updateUniversityPartnership,
+  deleteUniversityPartnership,
+  getAllEvidenceClaims,
+  getEvidenceClaimsForVenture,
+  insertEvidenceClaim,
+  updateEvidenceClaim,
+  deleteEvidenceClaim,
 } from "./db";
 
 export const appRouter = router({
@@ -544,6 +562,240 @@ Return a JSON object with exactly these fields:
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await deleteContractDocument(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // ── Academic Research ─────────────────────────────────────────────────────────
+  academic: router({
+    // Research Papers
+    listPapers: publicProcedure.query(async () => getAllResearchPapers()),
+
+    getPaper: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => getResearchPaperById(input.id)),
+
+    addPaper: publicProcedure
+      .input(z.object({
+        title: z.string().min(1),
+        authors: z.string().min(1),
+        journal: z.string().optional(),
+        year: z.number().optional(),
+        doi: z.string().optional(),
+        url: z.string().optional(),
+        abstract: z.string().optional(),
+        keywords: z.string().optional(),
+        category: z.enum([
+          "VRL Framework", "TRL Framework", "Lean Methodology", "Social Enterprise",
+          "Impact Investing", "Circular Economy", "Sports Technology", "Eco Materials",
+          "Venture Building", "University Spin-out", "Other"
+        ]).optional(),
+        evidenceType: z.enum([
+          "Peer Reviewed", "Conference Paper", "Thesis", "Industry Report",
+          "Government Report", "Book Chapter", "Working Paper"
+        ]).optional(),
+        relevanceScore: z.number().min(1).max(10).optional(),
+        ventureIds: z.string().optional(),
+        trlLevelsSupported: z.string().optional(),
+        vrlStagesSupported: z.string().optional(),
+        notes: z.string().optional(),
+        addedBy: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await insertResearchPaper(input as any);
+        return { success: true };
+      }),
+
+    updatePaper: publicProcedure
+      .input(z.object({
+        id: z.number(),
+        title: z.string().optional(),
+        authors: z.string().optional(),
+        journal: z.string().optional(),
+        year: z.number().optional(),
+        doi: z.string().optional(),
+        url: z.string().optional(),
+        abstract: z.string().optional(),
+        keywords: z.string().optional(),
+        category: z.enum([
+          "VRL Framework", "TRL Framework", "Lean Methodology", "Social Enterprise",
+          "Impact Investing", "Circular Economy", "Sports Technology", "Eco Materials",
+          "Venture Building", "University Spin-out", "Other"
+        ]).optional(),
+        evidenceType: z.enum([
+          "Peer Reviewed", "Conference Paper", "Thesis", "Industry Report",
+          "Government Report", "Book Chapter", "Working Paper"
+        ]).optional(),
+        relevanceScore: z.number().min(1).max(10).optional(),
+        ventureIds: z.string().optional(),
+        trlLevelsSupported: z.string().optional(),
+        vrlStagesSupported: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await updateResearchPaper(id, data as any);
+        return { success: true };
+      }),
+
+    deletePaper: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await deleteResearchPaper(input.id);
+        return { success: true };
+      }),
+
+    // Fellow Researchers
+    listFellows: publicProcedure.query(async () => getAllFellowResearchers()),
+
+    addFellow: publicProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        title: z.string().optional(),
+        institution: z.string().optional(),
+        department: z.string().optional(),
+        specialisation: z.string().optional(),
+        email: z.string().optional(),
+        linkedIn: z.string().optional(),
+        orcid: z.string().optional(),
+        collaborationType: z.enum([
+          "Academic Advisor", "Co-Researcher", "Industry Fellow",
+          "Visiting Scholar", "PhD Supervisor", "Peer Reviewer", "Consultant"
+        ]).optional(),
+        status: z.enum(["Active", "Prospective", "Past"]).optional(),
+        ventureIds: z.string().optional(),
+        bio: z.string().optional(),
+        publications: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await insertFellowResearcher(input as any);
+        return { success: true };
+      }),
+
+    updateFellow: publicProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        title: z.string().optional(),
+        institution: z.string().optional(),
+        department: z.string().optional(),
+        specialisation: z.string().optional(),
+        email: z.string().optional(),
+        linkedIn: z.string().optional(),
+        orcid: z.string().optional(),
+        collaborationType: z.enum([
+          "Academic Advisor", "Co-Researcher", "Industry Fellow",
+          "Visiting Scholar", "PhD Supervisor", "Peer Reviewer", "Consultant"
+        ]).optional(),
+        status: z.enum(["Active", "Prospective", "Past"]).optional(),
+        ventureIds: z.string().optional(),
+        bio: z.string().optional(),
+        publications: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await updateFellowResearcher(id, data as any);
+        return { success: true };
+      }),
+
+    deleteFellow: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await deleteFellowResearcher(input.id);
+        return { success: true };
+      }),
+
+    // University Partnerships
+    listPartnerships: publicProcedure.query(async () => getAllUniversityPartnerships()),
+
+    addPartnership: publicProcedure
+      .input(z.object({
+        universityName: z.string().min(1),
+        country: z.string().optional(),
+        department: z.string().optional(),
+        contactName: z.string().optional(),
+        contactEmail: z.string().optional(),
+        partnershipType: z.enum([
+          "Research Collaboration", "Spin-out Support", "Knowledge Transfer",
+          "Student Placement", "Grant Co-applicant", "Advisory Board", "MoU"
+        ]).optional(),
+        status: z.enum(["Active", "Prospective", "Completed", "Paused"]).optional(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+        description: z.string().optional(),
+        ventureIds: z.string().optional(),
+        fundingLinked: z.boolean().optional(),
+        fundingAmount: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await insertUniversityPartnership(input as any);
+        return { success: true };
+      }),
+
+    updatePartnership: publicProcedure
+      .input(z.object({
+        id: z.number(),
+        universityName: z.string().optional(),
+        country: z.string().optional(),
+        department: z.string().optional(),
+        contactName: z.string().optional(),
+        contactEmail: z.string().optional(),
+        partnershipType: z.enum([
+          "Research Collaboration", "Spin-out Support", "Knowledge Transfer",
+          "Student Placement", "Grant Co-applicant", "Advisory Board", "MoU"
+        ]).optional(),
+        status: z.enum(["Active", "Prospective", "Completed", "Paused"]).optional(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+        description: z.string().optional(),
+        ventureIds: z.string().optional(),
+        fundingLinked: z.boolean().optional(),
+        fundingAmount: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await updateUniversityPartnership(id, data as any);
+        return { success: true };
+      }),
+
+    deletePartnership: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await deleteUniversityPartnership(input.id);
+        return { success: true };
+      }),
+
+    // Evidence Claims
+    listClaims: publicProcedure.query(async () => getAllEvidenceClaims()),
+
+    listClaimsForVenture: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => getEvidenceClaimsForVenture(input.ventureId)),
+
+    addClaim: publicProcedure
+      .input(z.object({
+        ventureId: z.string(),
+        paperId: z.number().optional(),
+        claimText: z.string().min(1),
+        claimType: z.enum([
+          "Market Validation", "Technology Feasibility", "Social Impact",
+          "Competitive Advantage", "Regulatory Compliance", "Financial Model",
+          "Team Capability", "Methodology Support"
+        ]).optional(),
+        trlLevel: z.number().min(1).max(9).optional(),
+        vrlStage: z.number().min(1).max(4).optional(),
+        strength: z.enum(["Strong", "Moderate", "Weak"]).optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await insertEvidenceClaim(input as any);
+        return { success: true };
+      }),
+
+    deleteClaim: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await deleteEvidenceClaim(input.id);
         return { success: true };
       }),
   }),

@@ -12,6 +12,10 @@ import {
   InsertExperiment,
   InsertInterview,
   InsertFinancialSnapshot,
+  InsertResearchPaper,
+  InsertFellowResearcher,
+  InsertUniversityPartnership,
+  InsertEvidenceClaim,
   contractDocuments,
   users,
   ventures,
@@ -23,6 +27,10 @@ import {
   experiments,
   interviews,
   financialSnapshots,
+  researchPapers,
+  fellowResearchers,
+  universityPartnerships,
+  evidenceClaims,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -333,4 +341,117 @@ export async function upsertFinancialSnapshot(data: InsertFinancialSnapshot) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   return db.insert(financialSnapshots).values(data).onDuplicateKeyUpdate({ set: data });
+}
+
+// ── Research Papers ───────────────────────────────────────────────────────────
+export async function getAllResearchPapers() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(researchPapers).orderBy(desc(researchPapers.year));
+}
+
+export async function getResearchPaperById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(researchPapers).where(eq(researchPapers.id, id)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function insertResearchPaper(data: InsertResearchPaper) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.insert(researchPapers).values(data);
+}
+
+export async function updateResearchPaper(id: number, data: Partial<InsertResearchPaper>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.update(researchPapers).set(data).where(eq(researchPapers.id, id));
+}
+
+export async function deleteResearchPaper(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.delete(researchPapers).where(eq(researchPapers.id, id));
+}
+
+// ── Fellow Researchers ────────────────────────────────────────────────────────
+export async function getAllFellowResearchers() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(fellowResearchers).orderBy(fellowResearchers.name);
+}
+
+export async function insertFellowResearcher(data: InsertFellowResearcher) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.insert(fellowResearchers).values(data);
+}
+
+export async function updateFellowResearcher(id: number, data: Partial<InsertFellowResearcher>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.update(fellowResearchers).set(data).where(eq(fellowResearchers.id, id));
+}
+
+export async function deleteFellowResearcher(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.delete(fellowResearchers).where(eq(fellowResearchers.id, id));
+}
+
+// ── University Partnerships ───────────────────────────────────────────────────
+export async function getAllUniversityPartnerships() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(universityPartnerships).orderBy(universityPartnerships.universityName);
+}
+
+export async function insertUniversityPartnership(data: InsertUniversityPartnership) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.insert(universityPartnerships).values(data);
+}
+
+export async function updateUniversityPartnership(id: number, data: Partial<InsertUniversityPartnership>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.update(universityPartnerships).set(data).where(eq(universityPartnerships.id, id));
+}
+
+export async function deleteUniversityPartnership(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.delete(universityPartnerships).where(eq(universityPartnerships.id, id));
+}
+
+// ── Evidence Claims ───────────────────────────────────────────────────────────
+export async function getEvidenceClaimsForVenture(ventureId: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(evidenceClaims).where(eq(evidenceClaims.ventureId, ventureId)).orderBy(desc(evidenceClaims.createdAt));
+}
+
+export async function getAllEvidenceClaims() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(evidenceClaims).orderBy(desc(evidenceClaims.createdAt));
+}
+
+export async function insertEvidenceClaim(data: InsertEvidenceClaim) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.insert(evidenceClaims).values(data);
+}
+
+export async function updateEvidenceClaim(id: number, data: Partial<InsertEvidenceClaim>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.update(evidenceClaims).set(data).where(eq(evidenceClaims.id, id));
+}
+
+export async function deleteEvidenceClaim(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.delete(evidenceClaims).where(eq(evidenceClaims.id, id));
 }

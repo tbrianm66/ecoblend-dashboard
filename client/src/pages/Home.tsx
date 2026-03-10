@@ -137,7 +137,21 @@ function VentureCard({
       <div className="p-4">
         {/* ── Header row ── */}
         <div className="flex items-start justify-between mb-3">
-          <div className="flex-1 min-w-0">
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            {/* Brand logo */}
+            {venture.logo && (
+              <div
+                className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border"
+                style={{ borderColor: `${venture.color}30`, background: "#f9fafb" }}
+              >
+                <img
+                  src={venture.logo}
+                  alt={`${venture.name} logo`}
+                  className="w-full h-full object-contain p-1"
+                />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
             {/* Brand name + channel tag */}
             <div className="flex items-center gap-2 mb-0.5">
               <span
@@ -157,6 +171,7 @@ function VentureCard({
             <p className="text-xs text-gray-400 truncate" style={{ fontFamily: "'Inter', sans-serif" }}>
               {venture.tagline}
             </p>
+            </div>
           </div>
 
           {/* Status + actions */}
