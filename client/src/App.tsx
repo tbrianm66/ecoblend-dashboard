@@ -29,6 +29,7 @@ import OpportunityPipeline from "./pages/OpportunityPipeline";
 import ExperimentLog from "./pages/ExperimentLog";
 import FounderProfiles from "./pages/FounderProfiles";
 import AcademicResearch from "./pages/AcademicResearch";
+import MarketIntelligence from "./pages/MarketIntelligence";
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
@@ -56,6 +57,7 @@ function Router() {
       <Route path="/experiments" component={ExperimentLog} />
       <Route path="/founders" component={FounderProfiles} />
       <Route path="/academic" component={AcademicResearch} />
+      <Route path="/market-intelligence" component={MarketIntelligence} />
       <Route component={Home} />
     </Switch>
   );

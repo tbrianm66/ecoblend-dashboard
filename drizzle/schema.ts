@@ -321,3 +321,82 @@ export const evidenceClaims = mysqlTable("evidence_claims", {
 
 export type EvidenceClaim = typeof evidenceClaims.$inferSelect;
 export type InsertEvidenceClaim = typeof evidenceClaims.$inferInsert;
+
+// ── Market Analysis ───────────────────────────────────────────────────────────
+// Stores market size estimates and TAM/SAM/SOM data per venture
+export const marketAnalysis = mysqlTable("market_analysis", {
+  id: int("id").autoincrement().primaryKey(),
+  ventureId: varchar("ventureId", { length: 64 }).notNull(),
+  marketName: varchar("marketName", { length: 255 }).notNull(),   // e.g. "Global Eco-Materials Market"
+  geography: varchar("geography", { length: 128 }).default("Global"),
+  tamValue: int("tamValue").default(0),           // Total Addressable Market (£M)
+  samValue: int("samValue").default(0),           // Serviceable Addressable Market (£M)
+  somValue: int("somValue").default(0),           // Serviceable Obtainable Market (£M)
+  tamUnit: varchar("tamUnit", { length: 32 }).default("£M"),
+  cagr: float("cagr").default(0),                 // Compound Annual Growth Rate (%)
+  marketYear: int("marketYear").default(2025),    // base year for the estimate
+  forecastYear: int("forecastYear").default(2030),
+  sourceUrl: text("sourceUrl"),
+  sourceName: varchar("sourceName", { length: 255 }),
+  keyDrivers: text("keyDrivers"),                 // comma-separated growth drivers
+  keyBarriers: text("keyBarriers"),               // comma-separated barriers
+  notes: text("notes"),
+  aiGenerated: boolean("aiGenerated").default(false),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type MarketAnalysis = typeof marketAnalysis.$inferSelect;
+export type InsertMarketAnalysis = typeof marketAnalysis.$inferInsert;
+
+// ── Competitors ───────────────────────────────────────────────────────────────
+export const competitors = mysqlTable("competitors", {
+  id: int("id").autoincrement().primaryKey(),
+  ventureId: varchar("ventureId", { length: 64 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  website: varchar("website", { length: 512 }),
+  hq: varchar("hq", { length: 128 }),             // headquarters location
+  founded: int("founded"),                          // year founded
+  stage: mysqlEnum("stage", [
+    "Startup", "Scale-up", "Established", "Enterprise", "Unknown"
+  ]).default("Unknown"),
+  competitorType: mysqlEnum("competitorType", [
+    "Direct", "Indirect", "Substitute", "Potential"
+  ]).default("Direct"),
+  productDescription: text("productDescription"),
+  strengths: text("strengths"),
+  weaknesses: text("weaknesses"),
+  differentiator: text("differentiator"),          // how our venture differs
+  revenueEstimate: varchar("revenueEstimate", { length: 64 }), // e.g. "£5M–£20M"
+  fundingRaised: varchar("fundingRaised", { length: 64 }),
+  threatLevel: mysqlEnum("threatLevel", ["Low", "Medium", "High"]).default("Medium"),
+  notes: text("notes"),
+  aiGenerated: boolean("aiGenerated").default(false),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Competitor = typeof competitors.$inferSelect;
+export type InsertCompetitor = typeof competitors.$inferInsert;
+
+// ── Opportunity Research Reports ──────────────────────────────────────────────
+// AI-generated research reports triggered from an opportunity's problem statement
+export const opportunityReports = mysqlTable("opportunity_reports", {
+  id: int("id").autoincrement().primaryKey(),
+  opportunityId: int("opportunityId").notNull(),   // FK to opportunities
+  title: varchar("title", { length: 512 }).notNull(),
+  problemStatement: text("problemStatement").notNull(),
+  reportContent: text("reportContent"),            // full markdown report from LLM
+  marketSizeSummary: text("marketSizeSummary"),    // extracted market size section
+  competitorSummary: text("competitorSummary"),    // extracted competitor section
+  keyInsights: text("keyInsights"),                // bullet-point insights
+  recommendedAction: mysqlEnum("recommendedAction", [
+    "Pursue", "Investigate Further", "Park", "Reject"
+  ]).default("Investigate Further"),
+  confidenceScore: int("confidenceScore").default(5), // 1–10 AI confidence
+  generatedAt: timestamp("generatedAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type OpportunityReport = typeof opportunityReports.$inferSelect;
+export type InsertOpportunityReport = typeof opportunityReports.$inferInsert;

@@ -1,0 +1,61 @@
+CREATE TABLE `competitors` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`ventureId` varchar(64) NOT NULL,
+	`name` varchar(255) NOT NULL,
+	`website` varchar(512),
+	`hq` varchar(128),
+	`founded` int,
+	`stage` enum('Startup','Scale-up','Established','Enterprise','Unknown') DEFAULT 'Unknown',
+	`competitorType` enum('Direct','Indirect','Substitute','Potential') DEFAULT 'Direct',
+	`productDescription` text,
+	`strengths` text,
+	`weaknesses` text,
+	`differentiator` text,
+	`revenueEstimate` varchar(64),
+	`fundingRaised` varchar(64),
+	`threatLevel` enum('Low','Medium','High') DEFAULT 'Medium',
+	`notes` text,
+	`aiGenerated` boolean DEFAULT false,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `competitors_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `market_analysis` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`ventureId` varchar(64) NOT NULL,
+	`marketName` varchar(255) NOT NULL,
+	`geography` varchar(128) DEFAULT 'Global',
+	`tamValue` int DEFAULT 0,
+	`samValue` int DEFAULT 0,
+	`somValue` int DEFAULT 0,
+	`tamUnit` varchar(32) DEFAULT '£M',
+	`cagr` float DEFAULT 0,
+	`marketYear` int DEFAULT 2025,
+	`forecastYear` int DEFAULT 2030,
+	`sourceUrl` text,
+	`sourceName` varchar(255),
+	`keyDrivers` text,
+	`keyBarriers` text,
+	`notes` text,
+	`aiGenerated` boolean DEFAULT false,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `market_analysis_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `opportunity_reports` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`opportunityId` int NOT NULL,
+	`title` varchar(512) NOT NULL,
+	`problemStatement` text NOT NULL,
+	`reportContent` text,
+	`marketSizeSummary` text,
+	`competitorSummary` text,
+	`keyInsights` text,
+	`recommendedAction` enum('Pursue','Investigate Further','Park','Reject') DEFAULT 'Investigate Further',
+	`confidenceScore` int DEFAULT 5,
+	`generatedAt` timestamp NOT NULL DEFAULT (now()),
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	CONSTRAINT `opportunity_reports_id` PRIMARY KEY(`id`)
+);

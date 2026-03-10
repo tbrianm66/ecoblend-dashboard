@@ -16,6 +16,12 @@ import {
   InsertFellowResearcher,
   InsertUniversityPartnership,
   InsertEvidenceClaim,
+  InsertMarketAnalysis,
+  InsertCompetitor,
+  InsertOpportunityReport,
+  marketAnalysis,
+  competitors,
+  opportunityReports,
   contractDocuments,
   users,
   ventures,
@@ -454,4 +460,81 @@ export async function deleteEvidenceClaim(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   return db.delete(evidenceClaims).where(eq(evidenceClaims.id, id));
+}
+
+// ── Market Analysis ───────────────────────────────────────────────────────────
+export async function getMarketAnalysisForVenture(ventureId: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(marketAnalysis).where(eq(marketAnalysis.ventureId, ventureId)).orderBy(desc(marketAnalysis.createdAt));
+}
+export async function getAllMarketAnalysis() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(marketAnalysis).orderBy(desc(marketAnalysis.createdAt));
+}
+export async function insertMarketAnalysis(data: InsertMarketAnalysis) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.insert(marketAnalysis).values(data);
+}
+export async function updateMarketAnalysis(id: number, data: Partial<InsertMarketAnalysis>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.update(marketAnalysis).set(data).where(eq(marketAnalysis.id, id));
+}
+export async function deleteMarketAnalysis(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.delete(marketAnalysis).where(eq(marketAnalysis.id, id));
+}
+
+// ── Competitors ───────────────────────────────────────────────────────────────
+export async function getCompetitorsForVenture(ventureId: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(competitors).where(eq(competitors.ventureId, ventureId)).orderBy(desc(competitors.createdAt));
+}
+export async function getAllCompetitors() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(competitors).orderBy(desc(competitors.createdAt));
+}
+export async function insertCompetitor(data: InsertCompetitor) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.insert(competitors).values(data);
+}
+export async function updateCompetitor(id: number, data: Partial<InsertCompetitor>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.update(competitors).set(data).where(eq(competitors.id, id));
+}
+export async function deleteCompetitor(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.delete(competitors).where(eq(competitors.id, id));
+}
+
+// ── Opportunity Reports ───────────────────────────────────────────────────────
+export async function getReportsForOpportunity(opportunityId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(opportunityReports).where(eq(opportunityReports.opportunityId, opportunityId)).orderBy(desc(opportunityReports.generatedAt));
+}
+export async function getOpportunityReportById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(opportunityReports).where(eq(opportunityReports.id, id));
+  return rows[0] ?? null;
+}
+export async function insertOpportunityReport(data: InsertOpportunityReport) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.insert(opportunityReports).values(data);
+}
+export async function deleteOpportunityReport(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.delete(opportunityReports).where(eq(opportunityReports.id, id));
 }

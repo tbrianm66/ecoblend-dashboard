@@ -88,3 +88,12 @@
 - [x] Integrate brand logos into Portfolio Overview venture cards (with logoBg for dark-bg logos)
 - [x] Integrate brand logos into hub-spoke diagram nodes (SVG image element with clip-path)
 - [x] Integrate brand logos into Venture Detail page header (16×16 rounded-2xl container)
+
+## Sprint 9 — Market Intelligence & AI Research (Mar 2026)
+- [x] Extend DB schema: marketAnalysis, competitors, opportunityReports tables (migration 0004 applied)
+- [x] tRPC procedures: market analysis CRUD + AI generate, competitor CRUD + AI identify, opportunity report generate/list/delete
+- [x] Market Intelligence page (/market-intelligence) with TAM/SAM/SOM funnel, competitor cards, AI generation buttons
+- [x] Opportunity Pipeline: problem statement field with AI research prompt, AI Research button per card
+- [x] AI Research Report: 10-section commercial report (market size, competitive landscape, ESG, TRL, business case, risks)
+- [x] Report viewer dialog with markdown rendering, recommendation badge, confidence score
+- [x] Vitest tests for market, competitor, and report procedures (106 tests total passing)

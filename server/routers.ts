@@ -64,6 +64,19 @@ import {
   insertEvidenceClaim,
   updateEvidenceClaim,
   deleteEvidenceClaim,
+  getAllMarketAnalysis,
+  getMarketAnalysisForVenture,
+  insertMarketAnalysis,
+  updateMarketAnalysis,
+  deleteMarketAnalysis,
+  getAllCompetitors,
+  getCompetitorsForVenture,
+  insertCompetitor,
+  updateCompetitor,
+  deleteCompetitor,
+  getReportsForOpportunity,
+  insertOpportunityReport,
+  deleteOpportunityReport,
 } from "./db";
 
 export const appRouter = router({
@@ -792,13 +805,329 @@ Return a JSON object with exactly these fields:
         return { success: true };
       }),
 
-    deleteClaim: publicProcedure
+     deleteClaim: publicProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await deleteEvidenceClaim(input.id);
         return { success: true };
       }),
   }),
-});
 
+  // ── Market Analysis ─────────────────────────────────────────────────────────
+  market: router({
+    listAll: publicProcedure.query(async () => getAllMarketAnalysis()),
+    listForVenture: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => getMarketAnalysisForVenture(input.ventureId)),
+    add: publicProcedure
+      .input(z.object({
+        ventureId: z.string(),
+        marketName: z.string().min(1),
+        geography: z.string().optional(),
+        tamValue: z.number().optional(),
+        samValue: z.number().optional(),
+        somValue: z.number().optional(),
+        tamUnit: z.string().optional(),
+        cagr: z.number().optional(),
+        marketYear: z.number().optional(),
+        forecastYear: z.number().optional(),
+        sourceUrl: z.string().optional(),
+        sourceName: z.string().optional(),
+        keyDrivers: z.string().optional(),
+        keyBarriers: z.string().optional(),
+        notes: z.string().optional(),
+        aiGenerated: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await insertMarketAnalysis(input as any);
+        return { success: true };
+      }),
+    update: publicProcedure
+      .input(z.object({
+        id: z.number(),
+        data: z.object({
+          marketName: z.string().optional(),
+          geography: z.string().optional(),
+          tamValue: z.number().optional(),
+          samValue: z.number().optional(),
+          somValue: z.number().optional(),
+          cagr: z.number().optional(),
+          marketYear: z.number().optional(),
+          forecastYear: z.number().optional(),
+          sourceUrl: z.string().optional(),
+          sourceName: z.string().optional(),
+          keyDrivers: z.string().optional(),
+          keyBarriers: z.string().optional(),
+          notes: z.string().optional(),
+        }),
+      }))
+      .mutation(async ({ input }) => {
+        await updateMarketAnalysis(input.id, input.data);
+        return { success: true };
+      }),
+    delete: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await deleteMarketAnalysis(input.id);
+        return { success: true };
+      }),
+    // AI-generate market analysis from a venture description
+    generateAI: publicProcedure
+      .input(z.object({
+        ventureId: z.string(),
+        ventureName: z.string(),
+        sector: z.string(),
+        description: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const response = await invokeLLM({
+          messages: [
+            {
+              role: "system",
+              content: `You are a market research analyst specialising in sustainable technology, eco-materials, and impact ventures. 
+Generate a structured market analysis in JSON format. Use British English. Be specific with numbers — cite realistic market size figures based on known industry data.
+Return ONLY valid JSON matching this schema exactly:
+{
+  "marketName": string,
+  "geography": string,
+  "tamValue": number (in £M),
+  "samValue": number (in £M),
+  "somValue": number (in £M),
+  "tamUnit": "£M",
+  "cagr": number (percentage, e.g. 8.5),
+  "marketYear": number,
+  "forecastYear": number,
+  "sourceName": string,
+  "keyDrivers": string (comma-separated list of 3-5 drivers),
+  "keyBarriers": string (comma-separated list of 3-5 barriers),
+  "notes": string (2-3 sentence summary)
+}`,
+            },
+            {
+              role: "user",
+              content: `Generate a market analysis for the following venture:\n\nVenture: ${input.ventureName}\nSector: ${input.sector}\nDescription: ${input.description}`,
+            },
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "market_analysis",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: {
+                  marketName: { type: "string" },
+                  geography: { type: "string" },
+                  tamValue: { type: "number" },
+                  samValue: { type: "number" },
+                  somValue: { type: "number" },
+                  tamUnit: { type: "string" },
+                  cagr: { type: "number" },
+                  marketYear: { type: "number" },
+                  forecastYear: { type: "number" },
+                  sourceName: { type: "string" },
+                  keyDrivers: { type: "string" },
+                  keyBarriers: { type: "string" },
+                  notes: { type: "string" },
+                },
+                required: ["marketName","geography","tamValue","samValue","somValue","tamUnit","cagr","marketYear","forecastYear","sourceName","keyDrivers","keyBarriers","notes"],
+                additionalProperties: false,
+              },
+            },
+          },
+        });
+        const content = String(response.choices[0]?.message?.content ?? "{}");
+        const parsed = JSON.parse(content);
+        const record = { ...parsed, ventureId: input.ventureId, aiGenerated: true };
+        await insertMarketAnalysis(record);
+        return { success: true, data: record };
+      }),
+  }),
+
+  // ── Competitor Analysis ──────────────────────────────────────────────────────
+  competitors: router({
+    listAll: publicProcedure.query(async () => getAllCompetitors()),
+    listForVenture: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => getCompetitorsForVenture(input.ventureId)),
+    add: publicProcedure
+      .input(z.object({
+        ventureId: z.string(),
+        name: z.string().min(1),
+        website: z.string().optional(),
+        hq: z.string().optional(),
+        founded: z.number().optional(),
+        stage: z.enum(["Startup","Scale-up","Established","Enterprise","Unknown"]).optional(),
+        competitorType: z.enum(["Direct","Indirect","Substitute","Potential"]).optional(),
+        productDescription: z.string().optional(),
+        strengths: z.string().optional(),
+        weaknesses: z.string().optional(),
+        differentiator: z.string().optional(),
+        revenueEstimate: z.string().optional(),
+        fundingRaised: z.string().optional(),
+        threatLevel: z.enum(["Low","Medium","High"]).optional(),
+        notes: z.string().optional(),
+        aiGenerated: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await insertCompetitor(input as any);
+        return { success: true };
+      }),
+    update: publicProcedure
+      .input(z.object({
+        id: z.number(),
+        data: z.object({
+          name: z.string().optional(),
+          website: z.string().optional(),
+          hq: z.string().optional(),
+          stage: z.enum(["Startup","Scale-up","Established","Enterprise","Unknown"]).optional(),
+          competitorType: z.enum(["Direct","Indirect","Substitute","Potential"]).optional(),
+          productDescription: z.string().optional(),
+          strengths: z.string().optional(),
+          weaknesses: z.string().optional(),
+          differentiator: z.string().optional(),
+          revenueEstimate: z.string().optional(),
+          fundingRaised: z.string().optional(),
+          threatLevel: z.enum(["Low","Medium","High"]).optional(),
+          notes: z.string().optional(),
+        }),
+      }))
+      .mutation(async ({ input }) => {
+        await updateCompetitor(input.id, input.data);
+        return { success: true };
+      }),
+    delete: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await deleteCompetitor(input.id);
+        return { success: true };
+      }),
+    // AI-generate competitor analysis
+    generateAI: publicProcedure
+      .input(z.object({
+        ventureId: z.string(),
+        ventureName: z.string(),
+        sector: z.string(),
+        description: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const response = await invokeLLM({
+          messages: [
+            {
+              role: "system",
+              content: `You are a competitive intelligence analyst specialising in sustainable technology and eco-materials ventures.
+Identify 4-6 real or representative competitors for the venture described. Use British English.
+Return ONLY a valid JSON array of competitor objects matching this schema exactly:
+[{
+  "name": string,
+  "website": string,
+  "hq": string,
+  "founded": number or null,
+  "stage": "Startup" | "Scale-up" | "Established" | "Enterprise" | "Unknown",
+  "competitorType": "Direct" | "Indirect" | "Substitute" | "Potential",
+  "productDescription": string,
+  "strengths": string,
+  "weaknesses": string,
+  "differentiator": string,
+  "revenueEstimate": string,
+  "fundingRaised": string,
+  "threatLevel": "Low" | "Medium" | "High"
+}]`,
+            },
+            {
+              role: "user",
+              content: `Identify competitors for:\n\nVenture: ${input.ventureName}\nSector: ${input.sector}\nDescription: ${input.description}`,
+            },
+          ],
+        });
+        const content = String(response.choices[0]?.message?.content ?? "[]");
+        let parsed: any[] = [];
+        try { parsed = JSON.parse(content); } catch { parsed = []; }
+        const records = parsed.map((c: any) => ({ ...c, ventureId: input.ventureId, aiGenerated: true }));
+        for (const record of records) {
+          await insertCompetitor(record);
+        }
+        return { success: true, count: records.length, data: records };
+      }),
+  }),
+
+  // ── Opportunity Research Reports ─────────────────────────────────────────────
+  opportunityReports: router({
+    listForOpportunity: publicProcedure
+      .input(z.object({ opportunityId: z.number() }))
+      .query(async ({ input }) => getReportsForOpportunity(input.opportunityId)),
+    delete: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await deleteOpportunityReport(input.id);
+        return { success: true };
+      }),
+    // Core AI research report generation from problem statement
+    generate: publicProcedure
+      .input(z.object({
+        opportunityId: z.number(),
+        title: z.string(),
+        problemStatement: z.string().min(20),
+        sector: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const response = await invokeLLM({
+          messages: [
+            {
+              role: "system",
+              content: `You are a senior business analyst and market researcher specialising in sustainable technology, social enterprise, and impact ventures. You produce structured, evidence-based commercial research reports.
+
+Your reports are written in British English, use a professional academic tone, and are structured to support venture investment decisions.
+
+Generate a comprehensive research report in Markdown format covering:
+1. **Executive Summary** — 3-4 sentences summarising the opportunity
+2. **Problem Analysis** — depth analysis of the problem, who it affects, and why it matters now
+3. **Market Size & Opportunity** — TAM/SAM/SOM estimates with sources, CAGR, key growth drivers
+4. **Competitive Landscape** — 4-6 key competitors or analogues, their positioning, strengths and weaknesses
+5. **Regulatory & ESG Context** — relevant regulations, sustainability frameworks, B Corp alignment
+6. **Technology Readiness** — current TRL landscape for relevant technologies
+7. **Commercial Business Case** — revenue model options, pricing benchmarks, unit economics
+8. **Key Risks & Mitigations** — top 4-5 risks with mitigation strategies
+9. **Recommended Next Steps** — 3-5 concrete validation actions
+10. **Conclusion & Recommendation** — Pursue / Investigate Further / Park / Reject with rationale
+
+Be specific with numbers. Cite real market data where possible. Use British English throughout.`,
+            },
+            {
+              role: "user",
+              content: `Generate a commercial research report for the following opportunity:\n\nTitle: ${input.title}\nSector: ${input.sector ?? "Not specified"}\n\nProblem Statement:\n${input.problemStatement}`,
+            },
+          ],
+        });
+        const reportContent = String(response.choices[0]?.message?.content ?? "Report generation failed.");
+
+        // Extract key sections for structured fields
+        const summaryMatch = reportContent.match(/## Executive Summary[\s\S]*?(?=##|$)/i);
+        const marketMatch = reportContent.match(/## Market Size[\s\S]*?(?=##|$)/i);
+        const competitorMatch = reportContent.match(/## Competitive Landscape[\s\S]*?(?=##|$)/i);
+        const conclusionMatch = reportContent.match(/## Conclusion[\s\S]*?(?=##|$)/i);
+
+        // Determine recommended action from conclusion
+        let recommendedAction: "Pursue" | "Investigate Further" | "Park" | "Reject" = "Investigate Further";
+        const conclusionText = (conclusionMatch?.[0] ?? "").toLowerCase();
+        if (conclusionText.includes("pursue")) recommendedAction = "Pursue";
+        else if (conclusionText.includes("reject")) recommendedAction = "Reject";
+        else if (conclusionText.includes("park")) recommendedAction = "Park";
+
+        const record = {
+          opportunityId: input.opportunityId,
+          title: `Research Report: ${input.title}`,
+          problemStatement: input.problemStatement,
+          reportContent,
+          marketSizeSummary: marketMatch?.[0]?.slice(0, 1000) ?? null,
+          competitorSummary: competitorMatch?.[0]?.slice(0, 1000) ?? null,
+          keyInsights: summaryMatch?.[0]?.slice(0, 500) ?? null,
+          recommendedAction,
+          confidenceScore: 7,
+        };
+        await insertOpportunityReport(record as any);
+        return { success: true, report: record };
+      }),
+  }),
+});
 export type AppRouter = typeof appRouter;

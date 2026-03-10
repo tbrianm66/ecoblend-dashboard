@@ -1,6 +1,7 @@
 // ============================================================
 // OPPORTUNITY PIPELINE
 // Intake → Scoring → Approval → Conversion to Venture
+// + AI Research Report generation from Problem Statement
 // ============================================================
 
 import { useState } from "react";
@@ -11,9 +12,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { Streamdown } from "streamdown";
 import {
   Plus, ChevronRight, TrendingUp, Target, Leaf, Users,
   CheckCircle2, XCircle, ArrowRight, Lightbulb, BarChart3,
+  Sparkles, FileText, Loader2, BookOpen, ExternalLink,
 } from "lucide-react";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -25,6 +28,13 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
 };
 
 const STAGE_ORDER = ["Identified", "Scoring", "Approved", "Converted"];
+
+const RECOMMENDATION_COLORS: Record<string, string> = {
+  "Pursue": "#10b981",
+  "Investigate Further": "#f59e0b",
+  "Park": "#6b7280",
+  "Reject": "#ef4444",
+};
 
 function ScoreBar({ label, value, icon: Icon, color }: { label: string; value: number; icon: any; color: string }) {
   return (
@@ -44,26 +54,74 @@ function ScoreBar({ label, value, icon: Icon, color }: { label: string; value: n
   );
 }
 
+// ── Report Viewer Dialog ──────────────────────────────────────────────────────
+function ReportViewerDialog({ report, open, onClose }: { report: any; open: boolean; onClose: () => void }) {
+  if (!report) return null;
+  const recColor = RECOMMENDATION_COLORS[report.recommendedAction] || "#6b7280";
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <FileText size={16} style={{ color: "#7c3aed" }} />
+            {report.title}
+          </DialogTitle>
+          <div className="flex items-center gap-3 mt-2">
+            <span
+              className="text-xs font-bold px-3 py-1 rounded-full"
+              style={{ background: `${recColor}15`, color: recColor }}
+            >
+              Recommendation: {report.recommendedAction}
+            </span>
+            <span className="text-xs text-gray-400">
+              Confidence: {report.confidenceScore}/10
+            </span>
+            <span className="text-xs text-gray-400">
+              Generated: {new Date(report.generatedAt).toLocaleDateString("en-GB")}
+            </span>
+          </div>
+        </DialogHeader>
+        <div className="mt-4 prose prose-sm max-w-none">
+          <div className="bg-gray-50 rounded-xl p-4 text-xs text-gray-600 mb-4 border-l-4" style={{ borderColor: "#7c3aed" }}>
+            <strong className="text-gray-700">Problem Statement:</strong> {report.problemStatement}
+          </div>
+          <Streamdown>{report.reportContent || "No report content available."}</Streamdown>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ── Opportunity Card ──────────────────────────────────────────────────────────
 function OpportunityCard({
   opp,
   onAdvance,
   onReject,
   onScore,
+  onViewReports,
+  onGenerateReport,
+  reportCount,
+  isGenerating,
 }: {
   opp: any;
   onAdvance: () => void;
   onReject: () => void;
   onScore: () => void;
+  onViewReports: () => void;
+  onGenerateReport: () => void;
+  reportCount: number;
+  isGenerating: boolean;
 }) {
   const cfg = STATUS_CONFIG[opp.status] ?? STATUS_CONFIG.Identified;
   const canAdvance = opp.status !== "Approved" && opp.status !== "Rejected" && opp.status !== "Converted";
   const canReject = opp.status !== "Rejected" && opp.status !== "Converted";
+  const hasProblemStatement = opp.problemStatement && opp.problemStatement.trim().length > 0;
 
   return (
     <div className="bg-white rounded-xl border p-5 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
             <span
               className="text-xs font-semibold px-2 py-0.5 rounded-full"
               style={{ background: cfg.bg, color: cfg.color }}
@@ -72,6 +130,15 @@ function OpportunityCard({
             </span>
             {opp.sector && (
               <span className="text-xs text-gray-400 font-mono">{opp.sector}</span>
+            )}
+            {reportCount > 0 && (
+              <span
+                className="text-xs px-2 py-0.5 rounded-full flex items-center gap-1 cursor-pointer hover:opacity-80"
+                style={{ background: "#ede9fe", color: "#7c3aed" }}
+                onClick={onViewReports}
+              >
+                <FileText size={9} /> {reportCount} report{reportCount > 1 ? "s" : ""}
+              </span>
             )}
           </div>
           <h3 className="text-sm font-bold text-gray-900 mb-1">{opp.title}</h3>
@@ -100,10 +167,41 @@ function OpportunityCard({
         <p className="text-xs text-gray-400 italic mb-3 line-clamp-2">{opp.notes}</p>
       )}
 
-      <div className="flex items-center gap-2 mt-2">
+      <div className="flex items-center gap-2 mt-2 flex-wrap">
         <Button size="sm" variant="outline" className="gap-1 text-xs h-7" onClick={onScore}>
           <BarChart3 size={11} /> Score
         </Button>
+
+        {/* AI Research Report button — only if problem statement exists */}
+        {hasProblemStatement && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1 text-xs h-7"
+            style={{ borderColor: "#7c3aed", color: "#7c3aed" }}
+            onClick={isGenerating ? undefined : onGenerateReport}
+            disabled={isGenerating}
+          >
+            {isGenerating ? (
+              <><Loader2 size={11} className="animate-spin" /> Researching...</>
+            ) : (
+              <><Sparkles size={11} /> AI Research</>
+            )}
+          </Button>
+        )}
+
+        {reportCount > 0 && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1 text-xs h-7"
+            style={{ borderColor: "#6b7280", color: "#6b7280" }}
+            onClick={onViewReports}
+          >
+            <BookOpen size={11} /> View Reports
+          </Button>
+        )}
+
         {canAdvance && (
           <Button
             size="sm"
@@ -140,17 +238,111 @@ function OpportunityCard({
   );
 }
 
+// ── Reports Panel Dialog ──────────────────────────────────────────────────────
+function ReportsPanelDialog({ opp, open, onClose }: { opp: any; open: boolean; onClose: () => void }) {
+  const [selectedReport, setSelectedReport] = useState<any | null>(null);
+  const { data: reports = [], isLoading } = trpc.opportunityReports.listForOpportunity.useQuery(
+    { opportunityId: opp?.id },
+    { enabled: !!opp?.id }
+  );
+  const utils = trpc.useUtils();
+  const deleteReport = trpc.opportunityReports.delete.useMutation({
+    onSuccess: () => { utils.opportunityReports.listForOpportunity.invalidate({ opportunityId: opp.id }); toast.success("Report deleted"); },
+  });
+
+  if (!opp) return null;
+  return (
+    <>
+      <Dialog open={open && !selectedReport} onOpenChange={onClose}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BookOpen size={16} style={{ color: "#7c3aed" }} />
+              Research Reports — {opp.title}
+            </DialogTitle>
+          </DialogHeader>
+          {isLoading ? (
+            <div className="py-8 text-center text-gray-400 text-sm flex items-center justify-center gap-2">
+              <Loader2 size={16} className="animate-spin" /> Loading reports...
+            </div>
+          ) : reports.length === 0 ? (
+            <div className="py-8 text-center text-gray-400 text-sm">
+              <FileText size={32} className="mx-auto mb-2 text-gray-200" />
+              No reports yet. Click "AI Research" on the opportunity card to generate one.
+            </div>
+          ) : (
+            <div className="space-y-3 mt-2">
+              {reports.map((r: any) => {
+                const recColor = RECOMMENDATION_COLORS[r.recommendedAction] || "#6b7280";
+                return (
+                  <div key={r.id} className="border rounded-xl p-4 bg-gray-50" style={{ borderColor: "#e5e7eb" }}>
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <h4 className="text-sm font-semibold text-gray-800 mb-1">{r.title}</h4>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: `${recColor}15`, color: recColor }}>
+                            {r.recommendedAction}
+                          </span>
+                          <span className="text-xs text-gray-400">Confidence: {r.confidenceScore}/10</span>
+                          <span className="text-xs text-gray-400">{new Date(r.generatedAt).toLocaleDateString("en-GB")}</span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => deleteReport.mutate({ id: r.id })}
+                        className="text-gray-300 hover:text-red-400 transition-colors ml-2 p-1"
+                      >
+                        <XCircle size={14} />
+                      </button>
+                    </div>
+                    {r.keyInsights && (
+                      <p className="text-xs text-gray-500 line-clamp-2 mb-2">{r.keyInsights.replace(/^#+\s*/gm, "").slice(0, 200)}...</p>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1 text-xs h-7"
+                      onClick={() => setSelectedReport(r)}
+                    >
+                      <ExternalLink size={11} /> Read Full Report
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {selectedReport && (
+        <ReportViewerDialog
+          report={selectedReport}
+          open={!!selectedReport}
+          onClose={() => setSelectedReport(null)}
+        />
+      )}
+    </>
+  );
+}
+
+// ── Main Page ─────────────────────────────────────────────────────────────────
 export default function OpportunityPipeline() {
   const utils = trpc.useUtils();
   const { data: opps = [], isLoading } = trpc.opportunities.list.useQuery();
 
   const [showAdd, setShowAdd] = useState(false);
   const [showScore, setShowScore] = useState<any | null>(null);
+  const [showReports, setShowReports] = useState<any | null>(null);
+  const [generatingReportFor, setGeneratingReportFor] = useState<number | null>(null);
   const [form, setForm] = useState({ title: "", problemStatement: "", sector: "", submittedBy: "", notes: "" });
   const [scoreForm, setScoreForm] = useState({ marketSizeScore: 5, strategicFitScore: 5, esgAlignmentScore: 5, founderAvailScore: 5 });
 
   const addMutation = trpc.opportunities.add.useMutation({
-    onSuccess: () => { utils.opportunities.list.invalidate(); setShowAdd(false); setForm({ title: "", problemStatement: "", sector: "", submittedBy: "", notes: "" }); toast.success("Opportunity added"); },
+    onSuccess: () => {
+      utils.opportunities.list.invalidate();
+      setShowAdd(false);
+      setForm({ title: "", problemStatement: "", sector: "", submittedBy: "", notes: "" });
+      toast.success("Opportunity added");
+    },
     onError: () => toast.error("Failed to add opportunity"),
   });
 
@@ -163,6 +355,24 @@ export default function OpportunityPipeline() {
     onSuccess: () => { utils.opportunities.list.invalidate(); setShowScore(null); toast.success("Scores saved"); },
     onError: () => toast.error("Failed to save scores"),
   });
+
+  const generateReportMutation = trpc.opportunityReports.generate.useMutation({
+    onSuccess: (res) => {
+      setGeneratingReportFor(null);
+      toast.success("AI research report generated successfully");
+      utils.opportunityReports.listForOpportunity.invalidate();
+    },
+    onError: () => {
+      setGeneratingReportFor(null);
+      toast.error("Report generation failed — please try again");
+    },
+  });
+
+  // Fetch report counts for all opportunities
+  const { data: allReportCounts = {} } = trpc.opportunityReports.listForOpportunity.useQuery(
+    { opportunityId: -1 },
+    { enabled: false }
+  );
 
   const handleAdvance = (opp: any) => {
     const nextStatus: Record<string, string> = {
@@ -185,6 +395,20 @@ export default function OpportunityPipeline() {
       strategicFitScore: opp.strategicFitScore ?? 5,
       esgAlignmentScore: opp.esgAlignmentScore ?? 5,
       founderAvailScore: opp.founderAvailScore ?? 5,
+    });
+  };
+
+  const handleGenerateReport = (opp: any) => {
+    if (!opp.problemStatement || opp.problemStatement.trim().length < 20) {
+      toast.error("Please add a problem statement of at least 20 characters to generate a report");
+      return;
+    }
+    setGeneratingReportFor(opp.id);
+    generateReportMutation.mutate({
+      opportunityId: opp.id,
+      title: opp.title,
+      problemStatement: opp.problemStatement,
+      sector: opp.sector || undefined,
     });
   };
 
@@ -214,6 +438,7 @@ export default function OpportunityPipeline() {
             <h1 className="vos-page-title mb-1">Venture Opportunity Pipeline</h1>
             <p className="text-sm text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>
               Identify, score, and advance new venture opportunities through the EcoRace Studio intake process.
+              Add a problem statement to unlock AI-powered commercial research reports.
             </p>
           </div>
           <Button
@@ -268,12 +493,15 @@ export default function OpportunityPipeline() {
                     </div>
                   ) : (
                     items.map(opp => (
-                      <OpportunityCard
+                      <OppCardWithReports
                         key={opp.id}
                         opp={opp}
                         onAdvance={() => handleAdvance(opp)}
                         onReject={() => handleReject(opp)}
                         onScore={() => openScore(opp)}
+                        onGenerateReport={() => handleGenerateReport(opp)}
+                        onViewReports={() => setShowReports(opp)}
+                        isGenerating={generatingReportFor === opp.id}
                       />
                     ))
                   )}
@@ -289,12 +517,15 @@ export default function OpportunityPipeline() {
             <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-3">Rejected</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {rejected.map(opp => (
-                <OpportunityCard
+                <OppCardWithReports
                   key={opp.id}
                   opp={opp}
                   onAdvance={() => {}}
                   onReject={() => {}}
                   onScore={() => openScore(opp)}
+                  onGenerateReport={() => handleGenerateReport(opp)}
+                  onViewReports={() => setShowReports(opp)}
+                  isGenerating={generatingReportFor === opp.id}
                 />
               ))}
             </div>
@@ -321,13 +552,27 @@ export default function OpportunityPipeline() {
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-500 mb-1 block">Problem Statement</label>
+              <label className="text-xs font-semibold text-gray-500 mb-1 block flex items-center gap-1.5">
+                Problem Statement
+                <span className="text-xs font-normal text-gray-400 flex items-center gap-1">
+                  <Sparkles size={10} style={{ color: "#7c3aed" }} />
+                  Required for AI research report
+                </span>
+              </label>
               <Textarea
-                placeholder="What problem does this opportunity address?"
+                placeholder="Describe the problem this opportunity addresses in detail. Include the target market, scale of the problem, current solutions and their shortcomings, and why now is the right time. The more detail you provide, the richer the AI research report will be."
                 value={form.problemStatement}
                 onChange={e => setForm(f => ({ ...f, problemStatement: e.target.value }))}
-                rows={3}
+                rows={5}
               />
+              {form.problemStatement.length > 0 && form.problemStatement.length < 20 && (
+                <p className="text-xs text-amber-500 mt-1">Add at least 20 characters to enable AI research</p>
+              )}
+              {form.problemStatement.length >= 20 && (
+                <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                  <CheckCircle2 size={10} /> AI research report will be available after saving
+                </p>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -427,6 +672,51 @@ export default function OpportunityPipeline() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Reports Panel Dialog */}
+      {showReports && (
+        <ReportsPanelDialog
+          opp={showReports}
+          open={!!showReports}
+          onClose={() => setShowReports(null)}
+        />
+      )}
     </div>
+  );
+}
+
+// ── Wrapper to fetch report count per opportunity ─────────────────────────────
+function OppCardWithReports({
+  opp,
+  onAdvance,
+  onReject,
+  onScore,
+  onGenerateReport,
+  onViewReports,
+  isGenerating,
+}: {
+  opp: any;
+  onAdvance: () => void;
+  onReject: () => void;
+  onScore: () => void;
+  onGenerateReport: () => void;
+  onViewReports: () => void;
+  isGenerating: boolean;
+}) {
+  const { data: reports = [] } = trpc.opportunityReports.listForOpportunity.useQuery(
+    { opportunityId: opp.id },
+    { staleTime: 30_000 }
+  );
+  return (
+    <OpportunityCard
+      opp={opp}
+      onAdvance={onAdvance}
+      onReject={onReject}
+      onScore={onScore}
+      onGenerateReport={onGenerateReport}
+      onViewReports={onViewReports}
+      reportCount={reports.length}
+      isGenerating={isGenerating}
+    />
   );
 }
