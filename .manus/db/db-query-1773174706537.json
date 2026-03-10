@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `fellow_researchers` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`name` varchar(128) NOT NULL,\n\t`title` varchar(255),\n\t`institution` varchar(255),\n\t`department` varchar(255),\n\t`specialisation` text,\n\t`email` varchar(320),\n\t`linkedIn` varchar(255),\n\t`orcid` varchar(64),\n\t`collaborationType` enum('Academic Advisor','Co-Researcher','Industry Fellow','Visiting Scholar','PhD Supervisor','Peer Reviewer','Consultant') DEFAULT 'Academic Advisor',\n\t`status` enum('Active','Prospective','Past') DEFAULT 'Active',\n\t`ventureIds` text,\n\t`bio` text,\n\t`publications` int DEFAULT 0,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `fellow_researchers_id` PRIMARY KEY(`id`)\n)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3HthdpivREJ9B8M.root --database ggmroLG8ezURUZiLzGveTG --execute CREATE TABLE IF NOT EXISTS `fellow_researchers` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`name` varchar(128) NOT NULL,\n\t`title` varchar(255),\n\t`institution` varchar(255),\n\t`department` varchar(255),\n\t`specialisation` text,\n\t`email` varchar(320),\n\t`linkedIn` varchar(255),\n\t`orcid` varchar(64),\n\t`collaborationType` enum('Academic Advisor','Co-Researcher','Industry Fellow','Visiting Scholar','PhD Supervisor','Peer Reviewer','Consultant') DEFAULT 'Academic Advisor',\n\t`status` enum('Active','Prospective','Past') DEFAULT 'Active',\n\t`ventureIds` text,\n\t`bio` text,\n\t`publications` int DEFAULT 0,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `fellow_researchers_id` PRIMARY KEY(`id`)\n)",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 63
+}

@@ -1,0 +1,49 @@
+{
+  "query": "SHOW TABLES LIKE 'research_papers';\nSHOW TABLES LIKE 'fellow_researchers';\nSHOW TABLES LIKE 'university_partnerships';\nSHOW TABLES LIKE 'evidence_claims';\nSHOW TABLES LIKE 'competitors';\nSHOW TABLES LIKE 'market_analysis';\nSHOW TABLES LIKE 'opportunity_reports'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3HthdpivREJ9B8M.root --database ggmroLG8ezURUZiLzGveTG --execute SHOW TABLES LIKE 'research_papers';\nSHOW TABLES LIKE 'fellow_researchers';\nSHOW TABLES LIKE 'university_partnerships';\nSHOW TABLES LIKE 'evidence_claims';\nSHOW TABLES LIKE 'competitors';\nSHOW TABLES LIKE 'market_analysis';\nSHOW TABLES LIKE 'opportunity_reports'",
+  "rows": [
+    {
+      "Tables_in_ggmroLG8ezURUZiLzGveTG (research_papers)": "research_papers"
+    },
+    {
+      "Tables_in_ggmroLG8ezURUZiLzGveTG (research_papers)": "Tables_in_ggmroLG8ezURUZiLzGveTG (fellow_researchers)"
+    },
+    {
+      "Tables_in_ggmroLG8ezURUZiLzGveTG (research_papers)": "fellow_researchers"
+    },
+    {
+      "Tables_in_ggmroLG8ezURUZiLzGveTG (research_papers)": "Tables_in_ggmroLG8ezURUZiLzGveTG (university_partnerships)"
+    },
+    {
+      "Tables_in_ggmroLG8ezURUZiLzGveTG (research_papers)": "university_partnerships"
+    },
+    {
+      "Tables_in_ggmroLG8ezURUZiLzGveTG (research_papers)": "Tables_in_ggmroLG8ezURUZiLzGveTG (evidence_claims)"
+    },
+    {
+      "Tables_in_ggmroLG8ezURUZiLzGveTG (research_papers)": "evidence_claims"
+    },
+    {
+      "Tables_in_ggmroLG8ezURUZiLzGveTG (research_papers)": "Tables_in_ggmroLG8ezURUZiLzGveTG (competitors)"
+    },
+    {
+      "Tables_in_ggmroLG8ezURUZiLzGveTG (research_papers)": "competitors"
+    },
+    {
+      "Tables_in_ggmroLG8ezURUZiLzGveTG (research_papers)": "Tables_in_ggmroLG8ezURUZiLzGveTG (market_analysis)"
+    },
+    {
+      "Tables_in_ggmroLG8ezURUZiLzGveTG (research_papers)": "market_analysis"
+    },
+    {
+      "Tables_in_ggmroLG8ezURUZiLzGveTG (research_papers)": "Tables_in_ggmroLG8ezURUZiLzGveTG (opportunity_reports)"
+    },
+    {
+      "Tables_in_ggmroLG8ezURUZiLzGveTG (research_papers)": "opportunity_reports"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_ggmroLG8ezURUZiLzGveTG (research_papers)\nresearch_papers\nTables_in_ggmroLG8ezURUZiLzGveTG (fellow_researchers)\nfellow_researchers\nTables_in_ggmroLG8ezURUZiLzGveTG (university_partnerships)\nuniversity_partnerships\nTables_in_ggmroLG8ezURUZiLzGveTG (evidence_claims)\nevidence_claims\nTables_in_ggmroLG8ezURUZiLzGveTG (competitors)\ncompetitors\nTables_in_ggmroLG8ezURUZiLzGveTG (market_analysis)\nmarket_analysis\nTables_in_ggmroLG8ezURUZiLzGveTG (opportunity_reports)\nopportunity_reports\n",
+  "stderr": "",
+  "execution_time_ms": 91
+}
