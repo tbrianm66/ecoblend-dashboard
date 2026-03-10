@@ -220,11 +220,33 @@ export default function HubSpokeDiagram({ onDomainClick, onVentureClick, activeD
               />
               {/* Dual ring gauges */}
               <DualRingGauge cx={pos.x} cy={pos.y} vrl={venture.vrl} trl={venture.trl} color={venture.color} />
-              {/* Venture name */}
-              <text x={pos.x} y={pos.y + 3} textAnchor="middle" fontSize="10" fontWeight="700"
-                fill={venture.color} style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                {venture.name}
-              </text>
+              {/* Brand logo or venture name */}
+              {venture.logo ? (
+                <>
+                  {/* Logo background circle */}
+                  <circle
+                    cx={pos.x} cy={pos.y} r={13}
+                    fill={venture.logoBg || "#f9fafb"}
+                  />
+                  <image
+                    href={venture.logo}
+                    x={pos.x - 11} y={pos.y - 11}
+                    width={22} height={22}
+                    preserveAspectRatio="xMidYMid meet"
+                    clipPath={`url(#clip-${venture.id})`}
+                  />
+                  <defs>
+                    <clipPath id={`clip-${venture.id}`}>
+                      <circle cx={pos.x} cy={pos.y} r={13} />
+                    </clipPath>
+                  </defs>
+                </>
+              ) : (
+                <text x={pos.x} y={pos.y + 3} textAnchor="middle" fontSize="10" fontWeight="700"
+                  fill={venture.color} style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                  {venture.name}
+                </text>
+              )}
               {/* Channel badge */}
               <text x={pos.x} y={pos.y + 52} textAnchor="middle" fontSize="7.5" fontWeight="500"
                 fill="#6b7280" style={{ fontFamily: "'DM Sans', sans-serif" }}>

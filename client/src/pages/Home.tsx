@@ -141,13 +141,16 @@ function VentureCard({
             {/* Brand logo */}
             {venture.logo && (
               <div
-                className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border"
-                style={{ borderColor: `${venture.color}30`, background: "#f9fafb" }}
+                className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border shadow-sm"
+                style={{
+                  borderColor: `${venture.color}40`,
+                  background: venture.logoBg || "#f9fafb",
+                }}
               >
                 <img
                   src={venture.logo}
                   alt={`${venture.name} logo`}
-                  className="w-full h-full object-contain p-1"
+                  className="w-full h-full object-contain p-1.5"
                 />
               </div>
             )}

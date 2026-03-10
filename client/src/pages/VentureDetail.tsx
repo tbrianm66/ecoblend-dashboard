@@ -44,10 +44,13 @@ export default function VentureDetail() {
           <div className="flex items-start gap-4">
             {venture.logo && (
               <div
-                className="w-14 h-14 rounded-xl overflow-hidden shrink-0 border shadow-sm"
-                style={{ borderColor: `${venture.color}30`, background: "#f9fafb" }}
+                className="w-16 h-16 rounded-2xl overflow-hidden shrink-0 border-2 shadow-md"
+                style={{
+                  borderColor: `${venture.color}50`,
+                  background: venture.logoBg || "#f9fafb",
+                }}
               >
-                <img src={venture.logo} alt={`${venture.name} logo`} className="w-full h-full object-contain p-1.5" />
+                <img src={venture.logo} alt={`${venture.name} logo`} className="w-full h-full object-contain p-2" />
               </div>
             )}
           <div>

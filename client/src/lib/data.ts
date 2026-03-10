@@ -45,6 +45,7 @@ export interface Venture {
   mmc: string;
   isInternalLab?: boolean; // true for EcoBlend R&D — not a portfolio brand
   logo?: string; // CDN URL for brand logo
+  logoBg?: string; // CSS background colour for logo container (for dark-bg logos)
 }
 
 export const VRL_STAGES = [
@@ -98,7 +99,8 @@ export const ventures: Venture[] = [
     charityFocus: "Vulnerable children & adults through technology",
     founder: "Internal VBS Team",
     color: "#51AF37",
-    logo: "https://d2xsxph8kpxj0f.cloudfront.net/310419663031397390/ggmroLG8ezURUZiLzGveTG/ecoblend-logo_b745e44b.png",
+    logo: "https://d2xsxph8kpxj0f.cloudfront.net/310419663031397390/ggmroLG8ezURUZiLzGveTG/ecoblend-logo-transparent_e294197c.png",
+    logoBg: "#f0fdf4",
     investmentReady: false,
     isInternalLab: true,
     description: "The internal R&D laboratory and IP engine of EcoRace Studio. Develops core material formulations, composite structures, and bio-based systems licensed to all portfolio brands. Manages TRL progression for all portfolio technologies. Not a commercial brand — operates as the innovation backbone of the studio.",
@@ -133,7 +135,8 @@ export const ventures: Venture[] = [
     charityFocus: "Sustainable materials access for social enterprises",
     founder: "TBC — Founder Recruitment Open",
     color: "#51AF37",
-    logo: "https://d2xsxph8kpxj0f.cloudfront.net/310419663031397390/ggmroLG8ezURUZiLzGveTG/ecoblend-logo_b745e44b.png",
+    logo: "https://d2xsxph8kpxj0f.cloudfront.net/310419663031397390/ggmroLG8ezURUZiLzGveTG/ecoblend-logo-transparent_e294197c.png",
+    logoBg: "#f0fdf4",
     investmentReady: false,
     description: "EcoBlend is the materials formulation and distribution brand of EcoRace Studio. It takes IP developed in the EcoBlend R&D lab and brings it to market as a Tier 1 ingredient brand — supplying bio-based, recycled, and high-performance material formulations to OEMs, manufacturers, and downstream portfolio brands. The 'blending' concept reflects the fusion of key performance matrices — mechanical, thermal, environmental, and social — into a single material solution.",
     bmc: "B2B material supply agreements; formulation licensing; technical consultancy for OEMs",
@@ -167,7 +170,8 @@ export const ventures: Venture[] = [
     charityFocus: "Sustainable transport access for underserved communities",
     founder: "TBC — Founder Recruitment Open",
     color: "#3A97D3",
-    logo: "https://d2xsxph8kpxj0f.cloudfront.net/310419663031397390/ggmroLG8ezURUZiLzGveTG/bebus-logo_ff4b4f39.png",
+    logo: "https://d2xsxph8kpxj0f.cloudfront.net/310419663031397390/ggmroLG8ezURUZiLzGveTG/bebus-logo-color_69330e6f.png",
+    logoBg: "#f8fafc",
     investmentReady: false,
     description: "A Tier 1 ingredient brand supplying eco-transport OEMs with advanced material formulations, lightweight structures, and sustainable systems sourced from EcoBlend. Targets bus, coach, and rail manufacturers seeking to reduce Scope 3 emissions and Total Cost of Ownership through next-generation eco-composite materials.",
     bmc: "B2B supply agreements with OEMs; material formulation licences; technical consultancy",
@@ -202,7 +206,8 @@ export const ventures: Venture[] = [
     charityFocus: "Arts and cultural inclusion for disadvantaged youth",
     founder: "TBC — Founder Recruitment Open",
     color: "#F49C13",
-    logo: "https://d2xsxph8kpxj0f.cloudfront.net/310419663031397390/ggmroLG8ezURUZiLzGveTG/tone-logo_7ea322e4.png",
+    logo: "https://d2xsxph8kpxj0f.cloudfront.net/310419663031397390/ggmroLG8ezURUZiLzGveTG/tone-logo-white_776e4b22.png",
+    logoBg: "#1a1a1a",
     investmentReady: false,
     description: "TONE is an eco-creative industry brand delivering sustainable products and solutions to the creative sector — spanning music, film, fashion, and design. It serves environmentally conscious creatives who refuse to compromise on performance or aesthetic. TONE leverages EcoBlend material formulations to produce sustainable creative tools, equipment, and accessories, establishing a new standard for eco-performance in the creative industries.",
     bmc: "D2C product sales; creative subscription model; eco-certification licensing to creative studios",
@@ -236,7 +241,8 @@ export const ventures: Venture[] = [
     charityFocus: "Sport participation and youth wellbeing",
     founder: "TBC — Founder Recruitment Open",
     color: "#ef4444",
-    logo: "https://d2xsxph8kpxj0f.cloudfront.net/310419663031397390/ggmroLG8ezURUZiLzGveTG/real-logo_dc2cdea7.png",
+    logo: "https://d2xsxph8kpxj0f.cloudfront.net/310419663031397390/ggmroLG8ezURUZiLzGveTG/real-logo_08dd9e45.png",
+    logoBg: "#111111",
     investmentReady: false,
     description: "REAL is a sports protection brand that applies Formula 1 materials science and engineering principles to protect the everyday athlete. Drawing on the same advanced composite and energy-absorption technologies used in F1 safety systems, REAL delivers next-generation protective equipment — helmets, body armour, and impact gear — for cyclists, skaters, climbers, and team sports players. Sustainable by design, high-performance by science.",
     bmc: "D2C product sales; performance certification; athlete ambassador programme; B2B supply to sports federations",
@@ -272,7 +278,8 @@ export const ventures: Venture[] = [
     charityFocus: "Ocean health, coastal community access to water sports",
     founder: "TBC — Founder Recruitment Open",
     color: "#0ea5e9",
-    logo: "https://d2xsxph8kpxj0f.cloudfront.net/310419663031397390/ggmroLG8ezURUZiLzGveTG/pipe-logo_f8bf29f9.png",
+    logo: "https://d2xsxph8kpxj0f.cloudfront.net/310419663031397390/ggmroLG8ezURUZiLzGveTG/pipe-logo-new_2ab35b8c.png",
+    logoBg: "#0f172a",
     investmentReady: false,
     description: "PIPE is an eco-water sport and performance brand delivering sustainable, high-performance equipment and apparel for surfers, paddlers, swimmers, and open-water athletes. Named after the legendary Banzai Pipeline surf break, PIPE embodies the raw power and flow of water — channelled through EcoBlend's advanced material formulations into boards, wetsuits, paddles, and performance gear that are as kind to the ocean as they are to the athlete. PIPE's mission is to make water sports accessible, sustainable, and performance-driven for the next generation.",
     bmc: "D2C product sales; performance gear subscription; eco-certification; B2B supply to surf schools and water sport centres",

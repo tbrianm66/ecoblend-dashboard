@@ -82,3 +82,9 @@
 - [x] Full CRUD with add/delete dialogs for all four entities
 - [x] Evidence map overview showing claim coverage per venture
 - [x] Vitest coverage for all 8 academic procedures (94 tests total passing)
+
+## Sprint 8 — Brand Logo Integration (Mar 2026)
+- [x] Upload BEBUS, TONE, EcoBlend, REAL, PIPE logos to CDN (new high-res versions)
+- [x] Integrate brand logos into Portfolio Overview venture cards (with logoBg for dark-bg logos)
+- [x] Integrate brand logos into hub-spoke diagram nodes (SVG image element with clip-path)
+- [x] Integrate brand logos into Venture Detail page header (16×16 rounded-2xl container)
