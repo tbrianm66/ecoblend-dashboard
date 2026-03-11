@@ -23,6 +23,8 @@ import {
   InsertMitigationAction,
   InsertAcademicPaper,
   InsertTaskPaperLink,
+  InsertVentureRisk,
+  ventureRisks,
   engineeringRisks,
   mitigationActions,
   marketAnalysis,
@@ -716,4 +718,121 @@ export async function getValidatedTaskIds(ventureId: string): Promise<number[]> 
     links.filter(l => qualifyingPaperIds.has(l.paperId)).map(l => l.taskId)
   ));
   return validatedTaskIds;
+}
+
+// ── Venture Risk helpers ──────────────────────────────────────────────────────
+
+/** Compute risk level from score */
+export function getRiskLevel(score: number): "Low" | "Medium" | "High" | "Critical" {
+  if (score <= 5) return "Low";
+  if (score <= 10) return "Medium";
+  if (score <= 15) return "High";
+  return "Critical";
+}
+
+/** Risk penalty for Adjusted VRI calculation */
+export function getRiskPenalty(level: "Low" | "Medium" | "High" | "Critical"): number {
+  const penalties = { Low: 0, Medium: -5, High: -10, Critical: -20 };
+  return penalties[level];
+}
+
+export async function listVentureRisks(ventureId: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(ventureRisks)
+    .where(eq(ventureRisks.ventureId, ventureId))
+    .orderBy(desc(ventureRisks.riskScore));
+}
+
+export async function addVentureRisk(data: InsertVentureRisk) {
+  const db = await getDb();
+  if (!db) return null;
+  const [result] = await db.insert(ventureRisks).values(data);
+  return result;
+}
+
+export async function updateVentureRisk(id: number, data: Partial<InsertVentureRisk>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(ventureRisks).set(data).where(eq(ventureRisks.id, id));
+}
+
+export async function deleteVentureRisk(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(ventureRisks).where(eq(ventureRisks.id, id));
+}
+
+export async function getVentureRiskById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const [row] = await db.select().from(ventureRisks).where(eq(ventureRisks.id, id));
+  return row ?? null;
+}
+
+/** Returns all open/in-progress High/Critical risks for a venture (VRL blockers) */
+export async function getVrlBlockers(ventureId: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(ventureRisks)
+    .where(
+      and(
+        eq(ventureRisks.ventureId, ventureId),
+        inArray(ventureRisks.status, ["Open", "In Progress"]),
+        inArray(ventureRisks.riskLevel, ["High", "Critical"])
+      )
+    )
+    .orderBy(desc(ventureRisks.riskScore));
+}
+
+/** Compute adjusted VRI for a venture based on its open risks */
+export async function computeAdjustedVri(
+  ventureId: string,
+  baseVrl: number,
+  baseVrlPercent: number
+): Promise<{ adjustedVrl: number; adjustedPercent: number; totalPenalty: number; riskCount: number }> {
+  const db = await getDb();
+  if (!db) return { adjustedVrl: baseVrl, adjustedPercent: baseVrlPercent, totalPenalty: 0, riskCount: 0 };
+
+  const openRisks = await db
+    .select({ riskLevel: ventureRisks.riskLevel })
+    .from(ventureRisks)
+    .where(
+      and(
+        eq(ventureRisks.ventureId, ventureId),
+        inArray(ventureRisks.status, ["Open", "In Progress"])
+      )
+    );
+
+  const totalPenalty = openRisks.reduce(
+    (sum, r) => sum + getRiskPenalty(r.riskLevel as "Low" | "Medium" | "High" | "Critical"),
+    0
+  );
+
+  const adjustedPercent = Math.max(0, Math.min(100, baseVrlPercent + totalPenalty));
+
+  return {
+    adjustedVrl: baseVrl,
+    adjustedPercent,
+    totalPenalty,
+    riskCount: openRisks.length,
+  };
+}
+
+/** Portfolio-wide risk summary */
+export async function getPortfolioRiskSummary() {
+  const db = await getDb();
+  if (!db) return { total: 0, byCategory: {}, byLevel: { Low: 0, Medium: 0, High: 0, Critical: 0 } };
+  const allRisks = await db.select().from(ventureRisks);
+  const byCategory: Record<string, number> = {};
+  const byLevel: Record<string, number> = { Low: 0, Medium: 0, High: 0, Critical: 0 };
+  for (const r of allRisks) {
+    byCategory[r.riskCategory] = (byCategory[r.riskCategory] ?? 0) + 1;
+    byLevel[r.riskLevel] = (byLevel[r.riskLevel] ?? 0) + 1;
+  }
+  return { total: allRisks.length, byCategory, byLevel };
 }

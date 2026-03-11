@@ -92,6 +92,14 @@ import {
   getPapersForTask,
   unlinkPaperFromTask,
   getValidatedTaskIds,
+  listVentureRisks,
+  addVentureRisk,
+  updateVentureRisk,
+  deleteVentureRisk,
+  getVrlBlockers,
+  computeAdjustedVri,
+  getPortfolioRiskSummary,
+  getRiskLevel,
 } from "./db";
 import { searchSemanticScholar, extractKeywords } from "./semanticScholar";
 
@@ -1343,6 +1351,111 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         const taskIds = await getValidatedTaskIds(input.ventureId);
         return { validatedTaskIds: taskIds };
       }),
+  }),
+
+  // ── Venture Risk Register ────────────────────────────────────────────────────
+  ventureRisk: router({
+    // List all risks for a venture, sorted by risk score descending
+    list: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => listVentureRisks(input.ventureId)),
+
+    // Add a new risk — auto-calculates riskScore and riskLevel
+    add: publicProcedure
+      .input(z.object({
+        ventureId: z.string(),
+        riskCategory: z.enum(["Technical", "Market", "Commercial", "Financial", "Operational", "Strategic"]),
+        riskTitle: z.string(),
+        riskDescription: z.string().optional(),
+        likelihood: z.number().min(1).max(5),
+        impact: z.number().min(1).max(5),
+        vrlStageImpacted: z.number().min(1).max(6).optional(),
+        mitigationPlan: z.string().optional(),
+        riskOwner: z.string().optional(),
+        status: z.enum(["Open", "In Progress", "Mitigated", "Accepted", "Closed"]).optional(),
+        reviewDate: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const riskScore = input.likelihood * input.impact;
+        const riskLevel = getRiskLevel(riskScore);
+        await addVentureRisk({
+          ...input,
+          riskScore,
+          riskLevel,
+          reviewDate: input.reviewDate ? new Date(input.reviewDate) : null,
+        } as any);
+        return { success: true };
+      }),
+
+    // Update an existing risk — recalculates riskScore and riskLevel
+    update: publicProcedure
+      .input(z.object({
+        id: z.number(),
+        riskCategory: z.enum(["Technical", "Market", "Commercial", "Financial", "Operational", "Strategic"]).optional(),
+        riskTitle: z.string().optional(),
+        riskDescription: z.string().optional(),
+        likelihood: z.number().min(1).max(5).optional(),
+        impact: z.number().min(1).max(5).optional(),
+        vrlStageImpacted: z.number().min(1).max(6).nullable().optional(),
+        mitigationPlan: z.string().optional(),
+        riskOwner: z.string().optional(),
+        status: z.enum(["Open", "In Progress", "Mitigated", "Accepted", "Closed"]).optional(),
+        reviewDate: z.string().nullable().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, likelihood, impact, reviewDate, ...rest } = input;
+        const updates: Record<string, any> = { ...rest };
+        if (likelihood !== undefined) updates.likelihood = likelihood;
+        if (impact !== undefined) updates.impact = impact;
+        if (likelihood !== undefined || impact !== undefined) {
+          // Need current values to recalculate if only one is provided
+          // For simplicity, require both when recalculating
+          if (likelihood !== undefined && impact !== undefined) {
+            updates.riskScore = likelihood * impact;
+            updates.riskLevel = getRiskLevel(likelihood * impact);
+          }
+        }
+        if (reviewDate !== undefined) {
+          updates.reviewDate = reviewDate ? new Date(reviewDate) : null;
+        }
+        await updateVentureRisk(id, updates);
+        return { success: true };
+      }),
+
+    // Delete a risk
+    delete: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await deleteVentureRisk(input.id);
+        return { success: true };
+      }),
+
+    // Get VRL stage blockers (High/Critical open risks) for a venture
+    vrlBlockers: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const blockers = await getVrlBlockers(input.ventureId);
+        return {
+          hasBlockers: blockers.length > 0,
+          blockerCount: blockers.length,
+          blockers,
+        };
+      }),
+
+    // Compute adjusted VRI for a venture
+    adjustedVri: publicProcedure
+      .input(z.object({
+        ventureId: z.string(),
+        baseVrl: z.number(),
+        baseVrlPercent: z.number(),
+      }))
+      .query(async ({ input }) => {
+        return computeAdjustedVri(input.ventureId, input.baseVrl, input.baseVrlPercent);
+      }),
+
+    // Portfolio-wide risk summary
+    portfolioSummary: publicProcedure
+      .query(async () => getPortfolioRiskSummary()),
   }),
 });
 export type AppRouter = typeof appRouter;

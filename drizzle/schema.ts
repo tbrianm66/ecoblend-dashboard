@@ -470,3 +470,28 @@ export const taskPaperLinks = mysqlTable("task_paper_links", {
 });
 export type TaskPaperLink = typeof taskPaperLinks.$inferSelect;
 export type InsertTaskPaperLink = typeof taskPaperLinks.$inferInsert;
+
+// ── Venture Risks (Business & Technical Risk Register) ────────────────────────
+// Tracks 6-category risk register with Likelihood × Impact scoring and VRL linkage
+export const ventureRisks = mysqlTable("venture_risks", {
+  id: int("id").autoincrement().primaryKey(),
+  ventureId: varchar("ventureId", { length: 64 }).notNull(),
+  riskCategory: mysqlEnum("riskCategory", [
+    "Technical", "Market", "Commercial", "Financial", "Operational", "Strategic"
+  ]).notNull(),
+  riskTitle: varchar("riskTitle", { length: 255 }).notNull(),
+  riskDescription: text("riskDescription"),
+  likelihood: int("likelihood").notNull().default(3),   // 1–5
+  impact: int("impact").notNull().default(3),           // 1–5
+  riskScore: int("riskScore").notNull().default(9),     // likelihood × impact (auto-calculated)
+  riskLevel: mysqlEnum("riskLevel", ["Low", "Medium", "High", "Critical"]).notNull().default("Medium"),
+  vrlStageImpacted: int("vrlStageImpacted"),            // 1–6 VRL stage this risk blocks
+  mitigationPlan: text("mitigationPlan"),
+  riskOwner: varchar("riskOwner", { length: 128 }),
+  status: mysqlEnum("status", ["Open", "In Progress", "Mitigated", "Accepted", "Closed"]).default("Open"),
+  reviewDate: timestamp("reviewDate"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type VentureRisk = typeof ventureRisks.$inferSelect;
+export type InsertVentureRisk = typeof ventureRisks.$inferInsert;

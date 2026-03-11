@@ -114,3 +114,14 @@
 - [x] Scientifically Validated badge on TRL 1-2 tasks with citationCount > 10 paper attached
 - [x] Scientific Validation Summary panel in TRL Analytics (per-venture validated task counts)
 - [x] Vitest tests: 16 new tests for keyword extraction, schema validation, and badge logic (137 total passing)
+
+## Sprint 12 — Venture Risk Management Module Upgrade (Mar 2026)
+- [x] Extend DB schema: venture_risks table (6 categories, L×I scoring, VRL stage linkage, mitigation, owner, status, review date) — migration 0007
+- [x] tRPC procedures: CRUD for venture risks, risk score auto-calc (L×I), VRL blocker check, adjusted VRI computation, portfolio summary
+- [x] Rebuilt Risk Management page: 6-category register, L/I/Score columns, conditional colour formatting, edit/delete dialogs
+- [x] Risk Heatmap: 5×5 Likelihood × Impact grid with colour-coded cells and risk counts
+- [x] Risk by Category bar chart: distribution across 6 categories with venture-specific colour coding
+- [x] VRL Stage Blocker panel: Critical open risks blocking VRL stage advancement shown as banner
+- [x] Adjusted VRI: Base VRI minus risk penalty (Low=0%, Med=−5%, High=−10%, Critical=−20%) with formula breakdown
+- [x] FMEA tab: integrated view of FMEA engineering failure modes alongside venture risks
+- [x] 137 tests passing (no regressions)

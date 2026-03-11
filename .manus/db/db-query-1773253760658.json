@@ -1,0 +1,138 @@
+{
+  "query": "SHOW COLUMNS FROM venture_risks;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3HthdpivREJ9B8M.root --database ggmroLG8ezURUZiLzGveTG --execute SHOW COLUMNS FROM venture_risks;",
+  "rows": [
+    {
+      "Field": "id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": "NULL",
+      "Extra": "auto_increment"
+    },
+    {
+      "Field": "ventureId",
+      "Type": "varchar(64)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "riskCategory",
+      "Type": "enum('Technical','Market','Commercial','Financial','Operational','Strategic')",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "riskTitle",
+      "Type": "varchar(255)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "riskDescription",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "likelihood",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "3",
+      "Extra": ""
+    },
+    {
+      "Field": "impact",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "3",
+      "Extra": ""
+    },
+    {
+      "Field": "riskScore",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "9",
+      "Extra": ""
+    },
+    {
+      "Field": "riskLevel",
+      "Type": "enum('Low','Medium','High','Critical')",
+      "Null": "NO",
+      "Key": "",
+      "Default": "Medium",
+      "Extra": ""
+    },
+    {
+      "Field": "vrlStageImpacted",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "mitigationPlan",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "riskOwner",
+      "Type": "varchar(128)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "status",
+      "Type": "enum('Open','In Progress','Mitigated','Accepted','Closed')",
+      "Null": "YES",
+      "Key": "",
+      "Default": "Open",
+      "Extra": ""
+    },
+    {
+      "Field": "reviewDate",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "createdAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": ""
+    },
+    {
+      "Field": "updatedAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nid\tint\tNO\tPRI\tNULL\tauto_increment\nventureId\tvarchar(64)\tNO\t\tNULL\t\nriskCategory\tenum('Technical','Market','Commercial','Financial','Operational','Strategic')\tNO\t\tNULL\t\nriskTitle\tvarchar(255)\tNO\t\tNULL\t\nriskDescription\ttext\tYES\t\tNULL\t\nlikelihood\tint\tNO\t\t3\t\nimpact\tint\tNO\t\t3\t\nriskScore\tint\tNO\t\t9\t\nriskLevel\tenum('Low','Medium','High','Critical')\tNO\t\tMedium\t\nvrlStageImpacted\tint\tYES\t\tNULL\t\nmitigationPlan\ttext\tYES\t\tNULL\t\nriskOwner\tvarchar(128)\tYES\t\tNULL\t\nstatus\tenum('Open','In Progress','Mitigated','Accepted','Closed')\tYES\t\tOpen\t\nreviewDate\ttimestamp\tYES\t\tNULL\t\ncreatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\nupdatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP\n",
+  "stderr": "",
+  "execution_time_ms": 920
+}
