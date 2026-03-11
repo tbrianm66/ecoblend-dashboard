@@ -400,3 +400,43 @@ export const opportunityReports = mysqlTable("opportunity_reports", {
 
 export type OpportunityReport = typeof opportunityReports.$inferSelect;
 export type InsertOpportunityReport = typeof opportunityReports.$inferInsert;
+
+// ── FMEA Engineering Risk Register ────────────────────────────────────────────
+// Failure Mode & Effects Analysis risks linked to a venture and optional TRL stage
+export const engineeringRisks = mysqlTable("engineering_risks", {
+  id: int("id").autoincrement().primaryKey(),
+  ventureId: varchar("ventureId", { length: 64 }).notNull(),
+  relatedTrlStage: int("relatedTrlStage"),                      // Optional: TRL level 1–9
+  componentName: varchar("componentName", { length: 255 }).notNull(),
+  failureMode: text("failureMode").notNull(),
+  failureEffect: text("failureEffect").notNull(),
+  severity: int("severity").notNull().default(5),               // 1–10
+  occurrence: int("occurrence").notNull().default(5),           // 1–10
+  detection: int("detection").notNull().default(5),             // 1–10
+  initialRpn: int("initialRpn").notNull().default(125),         // Auto: S * O * D
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type EngineeringRisk = typeof engineeringRisks.$inferSelect;
+export type InsertEngineeringRisk = typeof engineeringRisks.$inferInsert;
+
+// ── FMEA Mitigation Actions ────────────────────────────────────────────────────
+// Mitigation actions linked to an engineering risk with revised RPN scores
+export const mitigationActions = mysqlTable("mitigation_actions", {
+  id: int("id").autoincrement().primaryKey(),
+  riskId: int("riskId").notNull(),                              // FK to engineering_risks
+  actionDescription: text("actionDescription").notNull(),
+  owner: varchar("owner", { length: 128 }),
+  status: mysqlEnum("status", [
+    "Identified", "In Progress", "Implemented", "Verified"
+  ]).default("Identified").notNull(),
+  revisedSeverity: int("revisedSeverity").default(5),           // 1–10
+  revisedOccurrence: int("revisedOccurrence").default(5),       // 1–10
+  revisedDetection: int("revisedDetection").default(5),         // 1–10
+  revisedRpn: int("revisedRpn").default(125),                   // Auto: rS * rO * rD
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type MitigationAction = typeof mitigationActions.$inferSelect;
+export type InsertMitigationAction = typeof mitigationActions.$inferInsert;

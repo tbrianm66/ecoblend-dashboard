@@ -97,3 +97,11 @@
 - [x] AI Research Report: 10-section commercial report (market size, competitive landscape, ESG, TRL, business case, risks)
 - [x] Report viewer dialog with markdown rendering, recommendation badge, confidence score
 - [x] Vitest tests for market, competitor, and report procedures (106 tests total passing)
+
+## Sprint 10 — FMEA Engineering Risk & Mitigation Module (Mar 2026)
+- [x] Extend DB schema: engineering_risks and mitigation_actions tables (migration applied to live DB)
+- [x] tRPC procedures: CRUD for risks and mitigations, auto-calculated RPN (S×O×D), TRL blocker query
+- [x] FMEA Risk Register page: full data table with S/O/D/RPN columns, conditional colour formatting (Red >100, Yellow 50-100, Green <50)
+- [x] Expandable rows: view/add/update mitigation actions per risk with revised RPN display and status dropdown
+- [x] TRL Blocker integration: per-venture blocker panel in TRL Analytics showing unmitigated critical risks
+- [x] Vitest tests for all FMEA procedures (15 tests, 121 total passing)

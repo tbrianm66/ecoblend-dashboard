@@ -77,6 +77,15 @@ import {
   getReportsForOpportunity,
   insertOpportunityReport,
   deleteOpportunityReport,
+  getEngineeringRisksByVenture,
+  insertEngineeringRisk,
+  updateEngineeringRisk,
+  deleteEngineeringRisk,
+  getVentureTrlBlockers,
+  getMitigationsByRisk,
+  insertMitigationAction,
+  updateMitigationAction,
+  deleteMitigationAction,
 } from "./db";
 
 export const appRouter = router({
@@ -1127,6 +1136,120 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         };
         await insertOpportunityReport(record as any);
         return { success: true, report: record };
+      }),
+  }),
+
+  // ── FMEA Engineering Risk Register ─────────────────────────────────────────
+  fmea: router({
+    // Get all risks for a venture
+    listRisks: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        return getEngineeringRisksByVenture(input.ventureId);
+      }),
+
+    // Get mitigations for a specific risk
+    listMitigations: publicProcedure
+      .input(z.object({ riskId: z.number() }))
+      .query(async ({ input }) => {
+        return getMitigationsByRisk(input.riskId);
+      }),
+
+    // TRL blocker check for a venture
+    trlBlockerCheck: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        return getVentureTrlBlockers(input.ventureId);
+      }),
+
+    // Add a new engineering risk
+    addRisk: publicProcedure
+      .input(z.object({
+        ventureId: z.string(),
+        relatedTrlStage: z.number().min(1).max(9).optional(),
+        componentName: z.string().min(1),
+        failureMode: z.string().min(1),
+        failureEffect: z.string().min(1),
+        severity: z.number().min(1).max(10),
+        occurrence: z.number().min(1).max(10),
+        detection: z.number().min(1).max(10),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const rpn = input.severity * input.occurrence * input.detection;
+        await insertEngineeringRisk({ ...input, initialRpn: rpn });
+        return { success: true };
+      }),
+
+    // Update an engineering risk
+    updateRisk: publicProcedure
+      .input(z.object({
+        id: z.number(),
+        relatedTrlStage: z.number().min(1).max(9).optional().nullable(),
+        componentName: z.string().min(1).optional(),
+        failureMode: z.string().min(1).optional(),
+        failureEffect: z.string().min(1).optional(),
+        severity: z.number().min(1).max(10).optional(),
+        occurrence: z.number().min(1).max(10).optional(),
+        detection: z.number().min(1).max(10).optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await updateEngineeringRisk(id, data as any);
+        return { success: true };
+      }),
+
+    // Delete an engineering risk (cascades to mitigations)
+    deleteRisk: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await deleteEngineeringRisk(input.id);
+        return { success: true };
+      }),
+
+    // Add a mitigation action to a risk
+    addMitigation: publicProcedure
+      .input(z.object({
+        riskId: z.number(),
+        actionDescription: z.string().min(1),
+        owner: z.string().optional(),
+        status: z.enum(["Identified", "In Progress", "Implemented", "Verified"]).optional(),
+        revisedSeverity: z.number().min(1).max(10).optional(),
+        revisedOccurrence: z.number().min(1).max(10).optional(),
+        revisedDetection: z.number().min(1).max(10).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const rS = input.revisedSeverity ?? 5;
+        const rO = input.revisedOccurrence ?? 5;
+        const rD = input.revisedDetection ?? 5;
+        await insertMitigationAction({ ...input, revisedRpn: rS * rO * rD });
+        return { success: true };
+      }),
+
+    // Update a mitigation action
+    updateMitigation: publicProcedure
+      .input(z.object({
+        id: z.number(),
+        actionDescription: z.string().min(1).optional(),
+        owner: z.string().optional(),
+        status: z.enum(["Identified", "In Progress", "Implemented", "Verified"]).optional(),
+        revisedSeverity: z.number().min(1).max(10).optional(),
+        revisedOccurrence: z.number().min(1).max(10).optional(),
+        revisedDetection: z.number().min(1).max(10).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await updateMitigationAction(id, data as any);
+        return { success: true };
+      }),
+
+    // Delete a mitigation action
+    deleteMitigation: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await deleteMitigationAction(input.id);
+        return { success: true };
       }),
   }),
 });

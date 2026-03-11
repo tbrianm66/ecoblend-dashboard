@@ -19,6 +19,10 @@ import {
   InsertMarketAnalysis,
   InsertCompetitor,
   InsertOpportunityReport,
+  InsertEngineeringRisk,
+  InsertMitigationAction,
+  engineeringRisks,
+  mitigationActions,
   marketAnalysis,
   competitors,
   opportunityReports,
@@ -537,4 +541,101 @@ export async function deleteOpportunityReport(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   return db.delete(opportunityReports).where(eq(opportunityReports.id, id));
+}
+
+// ── FMEA Engineering Risks ────────────────────────────────────────────────────
+export async function getEngineeringRisksByVenture(ventureId: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(engineeringRisks)
+    .where(eq(engineeringRisks.ventureId, ventureId))
+    .orderBy(engineeringRisks.initialRpn);
+}
+
+export async function getEngineeringRiskById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(engineeringRisks).where(eq(engineeringRisks.id, id));
+  return rows[0] ?? null;
+}
+
+export async function insertEngineeringRisk(data: InsertEngineeringRisk) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  // Auto-calculate initialRpn
+  const rpn = (data.severity ?? 5) * (data.occurrence ?? 5) * (data.detection ?? 5);
+  return db.insert(engineeringRisks).values({ ...data, initialRpn: rpn });
+}
+
+export async function updateEngineeringRisk(id: number, data: Partial<InsertEngineeringRisk>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  // Recalculate RPN if any score changed
+  const existing = await getEngineeringRiskById(id);
+  const s = data.severity ?? existing?.severity ?? 5;
+  const o = data.occurrence ?? existing?.occurrence ?? 5;
+  const d = data.detection ?? existing?.detection ?? 5;
+  return db.update(engineeringRisks).set({ ...data, initialRpn: s * o * d }).where(eq(engineeringRisks.id, id));
+}
+
+export async function deleteEngineeringRisk(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  // Delete mitigations first
+  await db.delete(mitigationActions).where(eq(mitigationActions.riskId, id));
+  return db.delete(engineeringRisks).where(eq(engineeringRisks.id, id));
+}
+
+// Returns true if venture has any unmitigated high-RPN risk (blocker check)
+export async function getVentureTrlBlockers(ventureId: string) {
+  const db = await getDb();
+  if (!db) return { hasBlocker: false, blockerCount: 0, risks: [] };
+  const allRisks = await db.select().from(engineeringRisks)
+    .where(eq(engineeringRisks.ventureId, ventureId));
+  const highRpnRisks = allRisks.filter(r => r.initialRpn > 100);
+  if (highRpnRisks.length === 0) return { hasBlocker: false, blockerCount: 0, risks: [] };
+  // Check if each high-RPN risk has at least one Implemented or Verified mitigation
+  const blockers = [];
+  for (const risk of highRpnRisks) {
+    const mitigations = await db.select().from(mitigationActions)
+      .where(eq(mitigationActions.riskId, risk.id));
+    const hasMitigation = mitigations.some(m => m.status === "Implemented" || m.status === "Verified");
+    if (!hasMitigation) blockers.push(risk);
+  }
+  return { hasBlocker: blockers.length > 0, blockerCount: blockers.length, risks: blockers };
+}
+
+// ── FMEA Mitigation Actions ───────────────────────────────────────────────────
+export async function getMitigationsByRisk(riskId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(mitigationActions)
+    .where(eq(mitigationActions.riskId, riskId))
+    .orderBy(mitigationActions.createdAt);
+}
+
+export async function insertMitigationAction(data: InsertMitigationAction) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const rS = data.revisedSeverity ?? 5;
+  const rO = data.revisedOccurrence ?? 5;
+  const rD = data.revisedDetection ?? 5;
+  return db.insert(mitigationActions).values({ ...data, revisedRpn: rS * rO * rD });
+}
+
+export async function updateMitigationAction(id: number, data: Partial<InsertMitigationAction>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const rows = await db.select().from(mitigationActions).where(eq(mitigationActions.id, id));
+  const existing = rows[0];
+  const rS = data.revisedSeverity ?? existing?.revisedSeverity ?? 5;
+  const rO = data.revisedOccurrence ?? existing?.revisedOccurrence ?? 5;
+  const rD = data.revisedDetection ?? existing?.revisedDetection ?? 5;
+  return db.update(mitigationActions).set({ ...data, revisedRpn: rS * rO * rD }).where(eq(mitigationActions.id, id));
+}
+
+export async function deleteMitigationAction(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.delete(mitigationActions).where(eq(mitigationActions.id, id));
 }

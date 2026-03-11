@@ -1,0 +1,19 @@
+{
+  "query": "SHOW TABLES LIKE 'engineering_risks';\nSHOW TABLES LIKE 'mitigation_actions'",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3HthdpivREJ9B8M.root --database ggmroLG8ezURUZiLzGveTG --execute SHOW TABLES LIKE 'engineering_risks';\nSHOW TABLES LIKE 'mitigation_actions'",
+  "rows": [
+    {
+      "Tables_in_ggmroLG8ezURUZiLzGveTG (engineering_risks)": "engineering_risks"
+    },
+    {
+      "Tables_in_ggmroLG8ezURUZiLzGveTG (engineering_risks)": "Tables_in_ggmroLG8ezURUZiLzGveTG (mitigation_actions)"
+    },
+    {
+      "Tables_in_ggmroLG8ezURUZiLzGveTG (engineering_risks)": "mitigation_actions"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_ggmroLG8ezURUZiLzGveTG (engineering_risks)\nengineering_risks\nTables_in_ggmroLG8ezURUZiLzGveTG (mitigation_actions)\nmitigation_actions\n",
+  "stderr": "",
+  "execution_time_ms": 446
+}

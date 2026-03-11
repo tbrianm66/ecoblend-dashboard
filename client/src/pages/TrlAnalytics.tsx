@@ -4,7 +4,8 @@
 // ============================================================
 
 import { ventures, TRL_LEVELS } from "@/lib/data";
-import { FlaskConical } from "lucide-react";
+import { trpc } from "@/lib/trpc";
+import { FlaskConical, AlertTriangle, ShieldAlert, ShieldCheck } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LineChart, Line, Legend
 } from "recharts";
@@ -31,6 +32,59 @@ const valleyData = TRL_LEVELS.map(l => ({
   risk: l.id <= 3 ? 30 : l.id <= 7 ? 90 : 20,
 }));
 
+// Per-venture TRL blocker widget
+function TrlBlockerPanel() {
+  const blockerQueries = ventures.map(v => ({
+    id: v.id,
+    name: v.name,
+    color: v.color,
+    query: trpc.fmea.trlBlockerCheck.useQuery({ ventureId: v.id }),
+  }));
+
+  const anyBlocker = blockerQueries.some(q => q.query.data?.hasBlocker);
+
+  if (!anyBlocker) {
+    return (
+      <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl">
+        <ShieldCheck size={20} className="text-green-600 shrink-0" />
+        <div>
+          <p className="text-sm font-bold text-green-700">No TRL Blockers Detected</p>
+          <p className="text-xs text-green-600 mt-0.5">All ventures are clear to advance TRL — no unmitigated critical engineering risks (RPN &gt; 100) found.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {blockerQueries.map(({ id, name, color, query }) => {
+        if (!query.data?.hasBlocker) return null;
+        return (
+          <div key={id} className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl">
+            <AlertTriangle size={18} className="text-red-600 mt-0.5 shrink-0" />
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-red-700">TRL Advancement Blocked</span>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: `${color}20`, color }}>{name}</span>
+              </div>
+              <p className="text-xs text-red-600 mt-0.5">
+                {query.data.blockerCount} unmitigated critical risk{query.data.blockerCount > 1 ? 's' : ''} (RPN &gt; 100) — resolve in Risk Management before advancing.
+              </p>
+              <div className="flex flex-wrap gap-1.5 mt-1.5">
+                {query.data.risks.map(r => (
+                  <span key={r.id} className="text-xs px-2 py-0.5 bg-red-100 text-red-700 rounded-full border border-red-300">
+                    {r.componentName} (RPN {r.initialRpn})
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function TrlAnalytics() {
   return (
     <div className="flex-1 overflow-y-auto bg-gray-50">
@@ -44,6 +98,15 @@ export default function TrlAnalytics() {
       </div>
 
       <div className="p-8 space-y-8">
+        {/* FMEA TRL Blocker Panel */}
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <ShieldAlert size={14} className="text-red-500" />
+            <span className="text-xs font-bold uppercase tracking-widest text-gray-500">FMEA Engineering Risk Blockers</span>
+          </div>
+          <TrlBlockerPanel />
+        </div>
+
         {/* TRL level cards */}
         <div className="grid grid-cols-3 md:grid-cols-9 gap-2">
           {TRL_LEVELS.map(level => {

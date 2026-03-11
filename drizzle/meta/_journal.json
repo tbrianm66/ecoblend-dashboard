@@ -36,6 +36,13 @@
       "when": 1773165971045,
       "tag": "0004_spooky_boomerang",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1773218929751,
+      "tag": "0005_yielding_ultragirl",
+      "breakpoints": true
     }
   ]
 }
