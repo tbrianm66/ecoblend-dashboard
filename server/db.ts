@@ -1,4 +1,4 @@
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, inArray, gt } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser,
@@ -21,6 +21,8 @@ import {
   InsertOpportunityReport,
   InsertEngineeringRisk,
   InsertMitigationAction,
+  InsertAcademicPaper,
+  InsertTaskPaperLink,
   engineeringRisks,
   mitigationActions,
   marketAnalysis,
@@ -41,6 +43,8 @@ import {
   fellowResearchers,
   universityPartnerships,
   evidenceClaims,
+  academicPapers,
+  taskPaperLinks,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -638,4 +642,78 @@ export async function deleteMitigationAction(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   return db.delete(mitigationActions).where(eq(mitigationActions.id, id));
+}
+
+// ── Academic Papers ───────────────────────────────────────────────────────────
+export async function upsertAcademicPaper(data: InsertAcademicPaper) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  // Check if paper already exists by externalId
+  const existing = await db.select().from(academicPapers)
+    .where(eq(academicPapers.externalId, data.externalId)).limit(1);
+  if (existing[0]) return existing[0];
+  await db.insert(academicPapers).values(data);
+  const inserted = await db.select().from(academicPapers)
+    .where(eq(academicPapers.externalId, data.externalId)).limit(1);
+  return inserted[0];
+}
+
+export async function getAcademicPaperById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const rows = await db.select().from(academicPapers).where(eq(academicPapers.id, id)).limit(1);
+  return rows[0] ?? null;
+}
+
+// ── Task Paper Links ──────────────────────────────────────────────────────────
+export async function linkPaperToTask(data: InsertTaskPaperLink) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  // Prevent duplicate links
+  const existing = await db.select().from(taskPaperLinks)
+    .where(and(eq(taskPaperLinks.taskId, data.taskId), eq(taskPaperLinks.paperId, data.paperId))).limit(1);
+  if (existing[0]) return existing[0];
+  await db.insert(taskPaperLinks).values(data);
+  const inserted = await db.select().from(taskPaperLinks)
+    .where(and(eq(taskPaperLinks.taskId, data.taskId), eq(taskPaperLinks.paperId, data.paperId))).limit(1);
+  return inserted[0];
+}
+
+export async function getPapersForTask(taskId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  // Join task_paper_links with academic_papers
+  const links = await db.select().from(taskPaperLinks)
+    .where(eq(taskPaperLinks.taskId, taskId));
+  if (links.length === 0) return [];
+  const paperIds = links.map(l => l.paperId);
+  const papers = await db.select().from(academicPapers)
+    .where(inArray(academicPapers.id, paperIds));
+  return papers.map(paper => {
+    const link = links.find(l => l.paperId === paper.id);
+    return { ...paper, relevanceScore: link?.relevanceScore ?? null, linkId: link?.id };
+  });
+}
+
+export async function unlinkPaperFromTask(linkId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.delete(taskPaperLinks).where(eq(taskPaperLinks.id, linkId));
+}
+
+export async function getValidatedTaskIds(ventureId: string): Promise<number[]> {
+  // Returns task IDs that have at least one paper with citationCount > 10
+  const db = await getDb();
+  if (!db) return [];
+  const links = await db.select().from(taskPaperLinks)
+    .where(eq(taskPaperLinks.ventureId, ventureId));
+  if (links.length === 0) return [];
+  const paperIds = links.map(l => l.paperId);
+  const qualifyingPapers = await db.select().from(academicPapers)
+    .where(and(inArray(academicPapers.id, paperIds), gt(academicPapers.citationCount, 10)));
+  const qualifyingPaperIds = new Set(qualifyingPapers.map(p => p.id));
+  const validatedTaskIds = Array.from(new Set(
+    links.filter(l => qualifyingPaperIds.has(l.paperId)).map(l => l.taskId)
+  ));
+  return validatedTaskIds;
 }

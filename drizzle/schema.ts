@@ -440,3 +440,33 @@ export const mitigationActions = mysqlTable("mitigation_actions", {
 });
 export type MitigationAction = typeof mitigationActions.$inferSelect;
 export type InsertMitigationAction = typeof mitigationActions.$inferInsert;
+
+// ── Academic Papers ────────────────────────────────────────────────────────────
+// Stores peer-reviewed papers retrieved from Semantic Scholar / Crossref
+export const academicPapers = mysqlTable("academic_papers", {
+  id: int("id").autoincrement().primaryKey(),
+  externalId: varchar("externalId", { length: 255 }).notNull().unique(), // DOI or Semantic Scholar paperId
+  title: varchar("title", { length: 512 }).notNull(),
+  authors: text("authors").notNull(),                // JSON array of author name strings
+  abstract: text("abstract"),
+  url: varchar("url", { length: 512 }),
+  citationCount: int("citationCount").default(0).notNull(),
+  publishedYear: int("publishedYear"),
+  source: varchar("source", { length: 64 }).default("semantic_scholar"), // 'semantic_scholar' | 'crossref'
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type AcademicPaper = typeof academicPapers.$inferSelect;
+export type InsertAcademicPaper = typeof academicPapers.$inferInsert;
+
+// ── Task Paper Links (join table) ─────────────────────────────────────────────
+// Links an engineering task (experiment) to an academic paper
+export const taskPaperLinks = mysqlTable("task_paper_links", {
+  id: int("id").autoincrement().primaryKey(),
+  taskId: int("taskId").notNull(),                   // FK to experiments.id
+  paperId: int("paperId").notNull(),                 // FK to academic_papers.id
+  ventureId: varchar("ventureId", { length: 64 }).notNull(),
+  relevanceScore: float("relevanceScore"),           // Optional: returned by search API
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type TaskPaperLink = typeof taskPaperLinks.$inferSelect;
+export type InsertTaskPaperLink = typeof taskPaperLinks.$inferInsert;

@@ -86,7 +86,14 @@ import {
   insertMitigationAction,
   updateMitigationAction,
   deleteMitigationAction,
+  upsertAcademicPaper,
+  getAcademicPaperById,
+  linkPaperToTask,
+  getPapersForTask,
+  unlinkPaperFromTask,
+  getValidatedTaskIds,
 } from "./db";
+import { searchSemanticScholar, extractKeywords } from "./semanticScholar";
 
 export const appRouter = router({
   system: systemRouter,
@@ -1250,6 +1257,91 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       .mutation(async ({ input }) => {
         await deleteMitigationAction(input.id);
         return { success: true };
+      }),
+  }),
+
+  // ── Academic Research Validation ────────────────────────────────────────────
+  // Semantic Scholar integration for linking peer-reviewed papers to engineering tasks
+  academicValidation: router({
+    // Search Semantic Scholar using keywords extracted from a task description
+    searchPapers: publicProcedure
+      .input(z.object({
+        taskId: z.number(),
+        taskTitle: z.string(),
+        taskDescription: z.string().optional(),
+        limit: z.number().min(1).max(10).default(5),
+      }))
+      .query(async ({ input }) => {
+        const text = `${input.taskTitle} ${input.taskDescription ?? ""}`;
+        const keywords = extractKeywords(text);
+        if (!keywords) return { keywords: "", papers: [] };
+        const papers = await searchSemanticScholar(keywords, input.limit);
+        return { keywords, papers };
+      }),
+
+    // Attach a paper to a task (upsert paper, create link)
+    attachPaper: publicProcedure
+      .input(z.object({
+        taskId: z.number(),
+        ventureId: z.string(),
+        externalId: z.string(),
+        title: z.string(),
+        authors: z.array(z.string()),
+        abstract: z.string().optional(),
+        url: z.string().optional(),
+        citationCount: z.number().default(0),
+        publishedYear: z.number().nullable().optional(),
+        relevanceScore: z.number().nullable().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { taskId, ventureId, relevanceScore, ...paperData } = input;
+        // Upsert the paper record
+        const paper = await upsertAcademicPaper({
+          externalId: paperData.externalId,
+          title: paperData.title,
+          authors: JSON.stringify(paperData.authors),
+          abstract: paperData.abstract ?? "",
+          url: paperData.url ?? "",
+          citationCount: paperData.citationCount,
+          publishedYear: paperData.publishedYear ?? null,
+          source: "semantic_scholar",
+        });
+        if (!paper) throw new Error("Failed to save paper");
+        // Create the task-paper link
+        const link = await linkPaperToTask({
+          taskId,
+          paperId: paper.id,
+          ventureId,
+          relevanceScore: relevanceScore ?? null,
+        });
+        return { paper, link, success: true };
+      }),
+
+    // Get all papers linked to a task
+    getTaskPapers: publicProcedure
+      .input(z.object({ taskId: z.number() }))
+      .query(async ({ input }) => {
+        const papers = await getPapersForTask(input.taskId);
+        return papers.map(p => ({
+          ...p,
+          authors: (() => { try { return JSON.parse(p.authors as string); } catch { return []; } })(),
+        }));
+      }),
+
+    // Detach a paper from a task (delete the link, not the paper)
+    detachPaper: publicProcedure
+      .input(z.object({ linkId: z.number() }))
+      .mutation(async ({ input }) => {
+        await unlinkPaperFromTask(input.linkId);
+        return { success: true };
+      }),
+
+    // Get validated task IDs for a venture (tasks with ≥1 paper with citationCount > 10)
+    getValidatedTasks: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const taskIds = await getValidatedTaskIds(input.ventureId);
+        return { validatedTaskIds: taskIds };
       }),
   }),
 });

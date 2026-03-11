@@ -1,5 +1,6 @@
 // ============================================================
 // EXPERIMENT LOG — TRL Evidence Tracking & Stage Gate Enforcement
+// With Scientific Validation via Semantic Scholar
 // ============================================================
 
 import { useState } from "react";
@@ -9,8 +10,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, FlaskConical, CheckCircle2, XCircle, HelpCircle, Clock, ChevronDown, ChevronUp, Lock, Unlock } from "lucide-react";
+import {
+  Plus, FlaskConical, CheckCircle2, XCircle, HelpCircle, Clock,
+  ChevronDown, ChevronUp, Lock, Unlock, BookOpen, Search, ExternalLink,
+  Paperclip, Trash2, GraduationCap, Loader2,
+} from "lucide-react";
 
 const VENTURES = [
   { id: "ecoblend-rd", name: "EcoBlend R&D", color: "#51AF37" },
@@ -34,23 +40,250 @@ const TRL_LABELS: Record<number, string> = {
   7: "System Prototype", 8: "System Complete", 9: "Proven System",
 };
 
-// Stage gate rules: to advance to TRL N, you need at least 1 passing experiment at TRL N-1
 function getStageGateStatus(experiments: any[], currentTrl: number) {
   const gates: { trl: number; label: string; met: boolean; experiments: any[] }[] = [];
   for (let trl = 1; trl <= Math.min(currentTrl + 1, 9); trl++) {
     const relevant = experiments.filter(e => e.trlLevelJustified === trl);
     const passing = relevant.filter(e => e.outcome === "Pass");
-    gates.push({
-      trl,
-      label: TRL_LABELS[trl] ?? `TRL ${trl}`,
-      met: passing.length > 0,
-      experiments: relevant,
-    });
+    gates.push({ trl, label: TRL_LABELS[trl] ?? `TRL ${trl}`, met: passing.length > 0, experiments: relevant });
   }
   return gates;
 }
 
-function ExperimentCard({ exp, onDelete }: { exp: any; onDelete: () => void }) {
+// ── Scientific Validation Panel ───────────────────────────────────────────────
+function ScientificValidationPanel({
+  exp,
+  ventureId,
+  isValidated,
+}: {
+  exp: any;
+  ventureId: string;
+  isValidated: boolean;
+}) {
+  const utils = trpc.useUtils();
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchEnabled, setSearchEnabled] = useState(false);
+
+  // Fetch attached papers for this task
+  const { data: attachedPapers = [], isLoading: papersLoading } = trpc.academicValidation.getTaskPapers.useQuery(
+    { taskId: exp.id },
+    { enabled: true }
+  );
+
+  // Search papers (only fires when searchEnabled = true)
+  const { data: searchResults, isLoading: searching, refetch: doSearch } = trpc.academicValidation.searchPapers.useQuery(
+    { taskId: exp.id, taskTitle: exp.title, taskDescription: exp.hypothesis ?? exp.method ?? "" },
+    { enabled: false }
+  );
+
+  const attachMutation = trpc.academicValidation.attachPaper.useMutation({
+    onSuccess: () => {
+      utils.academicValidation.getTaskPapers.invalidate({ taskId: exp.id });
+      utils.academicValidation.getValidatedTasks.invalidate({ ventureId });
+      toast.success("Paper attached to task");
+    },
+    onError: () => toast.error("Failed to attach paper"),
+  });
+
+  const detachMutation = trpc.academicValidation.detachPaper.useMutation({
+    onSuccess: () => {
+      utils.academicValidation.getTaskPapers.invalidate({ taskId: exp.id });
+      utils.academicValidation.getValidatedTasks.invalidate({ ventureId });
+      toast.success("Paper detached");
+    },
+    onError: () => toast.error("Failed to detach paper"),
+  });
+
+  const handleSearch = async () => {
+    setSearchOpen(true);
+    await doSearch();
+  };
+
+  const handleAttach = (paper: any) => {
+    attachMutation.mutate({
+      taskId: exp.id,
+      ventureId,
+      externalId: paper.externalId,
+      title: paper.title,
+      authors: paper.authors,
+      abstract: paper.abstract ?? "",
+      url: paper.url ?? "",
+      citationCount: paper.citationCount ?? 0,
+      publishedYear: paper.publishedYear ?? null,
+    });
+  };
+
+  const isAlreadyAttached = (externalId: string) =>
+    attachedPapers.some((p: any) => p.externalId === externalId);
+
+  return (
+    <div className="mt-3 border-t pt-3" style={{ borderColor: "#e0f2fe" }}>
+      {/* Section header */}
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-1.5">
+          <GraduationCap size={13} style={{ color: "#1d4ed8" }} />
+          <span className="text-xs font-semibold text-blue-700">Scientific Validation</span>
+          {isValidated && (
+            <Badge className="text-xs h-4 px-1.5 bg-green-100 text-green-700 border-green-200 font-semibold">
+              ✓ Scientifically Validated
+            </Badge>
+          )}
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-6 text-xs gap-1 border-blue-200 text-blue-600 hover:bg-blue-50"
+          onClick={handleSearch}
+          disabled={searching}
+        >
+          {searching ? <Loader2 size={11} className="animate-spin" /> : <Search size={11} />}
+          Find Supporting Research
+        </Button>
+      </div>
+
+      {/* Attached papers */}
+      {papersLoading ? (
+        <div className="text-xs text-gray-400 py-1">Loading papers...</div>
+      ) : attachedPapers.length > 0 ? (
+        <div className="space-y-1.5 mb-2">
+          {attachedPapers.map((paper: any) => (
+            <div
+              key={paper.id}
+              className="flex items-start gap-2 p-2 rounded-lg"
+              style={{ background: paper.citationCount > 10 ? "#f0fdf4" : "#f8fafc", border: "1px solid", borderColor: paper.citationCount > 10 ? "#bbf7d0" : "#e2e8f0" }}
+            >
+              <Paperclip size={11} className="mt-0.5 shrink-0 text-blue-400" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start gap-1.5 flex-wrap">
+                  <a
+                    href={paper.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-semibold text-blue-700 hover:underline leading-tight"
+                  >
+                    {paper.title}
+                  </a>
+                  {paper.citationCount > 10 && (
+                    <span className="text-xs px-1 py-0.5 rounded bg-green-100 text-green-700 font-semibold shrink-0">
+                      ✓ {paper.citationCount} citations
+                    </span>
+                  )}
+                  {paper.citationCount <= 10 && paper.citationCount > 0 && (
+                    <span className="text-xs px-1 py-0.5 rounded bg-gray-100 text-gray-500 shrink-0">
+                      {paper.citationCount} citations
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs text-gray-400 mt-0.5">
+                  {Array.isArray(paper.authors) ? paper.authors.slice(0, 3).join(", ") : paper.authors}
+                  {paper.publishedYear ? ` · ${paper.publishedYear}` : ""}
+                </div>
+              </div>
+              <button
+                onClick={() => detachMutation.mutate({ linkId: paper.linkId })}
+                className="shrink-0 text-gray-300 hover:text-red-400 transition-colors"
+                title="Detach paper"
+              >
+                <Trash2 size={11} />
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-xs text-gray-400 mb-2 py-1">
+          No papers attached yet. Click "Find Supporting Research" to search Semantic Scholar.
+        </div>
+      )}
+
+      {/* Search results panel */}
+      {searchOpen && (
+        <div className="mt-2 border rounded-xl overflow-hidden" style={{ borderColor: "#bfdbfe" }}>
+          <div className="flex items-center justify-between px-3 py-2" style={{ background: "#eff6ff" }}>
+            <span className="text-xs font-semibold text-blue-700">
+              {searching ? "Searching Semantic Scholar..." : `Search Results${searchResults?.keywords ? ` — "${searchResults.keywords}"` : ""}`}
+            </span>
+            <button onClick={() => setSearchOpen(false)} className="text-xs text-gray-400 hover:text-gray-600">✕ Close</button>
+          </div>
+          {searching ? (
+            <div className="flex items-center justify-center gap-2 py-6 text-xs text-gray-400">
+              <Loader2 size={14} className="animate-spin" />
+              Querying Semantic Scholar API...
+            </div>
+          ) : searchResults?.papers?.length === 0 ? (
+            <div className="text-xs text-gray-400 text-center py-6">No papers found. Try a different task description.</div>
+          ) : (
+            <div className="divide-y divide-blue-100">
+              {(searchResults?.papers ?? []).map((paper: any, i: number) => {
+                const attached = isAlreadyAttached(paper.externalId);
+                return (
+                  <div key={i} className="p-3 flex items-start gap-3 hover:bg-blue-50 transition-colors">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start gap-1.5 flex-wrap mb-0.5">
+                        <span className="text-xs font-semibold text-gray-800 leading-tight">{paper.title}</span>
+                        {paper.citationCount > 10 && (
+                          <span className="text-xs px-1 py-0.5 rounded bg-green-100 text-green-700 font-semibold shrink-0">
+                            {paper.citationCount} citations
+                          </span>
+                        )}
+                        {paper.citationCount > 0 && paper.citationCount <= 10 && (
+                          <span className="text-xs px-1 py-0.5 rounded bg-gray-100 text-gray-500 shrink-0">
+                            {paper.citationCount} citations
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        {paper.authors?.slice(0, 3).join(", ")}
+                        {paper.publishedYear ? ` · ${paper.publishedYear}` : ""}
+                      </div>
+                      {paper.abstract && (
+                        <p className="text-xs text-gray-500 mt-1 line-clamp-2">{paper.abstract}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {paper.url && (
+                        <a href={paper.url} target="_blank" rel="noopener noreferrer"
+                          className="p-1 rounded hover:bg-blue-100 text-blue-400 transition-colors" title="Open paper">
+                          <ExternalLink size={12} />
+                        </a>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-6 text-xs gap-1"
+                        style={attached
+                          ? { borderColor: "#bbf7d0", color: "#16a34a", background: "#f0fdf4" }
+                          : { borderColor: "#bfdbfe", color: "#1d4ed8" }
+                        }
+                        disabled={attached || attachMutation.isPending}
+                        onClick={() => handleAttach(paper)}
+                      >
+                        <Paperclip size={10} />
+                        {attached ? "Attached" : "Attach"}
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Experiment Card ───────────────────────────────────────────────────────────
+function ExperimentCard({
+  exp,
+  ventureId,
+  isValidated,
+  onDelete,
+}: {
+  exp: any;
+  ventureId: string;
+  isValidated: boolean;
+  onDelete: () => void;
+}) {
   const [expanded, setExpanded] = useState(false);
   const cfg = OUTCOME_CONFIG[exp.outcome] ?? OUTCOME_CONFIG.Pending;
   const Icon = cfg.icon;
@@ -65,11 +298,16 @@ function ExperimentCard({ exp, onDelete }: { exp: any; onDelete: () => void }) {
           <Icon size={16} style={{ color: cfg.color }} />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-0.5">
+          <div className="flex items-center gap-2 mb-0.5 flex-wrap">
             <span className="text-sm font-semibold text-gray-900 truncate">{exp.title}</span>
             {exp.trlLevelJustified && (
               <span className="text-xs font-mono px-1.5 py-0.5 rounded" style={{ background: "#dbeafe", color: "#1d4ed8" }}>
                 TRL {exp.trlLevelJustified}
+              </span>
+            )}
+            {isValidated && exp.trlLevelJustified <= 2 && (
+              <span className="text-xs px-1.5 py-0.5 rounded font-semibold" style={{ background: "#dcfce7", color: "#16a34a" }}>
+                ✓ Scientifically Validated
               </span>
             )}
           </div>
@@ -80,8 +318,11 @@ function ExperimentCard({ exp, onDelete }: { exp: any; onDelete: () => void }) {
             </span>
           )}
         </div>
-        <div className="text-gray-300">
-          {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        <div className="flex items-center gap-2">
+          <BookOpen size={13} className="text-blue-300" />
+          <div className="text-gray-300">
+            {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </div>
         </div>
       </div>
 
@@ -105,14 +346,22 @@ function ExperimentCard({ exp, onDelete }: { exp: any; onDelete: () => void }) {
               <p className="text-xs text-gray-700">{exp.result}</p>
             </div>
           )}
-          <div className="flex justify-end">
+
+          {/* Scientific Validation Panel */}
+          <ScientificValidationPanel
+            exp={exp}
+            ventureId={ventureId}
+            isValidated={isValidated}
+          />
+
+          <div className="flex justify-end pt-1">
             <Button
               size="sm"
               variant="outline"
               className="text-xs h-6 text-red-400 border-red-200 hover:bg-red-50"
               onClick={onDelete}
             >
-              Delete
+              Delete Experiment
             </Button>
           </div>
         </div>
@@ -121,6 +370,7 @@ function ExperimentCard({ exp, onDelete }: { exp: any; onDelete: () => void }) {
   );
 }
 
+// ── Main Page ─────────────────────────────────────────────────────────────────
 export default function ExperimentLog() {
   const utils = trpc.useUtils();
   const [selectedVenture, setSelectedVenture] = useState("ecoblend-rd");
@@ -134,6 +384,8 @@ export default function ExperimentLog() {
   const venture = VENTURES.find(v => v.id === selectedVenture);
   const { data: experiments = [], isLoading } = trpc.experiments.list.useQuery({ ventureId: selectedVenture });
   const { data: ventureData } = trpc.ventures.get.useQuery({ id: selectedVenture });
+  const { data: validatedData } = trpc.academicValidation.getValidatedTasks.useQuery({ ventureId: selectedVenture });
+  const validatedTaskIds = new Set(validatedData?.validatedTaskIds ?? []);
 
   const addMutation = trpc.experiments.add.useMutation({
     onSuccess: () => {
@@ -146,7 +398,10 @@ export default function ExperimentLog() {
   });
 
   const deleteMutation = trpc.experiments.delete.useMutation({
-    onSuccess: () => { utils.experiments.list.invalidate({ ventureId: selectedVenture }); toast.success("Experiment deleted"); },
+    onSuccess: () => {
+      utils.experiments.list.invalidate({ ventureId: selectedVenture });
+      toast.success("Experiment deleted");
+    },
     onError: () => toast.error("Failed to delete"),
   });
 
@@ -154,6 +409,7 @@ export default function ExperimentLog() {
   const stageGates = getStageGateStatus(experiments, currentTrl);
   const passCount = experiments.filter(e => e.outcome === "Pass").length;
   const pendingCount = experiments.filter(e => e.outcome === "Pending").length;
+  const validatedCount = experiments.filter(e => validatedTaskIds.has(e.id)).length;
 
   return (
     <div className="flex-1 overflow-y-auto bg-gray-50">
@@ -164,10 +420,11 @@ export default function ExperimentLog() {
             <div className="flex items-center gap-2 mb-1">
               <FlaskConical size={16} style={{ color: "#1d4ed8" }} />
               <span className="vos-badge" style={{ background: "#dbeafe", color: "#1d4ed8", fontSize: "0.65rem" }}>TRL Evidence Log</span>
+              <span className="vos-badge" style={{ background: "#dcfce7", color: "#16a34a", fontSize: "0.65rem" }}>Semantic Scholar</span>
             </div>
             <h1 className="vos-page-title mb-1">Experiment Log</h1>
             <p className="text-sm text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>
-              Log experiments and tests that justify TRL advancement. Stage gates require at least one passing experiment per level.
+              Log experiments that justify TRL advancement. Expand any experiment to find and attach peer-reviewed supporting literature from Semantic Scholar.
             </p>
           </div>
           <Button
@@ -231,17 +488,29 @@ export default function ExperimentLog() {
             </div>
 
             {/* Summary stats */}
-            <div className="grid grid-cols-3 gap-2 mt-4">
+            <div className="grid grid-cols-2 gap-2 mt-4">
               {[
                 { label: "Total", value: experiments.length, color: "#1d4ed8" },
                 { label: "Passing", value: passCount, color: "#10b981" },
                 { label: "Pending", value: pendingCount, color: "#f59e0b" },
+                { label: "Validated", value: validatedCount, color: "#7c3aed" },
               ].map(s => (
                 <div key={s.label} className="bg-white rounded-lg border p-3 text-center shadow-sm" style={{ borderColor: "#e5e7eb" }}>
                   <div className="text-xl font-bold" style={{ color: s.color }}>{s.value}</div>
                   <div className="text-xs text-gray-400">{s.label}</div>
                 </div>
               ))}
+            </div>
+
+            {/* Validation legend */}
+            <div className="mt-4 p-3 rounded-xl border" style={{ background: "#f0fdf4", borderColor: "#bbf7d0" }}>
+              <div className="flex items-center gap-1.5 mb-1">
+                <GraduationCap size={12} style={{ color: "#16a34a" }} />
+                <span className="text-xs font-semibold text-green-700">Validation Badge Logic</span>
+              </div>
+              <p className="text-xs text-green-600">
+                TRL 1–2 tasks with at least one attached paper with &gt;10 citations earn the "Scientifically Validated" badge.
+              </p>
             </div>
           </div>
 
@@ -267,6 +536,8 @@ export default function ExperimentLog() {
                   <ExperimentCard
                     key={exp.id}
                     exp={exp}
+                    ventureId={selectedVenture}
+                    isValidated={validatedTaskIds.has(exp.id)}
                     onDelete={() => deleteMutation.mutate({ id: exp.id })}
                   />
                 ))}
@@ -327,7 +598,7 @@ export default function ExperimentLog() {
             <div>
               <label className="text-xs font-semibold text-gray-500 mb-1 block">Hypothesis</label>
               <Textarea
-                placeholder="What were you testing and what did you expect?"
+                placeholder="What were you testing and what did you expect? (Used for paper keyword extraction)"
                 value={form.hypothesis}
                 onChange={e => setForm(f => ({ ...f, hypothesis: e.target.value }))}
                 rows={2}

@@ -5,7 +5,7 @@
 
 import { ventures, TRL_LEVELS } from "@/lib/data";
 import { trpc } from "@/lib/trpc";
-import { FlaskConical, AlertTriangle, ShieldAlert, ShieldCheck } from "lucide-react";
+import { FlaskConical, AlertTriangle, ShieldAlert, ShieldCheck, GraduationCap, CheckCircle2 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LineChart, Line, Legend
 } from "recharts";
@@ -31,6 +31,46 @@ const valleyData = TRL_LEVELS.map(l => ({
   funding: l.id <= 3 ? 80 : l.id <= 7 ? 20 : 90,
   risk: l.id <= 3 ? 30 : l.id <= 7 ? 90 : 20,
 }));
+
+// Per-venture Scientific Validation summary widget
+function ScientificValidationSummary() {
+  const validationQueries = ventures.map(v => ({
+    id: v.id,
+    name: v.name,
+    color: v.color,
+    query: trpc.academicValidation.getValidatedTasks.useQuery({ ventureId: v.id }),
+  }));
+
+  const totalValidated = validationQueries.reduce((sum, q) => sum + (q.query.data?.validatedTaskIds?.length ?? 0), 0);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-3 p-4 rounded-xl border" style={{ background: "#f0fdf4", borderColor: "#bbf7d0" }}>
+        <GraduationCap size={20} className="text-green-600 shrink-0" />
+        <div className="flex-1">
+          <p className="text-sm font-bold text-green-700">Semantic Scholar Validation Active</p>
+          <p className="text-xs text-green-600 mt-0.5">
+            {totalValidated} engineering task{totalValidated !== 1 ? 's' : ''} across the portfolio have peer-reviewed academic validation (≥1 paper with &gt;10 citations).
+          </p>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+        {validationQueries.map(({ id, name, color, query }) => {
+          const count = query.data?.validatedTaskIds?.length ?? 0;
+          return (
+            <div key={id} className="flex items-center gap-2 p-3 bg-white rounded-xl border shadow-sm" style={{ borderColor: count > 0 ? "#bbf7d0" : "#e5e7eb" }}>
+              <CheckCircle2 size={14} style={{ color: count > 0 ? "#16a34a" : "#d1d5db" }} className="shrink-0" />
+              <div>
+                <div className="text-xs font-semibold" style={{ color }}>{name}</div>
+                <div className="text-xs text-gray-400">{count} validated task{count !== 1 ? 's' : ''}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 // Per-venture TRL blocker widget
 function TrlBlockerPanel() {
@@ -105,6 +145,15 @@ export default function TrlAnalytics() {
             <span className="text-xs font-bold uppercase tracking-widest text-gray-500">FMEA Engineering Risk Blockers</span>
           </div>
           <TrlBlockerPanel />
+        </div>
+
+        {/* Scientific Validation Summary */}
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <GraduationCap size={14} className="text-green-600" />
+            <span className="text-xs font-bold uppercase tracking-widest text-gray-500">Scientific Validation (TRL 1–2)</span>
+          </div>
+          <ScientificValidationSummary />
         </div>
 
         {/* TRL level cards */}

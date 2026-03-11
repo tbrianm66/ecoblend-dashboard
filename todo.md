@@ -105,3 +105,12 @@
 - [x] Expandable rows: view/add/update mitigation actions per risk with revised RPN display and status dropdown
 - [x] TRL Blocker integration: per-venture blocker panel in TRL Analytics showing unmitigated critical risks
 - [x] Vitest tests for all FMEA procedures (15 tests, 121 total passing)
+
+## Sprint 11 — Academic Research Validation Module (Mar 2026)
+- [x] Extend DB schema: academic_papers and task_paper_links tables (migration 0006 applied)
+- [x] Semantic Scholar API integration service (keyword extraction via stop-word removal + live paper search)
+- [x] tRPC procedures: searchPapers, attachPaper, getTaskPapers, detachPaper, getValidatedTasks
+- [x] Scientific Validation UI panel in Experiment Log task cards (Find Research, Attach, attached papers list, detach)
+- [x] Scientifically Validated badge on TRL 1-2 tasks with citationCount > 10 paper attached
+- [x] Scientific Validation Summary panel in TRL Analytics (per-venture validated task counts)
+- [x] Vitest tests: 16 new tests for keyword extraction, schema validation, and badge logic (137 total passing)
