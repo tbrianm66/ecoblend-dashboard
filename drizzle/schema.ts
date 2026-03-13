@@ -495,3 +495,52 @@ export const ventureRisks = mysqlTable("venture_risks", {
 });
 export type VentureRisk = typeof ventureRisks.$inferSelect;
 export type InsertVentureRisk = typeof ventureRisks.$inferInsert;
+
+// ── BRL Tasks (Business Readiness Level — 100 Tasks Method) ───────────────────
+// Seed table: defines all 100 BRL tasks. Completions are per-venture.
+export const brlTasks = mysqlTable("brl_tasks", {
+  id: int("id").autoincrement().primaryKey(),
+  taskNumber: int("taskNumber").notNull().unique(), // 1–100
+  title: varchar("title", { length: 256 }).notNull(),
+  description: text("description"),
+  category: mysqlEnum("category", [
+    "Legal & Entity",
+    "Intellectual Property",
+    "Brand Identity",
+    "Financial",
+    "Technology & Product",
+    "Market & Customer",
+    "Partnerships & OEM",
+    "Governance & Compliance",
+    "People & Team",
+    "Go-to-Market",
+    "Scaling",
+  ]).notNull(),
+  vrlStage: int("vrlStage").notNull(), // 1=Idea, 2=Validation, 3=MVP/Kick-off, 4=Scale
+  platformScope: mysqlEnum("platformScope", [
+    "Fundamentals",   // Managed on this dashboard
+    "Kick-off",       // Managed on this dashboard
+    "Execution",      // Belongs to brand execution platform
+  ]).notNull().default("Fundamentals"),
+  linkedModule: varchar("linkedModule", { length: 128 }), // e.g. "brand", "legal", "academic"
+  weight: float("weight").notNull().default(1.0), // contribution to BRL score
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type BrlTask = typeof brlTasks.$inferSelect;
+export type InsertBrlTask = typeof brlTasks.$inferInsert;
+
+// ── BRL Task Completions (per-venture progress) ───────────────────────────────
+export const brlTaskCompletions = mysqlTable("brl_task_completions", {
+  id: int("id").autoincrement().primaryKey(),
+  ventureId: varchar("ventureId", { length: 64 }).notNull(),
+  taskId: int("taskId").notNull(),
+  completed: boolean("completed").notNull().default(false),
+  completedAt: timestamp("completedAt"),
+  completedBy: varchar("completedBy", { length: 128 }),
+  notes: text("notes"),
+  evidenceUrl: varchar("evidenceUrl", { length: 512 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type BrlTaskCompletion = typeof brlTaskCompletions.$inferSelect;
+export type InsertBrlTaskCompletion = typeof brlTaskCompletions.$inferInsert;

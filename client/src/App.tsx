@@ -30,6 +30,7 @@ import ExperimentLog from "./pages/ExperimentLog";
 import FounderProfiles from "./pages/FounderProfiles";
 import AcademicResearch from "./pages/AcademicResearch";
 import MarketIntelligence from "./pages/MarketIntelligence";
+import BrlAnalytics from "./pages/BrlAnalytics";
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
@@ -58,6 +59,7 @@ function Router() {
       <Route path="/founders" component={FounderProfiles} />
       <Route path="/academic" component={AcademicResearch} />
       <Route path="/market-intelligence" component={MarketIntelligence} />
+      <Route path="/brl" component={BrlAnalytics} />
       <Route component={Home} />
     </Switch>
   );

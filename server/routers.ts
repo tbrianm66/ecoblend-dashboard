@@ -100,6 +100,11 @@ import {
   computeAdjustedVri,
   getPortfolioRiskSummary,
   getRiskLevel,
+  getAllBrlTasks,
+  getBrlCompletionsForVenture,
+  upsertBrlCompletion,
+  getBrlScoreForVenture,
+  getPortfolioBrlSummary,
 } from "./db";
 import { searchSemanticScholar, extractKeywords } from "./semanticScholar";
 
@@ -1456,6 +1461,48 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
     // Portfolio-wide risk summary
     portfolioSummary: publicProcedure
       .query(async () => getPortfolioRiskSummary()),
+  }),
+
+  // ── BRL — Business Readiness Level (100 Tasks) ──────────────────────────────
+  brl: router({
+    // List all 100 BRL tasks (global, not per-venture)
+    listTasks: publicProcedure.query(async () => getAllBrlTasks()),
+
+    // Get completions for a specific venture
+    getCompletions: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => getBrlCompletionsForVenture(input.ventureId)),
+
+    // Toggle a task completion for a venture
+    toggleTask: publicProcedure
+      .input(z.object({
+        ventureId: z.string(),
+        taskId: z.number(),
+        completed: z.boolean(),
+        notes: z.string().optional(),
+        evidenceUrl: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await upsertBrlCompletion({
+          ventureId: input.ventureId,
+          taskId: input.taskId,
+          completed: input.completed,
+          completedAt: input.completed ? new Date() : null,
+          completedBy: null,
+          notes: input.notes ?? null,
+          evidenceUrl: input.evidenceUrl ?? null,
+        });
+        return { success: true };
+      }),
+
+    // Get BRL score for a venture
+    getScore: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => getBrlScoreForVenture(input.ventureId)),
+
+    // Portfolio-wide BRL summary
+    portfolioSummary: publicProcedure
+      .query(async () => getPortfolioBrlSummary()),
   }),
 });
 export type AppRouter = typeof appRouter;

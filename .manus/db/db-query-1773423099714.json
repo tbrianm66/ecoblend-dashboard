@@ -1,0 +1,16 @@
+{
+  "query": "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('brl_tasks', 'brl_task_completions');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3HthdpivREJ9B8M.root --database ggmroLG8ezURUZiLzGveTG --execute SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('brl_tasks', 'brl_task_completions');",
+  "rows": [
+    {
+      "TABLE_NAME": "brl_tasks"
+    },
+    {
+      "TABLE_NAME": "brl_task_completions"
+    }
+  ],
+  "messages": [],
+  "stdout": "TABLE_NAME\nbrl_tasks\nbrl_task_completions\n",
+  "stderr": "",
+  "execution_time_ms": 983
+}

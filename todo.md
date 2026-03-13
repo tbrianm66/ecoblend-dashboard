@@ -125,3 +125,15 @@
 - [x] Adjusted VRI: Base VRI minus risk penalty (Low=0%, Med=−5%, High=−10%, Critical=−20%) with formula breakdown
 - [x] FMEA tab: integrated view of FMEA engineering failure modes alongside venture risks
 - [x] 137 tests passing (no regressions)
+
+## Sprint 13 — Business Readiness Level (BRL) — 100 Tasks Method (Mar 2026)
+- [x] Designed 100 BRL tasks across 4 VRL stages (Tasks 1-25 Stage 1 Fundamentals, 26-50 Stage 2 Fundamentals, 51-75 Stage 3 Kick-off, 76-100 Stage 4 Execution Platform)
+- [x] Extend DB schema: brl_tasks and brl_task_completions tables (migration 0008 applied)
+- [x] Seeded all 100 BRL tasks into the live database via seed-brl.mjs
+- [x] tRPC procedures: listTasks, toggleCompletion, getBrlScore, portfolioSummary
+- [x] BRL Analytics page (/brl): 100-task register, stage grouping, Execution Platform badges, per-venture progress bars, BRL score
+- [x] Portfolio Overview: Avg BRL Score KPI tile added (5-tile triple-matrix TRL/BRL/VRL layout)
+- [x] Venture Detail: BRL triple-matrix summary bar with progress bar and link to BRL Analytics
+- [x] Brand Readiness: BRL link panel explaining scope boundaries (Fundamentals/Kick-off/Execution Platform) with handoff indicator
+- [x] Execution Platform handoff: Tasks 76-100 marked with purple Execution Platform badge and “coming soon” indicator
+- [x] Vitest tests: 15 BRL tests (152 total passing)

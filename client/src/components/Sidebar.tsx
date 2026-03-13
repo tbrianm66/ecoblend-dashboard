@@ -58,6 +58,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: "vrl",         label: "VRL Analytics",        icon: "TrendingUp",      href: "/vrl" },
       { id: "trl",         label: "TRL Analytics",        icon: "FlaskConical",    href: "/trl" },
+      { id: "brl",         label: "BRL Analytics",        icon: "Briefcase",       href: "/brl" },
       { id: "experiments", label: "Experiment Log",        icon: "TestTube2",       href: "/experiments" },
       { id: "playbook",    label: "EcoBlend Playbook",    icon: "BookOpen",        href: "/playbook" },
       { id: "founders",    label: "Founder Profiles",     icon: "UserCircle2",     href: "/founders" },

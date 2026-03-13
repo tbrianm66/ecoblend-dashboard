@@ -20,6 +20,7 @@ import {
   ArrowRight, Zap
 } from "lucide-react";
 import { exportPortfolioPdf, exportInvestorPack } from "@/lib/exportPdf";
+import { trpc } from "@/lib/trpc";
 
 const HERO_BG = "https://d2xsxph8kpxj0f.cloudfront.net/310419663031397390/ggmroLG8ezURUZiLzGveTG/ecoblend-hero-bg-4sozsAnSEGXN6NLMPzPbzp.webp";
 
@@ -280,6 +281,12 @@ export default function Home() {
   const [editingVenture, setEditingVenture] = useState<Venture | null>(null);
   const [milestonesVenture, setMilestonesVenture] = useState<Venture | null>(null);
 
+  // BRL portfolio summary
+  const { data: brlSummary = [] } = trpc.brl.portfolioSummary.useQuery();
+  const avgBrlScore = brlSummary.length > 0
+    ? Math.round(brlSummary.reduce((sum: number, v: { score: number }) => sum + v.score, 0) / brlSummary.length)
+    : 0;
+
   const handleDomainClick = (domainId: string) => {
     setActiveDomain(domainId);
     const routes: Record<string, string> = {
@@ -377,8 +384,8 @@ export default function Home() {
       </div>
 
       <div className="px-8 py-6">
-        {/* ── KPI Metric Tiles (Apple-style: label / large value / sub) ── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {/* ── KPI Metric Tiles — Triple Matrix: TRL / BRL / VRL ── */}
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           <MetricTile
             label="Active Ventures"
             value={stats.activeVentures}
@@ -399,6 +406,13 @@ export default function Home() {
             sub="of 9 levels"
             accent="#3A97D3"
             icon={FlaskConical}
+          />
+          <MetricTile
+            label="Avg BRL Score"
+            value={`${avgBrlScore}%`}
+            sub="business readiness"
+            accent="#8B5CF6"
+            icon={Briefcase}
           />
           <MetricTile
             label="Milestones"

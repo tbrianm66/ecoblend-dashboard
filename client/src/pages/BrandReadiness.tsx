@@ -6,12 +6,13 @@
 // ============================================================
 
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { toast } from "sonner";
 import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
 } from "recharts";
-import { CheckCircle2, Circle, Edit2, Save, X } from "lucide-react";
+import { CheckCircle2, Circle, Edit2, Save, X, Briefcase, ArrowRight, Rocket } from "lucide-react";
 
 interface BrandDimension {
   key: string;
@@ -370,6 +371,48 @@ export default function BrandReadiness() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+
+        {/* ── BRL Link Panel ── */}
+        <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb", borderTop: "3px solid #8B5CF6" }}>
+          <div className="flex items-center gap-2 mb-3">
+            <Briefcase size={16} style={{ color: "#8B5CF6" }} />
+            <h2 className="font-bold text-gray-900">Business Readiness Level (BRL)</h2>
+            <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: "#8B5CF620", color: "#8B5CF6" }}>100 Tasks</span>
+          </div>
+          <p className="text-sm text-gray-500 mb-4">
+            Brand Readiness is one dimension of the full Business Readiness Level framework. The BRL 100-task register covers all four VRL stages — from legal entity formation to go-to-market execution. Tasks 76–100 (Go-to-Market and Scaling) are managed in the Brand Execution Platform.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="rounded-lg p-4 border" style={{ borderColor: "#e5e7eb", background: "#f9fafb" }}>
+              <div className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Stages 1–2</div>
+              <div className="text-sm font-semibold text-gray-700">Fundamentals</div>
+              <div className="text-xs text-gray-500 mt-1">Tasks 1–50 · Managed here</div>
+            </div>
+            <div className="rounded-lg p-4 border" style={{ borderColor: "#e5e7eb", background: "#f9fafb" }}>
+              <div className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Stage 3</div>
+              <div className="text-sm font-semibold text-gray-700">Kick-off</div>
+              <div className="text-xs text-gray-500 mt-1">Tasks 51–75 · Managed here</div>
+            </div>
+            <div className="rounded-lg p-4 border" style={{ borderColor: "#8B5CF620", background: "#8B5CF605" }}>
+              <div className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "#8B5CF6" }}>Stage 4</div>
+              <div className="text-sm font-semibold" style={{ color: "#8B5CF6" }}>Execution Platform</div>
+              <div className="text-xs mt-1" style={{ color: "#8B5CF6" }}>Tasks 76–100 · Brand platform</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <a
+              href="/brl"
+              className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+              style={{ background: "#8B5CF6", color: "white" }}
+            >
+              <Briefcase size={14} /> Open BRL Analytics <ArrowRight size={14} />
+            </a>
+            <div className="flex items-center gap-1.5 text-sm text-gray-400 px-4 py-2 rounded-lg border cursor-default" style={{ borderColor: "#e5e7eb" }}>
+              <Rocket size={14} style={{ color: "#8B5CF6" }} />
+              Brand Execution Platform — coming soon
+            </div>
           </div>
         </div>
 

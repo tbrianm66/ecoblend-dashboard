@@ -7,7 +7,8 @@ import { useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { ventures, VRL_STAGES, TRL_LEVELS } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, CheckCircle2, Circle, AlertTriangle, TrendingUp, FlaskConical, LayoutGrid } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Circle, AlertTriangle, TrendingUp, FlaskConical, LayoutGrid, Briefcase } from "lucide-react";
+import { trpc } from "@/lib/trpc";
 
 const riskColors = { Low: "#22c55e", Medium: "#f59e0b", High: "#dc2626" };
 
@@ -29,6 +30,13 @@ export default function VentureDetail() {
 
   const vrlPct = ((venture.vrl - 1) / 4 + venture.vrlPercent / 400) * 100;
   const trlPct = ((venture.trl - 1) / 9 + venture.trlPercent / 900) * 100;
+
+  // BRL score for this venture
+  const { data: brlSummary = [] } = trpc.brl.portfolioSummary.useQuery();
+  const brlEntry = brlSummary.find((s: { ventureId: string; score: number; completedCount: number; totalCount: number }) => s.ventureId === venture.id);
+  const brlScore = brlEntry?.score ?? 0;
+  const brlCompleted = brlEntry?.completedCount ?? 0;
+  const brlTotal = brlEntry?.totalCount ?? 100;
 
   return (
     <div className="flex-1 overflow-y-auto bg-gray-50">
@@ -71,7 +79,26 @@ export default function VentureDetail() {
       </div>
 
       <div className="p-8 space-y-8">
-        {/* Dual Readiness Overview */}
+        {/* Triple Readiness Matrix: VRL / TRL / BRL */}
+        {/* BRL Summary Card */}
+        <div className="bg-white rounded-xl border p-5 shadow-sm flex items-center gap-6" style={{ borderColor: "#e5e7eb", borderTop: "3px solid #8B5CF6" }}>
+          <div className="flex items-center gap-2">
+            <Briefcase size={18} style={{ color: "#8B5CF6" }} />
+            <span className="font-bold text-gray-900">Business Readiness Level (BRL)</span>
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-gray-500">{brlCompleted} of {brlTotal} tasks complete</span>
+              <span className="text-sm font-bold" style={{ color: "#8B5CF6" }}>{brlScore}%</span>
+            </div>
+            <div className="w-full h-2 rounded-full bg-gray-100 overflow-hidden">
+              <div className="h-full rounded-full transition-all duration-700" style={{ width: `${brlScore}%`, background: "#8B5CF6" }} />
+            </div>
+          </div>
+          <a href="/brl" className="text-xs text-purple-600 hover:underline whitespace-nowrap">View BRL →</a>
+        </div>
+
+        {/* VRL + TRL Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* VRL Card */}
           <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb", borderTop: "3px solid #22c55e" }}>

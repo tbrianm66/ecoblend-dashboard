@@ -24,6 +24,11 @@ import {
   InsertAcademicPaper,
   InsertTaskPaperLink,
   InsertVentureRisk,
+  InsertBrlTaskCompletion,
+  BrlTask,
+  BrlTaskCompletion,
+  brlTasks,
+  brlTaskCompletions,
   ventureRisks,
   engineeringRisks,
   mitigationActions,
@@ -835,4 +840,73 @@ export async function getPortfolioRiskSummary() {
     byLevel[r.riskLevel] = (byLevel[r.riskLevel] ?? 0) + 1;
   }
   return { total: allRisks.length, byCategory, byLevel };
+}
+
+// ── BRL Tasks (Business Readiness Level) ─────────────────────────────────────
+export async function getAllBrlTasks() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(brlTasks).orderBy(brlTasks.taskNumber);
+}
+
+export async function getBrlTasksByStage(vrlStage: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(brlTasks).where(eq(brlTasks.vrlStage, vrlStage)).orderBy(brlTasks.taskNumber);
+}
+
+export async function getBrlCompletionsForVenture(ventureId: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(brlTaskCompletions).where(eq(brlTaskCompletions.ventureId, ventureId));
+}
+
+export async function upsertBrlCompletion(data: InsertBrlTaskCompletion) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  // Check if completion record exists
+  const existing = await db.select().from(brlTaskCompletions)
+    .where(and(eq(brlTaskCompletions.ventureId, data.ventureId), eq(brlTaskCompletions.taskId, data.taskId)))
+    .limit(1);
+  if (existing.length > 0) {
+    return db.update(brlTaskCompletions)
+      .set({ completed: data.completed, completedAt: data.completedAt, completedBy: data.completedBy, notes: data.notes, evidenceUrl: data.evidenceUrl })
+      .where(and(eq(brlTaskCompletions.ventureId, data.ventureId), eq(brlTaskCompletions.taskId, data.taskId)));
+  }
+  return db.insert(brlTaskCompletions).values(data);
+}
+
+export async function deleteBrlCompletion(ventureId: string, taskId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.delete(brlTaskCompletions)
+    .where(and(eq(brlTaskCompletions.ventureId, ventureId), eq(brlTaskCompletions.taskId, taskId)));
+}
+
+export async function getBrlScoreForVenture(ventureId: string): Promise<{ score: number; completedWeight: number; totalWeight: number; completedCount: number; totalCount: number }> {
+  const db = await getDb();
+  if (!db) return { score: 0, completedWeight: 0, totalWeight: 0, completedCount: 0, totalCount: 0 };
+  const allTasks = await db.select().from(brlTasks).orderBy(brlTasks.taskNumber);
+  const completions = await db.select().from(brlTaskCompletions).where(eq(brlTaskCompletions.ventureId, ventureId));
+  const completedIds = new Set(completions.filter(c => c.completed).map(c => c.taskId));
+  const totalWeight = allTasks.reduce((sum, t) => sum + (t.weight ?? 1), 0);
+  const completedWeight = allTasks.filter(t => completedIds.has(t.id)).reduce((sum, t) => sum + (t.weight ?? 1), 0);
+  const score = totalWeight > 0 ? Math.round((completedWeight / totalWeight) * 100) : 0;
+  return { score, completedWeight, totalWeight, completedCount: completedIds.size, totalCount: allTasks.length };
+}
+
+
+export async function getPortfolioBrlSummary() {
+  const db = await getDb();
+  if (!db) return [];
+  const allVentures = await db.select().from(ventures);
+  const allTasks = await db.select().from(brlTasks);
+  const allCompletions = await db.select().from(brlTaskCompletions);
+  const totalWeight = allTasks.reduce((sum, t) => sum + (t.weight ?? 1), 0);
+  return allVentures.map(v => {
+    const completedIds = new Set(allCompletions.filter(c => c.ventureId === v.id && c.completed).map(c => c.taskId));
+    const completedWeight = allTasks.filter(t => completedIds.has(t.id)).reduce((sum, t) => sum + (t.weight ?? 1), 0);
+    const score = totalWeight > 0 ? Math.round((completedWeight / totalWeight) * 100) : 0;
+    return { ventureId: v.id, ventureName: v.name, score, completedCount: completedIds.size, totalCount: allTasks.length };
+  });
 }
