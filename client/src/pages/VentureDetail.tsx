@@ -37,6 +37,8 @@ export default function VentureDetail() {
   const brlScore = brlEntry?.score ?? 0;
   const brlCompleted = brlEntry?.completedCount ?? 0;
   const brlTotal = brlEntry?.totalCount ?? 100;
+  // Computed VRL score from scoring engine
+  const { data: vrlComputedScore } = trpc.vrlScoring.getScore.useQuery({ ventureId: venture.id });
 
   return (
     <div className="flex-1 overflow-y-auto bg-gray-50">
@@ -109,6 +111,18 @@ export default function VentureDetail() {
             <div className="flex items-end gap-3 mb-4">
               <span className="text-5xl font-bold font-mono" style={{ color: "#22c55e" }}>{venture.vrl}</span>
               <span className="text-gray-400 mb-2">/ 4 stages</span>
+              {vrlComputedScore && (
+                <div className="ml-auto flex flex-col items-end">
+                  <span className="text-xs text-gray-400 mb-0.5">Computed VRL</span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-bold font-mono" style={{ color: "#51AF37" }}>{vrlComputedScore.vrlScore.toFixed(1)}</span>
+                    <span className="text-sm text-gray-400">/9</span>
+                  </div>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded" style={{ background: "#51AF3715", color: "#51AF37" }}>
+                    L{vrlComputedScore.vrlLevel}: {vrlComputedScore.vrlLevelLabel}
+                  </span>
+                </div>
+              )}
             </div>
             <div className="w-full h-3 rounded-full bg-gray-100 overflow-hidden mb-3">
               <div className="h-full rounded-full transition-all duration-700" style={{ width: `${vrlPct}%`, background: "#22c55e" }} />

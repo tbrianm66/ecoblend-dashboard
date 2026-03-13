@@ -25,10 +25,13 @@ import {
   InsertTaskPaperLink,
   InsertVentureRisk,
   InsertBrlTaskCompletion,
+  InsertVrlScoringParams,
+  VrlScoringParams,
   BrlTask,
   BrlTaskCompletion,
   brlTasks,
   brlTaskCompletions,
+  vrlScoringParams,
   ventureRisks,
   engineeringRisks,
   mitigationActions,
@@ -909,4 +912,182 @@ export async function getPortfolioBrlSummary() {
     const score = totalWeight > 0 ? Math.round((completedWeight / totalWeight) * 100) : 0;
     return { ventureId: v.id, ventureName: v.name, score, completedCount: completedIds.size, totalCount: allTasks.length };
   });
+}
+
+// ── VRL Scoring Engine ────────────────────────────────────────────────────────
+export async function getVrlScoringParams(ventureId: string): Promise<VrlScoringParams | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(vrlScoringParams).where(eq(vrlScoringParams.ventureId, ventureId)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function upsertVrlScoringParams(data: InsertVrlScoringParams) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.insert(vrlScoringParams).values(data).onDuplicateKeyUpdate({ set: data });
+}
+
+export async function getAllVrlScoringParams() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(vrlScoringParams);
+}
+
+// ── VRL Scoring Engine — Calculation Helpers ─────────────────────────────────
+
+/**
+ * VRL Level labels (9-level scale)
+ */
+export const VRL_LEVEL_LABELS: Record<number, string> = {
+  1: "Opportunity Discovery",
+  2: "Concept",
+  3: "Validation",
+  4: "Prototype",
+  5: "Market Validation",
+  6: "Product-Market Fit",
+  7: "Market Entry",
+  8: "Scaling",
+  9: "Market Leadership",
+};
+
+/**
+ * Map a raw VRL score (0–9 float) to a discrete VRL level (1–9)
+ */
+export function getVrlLevel(score: number): number {
+  if (score <= 0) return 1;
+  if (score >= 9) return 9;
+  return Math.max(1, Math.min(9, Math.round(score)));
+}
+
+/**
+ * Compute the Risk Index (0–1) from venture risks.
+ * Risk Index = average of normalised scores across 5 categories:
+ * Technical, Market, Financial, Operational, Regulatory
+ * Each category score = avg(riskScore) in that category / 25 (max L×I = 5×5)
+ */
+export async function computeVrlRiskIndex(ventureId: string): Promise<{
+  riskIndex: number;
+  byCategory: Record<string, number>;
+}> {
+  const db = await getDb();
+  if (!db) return { riskIndex: 0, byCategory: {} };
+
+  const risks = await db.select().from(ventureRisks).where(eq(ventureRisks.ventureId, ventureId));
+
+  const CATEGORIES = ["Technical", "Market", "Financial", "Operational", "Regulatory"];
+  const byCategory: Record<string, number> = {};
+
+  for (const cat of CATEGORIES) {
+    const catRisks = risks.filter(r => r.riskCategory === cat);
+    if (catRisks.length === 0) {
+      byCategory[cat] = 0;
+    } else {
+      const avgScore = catRisks.reduce((sum, r) => sum + (r.riskScore ?? 0), 0) / catRisks.length;
+      byCategory[cat] = Math.min(1, avgScore / 25);
+    }
+  }
+
+  const values = Object.values(byCategory);
+  const riskIndex = values.length > 0
+    ? Math.min(1, values.reduce((s, v) => s + v, 0) / values.length)
+    : 0;
+
+  return { riskIndex: Math.round(riskIndex * 1000) / 1000, byCategory };
+}
+
+/**
+ * Compute the full VRL score for a venture using the formula:
+ * VRL = (α × TRL_normalised + β × BRL_normalised) × (1 − Risk Index) × Confidence
+ *
+ * TRL_normalised = trl (kept on 0–9 scale)
+ * BRL_normalised = brlScore / 100 × 9  (mapped to 0–9 scale)
+ * Result is on 0–9 scale.
+ */
+export async function computeVrlScore(ventureId: string): Promise<{
+  vrlScore: number;
+  vrlLevel: number;
+  vrlLevelLabel: string;
+  trlNorm: number;
+  brlNorm: number;
+  riskIndex: number;
+  riskByCategory: Record<string, number>;
+  confidenceScore: number;
+  alphaWeight: number;
+  betaWeight: number;
+  baseReadiness: number;
+}> {
+  const fallback = {
+    vrlScore: 0, vrlLevel: 1, vrlLevelLabel: VRL_LEVEL_LABELS[1],
+    trlNorm: 0, brlNorm: 0, riskIndex: 0, riskByCategory: {},
+    confidenceScore: 0.5, alphaWeight: 0.45, betaWeight: 0.55, baseReadiness: 0,
+  };
+  const db = await getDb();
+  if (!db) return fallback;
+
+  // 1. Get venture TRL
+  const ventureRows = await db.select().from(ventures).where(eq(ventures.id, ventureId)).limit(1);
+  if (!ventureRows[0]) return fallback;
+  const venture = ventureRows[0];
+  const trlNorm = Math.min(9, Math.max(0, venture.trl ?? 1));
+
+  // 2. Get BRL score (0–100) and normalise to 0–9
+  const brlResult = await getBrlScoreForVenture(ventureId);
+  const brlNorm = (brlResult.score / 100) * 9;
+
+  // 3. Get scoring params (weights, confidence)
+  const params = await getVrlScoringParams(ventureId);
+  const alpha = params?.alphaWeight ?? 0.45;
+  const beta = params?.betaWeight ?? 0.55;
+  const confidence = params?.confidenceScore ?? 0.5;
+
+  // 4. Compute risk index
+  const { riskIndex, byCategory } = await computeVrlRiskIndex(ventureId);
+
+  // 5. Apply formula: VRL = (α×TRL + β×BRL) × (1 − RiskIndex) × Confidence
+  const baseReadiness = alpha * trlNorm + beta * brlNorm;
+  const vrlScore = Math.min(9, Math.max(0, baseReadiness * (1 - riskIndex) * confidence));
+  const vrlLevel = getVrlLevel(vrlScore);
+
+  return {
+    vrlScore: Math.round(vrlScore * 100) / 100,
+    vrlLevel,
+    vrlLevelLabel: VRL_LEVEL_LABELS[vrlLevel],
+    trlNorm,
+    brlNorm: Math.round(brlNorm * 100) / 100,
+    riskIndex,
+    riskByCategory: byCategory,
+    confidenceScore: confidence,
+    alphaWeight: alpha,
+    betaWeight: beta,
+    baseReadiness: Math.round(baseReadiness * 100) / 100,
+  };
+}
+
+/**
+ * Compute VRL scores for all ventures (portfolio summary)
+ */
+export async function computePortfolioVrlScores(): Promise<Array<{
+  ventureId: string;
+  ventureName: string;
+  vrlScore: number;
+  vrlLevel: number;
+  vrlLevelLabel: string;
+}>> {
+  const db = await getDb();
+  if (!db) return [];
+  const allVentures = await db.select().from(ventures);
+  const results = await Promise.all(
+    allVentures.map(async v => {
+      const score = await computeVrlScore(v.id);
+      return {
+        ventureId: v.id,
+        ventureName: v.name,
+        vrlScore: score.vrlScore,
+        vrlLevel: score.vrlLevel,
+        vrlLevelLabel: score.vrlLevelLabel,
+      };
+    })
+  );
+  return results;
 }

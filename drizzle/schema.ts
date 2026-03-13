@@ -544,3 +544,25 @@ export const brlTaskCompletions = mysqlTable("brl_task_completions", {
 });
 export type BrlTaskCompletion = typeof brlTaskCompletions.$inferSelect;
 export type InsertBrlTaskCompletion = typeof brlTaskCompletions.$inferInsert;
+
+// ── VRL Scoring Parameters (per-venture formula inputs) ──────────────────────
+// Stores the configurable inputs for the VRL formula:
+// VRL = (α × TRL + β × BRL) × (1 − Risk Index) × Confidence Score
+export const vrlScoringParams = mysqlTable("vrl_scoring_params", {
+  id: int("id").autoincrement().primaryKey(),
+  ventureId: varchar("ventureId", { length: 64 }).notNull().unique(),
+  // Weighting factors (must sum to 1.0)
+  alphaWeight: float("alphaWeight").notNull().default(0.45), // TRL weight
+  betaWeight: float("betaWeight").notNull().default(0.55),   // BRL weight
+  // Confidence Score (0.2–1.0) based on validation evidence strength
+  confidenceScore: float("confidenceScore").notNull().default(0.5),
+  confidenceRationale: text("confidenceRationale"),
+  // Computed outputs (cached, recalculated on demand)
+  computedVrlScore: float("computedVrlScore"),       // raw VRL score (0–9)
+  computedVrlLevel: int("computedVrlLevel"),         // rounded VRL level (1–9)
+  lastCalculatedAt: timestamp("lastCalculatedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type VrlScoringParams = typeof vrlScoringParams.$inferSelect;
+export type InsertVrlScoringParams = typeof vrlScoringParams.$inferInsert;

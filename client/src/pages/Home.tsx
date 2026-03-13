@@ -116,12 +116,14 @@ function LifecycleStrip({ currentStage }: { currentStage: string }) {
 
 // ── Venture Card ───────────────────────────────────────────────────────────
 function VentureCard({
-  venture, onClick, onEdit, onEditMilestones,
+  venture, onClick, onEdit, onEditMilestones, computedVrlScore, computedVrlLevel,
 }: {
   venture: Venture;
   onClick: () => void;
   onEdit: (e: React.MouseEvent) => void;
   onEditMilestones: (e: React.MouseEvent) => void;
+  computedVrlScore?: number;
+  computedVrlLevel?: number;
 }) {
   const vrlStage = VRL_STAGES[venture.vrl - 1];
   const trlLevel = TRL_LEVELS[venture.trl - 1];
@@ -213,7 +215,14 @@ function VentureCard({
                 <TrendingUp size={10} style={{ color: "#51AF37" }} />
                 VRL {venture.vrl} — {vrlStage?.label}
               </span>
-              <span className="text-xs font-mono text-gray-400">{venture.vrlPercent}%</span>
+              <div className="flex items-center gap-2">
+                {computedVrlScore !== undefined && (
+                  <span className="text-xs font-mono font-bold px-1.5 py-0.5 rounded" style={{ background: "#51AF3715", color: "#51AF37" }}>
+                    Score: {computedVrlScore.toFixed(1)}/9
+                  </span>
+                )}
+                <span className="text-xs font-mono text-gray-400">{venture.vrlPercent}%</span>
+              </div>
             </div>
             <div className="vos-progress-track">
               <div
@@ -286,6 +295,11 @@ export default function Home() {
   const avgBrlScore = brlSummary.length > 0
     ? Math.round(brlSummary.reduce((sum: number, v: { score: number }) => sum + v.score, 0) / brlSummary.length)
     : 0;
+  // VRL portfolio scores (computed via scoring engine)
+  const { data: vrlPortfolioScores = [] } = trpc.vrlScoring.portfolioScores.useQuery();
+  const avgComputedVrl = vrlPortfolioScores.length > 0
+    ? (vrlPortfolioScores.reduce((sum, v) => sum + v.vrlScore, 0) / vrlPortfolioScores.length).toFixed(1)
+    : "--";
 
   const handleDomainClick = (domainId: string) => {
     setActiveDomain(domainId);
@@ -394,9 +408,9 @@ export default function Home() {
             icon={TrendingUp}
           />
           <MetricTile
-            label="Avg VRL Stage"
-            value={stats.avgVrl.toFixed(1)}
-            sub="of 4 stages"
+            label="Avg VRL Score"
+            value={avgComputedVrl}
+            sub="computed, 0-9 scale"
             accent="#51AF37"
             icon={TrendingUp}
           />
@@ -464,15 +478,20 @@ export default function Home() {
               </span>
             </div>
 
-            {portfolioBrands.map((venture) => (
-              <VentureCard
-                key={venture.id}
-                venture={venture}
-                onClick={() => handleVentureClick(venture.id)}
-                onEdit={(e) => handleEditClick(e, venture)}
-                onEditMilestones={(e) => handleMilestonesClick(e, venture)}
-              />
-            ))}
+            {portfolioBrands.map((venture) => {
+              const vrlScore = vrlPortfolioScores.find(s => s.ventureId === venture.id);
+              return (
+                <VentureCard
+                  key={venture.id}
+                  venture={venture}
+                  onClick={() => handleVentureClick(venture.id)}
+                  onEdit={(e) => handleEditClick(e, venture)}
+                  onEditMilestones={(e) => handleMilestonesClick(e, venture)}
+                  computedVrlScore={vrlScore?.vrlScore}
+                  computedVrlLevel={vrlScore?.vrlLevel}
+                />
+              );
+            })}
 
             {/* Internal Lab — separated */}
             {internalLab && (
@@ -491,6 +510,8 @@ export default function Home() {
                   onClick={() => handleVentureClick(internalLab.id)}
                   onEdit={(e) => handleEditClick(e, internalLab)}
                   onEditMilestones={(e) => handleMilestonesClick(e, internalLab)}
+                  computedVrlScore={vrlPortfolioScores.find(s => s.ventureId === internalLab.id)?.vrlScore}
+                  computedVrlLevel={vrlPortfolioScores.find(s => s.ventureId === internalLab.id)?.vrlLevel}
                 />
               </div>
             )}

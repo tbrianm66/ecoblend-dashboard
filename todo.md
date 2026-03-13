@@ -137,3 +137,14 @@
 - [x] Brand Readiness: BRL link panel explaining scope boundaries (Fundamentals/Kick-off/Execution Platform) with handoff indicator
 - [x] Execution Platform handoff: Tasks 76-100 marked with purple Execution Platform badge and “coming soon” indicator
 - [x] Vitest tests: 15 BRL tests (152 total passing)
+
+## Sprint 14 — VRL Mathematical Framework Update (Mar 2026)
+- [x] Audit current VRL data model (4-stage) and upgrade to 9-level scale per specification
+- [x] Update VRL stage descriptions in data.ts and schema to match the 9-level framework
+- [x] Add confidence score and weighting (alpha/beta) fields to ventures table; push migration
+- [x] Build VRL Scoring Engine: tRPC procedure implementing VRL = (α×TRL + β×BRL) × (1 − Risk Index) × Confidence
+- [x] Build VRL Scoring Engine page: live formula calculator with inputs, computed score, stage interpretation
+- [x] Update VRL Analytics page with 9-level stage descriptions and computed VRL score display
+- [x] Update Portfolio Overview and Venture Detail to show computed VRL score alongside TRL/BRL
+- [ ] Upload VRL architecture infographic to CDN and embed in VRL Scoring Engine page
+- [x] Vitest tests for VRL scoring formula

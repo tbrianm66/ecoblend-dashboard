@@ -105,6 +105,12 @@ import {
   upsertBrlCompletion,
   getBrlScoreForVenture,
   getPortfolioBrlSummary,
+  getVrlScoringParams,
+  upsertVrlScoringParams,
+  getAllVrlScoringParams,
+  computeVrlScore,
+  computePortfolioVrlScores,
+  VRL_LEVEL_LABELS,
 } from "./db";
 import { searchSemanticScholar, extractKeywords } from "./semanticScholar";
 
@@ -1503,6 +1509,55 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
     // Portfolio-wide BRL summary
     portfolioSummary: publicProcedure
       .query(async () => getPortfolioBrlSummary()),
+  }),
+
+  // ── VRL Scoring Engine ───────────────────────────────────────────────────────
+  vrlScoring: router({
+    // Compute full VRL score for a venture using the formula:
+    // VRL = (α×TRL + β×BRL) × (1 − Risk Index) × Confidence
+    getScore: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => computeVrlScore(input.ventureId)),
+
+    // Portfolio-wide computed VRL scores
+    portfolioScores: publicProcedure
+      .query(async () => computePortfolioVrlScores()),
+
+    // Get scoring parameters for a venture
+    getParams: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => getVrlScoringParams(input.ventureId)),
+
+    // Update scoring parameters (weights, confidence)
+    updateParams: publicProcedure
+      .input(z.object({
+        ventureId: z.string(),
+        alphaWeight: z.number().min(0).max(1).optional(),
+        betaWeight: z.number().min(0).max(1).optional(),
+        confidenceScore: z.number().min(0.2).max(1.0).optional(),
+        confidenceRationale: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const existing = await getVrlScoringParams(input.ventureId);
+        const alpha = input.alphaWeight ?? existing?.alphaWeight ?? 0.45;
+        const beta = input.betaWeight ?? existing?.betaWeight ?? 0.55;
+        // Ensure weights sum to 1.0
+        const total = alpha + beta;
+        const normAlpha = total > 0 ? alpha / total : 0.45;
+        const normBeta = total > 0 ? beta / total : 0.55;
+        await upsertVrlScoringParams({
+          ventureId: input.ventureId,
+          alphaWeight: normAlpha,
+          betaWeight: normBeta,
+          confidenceScore: input.confidenceScore ?? existing?.confidenceScore ?? 0.5,
+          confidenceRationale: input.confidenceRationale ?? existing?.confidenceRationale ?? null,
+        });
+        return { success: true };
+      }),
+
+    // Get the VRL level label map
+    getLevelLabels: publicProcedure
+      .query(() => VRL_LEVEL_LABELS),
   }),
 });
 export type AppRouter = typeof appRouter;
