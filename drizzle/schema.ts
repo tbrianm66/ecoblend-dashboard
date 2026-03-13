@@ -47,6 +47,32 @@ export const ventures = mysqlTable("ventures", {
   bmc: text("bmc"),
   mmc: text("mmc"),
   lifecycleStage: mysqlEnum("lifecycleStage", ["Opportunity", "Validation", "Build", "Launch", "Scale"]).default("Opportunity"),
+  // ── Literature Audit: Innovator's Dilemma — Rec. 5 ──────────────────────────
+  // Classifies each venture as sustaining or disruptive per Christensen's framework
+  strategicClassification: mysqlEnum("strategicClassification", [
+    "Sustaining",           // Improves performance on dimensions valued by current customers
+    "Disruptive-NewMarket", // Creates new market by targeting non-consumers
+    "Disruptive-LowEnd",    // Targets overserved customers with simpler/cheaper offering
+  ]).default("Sustaining"),
+  // ── Literature Audit: Lean Startup — Rec. 7 ─────────────────────────────────
+  // Identifies which self-reinforcing growth mechanism the venture is pursuing
+  engineOfGrowth: mysqlEnum("engineOfGrowth", [
+    "Sticky",  // Retention-driven; primary metric: churn rate
+    "Viral",   // Referral-driven; primary metric: viral coefficient
+    "Paid",    // Acquisition-driven; primary metric: LTV/CAC ratio
+  ]),
+  // ── Literature Audit: Lean Startup — Rec. 8 ─────────────────────────────────
+  // Product/market fit signal: whether the engine of growth is self-sustaining
+  productMarketFitSignal: mysqlEnum("productMarketFitSignal", [
+    "Not Yet",    // Engine not yet identified or not self-sustaining
+    "Emerging",   // Early positive signals but not yet reliable
+    "Achieved",   // Engine is reliably self-sustaining
+  ]).default("Not Yet"),
+  // ── Literature Audit: Lean Startup — Rec. 3 (Innovation Accounting) ─────────
+  // Cached innovation accounting metrics (recomputed from experiments/interviews)
+  experimentPassRate: float("experimentPassRate"),    // passing / completed experiments (%)
+  learningVelocity: int("learningVelocity"),           // validated learning cycles last 30 days
+  interviewInsightRate: float("interviewInsightRate"), // interviews with validated signal (%)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -192,6 +218,20 @@ export const financialSnapshots = mysqlTable("financial_snapshots", {
   investmentRaised: int("investmentRaised").default(0),
   investmentTarget: int("investmentTarget").default(0),
   notes: text("notes"),
+  // ── Literature Audit: Lean Startup — Rec. 7 & 9 (Engine of Growth + Innovation Accounting) ──
+  // Sticky engine metrics
+  churnRate: float("churnRate"),              // % of customers lost per month
+  retentionRate: float("retentionRate"),       // % of customers retained per month
+  // Viral engine metrics
+  viralCoefficient: float("viralCoefficient"), // avg new users each existing user generates
+  referralRate: float("referralRate"),          // % of customers who refer others
+  // Paid engine metrics
+  customerAcquisitionCost: int("customerAcquisitionCost"), // CAC in currency units
+  customerLifetimeValue: int("customerLifetimeValue"),     // LTV in currency units
+  ltvCacRatio: float("ltvCacRatio"),           // LTV / CAC ratio (target >= 3)
+  // Innovation accounting baseline (Rec. 9)
+  baselineRevenueTarget: int("baselineRevenueTarget"), // MVP-stage revenue model target
+  isBaseline: boolean("isBaseline").default(false),    // marks the initial MVP baseline snapshot
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -566,3 +606,286 @@ export const vrlScoringParams = mysqlTable("vrl_scoring_params", {
 });
 export type VrlScoringParams = typeof vrlScoringParams.$inferSelect;
 export type InsertVrlScoringParams = typeof vrlScoringParams.$inferInsert;
+
+// ╔══════════════════════════════════════════════════════════════════════════════╗
+// ║  LITERATURE AUDIT ADDITIONS — TIER 2                                        ║
+// ║  The Lean Startup (Ries, 2011) + The Innovator's Dilemma (Christensen, 1997)║
+// ╚══════════════════════════════════════════════════════════════════════════════╝
+
+// ── Pivot Decision Log (Lean Startup — Rec. 1) ───────────────────────────────
+// Records every structured pivot-or-persevere decision with full evidence trail.
+// Ries: "A pivot is a structured course correction designed to test a new
+// fundamental hypothesis about the product, business model, and engine of growth."
+export const pivotDecisions = mysqlTable("pivot_decisions", {
+  id: int("id").autoincrement().primaryKey(),
+  ventureId: varchar("ventureId", { length: 64 }).notNull(),
+  // Decision metadata
+  decisionDate: timestamp("decisionDate").notNull(),
+  decision: mysqlEnum("decision", ["Pivot", "Persevere", "Pause"]).notNull(),
+  // Ries's ten pivot types
+  pivotType: mysqlEnum("pivotType", [
+    "Zoom-In",            // Single feature becomes the whole product
+    "Zoom-Out",           // Whole product becomes a single feature
+    "Customer-Segment",   // Same problem, different customer
+    "Customer-Need",      // Same customer, different problem
+    "Platform",           // App to platform or vice versa
+    "Business-Architecture", // High-margin/low-volume ↔ low-margin/high-volume
+    "Value-Capture",      // Monetisation model change
+    "Engine-of-Growth",   // Sticky → Viral → Paid switch
+    "Channel",            // Distribution channel change
+    "Technology",         // Same outcome, different technology
+  ]),
+  // Hypothesis being tested at time of decision
+  hypothesisTested: text("hypothesisTested").notNull(),
+  // Evidence reviewed (narrative + linked counts)
+  evidenceSummary: text("evidenceSummary"),
+  experimentsPassed: int("experimentsPassed").default(0),
+  experimentsFailed: int("experimentsFailed").default(0),
+  interviewsReviewed: int("interviewsReviewed").default(0),
+  // VRL score at time of decision (snapshot)
+  vrlScoreAtDecision: float("vrlScoreAtDecision"),
+  // Outcome of the decision
+  newHypothesis: text("newHypothesis"),  // what will be tested next
+  rationale: text("rationale"),
+  decidedBy: varchar("decidedBy", { length: 128 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type PivotDecision = typeof pivotDecisions.$inferSelect;
+export type InsertPivotDecision = typeof pivotDecisions.$inferInsert;
+
+// ── Pivot Trigger Configuration (Lean Startup — Rec. 2) ──────────────────────
+// Per-venture thresholds that generate a "pivot signal" alert when crossed.
+// Operationalises Ries's "runway is the number of pivots it can still make."
+export const pivotTriggerConfig = mysqlTable("pivot_trigger_config", {
+  id: int("id").autoincrement().primaryKey(),
+  ventureId: varchar("ventureId", { length: 64 }).notNull().unique(),
+  // Thresholds — alert fires when ALL active conditions are met
+  minExperimentPassRatePct: float("minExperimentPassRatePct").default(30), // alert if pass rate < this
+  maxRiskIndexPct: float("maxRiskIndexPct").default(60),                   // alert if risk index > this
+  minVrlScore: float("minVrlScore").default(2.0),                          // alert if VRL score < this
+  stagnationPeriodDays: int("stagnationPeriodDays").default(60),           // alert if no VRL progress for N days
+  // Alert state
+  alertActive: boolean("alertActive").default(false),
+  alertTriggeredAt: timestamp("alertTriggeredAt"),
+  alertDismissedAt: timestamp("alertDismissedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type PivotTriggerConfig = typeof pivotTriggerConfig.$inferSelect;
+export type InsertPivotTriggerConfig = typeof pivotTriggerConfig.$inferInsert;
+
+// ── Value Network Mapping (Innovator's Dilemma — Rec. 6) ─────────────────────
+// Captures the value network context for each venture per Christensen's framework.
+// "A value network is the context within which a firm identifies and responds to
+// customers' needs, solves problems, procures input, reacts to competitors,
+// and strives for profit."
+export const valueNetworks = mysqlTable("value_networks", {
+  id: int("id").autoincrement().primaryKey(),
+  ventureId: varchar("ventureId", { length: 64 }).notNull().unique(),
+  // Primary customer segment
+  primaryCustomerSegment: text("primaryCustomerSegment"),
+  customerPerformanceMetrics: text("customerPerformanceMetrics"), // what customers measure success by
+  // Cost structure
+  targetGrossMarginPct: float("targetGrossMarginPct"),  // % gross margin required to be viable
+  costStructureNotes: text("costStructureNotes"),
+  // Distribution
+  primaryChannel: varchar("primaryChannel", { length: 128 }),
+  channelNotes: text("channelNotes"),
+  // Competitive alternatives (what customers use instead)
+  competitiveAlternatives: text("competitiveAlternatives"),
+  // Value network fit flag (Rec. 12)
+  requiresDifferentCostStructure: boolean("requiresDifferentCostStructure").default(false),
+  requiresDifferentChannel: boolean("requiresDifferentChannel").default(false),
+  requiresDifferentCustomerRelationship: boolean("requiresDifferentCustomerRelationship").default(false),
+  // If any of the above are true, recommend autonomous team
+  autonomousTeamRecommended: boolean("autonomousTeamRecommended").default(false),
+  autonomousTeamNotes: text("autonomousTeamNotes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ValueNetwork = typeof valueNetworks.$inferSelect;
+export type InsertValueNetwork = typeof valueNetworks.$inferInsert;
+
+// ── Hypothesis-Linked Onboarding Tasks (Lean Startup — Rec. 13) ──────────────
+// Extends the onboarding wizard so each task is linked to a specific hypothesis
+// and a validation criterion, transforming the checklist into a validated
+// learning record. Ries: "the number of interviews is a vanity metric; what
+// matters is the number of validated hypotheses."
+export const onboardingHypotheses = mysqlTable("onboarding_hypotheses", {
+  id: int("id").autoincrement().primaryKey(),
+  ventureId: varchar("ventureId", { length: 64 }).notNull(),
+  // Onboarding task reference (maps to the wizard step)
+  onboardingStep: int("onboardingStep").notNull(),  // 1–4 (wizard steps)
+  taskLabel: varchar("taskLabel", { length: 255 }).notNull(),
+  // Hypothesis structure (Lean Startup scientific method)
+  hypothesis: text("hypothesis").notNull(),          // "We believe that X..."
+  validationCriterion: text("validationCriterion").notNull(), // "We will know this is true when..."
+  minimumSampleSize: int("minimumSampleSize"),        // e.g. minimum 20 interviews
+  // Outcome
+  outcome: mysqlEnum("outcome", ["Validated", "Invalidated", "Inconclusive", "Pending"]).default("Pending"),
+  evidenceSummary: text("evidenceSummary"),
+  validatedAt: timestamp("validatedAt"),
+  // Links to experiments/interviews that provide evidence
+  linkedExperimentIds: text("linkedExperimentIds"),  // JSON array of experiment IDs
+  linkedInterviewIds: text("linkedInterviewIds"),    // JSON array of interview IDs
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type OnboardingHypothesis = typeof onboardingHypotheses.$inferSelect;
+export type InsertOnboardingHypothesis = typeof onboardingHypotheses.$inferInsert;
+
+// ╔══════════════════════════════════════════════════════════════════════════════╗
+// ║  LITERATURE AUDIT ADDITIONS — TIER 3                                        ║
+// ╚══════════════════════════════════════════════════════════════════════════════╝
+
+// ── Disruptive Opportunity Scoring (Innovator's Dilemma — Rec. 11 & 12) ───────
+// Extends the Opportunity Pipeline with a Disruption Potential score that
+// inverts standard criteria. Christensen: "the most dangerous competitive threats
+// come from opportunities that score poorly on standard criteria."
+export const opportunityDisruptionScores = mysqlTable("opportunity_disruption_scores", {
+  id: int("id").autoincrement().primaryKey(),
+  opportunityId: int("opportunityId").notNull().unique(),
+  // Disruption Potential scoring (inverted criteria — high score = more disruptive)
+  // Each dimension scored 0–10
+  initialMarketSmallness: int("initialMarketSmallness").default(0),
+    // 10 = very small/niche market (disruptive signal); 0 = large established market
+  nonConsumerTargeting: int("nonConsumerTargeting").default(0),
+    // 10 = targets non-consumers or underserved; 0 = targets mainstream customers
+  simplicityScore: int("simplicityScore").default(0),
+    // 10 = simpler/more convenient than incumbents; 0 = more complex
+  lowMarginViability: int("lowMarginViability").default(0),
+    // 10 = viable at low margins (disruptive); 0 = requires high margins
+  incumbentIgnoreScore: int("incumbentIgnoreScore").default(0),
+    // 10 = incumbents would rationally ignore this; 0 = incumbents would respond immediately
+  // Computed total (sum of above, max 50)
+  disruptionPotentialScore: int("disruptionPotentialScore").default(0),
+  // Value network fit assessment (Rec. 12)
+  requiresDifferentCostStructure: boolean("requiresDifferentCostStructure").default(false),
+  requiresDifferentChannel: boolean("requiresDifferentChannel").default(false),
+  requiresDifferentCustomerRelationship: boolean("requiresDifferentCustomerRelationship").default(false),
+  // If any above are true, flag for autonomous team recommendation
+  autonomousTeamFlagged: boolean("autonomousTeamFlagged").default(false),
+  assessmentNotes: text("assessmentNotes"),
+  assessedBy: varchar("assessedBy", { length: 128 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type OpportunityDisruptionScore = typeof opportunityDisruptionScores.$inferSelect;
+export type InsertOpportunityDisruptionScore = typeof opportunityDisruptionScores.$inferInsert;
+
+// ── Organisational Autonomy Health Check (Innovator's Dilemma — Rec. 14) ─────
+// Assesses whether disruptive ventures have the organisational autonomy required
+// to succeed. Christensen: "disruptive ventures fail when managed within the same
+// organisational structure as sustaining ventures."
+// Only relevant for ventures classified as Disruptive-NewMarket or Disruptive-LowEnd.
+export const autonomyHealthChecks = mysqlTable("autonomy_health_checks", {
+  id: int("id").autoincrement().primaryKey(),
+  ventureId: varchar("ventureId", { length: 64 }).notNull(),
+  assessmentDate: timestamp("assessmentDate").notNull(),
+  // Four autonomy dimensions (each scored 0–10)
+  budgetProtectionScore: int("budgetProtectionScore").default(0),
+    // 10 = budget fully ring-fenced; 0 = subject to portfolio reallocation
+  decisionAutonomyScore: int("decisionAutonomyScore").default(0),
+    // 10 = team makes all product/GTM decisions independently; 0 = requires approval
+  metricsAppropriatenessScore: int("metricsAppropriatenessScore").default(0),
+    // 10 = measured on stage-appropriate small wins; 0 = measured against portfolio scale
+  valueNetworkEmbeddingScore: int("valueNetworkEmbeddingScore").default(0),
+    // 10 = embedded in target customers' value network; 0 = serving existing portfolio customers
+  // Computed total (sum of above, max 40)
+  totalAutonomyScore: int("totalAutonomyScore").default(0),
+  // Autonomy level classification
+  autonomyLevel: mysqlEnum("autonomyLevel", [
+    "Critical",  // 0–10: Severely constrained, high failure risk
+    "Low",       // 11–20: Insufficient autonomy
+    "Moderate",  // 21–30: Some autonomy but gaps remain
+    "High",      // 31–40: Well-protected disruptive unit
+  ]).default("Critical"),
+  // Narrative assessment
+  budgetNotes: text("budgetNotes"),
+  decisionNotes: text("decisionNotes"),
+  metricsNotes: text("metricsNotes"),
+  valueNetworkNotes: text("valueNetworkNotes"),
+  recommendedActions: text("recommendedActions"),
+  assessedBy: varchar("assessedBy", { length: 128 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type AutonomyHealthCheck = typeof autonomyHealthChecks.$inferSelect;
+export type InsertAutonomyHealthCheck = typeof autonomyHealthChecks.$inferInsert;
+
+// ── Technology Trajectory Snapshots (Innovator's Dilemma — Rec. 15) ──────────
+// Records periodic TRL trajectory data points for plotting against market
+// performance thresholds. Christensen: reveals when a disruptive technology is
+// about to intersect with mainstream market requirements.
+// Note: venture_scores already records historical TRL. This table adds the
+// market threshold context needed for trajectory analysis.
+export const technologyTrajectories = mysqlTable("technology_trajectories", {
+  id: int("id").autoincrement().primaryKey(),
+  ventureId: varchar("ventureId", { length: 64 }).notNull(),
+  // Market performance threshold (configurable per venture)
+  // The TRL level at which the technology meets mainstream market requirements
+  mainStreamMarketTrlThreshold: int("mainStreamMarketTrlThreshold").default(7),
+  lowEndMarketTrlThreshold: int("lowEndMarketTrlThreshold").default(4),
+  // Projected trajectory (simple linear extrapolation inputs)
+  currentTrl: int("currentTrl").notNull(),
+  trlGrowthRatePerQuarter: float("trlGrowthRatePerQuarter"), // avg TRL levels gained per quarter
+  // Market entry window calculation
+  quartersToMainstreamEntry: float("quartersToMainstreamEntry"), // computed: (threshold - current) / rate
+  quartersToLowEndEntry: float("quartersToLowEndEntry"),
+  // Alert: when entry window < alertHorizonQuarters, generate "market entry window" alert
+  alertHorizonQuarters: int("alertHorizonQuarters").default(4),
+  marketEntryAlertActive: boolean("marketEntryAlertActive").default(false),
+  // Snapshot date
+  snapshotDate: timestamp("snapshotDate").notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type TechnologyTrajectory = typeof technologyTrajectories.$inferSelect;
+export type InsertTechnologyTrajectory = typeof technologyTrajectories.$inferInsert;
+
+// ── Cohort Analysis Snapshots (Lean Startup — Rec. 4) ────────────────────────
+// Groups ventures by founding quarter and tracks VRL progression over time.
+// Ries: "use cohort analysis rather than cumulative totals to reveal whether
+// the portfolio's readiness methodology is improving across successive cohorts."
+export const cohortSnapshots = mysqlTable("cohort_snapshots", {
+  id: int("id").autoincrement().primaryKey(),
+  ventureId: varchar("ventureId", { length: 64 }).notNull(),
+  // Cohort identifier (founding quarter, e.g. "2024-Q1")
+  foundingCohort: varchar("foundingCohort", { length: 8 }).notNull(),
+  // Snapshot data (taken at regular intervals)
+  snapshotQuarter: varchar("snapshotQuarter", { length: 8 }).notNull(), // e.g. "2026-Q1"
+  quartersElapsed: int("quartersElapsed").notNull(),  // quarters since founding
+  vrlScore: float("vrlScore"),
+  trlLevel: int("trlLevel"),
+  experimentPassRate: float("experimentPassRate"),
+  pivotCount: int("pivotCount").default(0),
+  isActive: boolean("isActive").default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type CohortSnapshot = typeof cohortSnapshots.$inferSelect;
+export type InsertCohortSnapshot = typeof cohortSnapshots.$inferInsert;
+
+// ── Pivot Runway Calculator Inputs (Lean Startup — Rec. 10) ──────────────────
+// Stores the inputs needed to estimate how many pivots a venture can still afford.
+// Ries: "a startup's runway is the number of pivots it can still make."
+export const pivotRunwayInputs = mysqlTable("pivot_runway_inputs", {
+  id: int("id").autoincrement().primaryKey(),
+  ventureId: varchar("ventureId", { length: 64 }).notNull().unique(),
+  // Cash position
+  currentCashBalance: int("currentCashBalance").default(0),   // current cash in hand
+  monthlyBurnRate: int("monthlyBurnRate").default(0),          // current monthly burn
+  // Pivot cost estimate
+  avgPivotCostEstimate: int("avgPivotCostEstimate").default(0), // estimated cost per pivot cycle
+  avgPivotDurationWeeks: int("avgPivotDurationWeeks").default(8), // typical weeks per pivot
+  // Computed outputs (cached)
+  estimatedRunwayMonths: float("estimatedRunwayMonths"),        // currentCash / monthlyBurn
+  estimatedPivotsRemaining: float("estimatedPivotsRemaining"),  // runwayMonths / (pivotDurationWeeks/4.3)
+  runwayAlertThreshold: int("runwayAlertThreshold").default(2), // alert when pivots remaining < this
+  runwayAlertActive: boolean("runwayAlertActive").default(false),
+  lastCalculatedAt: timestamp("lastCalculatedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type PivotRunwayInputs = typeof pivotRunwayInputs.$inferSelect;
+export type InsertPivotRunwayInputs = typeof pivotRunwayInputs.$inferInsert;

@@ -148,3 +148,38 @@
 - [x] Update Portfolio Overview and Venture Detail to show computed VRL score alongside TRL/BRL
 - [ ] Upload VRL architecture infographic to CDN and embed in VRL Scoring Engine page
 - [x] Vitest tests for VRL scoring formula
+
+## Sprint 15 — Literature Audit Database Implementation (Mar 2026)
+
+### Tier 1 — Venture-Level Strategic Fields
+- [x] Add strategicClassification to ventures (Sustaining / Disruptive-NewMarket / Disruptive-LowEnd) — Christensen Rec. 5
+- [x] Add engineOfGrowth to ventures (Sticky / Viral / Paid) — Ries Rec. 7
+- [x] Add productMarketFitSignal to ventures (Not Yet / Emerging / Achieved) — Ries Rec. 8
+- [x] Add innovation accounting cache fields to ventures (experimentPassRate, learningVelocity, interviewInsightRate) — Ries Rec. 3
+- [x] Add engine-of-growth metrics to financial_snapshots (churnRate, retentionRate, viralCoefficient, referralRate, CAC, LTV, LTV:CAC, baselineRevenueTarget, isBaseline) — Ries Rec. 4
+
+### Tier 2 — New Tables
+- [x] Create pivot_decisions table (10 Ries pivot types, hypothesis, evidence counts, VRL snapshot) — Ries Rec. 1
+- [x] Create pivot_trigger_config table (per-venture alert thresholds for pass rate, risk index, VRL stagnation) — Ries Rec. 2
+- [x] Create pivot_runway_inputs table (cash, burn, pivot cost, computed runway months and pivots remaining) — Ries Rec. 10
+- [x] Create value_networks table (customer segment, cost structure, channel, competitive alternatives, autonomous team flag) — Christensen Rec. 6
+- [x] Create onboarding_hypotheses table (hypothesis + validation criterion per wizard step, outcome tracking) — Ries Rec. 13
+
+### Tier 3 — New Tables
+- [x] Create opportunity_disruption_scores table (5-dimension inverted scoring: market smallness, non-consumer, simplicity, low-margin, incumbent-ignore) — Christensen Rec. 11
+- [x] Create autonomy_health_checks table (4-dimension: budget, decision, metrics, value-network; Critical/Low/Moderate/High classification) — Christensen Rec. 14
+- [x] Create technology_trajectories table (TRL growth rate, quarters-to-mainstream/low-end entry, market entry window alert) — Christensen Rec. 15
+- [x] Create cohort_snapshots table (founding cohort, VRL/TRL/pass-rate per quarter elapsed) — Ries Rec. 4
+
+### Backend Procedures
+- [x] tRPC pivots router (list, add, delete, getTriggerConfig, upsertTriggerConfig, getRunwayInputs, upsertRunwayInputs)
+- [x] tRPC valueNetworks router (get, upsert with auto-autonomy-recommendation)
+- [x] tRPC leanMetrics router (updateClassification, recomputeMetrics, portfolioSummary)
+- [x] tRPC onboardingHypotheses router (list, upsert, delete)
+- [x] tRPC disruptionScoring router (get, upsert with auto-score, listAll)
+- [x] tRPC autonomyChecks router (list, add with auto-level-classification)
+- [x] tRPC technologyTrajectory router (list, addSnapshot with computed entry windows)
+- [x] tRPC cohortAnalysis router (list, addSnapshot)
+- [x] Push migration 0010_chief_medusa.sql — 35 tables, all changes applied successfully
+- [x] TypeScript check passes — 0 errors
+- [x] 31 new vitest tests for all new scoring algorithms (226 total tests passing)

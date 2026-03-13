@@ -111,6 +111,7 @@ import {
   computeVrlScore,
   computePortfolioVrlScores,
   VRL_LEVEL_LABELS,
+  getDb,
 } from "./db";
 import { searchSemanticScholar, extractKeywords } from "./semanticScholar";
 
@@ -1558,6 +1559,487 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
     // Get the VRL level label map
     getLevelLabels: publicProcedure
       .query(() => VRL_LEVEL_LABELS),
+  }),
+
+  // ── Literature Audit: Pivot Decision Log (Lean Startup — Rec. 1 & 2) ─────────
+  pivots: router({
+    list: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { pivotDecisions } = await import("../drizzle/schema");
+        const { eq, desc } = await import("drizzle-orm");
+        return db.select().from(pivotDecisions)
+          .where(eq(pivotDecisions.ventureId, input.ventureId))
+          .orderBy(desc(pivotDecisions.decisionDate));
+      }),
+
+    add: publicProcedure
+      .input(z.object({
+        ventureId: z.string(),
+        decisionDate: z.date().or(z.string().transform(s => new Date(s))),
+        decision: z.enum(["Pivot", "Persevere", "Pause"]),
+        pivotType: z.enum(["Zoom-In","Zoom-Out","Customer-Segment","Customer-Need","Platform","Business-Architecture","Value-Capture","Engine-of-Growth","Channel","Technology"]).optional(),
+        hypothesisTested: z.string(),
+        evidenceSummary: z.string().optional(),
+        experimentsPassed: z.number().default(0),
+        experimentsFailed: z.number().default(0),
+        interviewsReviewed: z.number().default(0),
+        vrlScoreAtDecision: z.number().optional(),
+        newHypothesis: z.string().optional(),
+        rationale: z.string().optional(),
+        decidedBy: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { pivotDecisions } = await import("../drizzle/schema");
+        await db.insert(pivotDecisions).values(input as any);
+        return { success: true };
+      }),
+
+    delete: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { pivotDecisions } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        await db.delete(pivotDecisions).where(eq(pivotDecisions.id, input.id));
+        return { success: true };
+      }),
+
+    // Pivot Trigger Config (Rec. 2)
+    getTriggerConfig: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { pivotTriggerConfig } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const [row] = await db.select().from(pivotTriggerConfig)
+          .where(eq(pivotTriggerConfig.ventureId, input.ventureId));
+        return row ?? null;
+      }),
+
+    upsertTriggerConfig: publicProcedure
+      .input(z.object({
+        ventureId: z.string(),
+        minExperimentPassRatePct: z.number().min(0).max(100).optional(),
+        maxRiskIndexPct: z.number().min(0).max(100).optional(),
+        minVrlScore: z.number().min(0).max(9).optional(),
+        stagnationPeriodDays: z.number().min(1).optional(),
+        alertActive: z.boolean().optional(),
+        alertDismissedAt: z.date().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { pivotTriggerConfig } = await import("../drizzle/schema");
+        await db.insert(pivotTriggerConfig).values(input as any)
+          .onDuplicateKeyUpdate({ set: input as any });
+        return { success: true };
+      }),
+
+    // Pivot Runway Calculator (Rec. 10)
+    getRunwayInputs: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { pivotRunwayInputs } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const [row] = await db.select().from(pivotRunwayInputs)
+          .where(eq(pivotRunwayInputs.ventureId, input.ventureId));
+        return row ?? null;
+      }),
+
+    upsertRunwayInputs: publicProcedure
+      .input(z.object({
+        ventureId: z.string(),
+        currentCashBalance: z.number().min(0),
+        monthlyBurnRate: z.number().min(0),
+        avgPivotCostEstimate: z.number().min(0).optional(),
+        avgPivotDurationWeeks: z.number().min(1).optional(),
+        runwayAlertThreshold: z.number().min(0).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { pivotRunwayInputs } = await import("../drizzle/schema");
+        // Compute derived fields
+        const runwayMonths = input.monthlyBurnRate > 0
+          ? input.currentCashBalance / input.monthlyBurnRate
+          : null;
+        const pivotWeeks = input.avgPivotDurationWeeks ?? 8;
+        const pivotsRemaining = runwayMonths !== null
+          ? runwayMonths / (pivotWeeks / 4.33)
+          : null;
+        const alertActive = pivotsRemaining !== null && pivotsRemaining < (input.runwayAlertThreshold ?? 2);
+        const values = {
+          ...input,
+          estimatedRunwayMonths: runwayMonths,
+          estimatedPivotsRemaining: pivotsRemaining,
+          runwayAlertActive: alertActive,
+          lastCalculatedAt: new Date(),
+        };
+        await db.insert(pivotRunwayInputs).values(values as any)
+          .onDuplicateKeyUpdate({ set: values as any });
+        return { success: true, runwayMonths, pivotsRemaining, alertActive };
+      }),
+  }),
+
+  // ── Literature Audit: Value Network Mapping (Innovator's Dilemma — Rec. 6) ───
+  valueNetworks: router({
+    get: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { valueNetworks } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const [row] = await db.select().from(valueNetworks)
+          .where(eq(valueNetworks.ventureId, input.ventureId));
+        return row ?? null;
+      }),
+
+    upsert: publicProcedure
+      .input(z.object({
+        ventureId: z.string(),
+        primaryCustomerSegment: z.string().optional(),
+        customerPerformanceMetrics: z.string().optional(),
+        targetGrossMarginPct: z.number().min(0).max(100).optional(),
+        costStructureNotes: z.string().optional(),
+        primaryChannel: z.string().optional(),
+        channelNotes: z.string().optional(),
+        competitiveAlternatives: z.string().optional(),
+        requiresDifferentCostStructure: z.boolean().optional(),
+        requiresDifferentChannel: z.boolean().optional(),
+        requiresDifferentCustomerRelationship: z.boolean().optional(),
+        autonomousTeamRecommended: z.boolean().optional(),
+        autonomousTeamNotes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { valueNetworks } = await import("../drizzle/schema");
+        // Auto-compute autonomousTeamRecommended
+        const autoRecommend = !!(input.requiresDifferentCostStructure ||
+          input.requiresDifferentChannel ||
+          input.requiresDifferentCustomerRelationship);
+        const values = { ...input, autonomousTeamRecommended: input.autonomousTeamRecommended ?? autoRecommend };
+        await db.insert(valueNetworks).values(values as any)
+          .onDuplicateKeyUpdate({ set: values as any });
+        return { success: true };
+      }),
+  }),
+
+  // ── Literature Audit: Strategic Classification + Innovation Accounting (Rec. 3, 5, 7, 8) ──
+  leanMetrics: router({
+    // Update venture's strategic classification, engine of growth, PMF signal
+    updateClassification: publicProcedure
+      .input(z.object({
+        ventureId: z.string(),
+        strategicClassification: z.enum(["Sustaining","Disruptive-NewMarket","Disruptive-LowEnd"]).optional(),
+        engineOfGrowth: z.enum(["Sticky","Viral","Paid"]).optional(),
+        productMarketFitSignal: z.enum(["Not Yet","Emerging","Achieved"]).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { ventures } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const { ventureId, ...fields } = input;
+        await db.update(ventures).set(fields as any).where(eq(ventures.id, ventureId));
+        return { success: true };
+      }),
+
+    // Recompute and cache innovation accounting metrics for a venture (Rec. 3)
+    recomputeMetrics: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { experiments, interviews, ventures } = await import("../drizzle/schema");
+        const { eq, and, gte, ne } = await import("drizzle-orm");
+        // Experiment pass rate: passing / (passing + failing + inconclusive)
+        const allExps = await db.select().from(experiments)
+          .where(eq(experiments.ventureId, input.ventureId));
+        const completed = allExps.filter(e => e.outcome !== "Pending");
+        const passing = completed.filter(e => e.outcome === "Pass");
+        const passRate = completed.length > 0 ? (passing.length / completed.length) * 100 : null;
+        // Learning velocity: experiments completed in last 30 days
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const recentCompleted = completed.filter(e =>
+          e.updatedAt && new Date(e.updatedAt) >= thirtyDaysAgo
+        );
+        const velocity = recentCompleted.length;
+        // Interview insight rate: interviews with validationSignals / total interviews
+        const allInterviews = await db.select().from(interviews)
+          .where(eq(interviews.ventureId, input.ventureId));
+        const withSignals = allInterviews.filter(i => i.validationSignals && i.validationSignals.trim().length > 0);
+        const insightRate = allInterviews.length > 0
+          ? (withSignals.length / allInterviews.length) * 100
+          : null;
+        await db.update(ventures).set({
+          experimentPassRate: passRate,
+          learningVelocity: velocity,
+          interviewInsightRate: insightRate,
+        } as any).where(eq(ventures.id, input.ventureId));
+        return { passRate, velocity, insightRate };
+      }),
+
+    // Get portfolio-level innovation accounting summary (Rec. 3)
+    portfolioSummary: publicProcedure
+      .query(async () => {
+        const db = (await getDb())!;
+        const { ventures } = await import("../drizzle/schema");
+        const rows = await db.select({
+          id: ventures.id,
+          name: ventures.name,
+          color: ventures.color,
+          strategicClassification: ventures.strategicClassification,
+          engineOfGrowth: ventures.engineOfGrowth,
+          productMarketFitSignal: ventures.productMarketFitSignal,
+          experimentPassRate: ventures.experimentPassRate,
+          learningVelocity: ventures.learningVelocity,
+          interviewInsightRate: ventures.interviewInsightRate,
+        }).from(ventures);
+        return rows;
+      }),
+  }),
+
+  // ── Literature Audit: Onboarding Hypotheses (Lean Startup — Rec. 13) ─────────
+  onboardingHypotheses: router({
+    list: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { onboardingHypotheses } = await import("../drizzle/schema");
+        const { eq, asc } = await import("drizzle-orm");
+        return db.select().from(onboardingHypotheses)
+          .where(eq(onboardingHypotheses.ventureId, input.ventureId))
+          .orderBy(asc(onboardingHypotheses.onboardingStep));
+      }),
+
+    upsert: publicProcedure
+      .input(z.object({
+        id: z.number().optional(),
+        ventureId: z.string(),
+        onboardingStep: z.number().min(1).max(4),
+        taskLabel: z.string(),
+        hypothesis: z.string(),
+        validationCriterion: z.string(),
+        minimumSampleSize: z.number().optional(),
+        outcome: z.enum(["Validated","Invalidated","Inconclusive","Pending"]).optional(),
+        evidenceSummary: z.string().optional(),
+        linkedExperimentIds: z.string().optional(),
+        linkedInterviewIds: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { onboardingHypotheses } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        if (input.id) {
+          const { id, ...fields } = input;
+          await db.update(onboardingHypotheses).set({
+            ...fields,
+            validatedAt: fields.outcome === "Validated" ? new Date() : undefined,
+          } as any).where(eq(onboardingHypotheses.id, id));
+        } else {
+          await db.insert(onboardingHypotheses).values(input as any);
+        }
+        return { success: true };
+      }),
+
+    delete: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { onboardingHypotheses } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        await db.delete(onboardingHypotheses).where(eq(onboardingHypotheses.id, input.id));
+        return { success: true };
+      }),
+  }),
+
+  // ── Literature Audit: Disruption Scoring (Innovator's Dilemma — Rec. 11 & 12) ─
+  disruptionScoring: router({
+    get: publicProcedure
+      .input(z.object({ opportunityId: z.number() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { opportunityDisruptionScores } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const [row] = await db.select().from(opportunityDisruptionScores)
+          .where(eq(opportunityDisruptionScores.opportunityId, input.opportunityId));
+        return row ?? null;
+      }),
+
+    upsert: publicProcedure
+      .input(z.object({
+        opportunityId: z.number(),
+        initialMarketSmallness: z.number().min(0).max(10).optional(),
+        nonConsumerTargeting: z.number().min(0).max(10).optional(),
+        simplicityScore: z.number().min(0).max(10).optional(),
+        lowMarginViability: z.number().min(0).max(10).optional(),
+        incumbentIgnoreScore: z.number().min(0).max(10).optional(),
+        requiresDifferentCostStructure: z.boolean().optional(),
+        requiresDifferentChannel: z.boolean().optional(),
+        requiresDifferentCustomerRelationship: z.boolean().optional(),
+        assessmentNotes: z.string().optional(),
+        assessedBy: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { opportunityDisruptionScores } = await import("../drizzle/schema");
+        const total = (input.initialMarketSmallness ?? 0) +
+          (input.nonConsumerTargeting ?? 0) +
+          (input.simplicityScore ?? 0) +
+          (input.lowMarginViability ?? 0) +
+          (input.incumbentIgnoreScore ?? 0);
+        const autonomousFlagged = !!(input.requiresDifferentCostStructure ||
+          input.requiresDifferentChannel ||
+          input.requiresDifferentCustomerRelationship);
+        const values = {
+          ...input,
+          disruptionPotentialScore: total,
+          autonomousTeamFlagged: autonomousFlagged,
+        };
+        await db.insert(opportunityDisruptionScores).values(values as any)
+          .onDuplicateKeyUpdate({ set: values as any });
+        return { success: true, disruptionPotentialScore: total };
+      }),
+
+    listAll: publicProcedure
+      .query(async () => {
+        const db = (await getDb())!;
+        const { opportunityDisruptionScores, opportunities } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        return db.select({
+          id: opportunityDisruptionScores.id,
+          opportunityId: opportunityDisruptionScores.opportunityId,
+          title: opportunities.title,
+          disruptionPotentialScore: opportunityDisruptionScores.disruptionPotentialScore,
+          autonomousTeamFlagged: opportunityDisruptionScores.autonomousTeamFlagged,
+          strategicFitScore: opportunities.strategicFitScore,
+        }).from(opportunityDisruptionScores)
+          .innerJoin(opportunities, eq(opportunityDisruptionScores.opportunityId, opportunities.id));
+      }),
+  }),
+
+  // ── Literature Audit: Autonomy Health Check (Innovator's Dilemma — Rec. 14) ──
+  autonomyChecks: router({
+    list: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { autonomyHealthChecks } = await import("../drizzle/schema");
+        const { eq, desc } = await import("drizzle-orm");
+        return db.select().from(autonomyHealthChecks)
+          .where(eq(autonomyHealthChecks.ventureId, input.ventureId))
+          .orderBy(desc(autonomyHealthChecks.assessmentDate));
+      }),
+
+    add: publicProcedure
+      .input(z.object({
+        ventureId: z.string(),
+        assessmentDate: z.date().or(z.string().transform(s => new Date(s))),
+        budgetProtectionScore: z.number().min(0).max(10),
+        decisionAutonomyScore: z.number().min(0).max(10),
+        metricsAppropriatenessScore: z.number().min(0).max(10),
+        valueNetworkEmbeddingScore: z.number().min(0).max(10),
+        budgetNotes: z.string().optional(),
+        decisionNotes: z.string().optional(),
+        metricsNotes: z.string().optional(),
+        valueNetworkNotes: z.string().optional(),
+        recommendedActions: z.string().optional(),
+        assessedBy: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { autonomyHealthChecks } = await import("../drizzle/schema");
+        const total = input.budgetProtectionScore + input.decisionAutonomyScore +
+          input.metricsAppropriatenessScore + input.valueNetworkEmbeddingScore;
+        const level = total <= 10 ? "Critical" : total <= 20 ? "Low" : total <= 30 ? "Moderate" : "High";
+        await db.insert(autonomyHealthChecks).values({
+          ...input,
+          totalAutonomyScore: total,
+          autonomyLevel: level,
+        } as any);
+        return { success: true, totalAutonomyScore: total, autonomyLevel: level };
+      }),
+  }),
+
+  // ── Literature Audit: Technology Trajectory (Innovator's Dilemma — Rec. 15) ──
+  technologyTrajectory: router({
+    list: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { technologyTrajectories } = await import("../drizzle/schema");
+        const { eq, desc } = await import("drizzle-orm");
+        return db.select().from(technologyTrajectories)
+          .where(eq(technologyTrajectories.ventureId, input.ventureId))
+          .orderBy(desc(technologyTrajectories.snapshotDate));
+      }),
+
+    addSnapshot: publicProcedure
+      .input(z.object({
+        ventureId: z.string(),
+        currentTrl: z.number().min(1).max(9),
+        mainStreamMarketTrlThreshold: z.number().min(1).max(9).optional(),
+        lowEndMarketTrlThreshold: z.number().min(1).max(9).optional(),
+        trlGrowthRatePerQuarter: z.number().min(0).optional(),
+        alertHorizonQuarters: z.number().min(1).optional(),
+        snapshotDate: z.date().or(z.string().transform(s => new Date(s))),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { technologyTrajectories } = await import("../drizzle/schema");
+        const mainThreshold = input.mainStreamMarketTrlThreshold ?? 7;
+        const lowThreshold = input.lowEndMarketTrlThreshold ?? 4;
+        const rate = input.trlGrowthRatePerQuarter ?? null;
+        const horizon = input.alertHorizonQuarters ?? 4;
+        const quartersToMain = rate && rate > 0
+          ? Math.max(0, (mainThreshold - input.currentTrl) / rate)
+          : null;
+        const quartersToLow = rate && rate > 0
+          ? Math.max(0, (lowThreshold - input.currentTrl) / rate)
+          : null;
+        const alertActive = quartersToMain !== null && quartersToMain <= horizon;
+        await db.insert(technologyTrajectories).values({
+          ...input,
+          mainStreamMarketTrlThreshold: mainThreshold,
+          lowEndMarketTrlThreshold: lowThreshold,
+          quartersToMainstreamEntry: quartersToMain,
+          quartersToLowEndEntry: quartersToLow,
+          marketEntryAlertActive: alertActive,
+        } as any);
+        return { success: true, quartersToMain, quartersToLow, alertActive };
+      }),
+  }),
+
+  // ── Literature Audit: Cohort Analysis (Lean Startup — Rec. 4) ────────────────
+  cohortAnalysis: router({
+    list: publicProcedure
+      .query(async () => {
+        const db = (await getDb())!;
+        const { cohortSnapshots } = await import("../drizzle/schema");
+        const { asc } = await import("drizzle-orm");
+        return db.select().from(cohortSnapshots)
+          .orderBy(asc(cohortSnapshots.foundingCohort), asc(cohortSnapshots.quartersElapsed));
+      }),
+
+    addSnapshot: publicProcedure
+      .input(z.object({
+        ventureId: z.string(),
+        foundingCohort: z.string(),
+        snapshotQuarter: z.string(),
+        quartersElapsed: z.number().min(0),
+        vrlScore: z.number().optional(),
+        trlLevel: z.number().optional(),
+        experimentPassRate: z.number().optional(),
+        pivotCount: z.number().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { cohortSnapshots } = await import("../drizzle/schema");
+        await db.insert(cohortSnapshots).values(input as any);
+        return { success: true };
+      }),
   }),
 });
 export type AppRouter = typeof appRouter;

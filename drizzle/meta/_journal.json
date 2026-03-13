@@ -71,6 +71,13 @@
       "when": 1773425623318,
       "tag": "0009_black_prism",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1773431554562,
+      "tag": "0010_chief_medusa",
+      "breakpoints": true
     }
   ]
 }
