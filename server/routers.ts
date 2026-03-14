@@ -459,6 +459,13 @@ export const appRouter = router({
         ventureId: z.string(),
       }))
       .mutation(async ({ input }) => {
+        // Retrieve relevant knowledge base context
+        const { searchKnowledge } = await import("./knowledgeBase");
+        const kbResults = await searchKnowledge({ query: `customer discovery interview ${input.ventureId}`, domain: "Market", topK: 3 });
+        const kbContext = kbResults.length > 0
+          ? `\n\n--- Relevant Knowledge Base Context ---\n${kbResults.map((r, i) => `[${i+1}] ${r.documentTitle} (${r.domain}): ${r.content.slice(0, 400)}`).join("\n\n")}`
+          : "";
+
         const response = await invokeLLM({
           messages: [
             {
@@ -466,10 +473,10 @@ export const appRouter = router({
               content: `You are an expert venture analyst specialising in customer discovery interviews for early-stage ventures. 
 Extract and structure the key information from this customer interview transcript into a concise, actionable summary for a venture builder studio.
 Return a JSON object with exactly these fields:
-- keyInsights: string (2-3 bullet points of the most important insights, separated by \\n)
-- painPoints: string (the main problems or frustrations expressed, 2-3 points separated by \\n)
-- validationSignals: string (evidence that supports or challenges the venture hypothesis, 2-3 points separated by \\n)
-- aiSummary: string (a 3-4 sentence executive summary of the interview)`,
+- keyInsights: string (2-3 bullet points of the most important insights, separated by \n)
+- painPoints: string (the main problems or frustrations expressed, 2-3 points separated by \n)
+- validationSignals: string (evidence that supports or challenges the venture hypothesis, 2-3 points separated by \n)
+- aiSummary: string (a 3-4 sentence executive summary of the interview)${kbContext}`,
             },
             {
               role: "user",
@@ -916,12 +923,19 @@ Return a JSON object with exactly these fields:
         description: z.string(),
       }))
       .mutation(async ({ input }) => {
+        // Retrieve relevant knowledge base context for market analysis
+        const { searchKnowledge } = await import("./knowledgeBase");
+        const kbResults = await searchKnowledge({ query: `${input.sector} market size growth drivers`, topK: 4 });
+        const kbContext = kbResults.length > 0
+          ? `\n\nKnowledge base context (use to inform your analysis):\n${kbResults.map((r, i) => `[${i+1}] ${r.documentTitle}: ${r.content.slice(0, 350)}`).join("\n\n")}`
+          : "";
+
         const response = await invokeLLM({
           messages: [
             {
               role: "system",
               content: `You are a market research analyst specialising in sustainable technology, eco-materials, and impact ventures. 
-Generate a structured market analysis in JSON format. Use British English. Be specific with numbers — cite realistic market size figures based on known industry data.
+Generate a structured market analysis in JSON format. Use British English. Be specific with numbers — cite realistic market size figures based on known industry data.${kbContext}
 Return ONLY valid JSON matching this schema exactly:
 {
   "marketName": string,
@@ -1107,11 +1121,25 @@ Return ONLY a valid JSON array of competitor objects matching this schema exactl
         sector: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
+        // Retrieve relevant knowledge base context for the report
+        const { searchKnowledge } = await import("./knowledgeBase");
+        const [strategyResults, marketResults, esgResults] = await Promise.all([
+          searchKnowledge({ query: `${input.title} ${input.sector ?? ""} disruptive innovation strategy`, topK: 3 }),
+          searchKnowledge({ query: `${input.sector ?? ""} market opportunity competitive landscape`, domain: "Market", topK: 3 }),
+          searchKnowledge({ query: `${input.sector ?? ""} ESG sustainability impact`, domain: "ESG", topK: 2 }),
+        ]);
+        const allKbResults = [...strategyResults, ...marketResults, ...esgResults]
+          .filter((r, i, arr) => arr.findIndex(x => x.documentId === r.documentId && x.chunkIndex === r.chunkIndex) === i) // deduplicate
+          .slice(0, 6);
+        const kbContext = allKbResults.length > 0
+          ? `\n\n--- Knowledge Base References (cite where relevant) ---\n${allKbResults.map((r, i) => `[KB${i+1}] ${r.documentTitle}${r.author ? ` by ${r.author}` : ""}${r.publishedYear ? ` (${r.publishedYear})` : ""} [${r.domain}]: ${r.content.slice(0, 450)}`).join("\n\n")}`
+          : "";
+
         const response = await invokeLLM({
           messages: [
             {
               role: "system",
-              content: `You are a senior business analyst and market researcher specialising in sustainable technology, social enterprise, and impact ventures. You produce structured, evidence-based commercial research reports.
+              content: `You are a senior business analyst and market researcher specialising in sustainable technology, social enterprise, and impact ventures. You produce structured, evidence-based commercial research reports.${kbContext}
 
 Your reports are written in British English, use a professional academic tone, and are structured to support venture investment decisions.
 
@@ -2356,6 +2384,124 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         const avgIrl  = parseFloat((rows.reduce((s, r) => s + (r.irlScore ?? 0), 0) / rows.length).toFixed(2));
         const avgTvis = parseFloat((rows.reduce((s, r) => s + (r.totalVentureIntelligenceScore ?? 0), 0) / rows.length).toFixed(2));
         return { avgIrl, avgTvis, ventures: rows };
+      }),
+  }),
+
+  // ── Knowledge Base ────────────────────────────────────────────────────────────────────────────
+  knowledgeBase: router({
+
+    // List all documents with metadata
+    listDocuments: publicProcedure
+      .query(async () => {
+        const { listKnowledgeDocuments } = await import("./knowledgeBase");
+        return listKnowledgeDocuments();
+      }),
+
+    // Get library stats
+    getStats: publicProcedure
+      .query(async () => {
+        const { getKnowledgeStats } = await import("./knowledgeBase");
+        return getKnowledgeStats();
+      }),
+
+    // Create a document record (returns new ID for subsequent upload)
+    createDocument: publicProcedure
+      .input(z.object({
+        title: z.string().min(1),
+        sourceType: z.enum(["pdf", "transcript", "url", "text"]),
+        domain: z.enum(["VRL", "TRL", "BRL", "IRL", "ESG", "Market", "Finance", "Legal", "People", "Brand", "Strategy", "General"]),
+        author: z.string().optional(),
+        publishedYear: z.number().int().optional(),
+        description: z.string().optional(),
+        tags: z.string().optional(),
+        sourceUrl: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { createKnowledgeDocument } = await import("./knowledgeBase");
+        const result = await createKnowledgeDocument({
+          title: input.title,
+          sourceType: input.sourceType,
+          domain: input.domain,
+          author: input.author ?? null,
+          publishedYear: input.publishedYear ?? null,
+          description: input.description ?? null,
+          tags: input.tags ?? null,
+          sourceUrl: input.sourceUrl ?? null,
+          status: "pending",
+        });
+        return { id: (result as any).insertId as number };
+      }),
+
+    // Upload PDF (base64) or plain text, extract text, chunk, and index
+    uploadAndIngest: publicProcedure
+      .input(z.object({
+        documentId: z.number().int(),
+        text: z.string().optional(),
+        fileBase64: z.string().optional(),
+        filename: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const {
+          ingestDocument,
+          extractPdfText,
+          uploadDocumentToS3,
+          getKnowledgeDocument,
+        } = await import("./knowledgeBase");
+
+        const doc = await getKnowledgeDocument(input.documentId);
+        if (!doc) throw new Error("Document not found");
+
+        let text = input.text ?? "";
+
+        if (input.fileBase64 && doc.sourceType === "pdf") {
+          const buffer = Buffer.from(input.fileBase64, "base64");
+          try {
+            const { key } = await uploadDocumentToS3(
+              buffer,
+              input.filename ?? `doc-${input.documentId}.pdf`,
+              "application/pdf"
+            );
+            const db = (await getDb())!;
+            const { knowledgeDocuments } = await import("../drizzle/schema");
+            const { eq } = await import("drizzle-orm");
+            await db.update(knowledgeDocuments).set({ s3Key: key }).where(eq(knowledgeDocuments.id, input.documentId));
+          } catch (e) {
+            console.warn("[KB] S3 upload failed, continuing with text extraction:", e);
+          }
+          text = await extractPdfText(buffer);
+        }
+
+        if (!text.trim()) throw new Error("No text content could be extracted");
+        return ingestDocument({ documentId: input.documentId, text });
+      }),
+
+    // Delete a document and all its chunks
+    deleteDocument: publicProcedure
+      .input(z.object({ id: z.number().int() }))
+      .mutation(async ({ input }) => {
+        const { deleteKnowledgeDocument } = await import("./knowledgeBase");
+        await deleteKnowledgeDocument(input.id);
+        return { success: true };
+      }),
+
+    // Full-text search across all indexed chunks
+    search: publicProcedure
+      .input(z.object({
+        query: z.string().min(1),
+        domain: z.string().optional(),
+        topK: z.number().int().min(1).max(20).default(5),
+      }))
+      .query(async ({ input }) => {
+        const { searchKnowledge } = await import("./knowledgeBase");
+        return searchKnowledge({ query: input.query, domain: input.domain, topK: input.topK });
+      }),
+
+    // Get all chunks for a specific document
+    getChunks: publicProcedure
+      .input(z.object({ documentId: z.number().int() }))
+      .query(async ({ input }) => {
+        const { getChunksByDocument } = await import("./knowledgeBase");
+        return getChunksByDocument(input.documentId);
       }),
   }),
 });

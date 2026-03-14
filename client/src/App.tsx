@@ -32,6 +32,7 @@ import AcademicResearch from "./pages/AcademicResearch";
 import MarketIntelligence from "./pages/MarketIntelligence";
 import BrlAnalytics from "./pages/BrlAnalytics";
 import ImpactGovernance from "./pages/ImpactGovernance";
+import KnowledgeBase from "./pages/KnowledgeBase";
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
@@ -62,6 +63,7 @@ function Router() {
       <Route path="/market-intelligence" component={MarketIntelligence} />
       <Route path="/brl" component={BrlAnalytics} />
       <Route path="/impact" component={ImpactGovernance} />
+      <Route path="/knowledge" component={KnowledgeBase} />
       <Route component={Home} />
     </Switch>
   );

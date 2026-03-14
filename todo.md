@@ -203,3 +203,27 @@
 - [x] Add Avg IRL Score KPI tile to Portfolio Overview (6-tile layout)
 - [x] Add Impact Governance Engine to Sidebar (Governance group) and App.tsx routes
 - [x] Vitest tests for IRL scoring engine (277 total passing, 0 TypeScript errors)
+
+## Sprint 18 — Knowledge Base Ingestion Module (Mar 2026)
+
+- [ ] Add knowledge_documents and knowledge_chunks tables to schema (migration 0012)
+- [ ] Build server-side ingestion pipeline: PDF text extraction, chunking, BM25 keyword indexing
+- [ ] Add knowledgeBase tRPC router: uploadDocument, listDocuments, deleteDocument, searchKnowledge, getDocumentChunks, getStats
+- [ ] Build Knowledge Base admin page with document upload, domain tagging, ingestion status, and search preview
+- [ ] Wire knowledge retrieval into market intelligence AI generate procedure
+- [ ] Wire knowledge retrieval into interview summariser procedure
+- [ ] Wire knowledge retrieval into opportunity report generate procedure
+- [ ] Add Knowledge Base to sidebar navigation (Research group)
+- [ ] Vitest tests for knowledge base procedures
+
+## Sprint 18 — Knowledge Base Ingestion Module / RAG Engine (Mar 2026)
+
+- [x] Add knowledge_documents and knowledge_chunks tables to schema, push migration 0012_steady_wolfpack.sql (43 tables total)
+- [x] Build server-side ingestion pipeline: PDF text extraction (pdf-parse), 500-word chunking with 50-word overlap, BM25 keyword search helper (server/knowledgeBase.ts)
+- [x] Add tRPC knowledgeBase router: createDocument, uploadAndIngest, listDocuments, deleteDocument, search, getChunks, getStats
+- [x] Build Knowledge Base admin page (/knowledge): document upload (PDF/transcript/text/URL), domain tagging (VRL/TRL/IRL/Market/ESG/Legal/Finance/Strategy/General), ingestion status, chunk preview, live search panel
+- [x] Wire knowledge base retrieval into interview summariser (top-4 relevant chunks injected as context)
+- [x] Wire knowledge base retrieval into market analysis AI generator (top-4 chunks by sector query)
+- [x] Wire knowledge base retrieval into opportunity report generator (parallel search across strategy/market/ESG domains, deduplicated, top-6 chunks with author/year citations)
+- [x] Add Knowledge Base to sidebar under new "Intelligence" group (Database icon, /knowledge route)
+- [x] Vitest tests: chunking, BM25 scoring, tokenisation, domain filtering (297 total passing, 0 TypeScript errors)

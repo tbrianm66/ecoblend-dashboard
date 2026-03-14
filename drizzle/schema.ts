@@ -1073,3 +1073,44 @@ export const irlScores = mysqlTable("irl_scores", {
 });
 export type IrlScore = typeof irlScores.$inferSelect;
 export type InsertIrlScore = typeof irlScores.$inferInsert;
+
+// ── Knowledge Base ────────────────────────────────────────────────────────────
+// Stores ingested documents (PDFs, transcripts, URLs) for RAG-style retrieval
+// Uses MySQL FULLTEXT index for BM25-style keyword search
+export const knowledgeDocuments = mysqlTable("knowledge_documents", {
+  id:           int("id").autoincrement().primaryKey(),
+  title:        varchar("title", { length: 256 }).notNull(),
+  sourceType:   mysqlEnum("sourceType", ["pdf", "transcript", "url", "text"]).notNull().default("pdf"),
+  sourceUrl:    varchar("sourceUrl", { length: 1024 }),
+  s3Key:        varchar("s3Key", { length: 512 }),
+  domain:       mysqlEnum("domain", [
+    "VRL", "TRL", "BRL", "IRL", "ESG", "Market", "Finance",
+    "Legal", "People", "Brand", "Strategy", "General"
+  ]).notNull().default("General"),
+  tags:         varchar("tags", { length: 512 }),
+  author:       varchar("author", { length: 256 }),
+  publishedYear: int("publishedYear"),
+  description:  text("description"),
+  chunkCount:   int("chunkCount").default(0),
+  wordCount:    int("wordCount").default(0),
+  status:       mysqlEnum("status", ["pending", "processing", "ready", "error"]).notNull().default("pending"),
+  errorMessage: text("errorMessage"),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:    timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type KnowledgeDocument = typeof knowledgeDocuments.$inferSelect;
+export type InsertKnowledgeDocument = typeof knowledgeDocuments.$inferInsert;
+
+// Each document is split into ~500-word chunks for retrieval
+export const knowledgeChunks = mysqlTable("knowledge_chunks", {
+  id:           int("id").autoincrement().primaryKey(),
+  documentId:   int("documentId").notNull(),
+  chunkIndex:   int("chunkIndex").notNull(),
+  content:      text("content").notNull(),
+  wordCount:    int("wordCount").default(0),
+  pageNumber:   int("pageNumber"),
+  section:      varchar("section", { length: 256 }),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+});
+export type KnowledgeChunk = typeof knowledgeChunks.$inferSelect;
+export type InsertKnowledgeChunk = typeof knowledgeChunks.$inferInsert;

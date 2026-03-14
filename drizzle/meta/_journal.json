@@ -85,6 +85,13 @@
       "when": 1773496964420,
       "tag": "0011_short_terror",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "5",
+      "when": 1773509501471,
+      "tag": "0012_steady_wolfpack",
+      "breakpoints": true
     }
   ]
 }
