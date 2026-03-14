@@ -13,7 +13,7 @@ import {
   Award, Heart, ChevronRight, Rocket, MessageSquare, BookOpen,
   Bell, X, AlertTriangle, FileText, Newspaper, Briefcase,
   Lightbulb, TestTube2, UserCircle2, FolderOpen, Globe,
-  Building2, ChevronDown, GraduationCap, Search, PieChart
+  Building2, ChevronDown, GraduationCap, Search, PieChart, Leaf
 } from "lucide-react";
 import { useVentures } from "@/contexts/VentureContext";
 
@@ -23,7 +23,7 @@ const iconMap: Record<string, React.ComponentType<{ size?: number; className?: s
   DollarSign, Layers, Lock, Users, Megaphone, BarChart2,
   Award, Heart, Rocket, MessageSquare, BookOpen, FileText,
   Newspaper, Briefcase, Lightbulb, TestTube2, UserCircle2,
-  FolderOpen, Globe, Building2, GraduationCap, Search, PieChart,
+  FolderOpen, Globe, Building2, GraduationCap, Search, PieChart, Leaf,
 };
 
 interface NavItem {
@@ -105,6 +105,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: "ip",          label: "IP Management",        icon: "Lock",            href: "/ip" },
       { id: "bcorp",       label: "B Corp & ISO",         icon: "Award",           href: "/bcorp" },
       { id: "foundation",  label: "Foundation Impact",    icon: "Heart",           href: "/foundation" },
+      { id: "impact",      label: "Impact Governance",    icon: "Leaf",            href: "/impact" },
     ],
   },
 ];

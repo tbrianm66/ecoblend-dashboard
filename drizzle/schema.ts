@@ -889,3 +889,187 @@ export const pivotRunwayInputs = mysqlTable("pivot_runway_inputs", {
 });
 export type PivotRunwayInputs = typeof pivotRunwayInputs.$inferSelect;
 export type InsertPivotRunwayInputs = typeof pivotRunwayInputs.$inferInsert;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// IMPACT GOVERNANCE ENGINE — IRL (Impact Readiness Level) Schema
+// IRL = (ESG + LCA + PCF + CSR + Certification) / 5
+// Total Venture Intelligence Score = VRL + IRL
+// Brief: venture_intelligence_dashboard_update_prompt_brief.docx
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── ESG Analytics ─────────────────────────────────────────────────────────────
+export const esgMetrics = mysqlTable("esg_metrics", {
+  id: int("id").autoincrement().primaryKey(),
+  ventureId: varchar("ventureId", { length: 64 }).notNull().unique(),
+  // Environmental pillar (0–10 each)
+  carbonEmissionsScore:       float("carbonEmissionsScore").default(0),
+  energyEfficiencyScore:      float("energyEfficiencyScore").default(0),
+  waterManagementScore:       float("waterManagementScore").default(0),
+  wasteCircularityScore:      float("wasteCircularityScore").default(0),
+  biodiversityScore:          float("biodiversityScore").default(0),
+  environmentalScore:         float("environmentalScore").default(0),
+  // Social pillar (0–10 each)
+  workerWellbeingScore:       float("workerWellbeingScore").default(0),
+  diversityInclusionScore:    float("diversityInclusionScore").default(0),
+  communityEngagementScore:   float("communityEngagementScore").default(0),
+  supplyChainEthicsScore:     float("supplyChainEthicsScore").default(0),
+  socialScore:                float("socialScore").default(0),
+  // Governance pillar (0–10 each)
+  boardTransparencyScore:     float("boardTransparencyScore").default(0),
+  ethicsAntiCorruptionScore:  float("ethicsAntiCorruptionScore").default(0),
+  stakeholderEngagementScore: float("stakeholderEngagementScore").default(0),
+  dataPrivacyScore:           float("dataPrivacyScore").default(0),
+  governanceScore:            float("governanceScore").default(0),
+  // Overall ESG score (0–10) — computed: (E + S + G) / 3
+  esgScore:                   float("esgScore").default(0),
+  esgFrameworkUsed:           varchar("esgFrameworkUsed", { length: 128 }),
+  lastReviewedAt:             timestamp("lastReviewedAt"),
+  notes:                      text("notes"),
+  createdAt:                  timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:                  timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type EsgMetrics = typeof esgMetrics.$inferSelect;
+export type InsertEsgMetrics = typeof esgMetrics.$inferInsert;
+
+// ── Life Cycle Assessment (LCA) ───────────────────────────────────────────────
+export const lcaAssessments = mysqlTable("lca_assessments", {
+  id: int("id").autoincrement().primaryKey(),
+  ventureId: varchar("ventureId", { length: 64 }).notNull(),
+  stage: mysqlEnum("stage", [
+    "Raw Material Extraction",
+    "Manufacturing",
+    "Distribution & Logistics",
+    "Use Phase",
+    "End of Life",
+  ]).notNull(),
+  climateChangeImpact:      float("climateChangeImpact").default(0),
+  acidificationImpact:      float("acidificationImpact").default(0),
+  eutrophicationImpact:     float("eutrophicationImpact").default(0),
+  waterUsageImpact:         float("waterUsageImpact").default(0),
+  landUseImpact:            float("landUseImpact").default(0),
+  resourceDepletionImpact:  float("resourceDepletionImpact").default(0),
+  assessmentMaturityScore:  float("assessmentMaturityScore").default(0),
+  improvementActions:       text("improvementActions"),
+  targetReductionPercent:   float("targetReductionPercent"),
+  baselineYear:             int("baselineYear"),
+  assessedAt:               timestamp("assessedAt"),
+  notes:                    text("notes"),
+  createdAt:                timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:                timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type LcaAssessment = typeof lcaAssessments.$inferSelect;
+export type InsertLcaAssessment = typeof lcaAssessments.$inferInsert;
+
+// ── Product Carbon Footprint (PCF) ────────────────────────────────────────────
+export const pcfRecords = mysqlTable("pcf_records", {
+  id: int("id").autoincrement().primaryKey(),
+  ventureId: varchar("ventureId", { length: 64 }).notNull().unique(),
+  scope1Emissions:          float("scope1Emissions").default(0),
+  scope2Emissions:          float("scope2Emissions").default(0),
+  scope3Emissions:          float("scope3Emissions").default(0),
+  totalEmissions:           float("totalEmissions").default(0),
+  emissionIntensity:        float("emissionIntensity"),
+  baselineYear:             int("baselineYear"),
+  baselineEmissions:        float("baselineEmissions"),
+  targetYear:               int("targetYear"),
+  targetReductionPercent:   float("targetReductionPercent"),
+  netZeroCommitment:        boolean("netZeroCommitment").default(false),
+  scienceBasedTarget:       boolean("scienceBasedTarget").default(false),
+  offsetsUsed:              float("offsetsUsed").default(0),
+  offsetProvider:           varchar("offsetProvider", { length: 128 }),
+  pcfScore:                 float("pcfScore").default(0),
+  measurementStandard:      varchar("measurementStandard", { length: 128 }),
+  lastMeasuredAt:           timestamp("lastMeasuredAt"),
+  notes:                    text("notes"),
+  createdAt:                timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:                timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type PcfRecord = typeof pcfRecords.$inferSelect;
+export type InsertPcfRecord = typeof pcfRecords.$inferInsert;
+
+// ── CSR Metrics ───────────────────────────────────────────────────────────────
+export const csrMetrics = mysqlTable("csr_metrics", {
+  id: int("id").autoincrement().primaryKey(),
+  ventureId: varchar("ventureId", { length: 64 }).notNull().unique(),
+  philanthropyScore:         float("philanthropyScore").default(0),
+  ethicalSourcingScore:      float("ethicalSourcingScore").default(0),
+  communityInvestmentScore:  float("communityInvestmentScore").default(0),
+  employeeVolunteeringScore: float("employeeVolunteeringScore").default(0),
+  transparencyReportingScore:float("transparencyReportingScore").default(0),
+  csrScore:                  float("csrScore").default(0),
+  csrReportPublished:        boolean("csrReportPublished").default(false),
+  reportingFramework:        varchar("reportingFramework", { length: 128 }),
+  sdgAlignments:             text("sdgAlignments"),
+  lastReportedAt:            timestamp("lastReportedAt"),
+  notes:                     text("notes"),
+  createdAt:                 timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:                 timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CsrMetrics = typeof csrMetrics.$inferSelect;
+export type InsertCsrMetrics = typeof csrMetrics.$inferInsert;
+
+// ── Certification & Compliance Tracking ──────────────────────────────────────
+export const certificationTracking = mysqlTable("certification_tracking", {
+  id: int("id").autoincrement().primaryKey(),
+  ventureId: varchar("ventureId", { length: 64 }).notNull(),
+  certificationName: mysqlEnum("certificationName", [
+    "B Corp",
+    "ISO 14001",
+    "ISO 26000",
+    "ISO 50001",
+    "ISO 9001",
+    "ISO 45001",
+    "GRI Standards",
+    "UN Global Compact",
+    "Science Based Targets (SBTi)",
+    "Carbon Neutral Certified",
+    "Other",
+  ]).notNull(),
+  status: mysqlEnum("status", [
+    "Not Started",
+    "Gap Analysis",
+    "In Progress",
+    "Under Review",
+    "Certified",
+    "Lapsed",
+  ]).notNull().default("Not Started"),
+  progressPercent:          int("progressPercent").default(0),
+  certificationScore:       float("certificationScore").default(0),
+  targetCertificationDate:  timestamp("targetCertificationDate"),
+  certificationDate:        timestamp("certificationDate"),
+  expiryDate:               timestamp("expiryDate"),
+  lastAuditDate:            timestamp("lastAuditDate"),
+  bImpactScore:             float("bImpactScore"),
+  bImpactGovernance:        float("bImpactGovernance"),
+  bImpactWorkers:           float("bImpactWorkers"),
+  bImpactCommunity:         float("bImpactCommunity"),
+  bImpactEnvironment:       float("bImpactEnvironment"),
+  bImpactCustomers:         float("bImpactCustomers"),
+  certifyingBody:           varchar("certifyingBody", { length: 128 }),
+  certificateUrl:           varchar("certificateUrl", { length: 512 }),
+  notes:                    text("notes"),
+  createdAt:                timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:                timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CertificationTracking = typeof certificationTracking.$inferSelect;
+export type InsertCertificationTracking = typeof certificationTracking.$inferInsert;
+
+// ── IRL Score Cache ───────────────────────────────────────────────────────────
+// IRL = (ESG + LCA + PCF + CSR + Certification) / 5
+// Total Venture Intelligence Score = VRL + IRL (raw sum; normalise for display)
+export const irlScores = mysqlTable("irl_scores", {
+  id: int("id").autoincrement().primaryKey(),
+  ventureId: varchar("ventureId", { length: 64 }).notNull().unique(),
+  esgScore:                      float("esgScore").default(0),
+  lcaScore:                      float("lcaScore").default(0),
+  pcfScore:                      float("pcfScore").default(0),
+  csrScore:                      float("csrScore").default(0),
+  certificationScore:            float("certificationScore").default(0),
+  irlScore:                      float("irlScore").default(0),
+  vrlScore:                      float("vrlScore").default(0),
+  totalVentureIntelligenceScore: float("totalVentureIntelligenceScore").default(0),
+  computedAt:                    timestamp("computedAt").defaultNow().notNull(),
+  updatedAt:                     timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type IrlScore = typeof irlScores.$inferSelect;
+export type InsertIrlScore = typeof irlScores.$inferInsert;

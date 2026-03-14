@@ -192,3 +192,14 @@
 - [x] Disruption Radar: 5-dimension radar chart on Opportunity Pipeline cards
 - [x] Disruption score CRUD: score each dimension (1–10) per opportunity card
 - [x] Vitest tests for new procedures (252 total passing)
+
+## Sprint 17 — Impact Governance Engine (IRL) (Mar 2026)
+
+- [x] Audit existing schema for IRL-related tables and fields
+- [x] Add 6 new IRL tables: esg_scores, lca_stages, product_carbon_footprints, csr_metrics, certifications, irl_scores (migration 0011)
+- [x] Add IRL tRPC router: getEsg, upsertEsg, getLca, upsertLcaStage, getPcf, upsertPcf, getCsr, upsertCsr, getCertifications, upsertCertification, deleteCertification, getIrlScore, computeIrl, portfolioIrlSummary
+- [x] Build Impact Governance Engine page (ImpactGovernance.tsx) with 5 tabbed modules: ESG Analytics, LCA, PCF, CSR, Certifications
+- [x] IRL Score gauge with 5-component breakdown and Total Venture Intelligence Score (VRL + IRL)
+- [x] Add Avg IRL Score KPI tile to Portfolio Overview (6-tile layout)
+- [x] Add Impact Governance Engine to Sidebar (Governance group) and App.tsx routes
+- [x] Vitest tests for IRL scoring engine (277 total passing, 0 TypeScript errors)

@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import {
   Pencil, ListChecks, FileDown, Briefcase, RotateCcw,
   TrendingUp, FlaskConical, CheckCircle2, Circle,
-  ArrowRight, Zap
+  ArrowRight, Zap, Leaf
 } from "lucide-react";
 import { exportPortfolioPdf, exportInvestorPack } from "@/lib/exportPdf";
 import { trpc } from "@/lib/trpc";
@@ -318,6 +318,8 @@ export default function Home() {
     : "--";
   // Innovation Accounting: experiment pass rate + engine of growth
   const { data: leanMetrics = [] } = trpc.leanMetrics.portfolioSummary.useQuery();
+  const { data: irlPortfolio } = trpc.irl.portfolioIrlSummary.useQuery();
+  const avgIrl = irlPortfolio?.avgIrl != null ? irlPortfolio.avgIrl.toFixed(1) : "--";
   const metricsWithRate = leanMetrics.filter((m: any) => m.experimentPassRate !== null);
   const avgPassRate = metricsWithRate.length > 0
     ? Math.round(metricsWithRate.reduce((sum: number, m: any) => sum + m.experimentPassRate, 0) / metricsWithRate.length)
@@ -456,6 +458,13 @@ export default function Home() {
             sub={avgPassRate !== null ? "innovation accounting" : "no experiments yet"}
             accent="#F49C13"
             icon={Zap}
+          />
+          <MetricTile
+            label="Avg IRL Score"
+            value={avgIrl}
+            sub="impact readiness, 0-10"
+            accent="#10b981"
+            icon={Leaf}
           />
         </div>
 

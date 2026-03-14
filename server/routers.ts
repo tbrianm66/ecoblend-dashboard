@@ -2041,5 +2041,322 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         return { success: true };
       }),
   }),
+
+  // ── Impact Governance Engine (IRL) ──────────────────────────────────────────
+  // IRL = (ESG + LCA + PCF + CSR + Certification) / 5
+  // Total Venture Intelligence Score = VRL + IRL
+  irl: router({
+
+    // ESG: get or upsert per-venture ESG metrics
+    getEsg: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { esgMetrics } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const rows = await db.select().from(esgMetrics).where(eq(esgMetrics.ventureId, input.ventureId));
+        return rows[0] ?? null;
+      }),
+
+    upsertEsg: publicProcedure
+      .input(z.object({
+        ventureId: z.string(),
+        carbonEmissionsScore:       z.number().min(0).max(10).optional(),
+        energyEfficiencyScore:      z.number().min(0).max(10).optional(),
+        waterManagementScore:       z.number().min(0).max(10).optional(),
+        wasteCircularityScore:      z.number().min(0).max(10).optional(),
+        biodiversityScore:          z.number().min(0).max(10).optional(),
+        workerWellbeingScore:       z.number().min(0).max(10).optional(),
+        diversityInclusionScore:    z.number().min(0).max(10).optional(),
+        communityEngagementScore:   z.number().min(0).max(10).optional(),
+        supplyChainEthicsScore:     z.number().min(0).max(10).optional(),
+        boardTransparencyScore:     z.number().min(0).max(10).optional(),
+        ethicsAntiCorruptionScore:  z.number().min(0).max(10).optional(),
+        stakeholderEngagementScore: z.number().min(0).max(10).optional(),
+        dataPrivacyScore:           z.number().min(0).max(10).optional(),
+        esgFrameworkUsed:           z.string().optional(),
+        notes:                      z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { esgMetrics } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const { ventureId, ...fields } = input;
+        const e = [fields.carbonEmissionsScore ?? 0, fields.energyEfficiencyScore ?? 0,
+                   fields.waterManagementScore ?? 0, fields.wasteCircularityScore ?? 0,
+                   fields.biodiversityScore ?? 0];
+        const s = [fields.workerWellbeingScore ?? 0, fields.diversityInclusionScore ?? 0,
+                   fields.communityEngagementScore ?? 0, fields.supplyChainEthicsScore ?? 0];
+        const g = [fields.boardTransparencyScore ?? 0, fields.ethicsAntiCorruptionScore ?? 0,
+                   fields.stakeholderEngagementScore ?? 0, fields.dataPrivacyScore ?? 0];
+        const avg = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / arr.length;
+        const environmentalScore = parseFloat(avg(e).toFixed(2));
+        const socialScore        = parseFloat(avg(s).toFixed(2));
+        const governanceScore    = parseFloat(avg(g).toFixed(2));
+        const esgScore           = parseFloat(avg([environmentalScore, socialScore, governanceScore]).toFixed(2));
+        const payload = { ...fields, environmentalScore, socialScore, governanceScore, esgScore, lastReviewedAt: new Date() };
+        const existing = await db.select().from(esgMetrics).where(eq(esgMetrics.ventureId, ventureId));
+        if (existing.length > 0) {
+          await db.update(esgMetrics).set(payload as any).where(eq(esgMetrics.ventureId, ventureId));
+        } else {
+          await db.insert(esgMetrics).values({ ventureId, ...payload } as any);
+        }
+        return { success: true, esgScore };
+      }),
+
+    // LCA: list and upsert life cycle assessment stages
+    getLca: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { lcaAssessments } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        return db.select().from(lcaAssessments).where(eq(lcaAssessments.ventureId, input.ventureId));
+      }),
+
+    upsertLcaStage: publicProcedure
+      .input(z.object({
+        ventureId: z.string(),
+        stage: z.enum(["Raw Material Extraction", "Manufacturing", "Distribution & Logistics", "Use Phase", "End of Life"]),
+        climateChangeImpact:     z.number().optional(),
+        acidificationImpact:     z.number().optional(),
+        eutrophicationImpact:    z.number().optional(),
+        waterUsageImpact:        z.number().optional(),
+        landUseImpact:           z.number().optional(),
+        resourceDepletionImpact: z.number().optional(),
+        assessmentMaturityScore: z.number().min(0).max(10).optional(),
+        improvementActions:      z.string().optional(),
+        targetReductionPercent:  z.number().optional(),
+        baselineYear:            z.number().optional(),
+        notes:                   z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { lcaAssessments } = await import("../drizzle/schema");
+        const { eq, and } = await import("drizzle-orm");
+        const { ventureId, stage, ...fields } = input;
+        const existing = await db.select().from(lcaAssessments)
+          .where(and(eq(lcaAssessments.ventureId, ventureId), eq(lcaAssessments.stage, stage)));
+        if (existing.length > 0) {
+          await db.update(lcaAssessments).set({ ...fields, assessedAt: new Date() } as any)
+            .where(and(eq(lcaAssessments.ventureId, ventureId), eq(lcaAssessments.stage, stage)));
+        } else {
+          await db.insert(lcaAssessments).values({ ventureId, stage, ...fields, assessedAt: new Date() } as any);
+        }
+        return { success: true };
+      }),
+
+    // PCF: get or upsert product carbon footprint
+    getPcf: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { pcfRecords } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const rows = await db.select().from(pcfRecords).where(eq(pcfRecords.ventureId, input.ventureId));
+        return rows[0] ?? null;
+      }),
+
+    upsertPcf: publicProcedure
+      .input(z.object({
+        ventureId:              z.string(),
+        scope1Emissions:        z.number().min(0).optional(),
+        scope2Emissions:        z.number().min(0).optional(),
+        scope3Emissions:        z.number().min(0).optional(),
+        baselineYear:           z.number().optional(),
+        baselineEmissions:      z.number().optional(),
+        targetYear:             z.number().optional(),
+        targetReductionPercent: z.number().optional(),
+        netZeroCommitment:      z.boolean().optional(),
+        scienceBasedTarget:     z.boolean().optional(),
+        offsetsUsed:            z.number().optional(),
+        offsetProvider:         z.string().optional(),
+        measurementStandard:    z.string().optional(),
+        notes:                  z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { pcfRecords } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const { ventureId, ...fields } = input;
+        const s1 = fields.scope1Emissions ?? 0;
+        const s2 = fields.scope2Emissions ?? 0;
+        const s3 = fields.scope3Emissions ?? 0;
+        const totalEmissions = s1 + s2 + s3;
+        let pcfScore = 0;
+        if (totalEmissions > 0) pcfScore += 3;
+        if (fields.scienceBasedTarget) pcfScore += 3;
+        if (fields.netZeroCommitment) pcfScore += 2;
+        if (fields.targetReductionPercent && fields.targetReductionPercent >= 50) pcfScore += 2;
+        const payload = { ...fields, totalEmissions, pcfScore, lastMeasuredAt: new Date() };
+        const existing = await db.select().from(pcfRecords).where(eq(pcfRecords.ventureId, ventureId));
+        if (existing.length > 0) {
+          await db.update(pcfRecords).set(payload as any).where(eq(pcfRecords.ventureId, ventureId));
+        } else {
+          await db.insert(pcfRecords).values({ ventureId, ...payload } as any);
+        }
+        return { success: true, pcfScore, totalEmissions };
+      }),
+
+    // CSR: get or upsert CSR metrics
+    getCsr: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { csrMetrics } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const rows = await db.select().from(csrMetrics).where(eq(csrMetrics.ventureId, input.ventureId));
+        return rows[0] ?? null;
+      }),
+
+    upsertCsr: publicProcedure
+      .input(z.object({
+        ventureId:                  z.string(),
+        philanthropyScore:          z.number().min(0).max(10).optional(),
+        ethicalSourcingScore:       z.number().min(0).max(10).optional(),
+        communityInvestmentScore:   z.number().min(0).max(10).optional(),
+        employeeVolunteeringScore:  z.number().min(0).max(10).optional(),
+        transparencyReportingScore: z.number().min(0).max(10).optional(),
+        csrReportPublished:         z.boolean().optional(),
+        reportingFramework:         z.string().optional(),
+        sdgAlignments:              z.string().optional(),
+        notes:                      z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { csrMetrics } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const { ventureId, ...fields } = input;
+        const dims = [fields.philanthropyScore ?? 0, fields.ethicalSourcingScore ?? 0,
+                      fields.communityInvestmentScore ?? 0, fields.employeeVolunteeringScore ?? 0,
+                      fields.transparencyReportingScore ?? 0];
+        const csrScore = parseFloat((dims.reduce((a, b) => a + b, 0) / dims.length).toFixed(2));
+        const payload = { ...fields, csrScore, lastReportedAt: new Date() };
+        const existing = await db.select().from(csrMetrics).where(eq(csrMetrics.ventureId, ventureId));
+        if (existing.length > 0) {
+          await db.update(csrMetrics).set(payload as any).where(eq(csrMetrics.ventureId, ventureId));
+        } else {
+          await db.insert(csrMetrics).values({ ventureId, ...payload } as any);
+        }
+        return { success: true, csrScore };
+      }),
+
+    // Certifications: list, add, update, delete
+    getCertifications: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { certificationTracking } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        return db.select().from(certificationTracking).where(eq(certificationTracking.ventureId, input.ventureId));
+      }),
+
+    upsertCertification: publicProcedure
+      .input(z.object({
+        id:                      z.number().optional(),
+        ventureId:               z.string(),
+        certificationName:       z.enum(["B Corp", "ISO 14001", "ISO 26000", "ISO 50001", "ISO 9001", "ISO 45001", "GRI Standards", "UN Global Compact", "Science Based Targets (SBTi)", "Carbon Neutral Certified", "Other"]),
+        status:                  z.enum(["Not Started", "Gap Analysis", "In Progress", "Under Review", "Certified", "Lapsed"]).optional(),
+        progressPercent:         z.number().min(0).max(100).optional(),
+        targetCertificationDate: z.date().optional(),
+        certificationDate:       z.date().optional(),
+        expiryDate:              z.date().optional(),
+        bImpactScore:            z.number().optional(),
+        bImpactGovernance:       z.number().optional(),
+        bImpactWorkers:          z.number().optional(),
+        bImpactCommunity:        z.number().optional(),
+        bImpactEnvironment:      z.number().optional(),
+        bImpactCustomers:        z.number().optional(),
+        certifyingBody:          z.string().optional(),
+        certificateUrl:          z.string().optional(),
+        notes:                   z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { certificationTracking } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const { id, ventureId, ...fields } = input;
+        const statusScores: Record<string, number> = {
+          "Not Started": 0, "Gap Analysis": 2, "In Progress": 4,
+          "Under Review": 7, "Certified": 10, "Lapsed": 3,
+        };
+        const certificationScore = statusScores[fields.status ?? "Not Started"] ?? 0;
+        const payload = { ...fields, certificationScore };
+        if (id) {
+          await db.update(certificationTracking).set(payload as any).where(eq(certificationTracking.id, id));
+        } else {
+          await db.insert(certificationTracking).values({ ventureId, ...payload } as any);
+        }
+        return { success: true, certificationScore };
+      }),
+
+    deleteCertification: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { certificationTracking } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        await db.delete(certificationTracking).where(eq(certificationTracking.id, input.id));
+        return { success: true };
+      }),
+
+    // IRL Score: compute and cache
+    computeIrl: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { esgMetrics, lcaAssessments, pcfRecords, csrMetrics, certificationTracking, irlScores, vrlScoringParams } =
+          await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const vid = input.ventureId;
+        const [esgRow] = await db.select().from(esgMetrics).where(eq(esgMetrics.ventureId, vid));
+        const lcaRows  = await db.select().from(lcaAssessments).where(eq(lcaAssessments.ventureId, vid));
+        const [pcfRow] = await db.select().from(pcfRecords).where(eq(pcfRecords.ventureId, vid));
+        const [csrRow] = await db.select().from(csrMetrics).where(eq(csrMetrics.ventureId, vid));
+        const certRows = await db.select().from(certificationTracking).where(eq(certificationTracking.ventureId, vid));
+        const [vrlRow] = await db.select().from(vrlScoringParams).where(eq(vrlScoringParams.ventureId, vid));
+        const esgScore  = esgRow?.esgScore ?? 0;
+        const lcaScore  = lcaRows.length > 0
+          ? parseFloat((lcaRows.reduce((s, r) => s + (r.assessmentMaturityScore ?? 0), 0) / lcaRows.length).toFixed(2)) : 0;
+        const pcfScore  = pcfRow?.pcfScore ?? 0;
+        const csrScore  = csrRow?.csrScore ?? 0;
+        const certScore = certRows.length > 0
+          ? parseFloat((certRows.reduce((s, r) => s + (r.certificationScore ?? 0), 0) / certRows.length).toFixed(2)) : 0;
+        const irlScore = parseFloat(((esgScore + lcaScore + pcfScore + csrScore + certScore) / 5).toFixed(2));
+        const vrlScore = vrlRow?.computedVrlScore ?? 0;
+        const totalVentureIntelligenceScore = parseFloat((vrlScore + irlScore).toFixed(2));
+        const existing = await db.select().from(irlScores).where(eq(irlScores.ventureId, vid));
+        const payload = { esgScore, lcaScore, pcfScore, csrScore, certificationScore: certScore,
+                          irlScore, vrlScore, totalVentureIntelligenceScore, computedAt: new Date() };
+        if (existing.length > 0) {
+          await db.update(irlScores).set(payload).where(eq(irlScores.ventureId, vid));
+        } else {
+          await db.insert(irlScores).values({ ventureId: vid, ...payload });
+        }
+        return { irlScore, vrlScore, totalVentureIntelligenceScore,
+                 components: { esgScore, lcaScore, pcfScore, csrScore, certScore } };
+      }),
+
+    getIrlScore: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { irlScores } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const rows = await db.select().from(irlScores).where(eq(irlScores.ventureId, input.ventureId));
+        return rows[0] ?? null;
+      }),
+
+    portfolioIrlSummary: publicProcedure
+      .query(async () => {
+        const db = (await getDb())!;
+        const { irlScores } = await import("../drizzle/schema");
+        const rows = await db.select().from(irlScores);
+        if (rows.length === 0) return { avgIrl: 0, avgTvis: 0, ventures: [] };
+        const avgIrl  = parseFloat((rows.reduce((s, r) => s + (r.irlScore ?? 0), 0) / rows.length).toFixed(2));
+        const avgTvis = parseFloat((rows.reduce((s, r) => s + (r.totalVentureIntelligenceScore ?? 0), 0) / rows.length).toFixed(2));
+        return { avgIrl, avgTvis, ventures: rows };
+      }),
+  }),
 });
 export type AppRouter = typeof appRouter;
