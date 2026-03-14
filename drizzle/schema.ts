@@ -1114,3 +1114,193 @@ export const knowledgeChunks = mysqlTable("knowledge_chunks", {
 });
 export type KnowledgeChunk = typeof knowledgeChunks.$inferSelect;
 export type InsertKnowledgeChunk = typeof knowledgeChunks.$inferInsert;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PEOPLE INTELLIGENCE MODULE
+// Sprint 20 — Talent profiles, PVF scoring, team composition, gap analysis
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ── Talent Profiles ──────────────────────────────────────────────────────────
+export const talentProfiles = mysqlTable("talent_profiles", {
+  id:                   int("id").autoincrement().primaryKey(),
+  // Identity
+  name:                 varchar("name", { length: 128 }).notNull(),
+  email:                varchar("email", { length: 255 }),
+  linkedIn:             varchar("linkedIn", { length: 255 }),
+  location:             varchar("location", { length: 128 }),
+  // Role classification
+  profileType:          mysqlEnum("profileType", [
+                          "Founder", "Operator", "Executive", "Technical Expert",
+                          "Advisor", "Mentor", "Supplier", "Partner", "Investor"
+                        ]).notNull().default("Operator"),
+  currentRole:          varchar("currentRole", { length: 128 }),
+  // Availability
+  availability:         mysqlEnum("availability", [
+                          "Immediately Available", "Available in 1 Month",
+                          "Available in 3 Months", "Part-Time Only", "Advisory Only", "Not Available"
+                        ]).default("Immediately Available"),
+  availabilityHoursPerWeek: int("availabilityHoursPerWeek").default(0),
+  // Experience
+  yearsExperience:      int("yearsExperience").default(0),
+  industryExpertise:    text("industryExpertise"),       // comma-separated sectors
+  previousVentures:     int("previousVentures").default(0),
+  previousExits:        int("previousExits").default(0),
+  previousLeadershipRoles: int("previousLeadershipRoles").default(0),
+  // Startup stage experience (0–10 each)
+  stageIdea:            int("stageIdea").default(0),
+  stageValidation:      int("stageValidation").default(0),
+  stageBuild:           int("stageBuild").default(0),
+  stageScale:           int("stageScale").default(0),
+  // Functional capabilities (0–10 each)
+  capTechnical:         int("capTechnical").default(0),
+  capCommercial:        int("capCommercial").default(0),
+  capOperational:       int("capOperational").default(0),
+  capRegulatory:        int("capRegulatory").default(0),
+  capManufacturing:     int("capManufacturing").default(0),
+  capSupplyChain:       int("capSupplyChain").default(0),
+  capFinancial:         int("capFinancial").default(0),
+  capMarketing:         int("capMarketing").default(0),
+  // Network strength (0–10 each)
+  networkInvestors:     int("networkInvestors").default(0),
+  networkCustomers:     int("networkCustomers").default(0),
+  networkSuppliers:     int("networkSuppliers").default(0),
+  networkRegulators:    int("networkRegulators").default(0),
+  networkIndustry:      int("networkIndustry").default(0),
+  // Behavioural attributes (0–10 each)
+  attrLeadership:       int("attrLeadership").default(0),
+  attrExecution:        int("attrExecution").default(0),
+  attrCollaboration:    int("attrCollaboration").default(0),
+  attrRiskTolerance:    int("attrRiskTolerance").default(0),
+  attrResilience:       int("attrResilience").default(0),
+  // Bio and notes
+  bio:                  text("bio"),
+  notes:                text("notes"),
+  // Timestamps
+  createdAt:            timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:            timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type TalentProfile = typeof talentProfiles.$inferSelect;
+export type InsertTalentProfile = typeof talentProfiles.$inferInsert;
+
+// ── Venture Role Requirements ─────────────────────────────────────────────────
+export const ventureRoleRequirements = mysqlTable("venture_role_requirements", {
+  id:                   int("id").autoincrement().primaryKey(),
+  ventureId:            varchar("ventureId", { length: 64 }).notNull(),
+  // Role definition
+  roleTitle:            varchar("roleTitle", { length: 128 }).notNull(),
+  functionalArea:       mysqlEnum("functionalArea", [
+                          "Technical", "Commercial", "Operational", "Regulatory",
+                          "Manufacturing", "Supply Chain", "Financial", "Marketing", "Leadership"
+                        ]).notNull(),
+  priority:             mysqlEnum("priority", ["Critical", "High", "Medium", "Low"]).default("High"),
+  status:               mysqlEnum("status", ["Open", "Filled", "On Hold"]).default("Open"),
+  // Requirements (0–10 minimum thresholds)
+  minYearsExperience:   int("minYearsExperience").default(0),
+  minCapScore:          int("minCapScore").default(5),
+  minNetworkScore:      int("minNetworkScore").default(3),
+  minStageExperience:   mysqlEnum("minStageExperience", ["Idea", "Validation", "Build", "Scale"]).default("Validation"),
+  requiredSectors:      text("requiredSectors"),         // comma-separated
+  // Engagement type
+  engagementType:       mysqlEnum("engagementType", ["Full-Time", "Part-Time", "Advisory", "Contract"]).default("Full-Time"),
+  description:          text("description"),
+  createdAt:            timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:            timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type VentureRoleRequirement = typeof ventureRoleRequirements.$inferSelect;
+export type InsertVentureRoleRequirement = typeof ventureRoleRequirements.$inferInsert;
+
+// ── People–Venture Fit Scores (PVF cache) ─────────────────────────────────────
+export const peopleVentureFit = mysqlTable("people_venture_fit", {
+  id:                   int("id").autoincrement().primaryKey(),
+  talentProfileId:      int("talentProfileId").notNull(),
+  ventureId:            varchar("ventureId", { length: 64 }).notNull(),
+  roleRequirementId:    int("roleRequirementId"),        // optional — fit against specific role
+  // PVF component scores (0–10 each)
+  skillsMatch:          float("skillsMatch").default(0),
+  industryMatch:        float("industryMatch").default(0),
+  stageMatch:           float("stageMatch").default(0),
+  networkValue:         float("networkValue").default(0),
+  availabilityFit:      float("availabilityFit").default(0),
+  // Computed PVF = (skillsMatch + industryMatch + stageMatch + networkValue + availabilityFit) / 5
+  pvfScore:             float("pvfScore").default(0),    // 0–10
+  // Recommendation
+  recommendation:       mysqlEnum("recommendation", ["Highly Recommended", "Recommended", "Possible", "Not Recommended"]).default("Possible"),
+  notes:                text("notes"),
+  computedAt:           timestamp("computedAt").defaultNow().notNull(),
+  updatedAt:            timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type PeopleVentureFit = typeof peopleVentureFit.$inferSelect;
+export type InsertPeopleVentureFit = typeof peopleVentureFit.$inferInsert;
+
+// ── Team Compositions ─────────────────────────────────────────────────────────
+export const teamCompositions = mysqlTable("team_compositions", {
+  id:                   int("id").autoincrement().primaryKey(),
+  ventureId:            varchar("ventureId", { length: 64 }).notNull(),
+  talentProfileId:      int("talentProfileId").notNull(),
+  roleRequirementId:    int("roleRequirementId"),
+  // Assignment details
+  assignedRole:         varchar("assignedRole", { length: 128 }).notNull(),
+  assignmentType:       mysqlEnum("assignmentType", ["Recommended", "Confirmed", "Proposed"]).default("Recommended"),
+  engagementType:       mysqlEnum("engagementType", ["Full-Time", "Part-Time", "Advisory", "Contract"]).default("Full-Time"),
+  pvfScore:             float("pvfScore").default(0),
+  isFounder:            boolean("isFounder").default(false),
+  notes:                text("notes"),
+  createdAt:            timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:            timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type TeamComposition = typeof teamCompositions.$inferSelect;
+export type InsertTeamComposition = typeof teamCompositions.$inferInsert;
+
+// ── Team Gap Analysis ─────────────────────────────────────────────────────────
+export const teamGapAnalysis = mysqlTable("team_gap_analysis", {
+  id:                   int("id").autoincrement().primaryKey(),
+  ventureId:            varchar("ventureId", { length: 64 }).notNull(),
+  // Gap definition
+  gapArea:              mysqlEnum("gapArea", [
+                          "Technical", "Commercial", "Operational", "Regulatory",
+                          "Manufacturing", "Supply Chain", "Financial", "Marketing",
+                          "Leadership", "Network", "Stage Experience"
+                        ]).notNull(),
+  severity:             mysqlEnum("severity", ["Critical", "High", "Medium", "Low"]).default("Medium"),
+  description:          text("description"),
+  // Current vs required
+  currentScore:         float("currentScore").default(0),   // 0–10 team average
+  requiredScore:        float("requiredScore").default(7),   // 0–10 threshold
+  gapScore:             float("gapScore").default(0),        // requiredScore - currentScore
+  // Resolution
+  status:               mysqlEnum("status", ["Open", "In Progress", "Resolved"]).default("Open"),
+  resolutionNotes:      text("resolutionNotes"),
+  computedAt:           timestamp("computedAt").defaultNow().notNull(),
+  updatedAt:            timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type TeamGapAnalysis = typeof teamGapAnalysis.$inferSelect;
+export type InsertTeamGapAnalysis = typeof teamGapAnalysis.$inferInsert;
+
+// ── Founder Suitability Assessments ──────────────────────────────────────────
+export const founderSuitabilityAssessments = mysqlTable("founder_suitability_assessments", {
+  id:                   int("id").autoincrement().primaryKey(),
+  talentProfileId:      int("talentProfileId").notNull(),
+  ventureId:            varchar("ventureId", { length: 64 }).notNull(),
+  // Suitability dimensions (0–10 each)
+  domainKnowledge:      int("domainKnowledge").default(0),
+  executionCapability:  int("executionCapability").default(0),
+  leadershipStrength:   int("leadershipStrength").default(0),
+  networkRelevance:     int("networkRelevance").default(0),
+  stageReadiness:       int("stageReadiness").default(0),
+  riskProfile:          int("riskProfile").default(0),
+  commitmentLevel:      int("commitmentLevel").default(0),
+  // Computed overall suitability score (0–10)
+  overallScore:         float("overallScore").default(0),
+  // Recommendation
+  recommendation:       mysqlEnum("recommendation", [
+                          "Highly Suitable", "Suitable", "Conditionally Suitable", "Not Suitable"
+                        ]).default("Conditionally Suitable"),
+  readinessToExecute:   mysqlEnum("readinessToExecute", [
+                          "Ready Now", "Ready in 3 Months", "Ready in 6 Months", "Not Ready"
+                        ]).default("Ready in 3 Months"),
+  assessmentNotes:      text("assessmentNotes"),
+  assessedAt:           timestamp("assessedAt").defaultNow().notNull(),
+  updatedAt:            timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type FounderSuitabilityAssessment = typeof founderSuitabilityAssessments.$inferSelect;
+export type InsertFounderSuitabilityAssessment = typeof founderSuitabilityAssessments.$inferInsert;

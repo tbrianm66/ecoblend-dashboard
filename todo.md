@@ -227,3 +227,18 @@
 - [x] Wire knowledge base retrieval into opportunity report generator (parallel search across strategy/market/ESG domains, deduplicated, top-6 chunks with author/year citations)
 - [x] Add Knowledge Base to sidebar under new "Intelligence" group (Database icon, /knowledge route)
 - [x] Vitest tests: chunking, BM25 scoring, tokenisation, domain filtering (297 total passing, 0 TypeScript errors)
+
+## Sprint 20 — People Intelligence Module
+
+- [ ] Add talent_profiles table (name, role, location, availability, expertise, stage experience, functional capabilities, network strength, behavioural attributes)
+- [ ] Add venture_role_requirements table (required skills, experience level, stage, functional area, priority)
+- [ ] Add people_venture_fit table (PVF score cache: skills match, industry match, stage match, network value, availability fit)
+- [ ] Add team_compositions table (recommended team structure per venture)
+- [ ] Add team_gap_analysis table (missing capabilities per venture)
+- [ ] Add talent_venture_assignments table (assigned people to ventures with role)
+- [ ] Push migration 0013
+- [ ] Add tRPC procedures: talent CRUD, computePVF, getTeamComposition, getTeamGaps, getRoleRankings, getFounderSuitability
+- [ ] Build People Intelligence dashboard page (6 components: talent pool, top rankings, role matrix, team composition, gap heatmap, founder scorecard)
+- [ ] Add People Intelligence to sidebar under Intelligence section
+- [ ] Wire route in App.tsx
+- [ ] Vitest tests for PVF scoring engine

@@ -2504,5 +2504,426 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         return getChunksByDocument(input.documentId);
       }),
   }),
+
+  // ── People Intelligence Module ───────────────────────────────────────────────
+  people: router({
+
+    // ── Talent Pool CRUD ────────────────────────────────────────────────────────
+    listTalent: publicProcedure.query(async () => {
+      const db = (await getDb())!;
+      const { talentProfiles } = await import("../drizzle/schema");
+      return db.select().from(talentProfiles).orderBy(talentProfiles.name);
+    }),
+
+    getTalent: publicProcedure
+      .input(z.object({ id: z.number().int() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { talentProfiles } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const rows = await db.select().from(talentProfiles).where(eq(talentProfiles.id, input.id));
+        return rows[0] ?? null;
+      }),
+
+    upsertTalent: publicProcedure
+      .input(z.object({
+        id:                       z.number().int().optional(),
+        name:                     z.string().min(1),
+        email:                    z.string().email().optional(),
+        linkedIn:                 z.string().optional(),
+        location:                 z.string().optional(),
+        profileType:              z.enum(["Founder","Operator","Executive","Technical Expert","Advisor","Mentor","Supplier","Partner","Investor"]).optional(),
+        currentRole:              z.string().optional(),
+        availability:             z.enum(["Immediately Available","Available in 1 Month","Available in 3 Months","Part-Time Only","Advisory Only","Not Available"]).optional(),
+        availabilityHoursPerWeek: z.number().int().min(0).max(60).optional(),
+        yearsExperience:          z.number().int().min(0).optional(),
+        industryExpertise:        z.string().optional(),
+        previousVentures:         z.number().int().min(0).optional(),
+        previousExits:            z.number().int().min(0).optional(),
+        previousLeadershipRoles:  z.number().int().min(0).optional(),
+        stageIdea:                z.number().int().min(0).max(10).optional(),
+        stageValidation:          z.number().int().min(0).max(10).optional(),
+        stageBuild:               z.number().int().min(0).max(10).optional(),
+        stageScale:               z.number().int().min(0).max(10).optional(),
+        capTechnical:             z.number().int().min(0).max(10).optional(),
+        capCommercial:            z.number().int().min(0).max(10).optional(),
+        capOperational:           z.number().int().min(0).max(10).optional(),
+        capRegulatory:            z.number().int().min(0).max(10).optional(),
+        capManufacturing:         z.number().int().min(0).max(10).optional(),
+        capSupplyChain:           z.number().int().min(0).max(10).optional(),
+        capFinancial:             z.number().int().min(0).max(10).optional(),
+        capMarketing:             z.number().int().min(0).max(10).optional(),
+        networkInvestors:         z.number().int().min(0).max(10).optional(),
+        networkCustomers:         z.number().int().min(0).max(10).optional(),
+        networkSuppliers:         z.number().int().min(0).max(10).optional(),
+        networkRegulators:        z.number().int().min(0).max(10).optional(),
+        networkIndustry:          z.number().int().min(0).max(10).optional(),
+        attrLeadership:           z.number().int().min(0).max(10).optional(),
+        attrExecution:            z.number().int().min(0).max(10).optional(),
+        attrCollaboration:        z.number().int().min(0).max(10).optional(),
+        attrRiskTolerance:        z.number().int().min(0).max(10).optional(),
+        attrResilience:           z.number().int().min(0).max(10).optional(),
+        bio:                      z.string().optional(),
+        notes:                    z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { talentProfiles } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        if (input.id) {
+          const { id, ...rest } = input;
+          await db.update(talentProfiles).set(rest).where(eq(talentProfiles.id, id));
+          return { id };
+        } else {
+          const { id: _id, ...rest } = input;
+          const result = await db.insert(talentProfiles).values(rest as any);
+          return { id: (result as any)[0]?.insertId ?? 0 };
+        }
+      }),
+
+    deleteTalent: publicProcedure
+      .input(z.object({ id: z.number().int() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { talentProfiles } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        await db.delete(talentProfiles).where(eq(talentProfiles.id, input.id));
+        return { success: true };
+      }),
+
+    // ── Venture Role Requirements ────────────────────────────────────────────────
+    listRoleRequirements: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { ventureRoleRequirements } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        return db.select().from(ventureRoleRequirements).where(eq(ventureRoleRequirements.ventureId, input.ventureId));
+      }),
+
+    upsertRoleRequirement: publicProcedure
+      .input(z.object({
+        id:                 z.number().int().optional(),
+        ventureId:          z.string(),
+        roleTitle:          z.string().min(1),
+        functionalArea:     z.enum(["Technical","Commercial","Operational","Regulatory","Manufacturing","Supply Chain","Financial","Marketing","Leadership"]),
+        priority:           z.enum(["Critical","High","Medium","Low"]).optional(),
+        status:             z.enum(["Open","Filled","On Hold"]).optional(),
+        minYearsExperience: z.number().int().min(0).optional(),
+        minCapScore:        z.number().int().min(0).max(10).optional(),
+        minNetworkScore:    z.number().int().min(0).max(10).optional(),
+        minStageExperience: z.enum(["Idea","Validation","Build","Scale"]).optional(),
+        requiredSectors:    z.string().optional(),
+        engagementType:     z.enum(["Full-Time","Part-Time","Advisory","Contract"]).optional(),
+        description:        z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { ventureRoleRequirements } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        if (input.id) {
+          const { id, ...rest } = input;
+          await db.update(ventureRoleRequirements).set(rest).where(eq(ventureRoleRequirements.id, id));
+          return { id };
+        } else {
+          const { id: _id, ...rest } = input;
+          const result = await db.insert(ventureRoleRequirements).values(rest as any);
+          return { id: (result as any)[0]?.insertId ?? 0 };
+        }
+      }),
+
+    deleteRoleRequirement: publicProcedure
+      .input(z.object({ id: z.number().int() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { ventureRoleRequirements } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        await db.delete(ventureRoleRequirements).where(eq(ventureRoleRequirements.id, input.id));
+        return { success: true };
+      }),
+
+    // ── PVF Scoring Engine ───────────────────────────────────────────────────────
+    computePVF: publicProcedure
+      .input(z.object({
+        talentProfileId:   z.number().int(),
+        ventureId:         z.string(),
+        roleRequirementId: z.number().int().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { talentProfiles, ventureRoleRequirements, peopleVentureFit } = await import("../drizzle/schema");
+        const { eq, and } = await import("drizzle-orm");
+
+        const profiles = await db.select().from(talentProfiles).where(eq(talentProfiles.id, input.talentProfileId));
+        const profile = profiles[0];
+        if (!profile) throw new Error("Talent profile not found");
+
+        let role: typeof ventureRoleRequirements.$inferSelect | null = null;
+        if (input.roleRequirementId) {
+          const roles = await db.select().from(ventureRoleRequirements).where(eq(ventureRoleRequirements.id, input.roleRequirementId));
+          role = roles[0] ?? null;
+        }
+
+        // 1. Skills Match
+        const capScores = [
+          profile.capTechnical, profile.capCommercial, profile.capOperational,
+          profile.capRegulatory, profile.capManufacturing, profile.capSupplyChain,
+          profile.capFinancial, profile.capMarketing,
+        ].filter(s => s !== null && s !== undefined) as number[];
+        const avgCap = capScores.length > 0 ? capScores.reduce((a, b) => a + b, 0) / capScores.length : 0;
+        let skillsMatch = avgCap;
+        if (role) {
+          const areaMap: Record<string, number> = {
+            Technical: profile.capTechnical ?? 0, Commercial: profile.capCommercial ?? 0,
+            Operational: profile.capOperational ?? 0, Regulatory: profile.capRegulatory ?? 0,
+            Manufacturing: profile.capManufacturing ?? 0, "Supply Chain": profile.capSupplyChain ?? 0,
+            Financial: profile.capFinancial ?? 0, Marketing: profile.capMarketing ?? 0,
+            Leadership: profile.attrLeadership ?? 0,
+          };
+          skillsMatch = avgCap * 0.4 + (areaMap[role.functionalArea] ?? 0) * 0.6;
+        }
+
+        // 2. Industry Match
+        const industryMatch = Math.min(10, (profile.yearsExperience ?? 0) / 2);
+
+        // 3. Stage Match
+        const stageScores = [profile.stageIdea, profile.stageValidation, profile.stageBuild, profile.stageScale].filter(Boolean) as number[];
+        const stageMatch = stageScores.length > 0 ? stageScores.reduce((a, b) => a + b, 0) / stageScores.length : 0;
+
+        // 4. Network Value
+        const netScores = [profile.networkInvestors, profile.networkCustomers, profile.networkSuppliers, profile.networkRegulators, profile.networkIndustry].filter(Boolean) as number[];
+        const networkValue = netScores.length > 0 ? netScores.reduce((a, b) => a + b, 0) / netScores.length : 0;
+
+        // 5. Availability Fit
+        const availMap: Record<string, number> = {
+          "Immediately Available": 10, "Available in 1 Month": 8,
+          "Available in 3 Months": 6, "Part-Time Only": 4,
+          "Advisory Only": 2, "Not Available": 0,
+        };
+        const availabilityFit = availMap[profile.availability ?? "Not Available"] ?? 0;
+
+        const pvfScore = parseFloat(((skillsMatch + industryMatch + stageMatch + networkValue + availabilityFit) / 5).toFixed(2));
+        const recommendation = pvfScore >= 8 ? "Highly Recommended" : pvfScore >= 6 ? "Recommended" : pvfScore >= 4 ? "Possible" : "Not Recommended";
+
+        const conditions = [
+          eq(peopleVentureFit.talentProfileId, input.talentProfileId),
+          eq(peopleVentureFit.ventureId, input.ventureId),
+          ...(input.roleRequirementId ? [eq(peopleVentureFit.roleRequirementId, input.roleRequirementId)] : []),
+        ];
+        const existing = await db.select().from(peopleVentureFit).where(and(...conditions));
+        const pvfData = {
+          talentProfileId: input.talentProfileId, ventureId: input.ventureId,
+          roleRequirementId: input.roleRequirementId ?? null,
+          skillsMatch: parseFloat(skillsMatch.toFixed(2)), industryMatch: parseFloat(industryMatch.toFixed(2)),
+          stageMatch: parseFloat(stageMatch.toFixed(2)), networkValue: parseFloat(networkValue.toFixed(2)),
+          availabilityFit, pvfScore, recommendation: recommendation as any,
+        };
+        if (existing.length > 0) {
+          await db.update(peopleVentureFit).set(pvfData).where(eq(peopleVentureFit.id, existing[0].id));
+          return { id: existing[0].id, ...pvfData };
+        } else {
+          const result = await db.insert(peopleVentureFit).values(pvfData);
+          return { id: (result as any)[0]?.insertId ?? 0, ...pvfData };
+        }
+      }),
+
+    getPVFRankings: publicProcedure
+      .input(z.object({ ventureId: z.string(), roleRequirementId: z.number().int().optional() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { peopleVentureFit, talentProfiles } = await import("../drizzle/schema");
+        const { eq, and, desc } = await import("drizzle-orm");
+        const conditions = [eq(peopleVentureFit.ventureId, input.ventureId)];
+        if (input.roleRequirementId) conditions.push(eq(peopleVentureFit.roleRequirementId, input.roleRequirementId));
+        return db
+          .select({ fit: peopleVentureFit, profile: talentProfiles })
+          .from(peopleVentureFit)
+          .innerJoin(talentProfiles, eq(peopleVentureFit.talentProfileId, talentProfiles.id))
+          .where(and(...conditions))
+          .orderBy(desc(peopleVentureFit.pvfScore));
+      }),
+
+    // ── Team Composition ────────────────────────────────────────────────────────
+    getTeamComposition: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { teamCompositions, talentProfiles } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        return db
+          .select({ composition: teamCompositions, profile: talentProfiles })
+          .from(teamCompositions)
+          .innerJoin(talentProfiles, eq(teamCompositions.talentProfileId, talentProfiles.id))
+          .where(eq(teamCompositions.ventureId, input.ventureId))
+          .orderBy(teamCompositions.assignedRole);
+      }),
+
+    upsertTeamMember: publicProcedure
+      .input(z.object({
+        id:               z.number().int().optional(),
+        ventureId:        z.string(),
+        talentProfileId:  z.number().int(),
+        roleRequirementId: z.number().int().optional(),
+        assignedRole:     z.string().min(1),
+        assignmentType:   z.enum(["Recommended","Confirmed","Proposed"]).optional(),
+        engagementType:   z.enum(["Full-Time","Part-Time","Advisory","Contract"]).optional(),
+        pvfScore:         z.number().min(0).max(10).optional(),
+        isFounder:        z.boolean().optional(),
+        notes:            z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { teamCompositions } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        if (input.id) {
+          const { id, ...rest } = input;
+          await db.update(teamCompositions).set(rest).where(eq(teamCompositions.id, id));
+          return { id };
+        } else {
+          const { id: _id, ...rest } = input;
+          const result = await db.insert(teamCompositions).values(rest as any);
+          return { id: (result as any)[0]?.insertId ?? 0 };
+        }
+      }),
+
+    removeTeamMember: publicProcedure
+      .input(z.object({ id: z.number().int() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { teamCompositions } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        await db.delete(teamCompositions).where(eq(teamCompositions.id, input.id));
+        return { success: true };
+      }),
+
+    // ── Team Gap Analysis ────────────────────────────────────────────────────────
+    computeTeamGaps: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { teamCompositions, talentProfiles, teamGapAnalysis, ventureRoleRequirements } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+
+        const team = await db
+          .select({ composition: teamCompositions, profile: talentProfiles })
+          .from(teamCompositions)
+          .innerJoin(talentProfiles, eq(teamCompositions.talentProfileId, talentProfiles.id))
+          .where(eq(teamCompositions.ventureId, input.ventureId));
+
+        const roles = await db.select().from(ventureRoleRequirements).where(eq(ventureRoleRequirements.ventureId, input.ventureId));
+
+        const capFields: Array<{ area: string; field: keyof typeof talentProfiles.$inferSelect }> = [
+          { area: "Technical",     field: "capTechnical" },
+          { area: "Commercial",    field: "capCommercial" },
+          { area: "Operational",   field: "capOperational" },
+          { area: "Regulatory",    field: "capRegulatory" },
+          { area: "Manufacturing", field: "capManufacturing" },
+          { area: "Supply Chain",  field: "capSupplyChain" },
+          { area: "Financial",     field: "capFinancial" },
+          { area: "Marketing",     field: "capMarketing" },
+          { area: "Leadership",    field: "attrLeadership" },
+          { area: "Network",       field: "networkIndustry" },
+        ];
+
+        const gaps: Array<{
+          ventureId: string; gapArea: any; severity: any;
+          description: string; currentScore: number; requiredScore: number; gapScore: number; status: any;
+        }> = [];
+
+        for (const { area, field } of capFields) {
+          const scores = team.map(t => (t.profile[field] as number) ?? 0);
+          const avgScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+          const requiredScore = 6;
+          const gapScore = Math.max(0, requiredScore - avgScore);
+          if (gapScore > 0) {
+            const severity = gapScore >= 4 ? "Critical" : gapScore >= 2.5 ? "High" : gapScore >= 1 ? "Medium" : "Low";
+            gaps.push({
+              ventureId: input.ventureId, gapArea: area as any, severity: severity as any,
+              description: `Team average ${area} score is ${avgScore.toFixed(1)}/10 (required: ${requiredScore}/10)`,
+              currentScore: parseFloat(avgScore.toFixed(2)), requiredScore,
+              gapScore: parseFloat(gapScore.toFixed(2)), status: "Open" as any,
+            });
+          }
+        }
+
+        await db.delete(teamGapAnalysis).where(eq(teamGapAnalysis.ventureId, input.ventureId));
+        if (gaps.length > 0) await db.insert(teamGapAnalysis).values(gaps);
+        return { gaps, teamSize: team.length, openRoles: roles.filter(r => r.status === "Open").length };
+      }),
+
+    getTeamGaps: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { teamGapAnalysis } = await import("../drizzle/schema");
+        const { eq, desc } = await import("drizzle-orm");
+        return db.select().from(teamGapAnalysis).where(eq(teamGapAnalysis.ventureId, input.ventureId)).orderBy(desc(teamGapAnalysis.gapScore));
+      }),
+
+    // ── Founder Suitability Assessment ──────────────────────────────────────────
+    upsertFounderSuitability: publicProcedure
+      .input(z.object({
+        id:                  z.number().int().optional(),
+        talentProfileId:     z.number().int(),
+        ventureId:           z.string(),
+        domainKnowledge:     z.number().int().min(0).max(10),
+        executionCapability: z.number().int().min(0).max(10),
+        leadershipStrength:  z.number().int().min(0).max(10),
+        networkRelevance:    z.number().int().min(0).max(10),
+        stageReadiness:      z.number().int().min(0).max(10),
+        riskProfile:         z.number().int().min(0).max(10),
+        commitmentLevel:     z.number().int().min(0).max(10),
+        readinessToExecute:  z.enum(["Ready Now","Ready in 3 Months","Ready in 6 Months","Not Ready"]).optional(),
+        assessmentNotes:     z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { founderSuitabilityAssessments } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const scores = [input.domainKnowledge, input.executionCapability, input.leadershipStrength,
+          input.networkRelevance, input.stageReadiness, input.riskProfile, input.commitmentLevel];
+        const overallScore = parseFloat((scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(2));
+        const recommendation = overallScore >= 8 ? "Highly Suitable" : overallScore >= 6 ? "Suitable" : overallScore >= 4 ? "Conditionally Suitable" : "Not Suitable";
+        const data = { ...input, overallScore, recommendation: recommendation as any };
+        if (input.id) {
+          const { id, ...rest } = data;
+          await db.update(founderSuitabilityAssessments).set(rest).where(eq(founderSuitabilityAssessments.id, id!));
+          return { id };
+        } else {
+          const { id: _id, ...rest } = data;
+          const result = await db.insert(founderSuitabilityAssessments).values(rest as any);
+          return { id: (result as any)[0]?.insertId ?? 0, overallScore, recommendation };
+        }
+      }),
+
+    getFounderSuitability: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { founderSuitabilityAssessments, talentProfiles } = await import("../drizzle/schema");
+        const { eq, desc } = await import("drizzle-orm");
+        return db
+          .select({ assessment: founderSuitabilityAssessments, profile: talentProfiles })
+          .from(founderSuitabilityAssessments)
+          .innerJoin(talentProfiles, eq(founderSuitabilityAssessments.talentProfileId, talentProfiles.id))
+          .where(eq(founderSuitabilityAssessments.ventureId, input.ventureId))
+          .orderBy(desc(founderSuitabilityAssessments.overallScore));
+      }),
+
+    // ── Portfolio Talent Summary ─────────────────────────────────────────────────
+    getTalentPoolSummary: publicProcedure.query(async () => {
+      const db = (await getDb())!;
+      const { talentProfiles, teamCompositions, teamGapAnalysis } = await import("../drizzle/schema");
+      const { count, eq } = await import("drizzle-orm");
+      const [totalResult] = await db.select({ total: count() }).from(talentProfiles);
+      const [assignedResult] = await db.select({ assigned: count() }).from(teamCompositions);
+      const [criticalGapsResult] = await db.select({ critical: count() }).from(teamGapAnalysis).where(eq(teamGapAnalysis.severity, "Critical"));
+      return {
+        totalTalent: totalResult?.total ?? 0,
+        assignedToVentures: assignedResult?.assigned ?? 0,
+        criticalGaps: criticalGapsResult?.critical ?? 0,
+      };
+    }),
+  }),
 });
 export type AppRouter = typeof appRouter;
