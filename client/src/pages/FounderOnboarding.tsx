@@ -1,6 +1,6 @@
 // ============================================================
 // ECOBLEND — Founder Onboarding Wizard
-// 4-step wizard aligned to 100tasks.com Playbook stages
+// 4-step wizard aligned to EcoBlend VBS Playbook stages
 // Auto-populates the venture portfolio on completion
 // ============================================================
 
@@ -22,7 +22,7 @@ const STEPS = [
   {
     id: 1,
     title: "Venture Fundamentals",
-    subtitle: "100tasks.com Tasks 1–17",
+    subtitle: "EcoBlend Playbook Tasks 1–17",
     icon: BookOpen,
     color: "#22c55e",
     description: "Define the core identity of your venture — its name, sector, channel, and the hypothesis you are testing.",
@@ -39,7 +39,7 @@ const STEPS = [
   {
     id: 2,
     title: "Kickoff — Problem & Solution",
-    subtitle: "100tasks.com Tasks 18–43",
+    subtitle: "EcoBlend Playbook Tasks 18–43",
     icon: Lightbulb,
     color: "#f59e0b",
     description: "Validate the problem with real beneficiaries, define your solution, and align your mission with your business plan.",
@@ -56,7 +56,7 @@ const STEPS = [
   {
     id: 3,
     title: "Go-to-Market",
-    subtitle: "100tasks.com Tasks 44–75",
+    subtitle: "EcoBlend Playbook Tasks 44–75",
     icon: Target,
     color: "#1d4ed8",
     description: "Set up operations, build your team, and prepare to launch your MVP to your first customers.",
@@ -81,7 +81,7 @@ const STEPS = [
       "Founder background confirmed",
       "ESOP equity allocation agreed",
       "VBS mentor assigned",
-      "100tasks.com account created",
+      "EcoBlend Playbook account created",
       "First 30-day sprint planned",
     ],
   },
@@ -175,7 +175,7 @@ export default function FounderOnboarding() {
       founder: form.founderName,
       color: form.brandColor,
       investmentReady: false,
-      description: `${form.ventureName} is a ${form.channel} venture in the ${form.sector} sector, onboarded through the EcoRace VBS Founder Playbook.`,
+      description: `${form.ventureName} is a ${form.channel} venture in the ${form.sector} sector, onboarded through the EcoBlend VBS Founder Playbook.`,
       bmc: form.bmc || "To be defined in VRL Stage 1",
       mmc: form.mmc || "To be defined in VRL Stage 1",
       risks: [
@@ -211,7 +211,7 @@ export default function FounderOnboarding() {
             <strong style={{ color: form.brandColor }}>{form.ventureName}</strong> has been added to the EcoBlend portfolio at VRL 1 — Fundamentals.
           </p>
           <p className="text-sm text-gray-400 mb-8">
-            Your next step is to complete Tasks 1–17 in the 100tasks.com Playbook and update your VRL progress on the dashboard.
+            Your next step is to complete Tasks 1–17 in the EcoBlend VBS Playbook and update your VRL progress on the dashboard.
           </p>
           <div className="space-y-3">
             <Button className="w-full gap-2" style={{ background: form.brandColor, color: "white" }} onClick={() => navigate("/")}>
@@ -235,7 +235,7 @@ export default function FounderOnboarding() {
           <span className="vos-badge vos-badge-success" style={{ fontSize: "0.65rem" }}>Onboarding</span>
         </div>
         <h1 className="vos-page-title mb-1">Founder Onboarding Wizard</h1>
-        <p className="text-sm text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>EcoRace VBS · H4 Lean Methodology · 100tasks.com Playbook</p>
+        <p className="text-sm text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>EcoBlend VBS · EcoBlend VBS Playbook</p>
       </div>
 
       <div className="max-w-2xl mx-auto p-8">
@@ -435,7 +435,7 @@ export default function FounderOnboarding() {
                 </div>
 
                 <div className="rounded-lg p-3 text-xs text-gray-500" style={{ background: "#f9fafb", border: "1px solid #e5e7eb" }}>
-                  <strong>Next steps after onboarding:</strong> You will receive access to the 100tasks.com Playbook, your ZINC VC stipend application link, and your assigned VBS mentor within 48 hours.
+                  <strong>Next steps after onboarding:</strong> You will receive access to the EcoBlend VBS Playbook, your ZINC VC stipend application link, and your assigned VBS mentor within 48 hours.
                 </div>
               </div>
             )}

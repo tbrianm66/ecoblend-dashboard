@@ -338,7 +338,7 @@ export default function Sidebar() {
               EcoRace Studio
             </div>
             <div className="text-xs" style={{ color: "rgba(255,255,255,0.22)", fontFamily: "'Inter', sans-serif", fontSize: "0.65rem" }}>
-              VIP v1.0 · H4 Lean
+              VIP v1.0 · © 2026 EcoRace Studio
             </div>
           </div>
         </div>

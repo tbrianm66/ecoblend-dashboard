@@ -416,7 +416,7 @@ export default function IpManagement() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
               { title: "Centralised Ownership", desc: "All core IP is owned by EcoBlend R&D. Spin-offs receive exclusive, field-of-use licences, protecting the portfolio from single-venture failure.", color: "#22c55e" },
-              { title: "Values-Aligned Licensing", desc: "External licences are only granted to partners who demonstrate alignment with EcoRace VBS values — sustainability, social impact, and ethical governance.", color: "#1d4ed8" },
+              { title: "Values-Aligned Licensing", desc: "External licences are only granted to partners who demonstrate alignment with EcoBlend VBS values — sustainability, social impact, and ethical governance.", color: "#1d4ed8" },
               { title: "Global Expansion", desc: "IP licensing to international partners creates a revenue stream that funds further R&D and extends the VBS's social and environmental impact globally.", color: "#7c3aed" },
             ].map(item => (
               <div key={item.title} className="rounded-lg p-4" style={{ background: `${item.color}08`, border: `1px solid ${item.color}25` }}>

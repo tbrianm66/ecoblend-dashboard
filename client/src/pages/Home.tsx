@@ -366,11 +366,11 @@ export default function Home() {
               className="vos-badge vos-badge-success"
               style={{ fontSize: "0.65rem", letterSpacing: "0.07em" }}
             >
-              EcoRace VBS
+              EcoBlend VBS
             </span>
             <span className="text-gray-300">·</span>
             <span className="text-xs text-gray-400" style={{ fontFamily: "'Inter', sans-serif" }}>
-              H4 Lean Methodology
+              EcoBlend VBS
             </span>
           </div>
 

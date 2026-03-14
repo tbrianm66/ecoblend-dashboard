@@ -145,7 +145,7 @@ export function exportPortfolioPdf(ventures: Venture[]) {
       <div style="border-bottom:3px solid #22c55e;padding-bottom:20px;margin-bottom:28px;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;">
           <div>
-            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#22c55e;margin-bottom:6px;">EcoRace VBS · H4 Lean Methodology</div>
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#22c55e;margin-bottom:6px;">EcoBlend VBS</div>
             <h1 style="font-size:26px;font-weight:700;color:#1c1c1e;margin-bottom:4px;">EcoBlend Portfolio Report</h1>
             <p style="font-size:12px;color:#6b7280;">Dual-Readiness Intelligence: VRL & TRL across all active ventures</p>
           </div>
@@ -188,8 +188,8 @@ export function exportPortfolioPdf(ventures: Venture[]) {
 
       <!-- Footer -->
       <div style="margin-top:32px;padding-top:16px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-size:10px;color:#9ca3af;">EcoRace Venture Builder Studio · EcoBlend Analytics Platform · MVP v1.0</div>
-        <div style="font-size:10px;color:#9ca3af;font-family:monospace;">H4 Lean Methodology · Confidential</div>
+        <div style="font-size:10px;color:#9ca3af;">© 2026 EcoRace Studio · EcoBlend Analytics Platform · MVP v1.0</div>
+        <div style="font-size:10px;color:#9ca3af;font-family:monospace;">© 2026 EcoRace Studio · Confidential</div>
       </div>
 
       <!-- Print button (hidden when printing) -->
@@ -350,7 +350,7 @@ export function exportInvestorPack(ventures: Venture[]) {
         <div style="display:flex;justify-content:space-between;align-items:flex-start;">
           <div>
             <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;color:#51AF37;margin-bottom:8px;">
-              EcoRace Venture Builder Studio · Confidential
+              © 2026 EcoRace Studio · Confidential
             </div>
             <h1 style="font-size:30px;font-weight:700;color:#1a2332;margin-bottom:6px;line-height:1.2;">
               Investor Due Diligence Pack
@@ -362,7 +362,7 @@ export function exportInvestorPack(ventures: Venture[]) {
           <div style="text-align:right;flex-shrink:0;">
             <div style="font-size:10px;color:#9ca3af;margin-bottom:4px;">Generated</div>
             <div style="font-size:13px;font-weight:700;color:#374151;">${date}</div>
-            <div style="margin-top:8px;font-size:10px;color:#9ca3af;">H4 Lean Methodology</div>
+            <div style="margin-top:8px;font-size:10px;color:#9ca3af;">© 2026 EcoRace Studio</div>
             <div style="font-size:10px;color:#9ca3af;">EcoBlend Analytics v1.0</div>
           </div>
         </div>
@@ -473,8 +473,8 @@ export function exportInvestorPack(ventures: Venture[]) {
 
       <!-- ── Footer ── -->
       <div style="margin-top:24px;padding-top:14px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-size:10px;color:#9ca3af;">EcoRace Venture Builder Studio · EcoBlend Analytics Platform</div>
-        <div style="font-size:10px;color:#9ca3af;">H4 Lean Methodology · ${date}</div>
+        <div style="font-size:10px;color:#9ca3af;">© 2026 EcoRace Studio · EcoBlend Analytics Platform</div>
+        <div style="font-size:10px;color:#9ca3af;">© 2026 EcoRace Studio · ${date}</div>
       </div>
 
       <!-- Print button -->

@@ -220,7 +220,7 @@ export default function PeopleEsop() {
           People & ESOP
         </h1>
         <p className="text-sm text-gray-500 max-w-xl">
-          Track founder equity vesting schedules, stipend support status, and team headcount across all ventures in the EcoRace VBS portfolio.
+          Track founder equity vesting schedules, stipend support status, and team headcount across all ventures in the EcoBlend VBS portfolio.
         </p>
       </div>
 
@@ -363,7 +363,7 @@ export default function PeopleEsop() {
 
         {/* ESOP Model explanation */}
         <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
-          <h3 className="text-sm font-bold text-gray-900 mb-3" style={{ fontFamily: "'DM Sans', sans-serif" }}>EcoRace VBS ESOP & Stipend Model</h3>
+          <h3 className="text-sm font-bold text-gray-900 mb-3" style={{ fontFamily: "'DM Sans', sans-serif" }}>EcoBlend VBS ESOP & Stipend Model</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
               {
@@ -378,7 +378,7 @@ export default function PeopleEsop() {
               },
               {
                 title: "VBS Guidance",
-                desc: "In addition to financial support, each founder receives dedicated mentorship from the VBS team, access to the EcoBlend R&D lab, the 100tasks.com Playbook, and introductions to the VBS investor network.",
+                desc: "In addition to financial support, each founder receives dedicated mentorship from the VBS team, access to the EcoBlend R&D lab, the EcoBlend VBS Playbook, and introductions to the VBS investor network.",
                 color: "#1d4ed8",
               },
             ].map(item => (

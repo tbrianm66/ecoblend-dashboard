@@ -291,7 +291,7 @@ export default function FoundationImpact() {
           Foundation Impact
         </h1>
         <p className="text-sm text-gray-500 max-w-xl">
-          Each EcoRace VBS spin-off nominates a charity aligned to its core activity. This module tracks donation commitments, beneficiary reach, and social impact KPIs across the portfolio.
+          Each EcoBlend VBS spin-off nominates a charity aligned to its core activity. This module tracks donation commitments, beneficiary reach, and social impact KPIs across the portfolio.
         </p>
       </div>
 

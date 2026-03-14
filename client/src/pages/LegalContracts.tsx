@@ -169,10 +169,10 @@ const INITIAL_CONTRACTS: Contract[] = [
   },
   {
     id: "c6",
-    title: "EcoRace VBS — Seed Investment Term Sheet",
+    title: "EcoBlend VBS — Seed Investment Term Sheet",
     category: "Investor Term Sheet",
     ventureId: "vbs",
-    counterparty: "EcoRace VBS Seed Investors",
+    counterparty: "EcoBlend VBS Seed Investors",
     counterpartyType: "Investors",
     status: "Under Review",
     value: "£500k Seed Round",
@@ -184,7 +184,7 @@ const INITIAL_CONTRACTS: Contract[] = [
       "Liquidation preference: 1x non-participating",
       "Drag-along: 75% shareholder approval required",
     ],
-    notes: "Seed round term sheet for EcoRace VBS. Covers investment amount, valuation, and key investor rights. Currently under review by both parties.",
+    notes: "Seed round term sheet for EcoBlend VBS. Covers investment amount, valuation, and key investor rights. Currently under review by both parties.",
   },
 ];
 
@@ -867,7 +867,7 @@ export default function LegalContracts() {
         >
           <AlertTriangle size={16} style={{ color: "#d97706", flexShrink: 0, marginTop: 1 }} />
           <p className="text-xs text-amber-700 leading-relaxed" style={{ fontFamily: "'Nunito', sans-serif" }}>
-            <strong>Legal Disclaimer:</strong> This module is a management and tracking tool only. All contracts should be reviewed, drafted, and executed by qualified legal counsel. The EcoRace VBS platform does not provide legal advice, and no information herein constitutes a legally binding agreement.
+            <strong>Legal Disclaimer:</strong> This module is a management and tracking tool only. All contracts should be reviewed, drafted, and executed by qualified legal counsel. The EcoBlend VBS platform does not provide legal advice, and no information herein constitutes a legally binding agreement.
           </p>
         </div>
       </div>
