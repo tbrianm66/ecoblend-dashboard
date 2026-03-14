@@ -183,3 +183,12 @@
 - [x] Push migration 0010_chief_medusa.sql — 35 tables, all changes applied successfully
 - [x] TypeScript check passes — 0 errors
 - [x] 31 new vitest tests for all new scoring algorithms (226 total tests passing)
+
+## Sprint 16 — Literature Audit Feature UIs (Mar 2026)
+
+- [x] Pivot Decision Log UI: "Pivot or Persevere" tab on Venture Detail with 10 Ries pivot types, experiment pass rate, VRL snapshot
+- [x] Innovation Accounting KPIs: replace Milestones tile with Experiment Pass Rate tile on Portfolio Overview
+- [x] Engine of Growth badges on each venture card (Sticky / Viral / Paid)
+- [x] Disruption Radar: 5-dimension radar chart on Opportunity Pipeline cards
+- [x] Disruption score CRUD: score each dimension (1–10) per opportunity card
+- [x] Vitest tests for new procedures (252 total passing)

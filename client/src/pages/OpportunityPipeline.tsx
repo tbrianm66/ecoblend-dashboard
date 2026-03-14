@@ -16,8 +16,11 @@ import { Streamdown } from "streamdown";
 import {
   Plus, ChevronRight, TrendingUp, Target, Leaf, Users,
   CheckCircle2, XCircle, ArrowRight, Lightbulb, BarChart3,
-  Sparkles, FileText, Loader2, BookOpen, ExternalLink,
+  Sparkles, FileText, Loader2, BookOpen, ExternalLink, Zap, AlertTriangle, Edit3,
 } from "lucide-react";
+import {
+  RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer,
+} from "recharts";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   Identified: { label: "Identified", color: "#6b7280", bg: "#f3f4f6" },
@@ -50,6 +53,148 @@ function ScoreBar({ label, value, icon: Icon, color }: { label: string; value: n
         />
       </div>
       <span className="text-xs font-mono font-semibold w-8 text-right" style={{ color }}>{value}/10</span>
+    </div>
+  );
+}
+
+// ── Disruption Radar ─────────────────────────────────────────────────────────
+const RADAR_DIMS = [
+  { key: "initialMarketSmallness", label: "Small Market", desc: "Targets a niche incumbents ignore" },
+  { key: "nonConsumerTargeting",   label: "Non-Consumer", desc: "Serves people who couldn't use existing solutions" },
+  { key: "simplicityScore",        label: "Simplicity",   desc: "Simpler/more convenient than incumbents" },
+  { key: "lowMarginViability",     label: "Low Margin",   desc: "Can survive on margins incumbents would reject" },
+  { key: "incumbentIgnoreScore",   label: "Ignored",      desc: "Rational for incumbents to ignore this" },
+] as const;
+
+function DisruptionRadar({ opportunityId }: { opportunityId: number }) {
+  const utils = trpc.useUtils();
+  const { data: score } = trpc.disruptionScoring.get.useQuery({ opportunityId });
+  const upsertMutation = trpc.disruptionScoring.upsert.useMutation({
+    onSuccess: () => {
+      utils.disruptionScoring.get.invalidate({ opportunityId });
+      setEditing(false);
+      toast.success("Disruption scores saved");
+    },
+    onError: () => toast.error("Failed to save"),
+  });
+  const [editing, setEditing] = useState(false);
+  const defaultScores = { initialMarketSmallness: 5, nonConsumerTargeting: 5, simplicityScore: 5, lowMarginViability: 5, incumbentIgnoreScore: 5 };
+  const [form, setForm] = useState(defaultScores);
+
+  const hasScore = score && score.disruptionPotentialScore !== null;
+  const totalScore = score?.disruptionPotentialScore ?? 0;
+  const disruptionLevel = totalScore >= 40 ? "High" : totalScore >= 25 ? "Medium" : "Low";
+  const levelColors: Record<string, string> = { High: "#ef4444", Medium: "#f59e0b", Low: "#9ca3af" };
+  const levelBg: Record<string, string> = { High: "#fef2f2", Medium: "#fffbeb", Low: "#f9fafb" };
+
+  const radarData = RADAR_DIMS.map(d => ({
+    dim: d.label,
+    value: score ? (score as any)[d.key] ?? 0 : 0,
+    fullMark: 10,
+  }));
+
+  if (!hasScore && !editing) {
+    return (
+      <div className="mt-3 p-3 rounded-lg border border-dashed flex items-center justify-between" style={{ borderColor: "#e5e7eb" }}>
+        <div className="flex items-center gap-2">
+          <Zap size={13} className="text-gray-300" />
+          <span className="text-xs text-gray-400">No disruption assessment yet</span>
+        </div>
+        <Button size="sm" variant="outline" className="gap-1 text-xs h-6" onClick={() => { setForm(defaultScores); setEditing(true); }}>
+          <Edit3 size={10} /> Assess
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-3 rounded-lg border overflow-hidden" style={{ borderColor: "#e5e7eb" }}>
+      {/* Header */}
+      <div className="px-3 py-2 flex items-center justify-between" style={{ background: levelBg[disruptionLevel] }}>
+        <div className="flex items-center gap-2">
+          <Zap size={12} style={{ color: levelColors[disruptionLevel] }} />
+          <span className="text-xs font-semibold" style={{ color: levelColors[disruptionLevel] }}>
+            Disruption Potential: {disruptionLevel}
+          </span>
+          <span className="text-xs font-mono text-gray-400">{totalScore}/50</span>
+          {score?.autonomousTeamFlagged && (
+            <span className="text-xs px-1.5 py-0.5 rounded flex items-center gap-1" style={{ background: "#fef3dc", color: "#b45309" }}>
+              <AlertTriangle size={9} /> Needs autonomous team
+            </span>
+          )}
+        </div>
+        <Button size="sm" variant="outline" className="gap-1 text-xs h-6" onClick={() => {
+          setForm({
+            initialMarketSmallness: score?.initialMarketSmallness ?? 5,
+            nonConsumerTargeting: score?.nonConsumerTargeting ?? 5,
+            simplicityScore: score?.simplicityScore ?? 5,
+            lowMarginViability: score?.lowMarginViability ?? 5,
+            incumbentIgnoreScore: score?.incumbentIgnoreScore ?? 5,
+          });
+          setEditing(!editing);
+        }}>
+          <Edit3 size={10} /> {editing ? "Cancel" : "Edit"}
+        </Button>
+      </div>
+
+      {/* Radar chart */}
+      {!editing && (
+        <div className="px-3 py-2">
+          <ResponsiveContainer width="100%" height={160}>
+            <RadarChart data={radarData} margin={{ top: 8, right: 20, bottom: 8, left: 20 }}>
+              <PolarGrid stroke="#f3f4f6" />
+              <PolarAngleAxis dataKey="dim" tick={{ fontSize: 9, fill: "#6b7280" }} />
+              <Radar
+                name="Disruption"
+                dataKey="value"
+                stroke={levelColors[disruptionLevel]}
+                fill={levelColors[disruptionLevel]}
+                fillOpacity={0.15}
+                strokeWidth={1.5}
+              />
+            </RadarChart>
+          </ResponsiveContainer>
+          <div className="grid grid-cols-5 gap-1 mt-1">
+            {RADAR_DIMS.map(d => (
+              <div key={d.key} className="text-center">
+                <div className="text-xs font-mono font-bold" style={{ color: levelColors[disruptionLevel] }}>
+                  {(score as any)?.[d.key] ?? 0}
+                </div>
+                <div className="text-gray-400" style={{ fontSize: "0.6rem" }}>{d.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Edit form */}
+      {editing && (
+        <div className="px-3 py-3 space-y-2">
+          {RADAR_DIMS.map(d => (
+            <div key={d.key} className="flex items-center gap-3">
+              <span className="text-xs text-gray-600 w-28 shrink-0">{d.label}</span>
+              <input
+                type="range" min={0} max={10} step={1}
+                value={(form as any)[d.key]}
+                onChange={e => setForm(f => ({ ...f, [d.key]: Number(e.target.value) }))}
+                className="flex-1 h-1.5 accent-orange-400"
+              />
+              <span className="text-xs font-mono w-6 text-right text-gray-500">{(form as any)[d.key]}</span>
+            </div>
+          ))}
+          <div className="pt-1 flex gap-2">
+            <Button
+              size="sm" className="flex-1 h-7 text-xs"
+              style={{ background: "#f59e0b", color: "white" }}
+              disabled={upsertMutation.isPending}
+              onClick={() => upsertMutation.mutate({ opportunityId, ...form })}
+            >
+              {upsertMutation.isPending ? <Loader2 size={11} className="animate-spin" /> : <Zap size={11} />}
+              Save Assessment
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -162,6 +307,9 @@ function OpportunityCard({
           <ScoreBar label="Founder Avail." value={opp.founderAvailScore} icon={Users} color="#f59e0b" />
         </div>
       )}
+
+      {/* Disruption Radar — Innovator's Dilemma assessment */}
+      <DisruptionRadar opportunityId={opp.id} />
 
       {opp.notes && (
         <p className="text-xs text-gray-400 italic mb-3 line-clamp-2">{opp.notes}</p>

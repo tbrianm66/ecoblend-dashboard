@@ -115,8 +115,13 @@ function LifecycleStrip({ currentStage }: { currentStage: string }) {
 }
 
 // ── Venture Card ───────────────────────────────────────────────────────────
+const ENGINE_COLORS: Record<string, { bg: string; color: string; label: string }> = {
+  Sticky:  { bg: "#e0f0fb", color: "#096ba7", label: "Sticky" },
+  Viral:   { bg: "#f0fdf4", color: "#15803d", label: "Viral" },
+  Paid:    { bg: "#fef3dc", color: "#b45309", label: "Paid" },
+};
 function VentureCard({
-  venture, onClick, onEdit, onEditMilestones, computedVrlScore, computedVrlLevel,
+  venture, onClick, onEdit, onEditMilestones, computedVrlScore, computedVrlLevel, engineOfGrowth,
 }: {
   venture: Venture;
   onClick: () => void;
@@ -124,6 +129,7 @@ function VentureCard({
   onEditMilestones: (e: React.MouseEvent) => void;
   computedVrlScore?: number;
   computedVrlLevel?: number;
+  engineOfGrowth?: string | null;
 }) {
   const vrlStage = VRL_STAGES[venture.vrl - 1];
   const trlLevel = TRL_LEVELS[venture.trl - 1];
@@ -189,6 +195,16 @@ function VentureCard({
               <span className="w-1.5 h-1.5 rounded-full mr-1 inline-block" style={{ background: status.dot }} />
               {venture.status}
             </span>
+            {engineOfGrowth && ENGINE_COLORS[engineOfGrowth] && (
+              <span
+                className="vos-badge"
+                style={{ background: ENGINE_COLORS[engineOfGrowth].bg, color: ENGINE_COLORS[engineOfGrowth].color, fontSize: "0.6rem" }}
+                title="Engine of Growth (Lean Startup)"
+              >
+                <Zap size={8} className="mr-0.5" />
+                {ENGINE_COLORS[engineOfGrowth].label}
+              </span>
+            )}
             <button
               onClick={onEdit}
               className="w-6 h-6 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
@@ -300,6 +316,12 @@ export default function Home() {
   const avgComputedVrl = vrlPortfolioScores.length > 0
     ? (vrlPortfolioScores.reduce((sum, v) => sum + v.vrlScore, 0) / vrlPortfolioScores.length).toFixed(1)
     : "--";
+  // Innovation Accounting: experiment pass rate + engine of growth
+  const { data: leanMetrics = [] } = trpc.leanMetrics.portfolioSummary.useQuery();
+  const metricsWithRate = leanMetrics.filter((m: any) => m.experimentPassRate !== null);
+  const avgPassRate = metricsWithRate.length > 0
+    ? Math.round(metricsWithRate.reduce((sum: number, m: any) => sum + m.experimentPassRate, 0) / metricsWithRate.length)
+    : null;
 
   const handleDomainClick = (domainId: string) => {
     setActiveDomain(domainId);
@@ -429,11 +451,11 @@ export default function Home() {
             icon={Briefcase}
           />
           <MetricTile
-            label="Milestones"
-            value={`${stats.totalMilestonesCompleted}/${stats.totalMilestones}`}
-            sub="completed"
+            label="Exp. Pass Rate"
+            value={avgPassRate !== null ? `${avgPassRate}%` : "--"}
+            sub={avgPassRate !== null ? "innovation accounting" : "no experiments yet"}
             accent="#F49C13"
-            icon={CheckCircle2}
+            icon={Zap}
           />
         </div>
 
@@ -480,6 +502,7 @@ export default function Home() {
 
             {portfolioBrands.map((venture) => {
               const vrlScore = vrlPortfolioScores.find(s => s.ventureId === venture.id);
+              const leanEntry = leanMetrics.find((m: any) => m.id === venture.id);
               return (
                 <VentureCard
                   key={venture.id}
@@ -489,6 +512,7 @@ export default function Home() {
                   onEditMilestones={(e) => handleMilestonesClick(e, venture)}
                   computedVrlScore={vrlScore?.vrlScore}
                   computedVrlLevel={vrlScore?.vrlLevel}
+                  engineOfGrowth={leanEntry?.engineOfGrowth}
                 />
               );
             })}
@@ -512,6 +536,7 @@ export default function Home() {
                   onEditMilestones={(e) => handleMilestonesClick(e, internalLab)}
                   computedVrlScore={vrlPortfolioScores.find(s => s.ventureId === internalLab.id)?.vrlScore}
                   computedVrlLevel={vrlPortfolioScores.find(s => s.ventureId === internalLab.id)?.vrlLevel}
+                  engineOfGrowth={leanMetrics.find((m: any) => m.id === internalLab.id)?.engineOfGrowth}
                 />
               </div>
             )}
