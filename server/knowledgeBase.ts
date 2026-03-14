@@ -280,22 +280,19 @@ export async function getChunksByDocument(documentId: number) {
 
 export async function getKnowledgeStats() {
   const db = (await getDb())!;
-  const [stats] = await db.execute(sql`
-    SELECT
-      COUNT(DISTINCT kd.id)   AS documentCount,
-      SUM(kd.chunk_count)     AS totalChunks,
-      SUM(kd.word_count)      AS totalWords,
-      COUNT(DISTINCT kd.domain) AS domainCount
-    FROM knowledge_documents kd
-    WHERE kd.status = 'ready'
-  `);
-  const row = (Array.isArray(stats) ? stats[0] : stats) as any;
-  return {
-    documentCount: Number(row?.documentCount ?? 0),
-    totalChunks: Number(row?.totalChunks ?? 0),
-    totalWords: Number(row?.totalWords ?? 0),
-    domainCount: Number(row?.domainCount ?? 0),
-  };
+
+  // Use Drizzle query builder to avoid raw SQL column name mismatches
+  const readyDocs = await db
+    .select()
+    .from(knowledgeDocuments)
+    .where(eq(knowledgeDocuments.status, "ready"));
+
+  const documentCount = readyDocs.length;
+  const totalChunks = readyDocs.reduce((sum, d) => sum + (d.chunkCount ?? 0), 0);
+  const totalWords = readyDocs.reduce((sum, d) => sum + (d.wordCount ?? 0), 0);
+  const domainCount = new Set(readyDocs.map((d) => d.domain)).size;
+
+  return { documentCount, totalChunks, totalWords, domainCount };
 }
 
 // ── S3 Upload Helper ──────────────────────────────────────────────────────────
