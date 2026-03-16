@@ -1,0 +1,64 @@
+{
+  "query": "SELECT id, name, status, vrl, trl, color, channel FROM ventures ORDER BY name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3HthdpivREJ9B8M.root --database ggmroLG8ezURUZiLzGveTG --execute SELECT id, name, status, vrl, trl, color, channel FROM ventures ORDER BY name;",
+  "rows": [
+    {
+      "id": "bebus",
+      "name": "BEBUS",
+      "status": "Active",
+      "vrl": "2",
+      "trl": "3",
+      "color": "#3A97D3",
+      "channel": "B2B"
+    },
+    {
+      "id": "ecoblend",
+      "name": "EcoBlend",
+      "status": "Active",
+      "vrl": "2",
+      "trl": "4",
+      "color": "#51AF37",
+      "channel": "B2B"
+    },
+    {
+      "id": "ecoblend-rd",
+      "name": "EcoBlend R&D",
+      "status": "Active",
+      "vrl": "2",
+      "trl": "4",
+      "color": "#51AF37",
+      "channel": "B2B"
+    },
+    {
+      "id": "pipe",
+      "name": "PIPE",
+      "status": "Pre-Launch",
+      "vrl": "1",
+      "trl": "1",
+      "color": "#0ea5e9",
+      "channel": "D2C"
+    },
+    {
+      "id": "real",
+      "name": "REAL",
+      "status": "Pre-Launch",
+      "vrl": "1",
+      "trl": "2",
+      "color": "#ef4444",
+      "channel": "D2C"
+    },
+    {
+      "id": "tone",
+      "name": "TONE",
+      "status": "Active",
+      "vrl": "1",
+      "trl": "2",
+      "color": "#F49C13",
+      "channel": "D2C"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tstatus\tvrl\ttrl\tcolor\tchannel\nbebus\tBEBUS\tActive\t2\t3\t#3A97D3\tB2B\necoblend\tEcoBlend\tActive\t2\t4\t#51AF37\tB2B\necoblend-rd\tEcoBlend R&D\tActive\t2\t4\t#51AF37\tB2B\npipe\tPIPE\tPre-Launch\t1\t1\t#0ea5e9\tD2C\nreal\tREAL\tPre-Launch\t1\t2\t#ef4444\tD2C\ntone\tTONE\tActive\t1\t2\t#F49C13\tD2C\n",
+  "stderr": "",
+  "execution_time_ms": 597
+}

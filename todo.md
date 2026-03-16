@@ -277,3 +277,13 @@
 - [x] Add 60-second refetchInterval to all 8 Command Centre tRPC queries
 - [x] Add live "Last updated" timestamp indicator to Command Centre header
 - [x] Add animated pulse indicator showing auto-refresh is active
+
+## Sprint 25 — Command Centre Live Data Seed (Mar 2026)
+
+- [x] Seed financial_snapshots: 6 months of revenue, burn, investment, runway per venture (36 rows)
+- [x] Seed esg_metrics: environment, social, governance scores per venture (6 rows)
+- [x] Seed experiments: 14 pass/fail/inconclusive results across all ventures
+- [x] Seed product_opportunities + assessments: 8 opportunities, 4 scored with full CPQS assessments
+- [x] Seed venture_programs + phases + tasks: 4 programs, 10 phases, 4 workstreams, 18 tasks
+- [x] Seed irl_scores: 6 venture IRL profiles (5.5–7.14/10 range)
+- [x] Verify all Command Centre widgets show real numbers — all 10 seeded tables confirmed

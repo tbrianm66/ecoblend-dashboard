@@ -1,0 +1,52 @@
+{
+  "query": "SELECT id, name, status, vrl, trl FROM ventures ORDER BY name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3HthdpivREJ9B8M.root --database ggmroLG8ezURUZiLzGveTG --execute SELECT id, name, status, vrl, trl FROM ventures ORDER BY name;",
+  "rows": [
+    {
+      "id": "bebus",
+      "name": "BEBUS",
+      "status": "Active",
+      "vrl": "2",
+      "trl": "3"
+    },
+    {
+      "id": "ecoblend",
+      "name": "EcoBlend",
+      "status": "Active",
+      "vrl": "2",
+      "trl": "4"
+    },
+    {
+      "id": "ecoblend-rd",
+      "name": "EcoBlend R&D",
+      "status": "Active",
+      "vrl": "2",
+      "trl": "4"
+    },
+    {
+      "id": "pipe",
+      "name": "PIPE",
+      "status": "Pre-Launch",
+      "vrl": "1",
+      "trl": "1"
+    },
+    {
+      "id": "real",
+      "name": "REAL",
+      "status": "Pre-Launch",
+      "vrl": "1",
+      "trl": "2"
+    },
+    {
+      "id": "tone",
+      "name": "TONE",
+      "status": "Active",
+      "vrl": "1",
+      "trl": "2"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tstatus\tvrl\ttrl\nbebus\tBEBUS\tActive\t2\t3\necoblend\tEcoBlend\tActive\t2\t4\necoblend-rd\tEcoBlend R&D\tActive\t2\t4\npipe\tPIPE\tPre-Launch\t1\t1\nreal\tREAL\tPre-Launch\t1\t2\ntone\tTONE\tActive\t1\t2\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}
