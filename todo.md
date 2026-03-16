@@ -262,3 +262,12 @@
 - [x] Add "Project Management" to Sidebar (Intelligence group) with ClipboardList icon, /project-management route
 - [x] Register /project-management route in App.tsx
 - [x] Vitest tests for PM scoring and status logic (30 new tests, 368 total passing)
+
+## Sprint 23 — Command Centre Dashboard (Mar 2026)
+
+- [x] Build server/commandCentreDb.ts: live aggregation helpers (portfolio summary, VRL distribution, POI funnel, PM health, financial performance, ESG/impact)
+- [x] Add tRPC commandCentre router: getLiveMetrics, getVrlDistribution, getOpportunityFunnel, getPmHealth, getFinancialPerformance, getEsgMetrics, getEcosystemNodes, upsertEcosystemNode
+- [x] Build CommandCentre.tsx: full dashboard with 7 widget panels
+- [x] Add "Command Centre" to Sidebar (Dashboard group, top position) with Zap icon, /command-centre route
+- [x] Register /command-centre route in App.tsx
+- [x] Vitest tests for Command Centre aggregation logic (45 tests, 413 total passing)

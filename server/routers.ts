@@ -7,6 +7,11 @@ import { storagePut } from "./storage";
 import { invokeLLM } from "./_core/llm";
 import { nanoid } from "nanoid";
 import {
+  getPortfolioSummary, getVrlDistribution, getOpportunityFunnel,
+  getPmHealth, getFinancialPerformance, getEsgMetrics,
+  getEcosystemNodes, upsertEcosystemNode, getLearningVelocity,
+} from "./commandCentreDb";
+import {
   listPrograms, getProgram, createProgram, updateProgram, deleteProgram,
   listPhases, getPhase, createPhase, updatePhase, deletePhase,
   listWorkstreams, createWorkstream, updateWorkstream, deleteWorkstream,
@@ -3437,6 +3442,37 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
   // Portfolio summary
   portfolioSummary: publicProcedure
     .query(() => getPmPortfolioSummary()),
+  }),
+
+  commandCentre: router({
+    getLiveMetrics: publicProcedure
+      .query(async () => {
+        const [portfolio, vrlDist, funnel, pmHealth, financial, esg, learning] = await Promise.all([
+          getPortfolioSummary(),
+          getVrlDistribution(),
+          getOpportunityFunnel(),
+          getPmHealth(),
+          getFinancialPerformance(),
+          getEsgMetrics(),
+          getLearningVelocity(),
+        ]);
+        return { portfolio, vrlDist, funnel, pmHealth, financial, esg, learning };
+      }),
+    getEcosystemNodes: publicProcedure
+      .query(() => getEcosystemNodes()),
+    upsertEcosystemNode: publicProcedure
+      .input(z.object({
+        ventureId: z.string(),
+        posX: z.number().optional(),
+        posY: z.number().optional(),
+        nodeSize: z.number().optional(),
+        nodeColor: z.string().optional(),
+        linkedVentureIds: z.string().optional(),
+        linkType: z.enum(["Technology Sharing", "Market Overlap", "Shared Founder", "Supply Chain", "Co-Investment", "None"]).optional(),
+        displayLabel: z.string().optional(),
+        tooltipText: z.string().optional(),
+      }))
+      .mutation(({ input }) => upsertEcosystemNode(input)),
   }),
 });
 

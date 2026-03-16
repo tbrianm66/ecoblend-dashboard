@@ -36,6 +36,7 @@ import KnowledgeBase from "./pages/KnowledgeBase";
 import PeopleIntelligence from "./pages/PeopleIntelligence";
 import ProductOpportunityIntelligence from "./pages/ProductOpportunityIntelligence";
 import VentureProjectManagement from "./pages/VentureProjectManagement";
+import CommandCentre from "./pages/CommandCentre";
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
@@ -70,6 +71,7 @@ function Router() {
       <Route path="/people-intelligence" component={PeopleIntelligence} />
       <Route path="/poi" component={ProductOpportunityIntelligence} />
       <Route path="/project-management" component={VentureProjectManagement} />
+      <Route path="/command-centre" component={CommandCentre} />
       <Route component={Home} />
     </Switch>
   );

@@ -13,7 +13,7 @@ import {
   Award, Heart, ChevronRight, Rocket, MessageSquare, BookOpen,
   Bell, X, AlertTriangle, FileText, Newspaper, Briefcase,
   Lightbulb, TestTube2, UserCircle2, FolderOpen, Globe,
-  Building2, ChevronDown, GraduationCap, Search, PieChart, Leaf, Database, UserCheck, Package, ClipboardList
+  Building2, ChevronDown, GraduationCap, Search, PieChart, Leaf, Database, UserCheck, Package, ClipboardList, Zap
 } from "lucide-react";
 import { useVentures } from "@/contexts/VentureContext";
 
@@ -23,7 +23,7 @@ const iconMap: Record<string, React.ComponentType<{ size?: number; className?: s
   DollarSign, Layers, Lock, Users, Megaphone, BarChart2,
   Award, Heart, Rocket, MessageSquare, BookOpen, FileText,
   Newspaper, Briefcase, Lightbulb, TestTube2, UserCircle2,
-  FolderOpen, Globe, Building2, GraduationCap, Search, PieChart, Leaf, Database, UserCheck, Package, ClipboardList,
+  FolderOpen, Globe, Building2, GraduationCap, Search, PieChart, Leaf, Database, UserCheck, Package, ClipboardList, Zap,
 };
 
 interface NavItem {
@@ -46,6 +46,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Dashboard",
     defaultOpen: true,
     items: [
+      { id: "command-centre", label: "Command Centre",      icon: "Zap",             href: "/command-centre" },
       { id: "portfolio",   label: "Portfolio Overview",   icon: "LayoutDashboard", href: "/" },
       { id: "pipeline",    label: "Opportunity Pipeline", icon: "Lightbulb",       href: "/pipeline" },
       { id: "onboarding",  label: "Onboard Founder",      icon: "Rocket",          href: "/onboarding" },
