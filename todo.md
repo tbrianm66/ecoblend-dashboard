@@ -253,3 +253,12 @@
 - [x] Add "Product Opportunity" to Sidebar Intelligence group (Package icon, /poi route)
 - [x] Register /poi route in App.tsx
 - [x] Vitest tests: 14 tests covering POS formula, classification boundaries, dimension scoring, pipeline scenarios (338 total passing, 0 TypeScript errors)
+
+## Sprint 22 — Project Management Module (Mar 2026)
+
+- [x] Build server/pmDb.ts: CRUD helpers for programs, phases, workstreams, milestones, tasks, resources, dependencies, documents, execution risks
+- [x] Add tRPC pm router to routers.ts: full CRUD + summary procedures
+- [x] Build VentureProjectManagement.tsx: program/phase/workstream/task hierarchy with Kanban board, Gantt timeline, milestone tracker, resource allocation, execution risk register, document repository
+- [x] Add "Project Management" to Sidebar (Intelligence group) with ClipboardList icon, /project-management route
+- [x] Register /project-management route in App.tsx
+- [x] Vitest tests for PM scoring and status logic (30 new tests, 368 total passing)

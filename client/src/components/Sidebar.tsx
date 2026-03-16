@@ -13,7 +13,7 @@ import {
   Award, Heart, ChevronRight, Rocket, MessageSquare, BookOpen,
   Bell, X, AlertTriangle, FileText, Newspaper, Briefcase,
   Lightbulb, TestTube2, UserCircle2, FolderOpen, Globe,
-  Building2, ChevronDown, GraduationCap, Search, PieChart, Leaf, Database, UserCheck, Package
+  Building2, ChevronDown, GraduationCap, Search, PieChart, Leaf, Database, UserCheck, Package, ClipboardList
 } from "lucide-react";
 import { useVentures } from "@/contexts/VentureContext";
 
@@ -23,7 +23,7 @@ const iconMap: Record<string, React.ComponentType<{ size?: number; className?: s
   DollarSign, Layers, Lock, Users, Megaphone, BarChart2,
   Award, Heart, Rocket, MessageSquare, BookOpen, FileText,
   Newspaper, Briefcase, Lightbulb, TestTube2, UserCircle2,
-  FolderOpen, Globe, Building2, GraduationCap, Search, PieChart, Leaf, Database, UserCheck, Package,
+  FolderOpen, Globe, Building2, GraduationCap, Search, PieChart, Leaf, Database, UserCheck, Package, ClipboardList,
 };
 
 interface NavItem {
@@ -116,6 +116,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: "knowledge",   label: "Knowledge Base",       icon: "Database",        href: "/knowledge" },
       { id: "people-intel", label: "People Intelligence",  icon: "UserCheck",       href: "/people-intelligence" },
       { id: "poi",         label: "Product Opportunity",  icon: "Package",         href: "/poi" },
+      { id: "pm",          label: "Project Management",   icon: "ClipboardList",   href: "/project-management" },
     ],
   },
 ];

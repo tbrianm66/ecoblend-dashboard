@@ -7,6 +7,17 @@ import { storagePut } from "./storage";
 import { invokeLLM } from "./_core/llm";
 import { nanoid } from "nanoid";
 import {
+  listPrograms, getProgram, createProgram, updateProgram, deleteProgram,
+  listPhases, getPhase, createPhase, updatePhase, deletePhase,
+  listWorkstreams, createWorkstream, updateWorkstream, deleteWorkstream,
+  listMilestonesByVenture, listMilestones, createMilestone, updateMilestone as updatePmMilestone, deleteMilestone as deletePmMilestone,
+  listTasksByVenture, listTasks, createTask, updateTask, deleteTask,
+  listResources, createResource, updateResource, deleteResource,
+  listExecutionRisks, createExecutionRisk, updateExecutionRisk, deleteExecutionRisk,
+  listDocuments, createDocument, updateDocument, deleteDocument,
+  getPmPortfolioSummary,
+} from "./pmDb";
+import {
   insertContractDocument,
   getContractDocuments,
   deleteContractDocument,
@@ -3152,5 +3163,281 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         return { success: true };
       }),
   }),
+
+  // ── Project Management ────────────────────────────────────────────────────
+  pm: router({
+  // Programs
+  listPrograms: publicProcedure
+    .input(z.object({ ventureId: z.string() }))
+    .query(({ input }) => listPrograms(input.ventureId)),
+  getProgram: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .query(({ input }) => getProgram(input.id)),
+  createProgram: publicProcedure
+    .input(z.object({
+      ventureId: z.string(),
+      name: z.string().min(1),
+      description: z.string().optional(),
+      status: z.enum(["Not Started", "In Progress", "On Hold", "Completed", "Cancelled"]).optional(),
+      startDate: z.string().optional(),
+      targetEndDate: z.string().optional(),
+      programManager: z.string().optional(),
+      budget: z.number().optional(),
+      notes: z.string().optional(),
+    }))
+    .mutation(({ input }) => createProgram(input)),
+  updateProgram: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      name: z.string().optional(),
+      description: z.string().optional(),
+      status: z.enum(["Not Started", "In Progress", "On Hold", "Completed", "Cancelled"]).optional(),
+      startDate: z.string().optional(),
+      targetEndDate: z.string().optional(),
+      actualEndDate: z.string().optional(),
+      programManager: z.string().optional(),
+      budget: z.number().optional(),
+      budgetSpent: z.number().optional(),
+      notes: z.string().optional(),
+    }))
+    .mutation(({ input }) => { const { id, ...rest } = input; return updateProgram(id, rest); }),
+  deleteProgram: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(({ input }) => deleteProgram(input.id)),
+
+  // Phases
+  listPhases: publicProcedure
+    .input(z.object({ programId: z.number() }))
+    .query(({ input }) => listPhases(input.programId)),
+  createPhase: publicProcedure
+    .input(z.object({
+      programId: z.number(),
+      ventureId: z.string(),
+      name: z.string().min(1),
+      phaseNumber: z.number(),
+      vrlStage: z.number().optional(),
+      status: z.enum(["Not Started", "In Progress", "On Hold", "Completed", "Cancelled"]).optional(),
+      startDate: z.string().optional(),
+      targetEndDate: z.string().optional(),
+      notes: z.string().optional(),
+    }))
+    .mutation(({ input }) => createPhase(input)),
+  updatePhase: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      name: z.string().optional(),
+      status: z.enum(["Not Started", "In Progress", "On Hold", "Completed", "Cancelled"]).optional(),
+      completionPercent: z.number().min(0).max(100).optional(),
+      gateReviewPassed: z.boolean().optional(),
+      gateReviewDate: z.string().optional(),
+      gateReviewNotes: z.string().optional(),
+      startDate: z.string().optional(),
+      targetEndDate: z.string().optional(),
+      actualEndDate: z.string().optional(),
+      notes: z.string().optional(),
+    }))
+    .mutation(({ input }) => { const { id, ...rest } = input; return updatePhase(id, rest); }),
+  deletePhase: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(({ input }) => deletePhase(input.id)),
+
+  // Workstreams
+  listWorkstreams: publicProcedure
+    .input(z.object({ phaseId: z.number() }))
+    .query(({ input }) => listWorkstreams(input.phaseId)),
+  createWorkstream: publicProcedure
+    .input(z.object({
+      phaseId: z.number(),
+      ventureId: z.string(),
+      name: z.string().min(1),
+      functionalArea: z.enum(["Technical", "Commercial", "Legal", "Financial", "Marketing", "Operations", "People", "ESG", "Other"]).optional(),
+      owner: z.string().optional(),
+      startDate: z.string().optional(),
+      targetEndDate: z.string().optional(),
+      notes: z.string().optional(),
+    }))
+    .mutation(({ input }) => createWorkstream(input)),
+  updateWorkstream: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      name: z.string().optional(),
+      status: z.enum(["Not Started", "In Progress", "On Hold", "Completed"]).optional(),
+      completionPercent: z.number().min(0).max(100).optional(),
+      owner: z.string().optional(),
+      startDate: z.string().optional(),
+      targetEndDate: z.string().optional(),
+      notes: z.string().optional(),
+    }))
+    .mutation(({ input }) => { const { id, ...rest } = input; return updateWorkstream(id, rest); }),
+  deleteWorkstream: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(({ input }) => deleteWorkstream(input.id)),
+
+  // Milestones
+  listMilestonesByVenture: publicProcedure
+    .input(z.object({ ventureId: z.string() }))
+    .query(({ input }) => listMilestonesByVenture(input.ventureId)),
+  listMilestones: publicProcedure
+    .input(z.object({ workstreamId: z.number() }))
+    .query(({ input }) => listMilestones(input.workstreamId)),
+  createMilestone: publicProcedure
+    .input(z.object({
+      workstreamId: z.number(),
+      phaseId: z.number(),
+      ventureId: z.string(),
+      title: z.string().min(1),
+      description: z.string().optional(),
+      milestoneType: z.enum(["Gate Review", "Deliverable", "Decision Point", "External Event", "Funding Milestone", "Launch"]).optional(),
+      targetDate: z.string().optional(),
+      completionEvidence: z.string().optional(),
+    }))
+    .mutation(({ input }) => createMilestone(input)),
+  updateMilestone: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      title: z.string().optional(),
+      status: z.enum(["Not Started", "In Progress", "Completed", "Overdue", "Cancelled"]).optional(),
+      targetDate: z.string().optional(),
+      completionEvidence: z.string().optional(),
+      milestoneType: z.enum(["Gate Review", "Deliverable", "Decision Point", "External Event", "Funding Milestone", "Launch"]).optional(),
+    }))
+    .mutation(({ input }) => { const { id, ...rest } = input; return updatePmMilestone(id, rest); }),
+  deleteMilestone: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(({ input }) => deletePmMilestone(input.id)),
+
+  // Tasks
+  listTasksByVenture: publicProcedure
+    .input(z.object({ ventureId: z.string() }))
+    .query(({ input }) => listTasksByVenture(input.ventureId)),
+  listTasks: publicProcedure
+    .input(z.object({ workstreamId: z.number() }))
+    .query(({ input }) => listTasks(input.workstreamId)),
+  createTask: publicProcedure
+    .input(z.object({
+      workstreamId: z.number(),
+      ventureId: z.string(),
+      title: z.string().min(1),
+      description: z.string().optional(),
+      kanbanStatus: z.enum(["Backlog", "To Do", "In Progress", "In Review", "Done", "Blocked"]).optional(),
+      priority: z.enum(["Critical", "High", "Medium", "Low"]).optional(),
+      assignee: z.string().optional(),
+      startDate: z.string().optional(),
+      dueDate: z.string().optional(),
+      estimatedHours: z.number().optional(),
+      milestoneId: z.number().optional(),
+      notes: z.string().optional(),
+    }))
+    .mutation(({ input }) => createTask(input)),
+  updateTask: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      title: z.string().optional(),
+      description: z.string().optional(),
+      kanbanStatus: z.enum(["Backlog", "To Do", "In Progress", "In Review", "Done", "Blocked"]).optional(),
+      priority: z.enum(["Critical", "High", "Medium", "Low"]).optional(),
+      assignee: z.string().optional(),
+      startDate: z.string().optional(),
+      dueDate: z.string().optional(),
+      estimatedHours: z.number().optional(),
+      actualHours: z.number().optional(),
+      notes: z.string().optional(),
+    }))
+    .mutation(({ input }) => { const { id, ...rest } = input; return updateTask(id, rest); }),
+  deleteTask: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(({ input }) => deleteTask(input.id)),
+
+  // Resources
+  listResources: publicProcedure
+    .input(z.object({ ventureId: z.string() }))
+    .query(({ input }) => listResources(input.ventureId)),
+  createResource: publicProcedure
+    .input(z.object({
+      ventureId: z.string(),
+      programId: z.number().optional(),
+      phaseId: z.number().optional(),
+      resourceType: z.enum(["Person", "Budget", "Equipment", "External Service"]).optional(),
+      name: z.string().min(1),
+      role: z.string().optional(),
+      allocationPercent: z.number().min(0).max(100).optional(),
+      allocationHoursPerWeek: z.number().optional(),
+      startDate: z.string().optional(),
+      endDate: z.string().optional(),
+      dayRate: z.number().optional(),
+      totalBudgeted: z.number().optional(),
+      notes: z.string().optional(),
+    }))
+    .mutation(({ input }) => createResource(input)),
+  updateResource: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      name: z.string().optional(),
+      role: z.string().optional(),
+      allocationPercent: z.number().optional(),
+      allocationHoursPerWeek: z.number().optional(),
+      dayRate: z.number().optional(),
+      totalBudgeted: z.number().optional(),
+      totalActual: z.number().optional(),
+      startDate: z.string().optional(),
+      endDate: z.string().optional(),
+      notes: z.string().optional(),
+    }))
+    .mutation(({ input }) => { const { id, ...rest } = input; return updateResource(id, rest); }),
+  deleteResource: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(({ input }) => deleteResource(input.id)),
+
+  // Execution Risks
+  listExecutionRisks: publicProcedure
+    .input(z.object({ ventureId: z.string() }))
+    .query(({ input }) => listExecutionRisks(input.ventureId)),
+  createExecutionRisk: publicProcedure
+    .input(z.object({
+      ventureId: z.string(),
+      programId: z.number().optional(),
+      phaseId: z.number().optional(),
+      workstreamId: z.number().optional(),
+      title: z.string().min(1),
+      description: z.string().optional(),
+      riskCategory: z.enum(["Schedule", "Budget", "Resource", "Technical", "Dependency", "Regulatory", "Stakeholder", "Scope", "Quality"]).optional(),
+      likelihood: z.enum(["Very Low", "Low", "Medium", "High", "Very High"]).optional(),
+      impact: z.enum(["Negligible", "Minor", "Moderate", "Major", "Critical"]).optional(),
+      mitigationPlan: z.string().optional(),
+      contingencyPlan: z.string().optional(),
+      owner: z.string().optional(),
+      reviewDate: z.string().optional(),
+    }))
+    .mutation(({ input }) => createExecutionRisk(input)),
+  updateExecutionRisk: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      title: z.string().optional(),
+      status: z.enum(["Open", "Mitigated", "Accepted", "Closed", "Escalated"]).optional(),
+      likelihood: z.enum(["Very Low", "Low", "Medium", "High", "Very High"]).optional(),
+      impact: z.enum(["Negligible", "Minor", "Moderate", "Major", "Critical"]).optional(),
+      mitigationPlan: z.string().optional(),
+      contingencyPlan: z.string().optional(),
+      owner: z.string().optional(),
+      reviewDate: z.string().optional(),
+    }))
+    .mutation(({ input }) => { const { id, ...rest } = input; return updateExecutionRisk(id, rest); }),
+  deleteExecutionRisk: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(({ input }) => deleteExecutionRisk(input.id)),
+
+  // Documents
+  listDocuments: publicProcedure
+    .input(z.object({ ventureId: z.string() }))
+    .query(({ input }) => listDocuments(input.ventureId)),
+  deleteDocument: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(({ input }) => deleteDocument(input.id)),
+
+  // Portfolio summary
+  portfolioSummary: publicProcedure
+    .query(() => getPmPortfolioSummary()),
+  }),
 });
+
 export type AppRouter = typeof appRouter;
