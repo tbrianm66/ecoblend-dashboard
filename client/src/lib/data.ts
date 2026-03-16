@@ -1,8 +1,8 @@
 // ============================================================
 // ECORACE STUDIO — VBS Portfolio Data Model
 // Platform: EcoRace Studio (parent company)
-// R&D Lab:  EcoBlend R&D (internal, not a portfolio brand)
-// Portfolio Brands: EcoBlend · BEBUS · TONE · REAL · PIPE
+// R&D Lab:  EcoRace (internal, not a portfolio brand)
+// Portfolio Brands: EcoComp · BEBUS · TONE · REAL · PIPE
 // VRL: Venture Readiness Level (Commercial Progress, 4 stages)
 // TRL: Technology Readiness Level (Technical Progress, 9 levels)
 // ============================================================
@@ -43,7 +43,7 @@ export interface Venture {
   investmentReady: boolean;
   bmc: string;
   mmc: string;
-  isInternalLab?: boolean; // true for EcoBlend R&D — not a portfolio brand
+  isInternalLab?: boolean; // true for EcoRace — not a portfolio brand
   logo?: string; // CDN URL for brand logo
   logoBg?: string; // CSS background colour for logo container (for dark-bg logos)
 }
@@ -86,7 +86,7 @@ export const ventures: Venture[] = [
   // ── Internal Lab (not a portfolio brand — shown separately) ──────────────
   {
     id: "ecoblend-rd",
-    name: "EcoBlend R&D",
+    name: "EcoRace",
     tagline: "Central IP & Technology Engine",
     sector: "Deep Tech / Materials Science",
     channel: "B2B",
@@ -107,7 +107,7 @@ export const ventures: Venture[] = [
     bmc: "IP licensing fees from portfolio brands; R&D service contracts with external partners",
     mmc: "Technology access for social impact ventures; foundation-linked IP sharing",
     risks: [
-      { domain: "Technical", level: "Medium", mitigation: "Staged TRL gate reviews with EcoBlend R&D team" },
+      { domain: "Technical", level: "Medium", mitigation: "Staged TRL gate reviews with EcoRace team" },
       { domain: "IP", level: "Low", mitigation: "Centralised IP registry with field-of-use licence agreements" },
       { domain: "People", level: "Medium", mitigation: "Stipend + ESOP for key R&D talent" },
     ],
@@ -119,10 +119,10 @@ export const ventures: Venture[] = [
     ],
   },
 
-  // ── Portfolio Brand 1: EcoBlend ──────────────────────────────────────────
+  // ── Portfolio Brand 1: EcoComp ──────────────────────────────────────────
   {
     id: "ecoblend",
-    name: "EcoBlend",
+    name: "EcoComp",
     tagline: "Advanced Materials Formulation & Distribution",
     sector: "Materials Science / Green Chemistry",
     channel: "B2B",
@@ -138,7 +138,7 @@ export const ventures: Venture[] = [
     logo: "https://d2xsxph8kpxj0f.cloudfront.net/310419663031397390/ggmroLG8ezURUZiLzGveTG/ecoblend-logo-transparent_e294197c.png",
     logoBg: "#f0fdf4",
     investmentReady: false,
-    description: "EcoBlend is the materials formulation and distribution brand of EcoRace Studio. It takes IP developed in the EcoBlend R&D lab and brings it to market as a Tier 1 ingredient brand — supplying bio-based, recycled, and high-performance material formulations to OEMs, manufacturers, and downstream portfolio brands. The 'blending' concept reflects the fusion of key performance matrices — mechanical, thermal, environmental, and social — into a single material solution.",
+    description: "EcoComp is the materials formulation and distribution brand of EcoRace Studio. It takes IP developed in the EcoRace lab and brings it to market as a Tier 1 ingredient brand — supplying bio-based, recycled, and high-performance material formulations to OEMs, manufacturers, and downstream portfolio brands. The 'blending' concept reflects the fusion of key performance matrices — mechanical, thermal, environmental, and social — into a single material solution.",
     bmc: "B2B material supply agreements; formulation licensing; technical consultancy for OEMs",
     mmc: "Sustainable materials access for social enterprises; circular economy enablement",
     risks: [
@@ -173,12 +173,12 @@ export const ventures: Venture[] = [
     logo: "https://d2xsxph8kpxj0f.cloudfront.net/310419663031397390/ggmroLG8ezURUZiLzGveTG/bebus-logo-color_69330e6f.png",
     logoBg: "#f8fafc",
     investmentReady: false,
-    description: "A Tier 1 ingredient brand supplying eco-transport OEMs with advanced material formulations, lightweight structures, and sustainable systems sourced from EcoBlend. Targets bus, coach, and rail manufacturers seeking to reduce Scope 3 emissions and Total Cost of Ownership through next-generation eco-composite materials.",
+    description: "A Tier 1 ingredient brand supplying eco-transport OEMs with advanced material formulations, lightweight structures, and sustainable systems sourced from EcoComp. Targets bus, coach, and rail manufacturers seeking to reduce Scope 3 emissions and Total Cost of Ownership through next-generation eco-composite materials.",
     bmc: "B2B supply agreements with OEMs; material formulation licences; technical consultancy",
     mmc: "Clean mobility access for underserved communities; Scope 3 emissions reduction",
     risks: [
       { domain: "Business", level: "Medium", mitigation: "Pilot agreement with one OEM before full commercial launch" },
-      { domain: "Technical", level: "High", mitigation: "EcoBlend R&D to reach TRL 6 before OEM pilot" },
+      { domain: "Technical", level: "High", mitigation: "EcoRace to reach TRL 6 before OEM pilot" },
       { domain: "Financial", level: "Medium", mitigation: "VBS stipend bridges founder to first revenue" },
       { domain: "Marketing", level: "Low", mitigation: "VBS ingredient brand strategy; OEM co-branding" },
     ],
@@ -209,7 +209,7 @@ export const ventures: Venture[] = [
     logo: "https://d2xsxph8kpxj0f.cloudfront.net/310419663031397390/ggmroLG8ezURUZiLzGveTG/tone-logo-white_776e4b22.png",
     logoBg: "#1a1a1a",
     investmentReady: false,
-    description: "TONE is an eco-creative industry brand delivering sustainable products and solutions to the creative sector — spanning music, film, fashion, and design. It serves environmentally conscious creatives who refuse to compromise on performance or aesthetic. TONE leverages EcoBlend material formulations to produce sustainable creative tools, equipment, and accessories, establishing a new standard for eco-performance in the creative industries.",
+    description: "TONE is an eco-creative industry brand delivering sustainable products and solutions to the creative sector — spanning music, film, fashion, and design. It serves environmentally conscious creatives who refuse to compromise on performance or aesthetic. TONE leverages EcoComp material formulations to produce sustainable creative tools, equipment, and accessories, establishing a new standard for eco-performance in the creative industries.",
     bmc: "D2C product sales; creative subscription model; eco-certification licensing to creative studios",
     mmc: "Arts access for disadvantaged youth; cultural inclusion through sustainable creative tools",
     risks: [
@@ -248,7 +248,7 @@ export const ventures: Venture[] = [
     bmc: "D2C product sales; performance certification; athlete ambassador programme; B2B supply to sports federations",
     mmc: "Sport participation for underserved youth; injury prevention and wellbeing through physical activity",
     risks: [
-      { domain: "Technical", level: "High", mitigation: "EcoBlend R&D to validate material performance at TRL 5 before launch" },
+      { domain: "Technical", level: "High", mitigation: "EcoRace to validate material performance at TRL 5 before launch" },
       { domain: "Regulatory", level: "High", mitigation: "CE/EN safety certification pathway mapped from TRL 4 onwards" },
       { domain: "Business", level: "Medium", mitigation: "D2C validation via athlete focus groups and sports federation pilots" },
       { domain: "People", level: "Low", mitigation: "VBS stipend for founder; ESOP for early team" },
@@ -285,7 +285,7 @@ export const ventures: Venture[] = [
     bmc: "D2C product sales; performance gear subscription; eco-certification; B2B supply to surf schools and water sport centres",
     mmc: "Ocean health and coastal community access; water sport participation for underserved youth",
     risks: [
-      { domain: "Technical", level: "Medium", mitigation: "EcoBlend R&D to validate water-resistant and UV-stable formulations at TRL 4" },
+      { domain: "Technical", level: "Medium", mitigation: "EcoRace to validate water-resistant and UV-stable formulations at TRL 4" },
       { domain: "Business", level: "High", mitigation: "D2C validation via 50 water sport athlete interviews before product development" },
       { domain: "Environmental", level: "Low", mitigation: "Full lifecycle assessment from materials sourcing to end-of-life recycling" },
       { domain: "Marketing", level: "Medium", mitigation: "Surf and water sport community seeding; ambassador programme with pro athletes" },

@@ -32,7 +32,7 @@ const INITIAL_CHARITIES: CharityPartner[] = [
   {
     id: "c1",
     ventureId: "ecoblend",
-    ventureName: "EcoBlend R&D",
+    ventureName: "EcoRace",
     ventureColor: "#22c55e",
     ventureChannel: "B2B",
     charityName: "EcoRace Foundation",

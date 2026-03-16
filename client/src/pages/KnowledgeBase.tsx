@@ -313,7 +313,7 @@ function UploadForm({ onSuccess }: { onSuccess: () => void }) {
           <Input
             value={description}
             onChange={e => setDescription(e.target.value)}
-            placeholder="Brief summary of the document's relevance to EcoBlend"
+            placeholder="Brief summary of the document's relevance to EcoComp"
             className="text-sm"
           />
         </div>

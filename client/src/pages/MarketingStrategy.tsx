@@ -42,7 +42,7 @@ interface BrandConsistency {
 const BRAND_CONSISTENCY: BrandConsistency[] = [
   {
     ventureId: "ecoblend",
-    ventureName: "EcoBlend R&D",
+    ventureName: "EcoRace",
     ventureColor: "#22c55e",
     model: "B2B",
     scores: [
@@ -105,7 +105,7 @@ const INITIAL_CAMPAIGNS: Campaign[] = [
   { id: "cam4", ventureId: "tone", ventureName: "TONE", ventureColor: "#7c3aed", title: "D2C E-Commerce Store Launch", channel: "D2C E-Commerce", status: "Planned", budget: 6500, spent: 0, reach: 0, startDate: "2026-05", endDate: "2026-07" },
   { id: "cam5", ventureId: "real", ventureName: "REAL", ventureColor: "#f59e0b", title: "Sports Protection PR Push", channel: "PR & Press", status: "Live", budget: 4000, spent: 1200, reach: 85000, startDate: "2026-02", endDate: "2026-03" },
   { id: "cam6", ventureId: "real", ventureName: "REAL", ventureColor: "#f59e0b", title: "Athlete Partnership Programme", channel: "Partnerships", status: "Planned", budget: 9000, spent: 0, reach: 0, startDate: "2026-04", endDate: "2026-12" },
-  { id: "cam7", ventureId: "ecoblend", ventureName: "EcoBlend R&D", ventureColor: "#22c55e", title: "Global IP Licensing Outreach", channel: "Digital B2B", status: "Live", budget: 3500, spent: 1800, reach: 24, startDate: "2026-01", endDate: "2026-06" },
+  { id: "cam7", ventureId: "ecoblend", ventureName: "EcoRace", ventureColor: "#22c55e", title: "Global IP Licensing Outreach", channel: "Digital B2B", status: "Live", budget: 3500, spent: 1800, reach: 24, startDate: "2026-01", endDate: "2026-06" },
 ];
 
 const statusColors: Record<CampaignStatus, string> = {
@@ -136,7 +136,7 @@ export default function MarketingStrategy() {
 
   // Channel split pie
   const channelData = [
-    { name: "B2B (BEBUS + EcoBlend)", value: campaigns.filter(c => c.ventureId === "bebus" || c.ventureId === "ecoblend").length, color: "#1d4ed8" },
+    { name: "B2B (BEBUS + EcoComp)", value: campaigns.filter(c => c.ventureId === "bebus" || c.ventureId === "ecoblend").length, color: "#1d4ed8" },
     { name: "D2C (TONE + REAL)", value: campaigns.filter(c => c.ventureId === "tone" || c.ventureId === "real").length, color: "#7c3aed" },
   ];
 
@@ -353,7 +353,7 @@ export default function MarketingStrategy() {
             {[
               { title: "Ingredient Brand (B2B)", desc: "BEBUS operates as a Tier 1 ingredient brand. The VBS manages a consistent technical brand narrative that positions BEBUS as a trusted sustainability partner to OEM customers globally.", color: "#1d4ed8" },
               { title: "D2C Consumer Brands", desc: "TONE and REAL are direct-to-consumer brands. The VBS provides centralised brand guidelines, tone of voice, and sustainability storytelling frameworks to ensure consistency across all consumer touchpoints.", color: "#7c3aed" },
-              { title: "EcoBlend Parent Brand", desc: "EcoBlend R&D acts as the parent brand and R&D engine. Its brand identity signals scientific credibility and environmental leadership, providing a halo effect for all spin-off ventures.", color: "#22c55e" },
+              { title: "EcoComp Parent Brand", desc: "EcoRace acts as the parent brand and R&D engine. Its brand identity signals scientific credibility and environmental leadership, providing a halo effect for all spin-off ventures.", color: "#22c55e" },
             ].map(item => (
               <div key={item.title} className="rounded-lg p-4" style={{ background: `${item.color}08`, border: `1px solid ${item.color}25` }}>
                 <div className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: item.color }}>{item.title}</div>

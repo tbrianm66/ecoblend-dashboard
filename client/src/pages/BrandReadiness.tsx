@@ -44,7 +44,7 @@ interface VentureBrand {
 const INITIAL_BRANDS: VentureBrand[] = [
   {
     id: "ecoblend",
-    name: "EcoBlend R&D",
+    name: "EcoRace",
     color: "#22c55e",
     model: "B2B",
     vrlStage: 2,

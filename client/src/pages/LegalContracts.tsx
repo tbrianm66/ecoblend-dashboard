@@ -37,7 +37,7 @@ interface Contract {
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const VENTURE_OPTIONS = [
-  { id: "ecoblend-rd", label: "EcoBlend R&D", color: "#51AF37" },
+  { id: "ecoblend-rd", label: "EcoRace", color: "#51AF37" },
   { id: "bebus",       label: "BEBUS",         color: "#3A97D3" },
   { id: "tone",        label: "TONE",           color: "#F49C13" },
   { id: "real",        label: "REAL",           color: "#f1c411" },
@@ -75,27 +75,27 @@ const CATEGORY_COLOURS: Record<ContractCategory, string> = {
 const INITIAL_CONTRACTS: Contract[] = [
   {
     id: "c1",
-    title: "EcoBlend R&D — Founder IP Assignment & ESOP Agreement",
+    title: "EcoRace — Founder IP Assignment & ESOP Agreement",
     category: "Founder Agreement",
     ventureId: "ecoblend-rd",
-    counterparty: "EcoBlend R&D Founding Team",
+    counterparty: "EcoRace Founding Team",
     counterpartyType: "Internal Founders",
     status: "Active",
     signedDate: "2025-09-01",
     expiryDate: "2029-09-01",
     value: "20% ESOP Pool",
     keyTerms: [
-      "All IP created during employment assigned to EcoBlend R&D Ltd",
+      "All IP created during employment assigned to EcoRace Ltd",
       "4-year vesting schedule with 12-month cliff",
       "Non-compete clause: 24 months post-departure",
       "Stipend: £2,200/month for 6 months during validation phase",
       "Equity: 20% ESOP pool distributed across founding team",
     ],
-    notes: "Core founding agreement covering IP assignment, equity vesting, and stipend terms for the EcoBlend R&D founding team.",
+    notes: "Core founding agreement covering IP assignment, equity vesting, and stipend terms for the EcoRace founding team.",
   },
   {
     id: "c2",
-    title: "EcoBlend R&D → BEBUS Exclusive Field-of-Use IP Licence",
+    title: "EcoRace → BEBUS Exclusive Field-of-Use IP Licence",
     category: "IP Licence",
     ventureId: "bebus",
     counterparty: "BEBUS Ltd",
@@ -106,7 +106,7 @@ const INITIAL_CONTRACTS: Contract[] = [
     value: "3% Net Revenue Royalty",
     keyTerms: [
       "Exclusive licence for eco-transport material formulations in EU & UK",
-      "EcoBlend R&D retains full IP ownership",
+      "EcoRace retains full IP ownership",
       "3% net revenue royalty payable quarterly",
       "Sub-licensing to OEM customers permitted with prior written consent",
       "Termination clause: 12 months notice or immediate on insolvency",

@@ -180,7 +180,7 @@ export default function FounderOnboarding() {
       mmc: form.mmc || "To be defined in VRL Stage 1",
       risks: [
         { domain: "Business", level: "Medium", mitigation: "Beneficiary discovery interviews to validate problem-solution fit" },
-        { domain: "Technical", level: "Medium", mitigation: "EcoBlend R&D support from TRL 1 baseline" },
+        { domain: "Technical", level: "Medium", mitigation: "EcoRace support from TRL 1 baseline" },
         { domain: "People", level: "Low", mitigation: "ZINC VC stipend and ESOP structure in place" },
       ],
       milestones: [

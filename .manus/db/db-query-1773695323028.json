@@ -1,0 +1,28 @@
+{
+  "query": "SELECT DISTINCT ventureId FROM financial_snapshots ORDER BY ventureId;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3HthdpivREJ9B8M.root --database ggmroLG8ezURUZiLzGveTG --execute SELECT DISTINCT ventureId FROM financial_snapshots ORDER BY ventureId;",
+  "rows": [
+    {
+      "ventureId": "bebus"
+    },
+    {
+      "ventureId": "ecoblend"
+    },
+    {
+      "ventureId": "ecoblend-rd"
+    },
+    {
+      "ventureId": "pipe"
+    },
+    {
+      "ventureId": "real"
+    },
+    {
+      "ventureId": "tone"
+    }
+  ],
+  "messages": [],
+  "stdout": "ventureId\nbebus\necoblend\necoblend-rd\npipe\nreal\ntone\n",
+  "stderr": "",
+  "execution_time_ms": 58
+}

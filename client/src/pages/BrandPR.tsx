@@ -72,8 +72,8 @@ function saveData<T>(key: string, data: T[]) {
 const defaultPressReleases: PressRelease[] = [
   {
     id: "pr1", brandId: "ecoblend",
-    title: "EcoBlend Launches Advanced Bio-Composite Formulation for OEM Partners",
-    summary: "EcoBlend announces its first commercial-grade bio-composite material range, targeting Tier 1 OEM manufacturers in transport and sports sectors.",
+    title: "EcoComp Launches Advanced Bio-Composite Formulation for OEM Partners",
+    summary: "EcoComp announces its first commercial-grade bio-composite material range, targeting Tier 1 OEM manufacturers in transport and sports sectors.",
     status: "Draft", date: "2026-04-15", outlet: "Composites World",
   },
   {
@@ -99,7 +99,7 @@ const defaultPressReleases: PressRelease[] = [
 const defaultNewsletters: NewsletterCampaign[] = [
   {
     id: "nl1", brandId: "ecoblend",
-    subject: "EcoBlend Materials Bulletin — Q1 2026",
+    subject: "EcoComp Materials Bulletin — Q1 2026",
     preview: "Our first formulation portfolio is ready. Here's what we've been building in the lab...",
     status: "Draft", scheduledDate: "2026-04-01",
   },
@@ -114,7 +114,7 @@ const defaultNewsletters: NewsletterCampaign[] = [
 const defaultMediaCoverage: MediaCoverage[] = [
   {
     id: "mc1", brandId: "ecoblend",
-    headline: "EcoRace Studio Enters Materials Science with EcoBlend R&D Lab",
+    headline: "EcoRace Studio Enters Materials Science with EcoRace Lab",
     outlet: "GreenBiz", type: "Article", date: "2026-03-01",
     sentiment: "Positive",
   },

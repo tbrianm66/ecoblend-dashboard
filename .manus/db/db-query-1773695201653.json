@@ -1,0 +1,22 @@
+{
+  "query": "SELECT id, name, tagline, color FROM ventures WHERE name LIKE '%EcoBlend%' OR name LIKE '%Eco%' ORDER BY name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3HthdpivREJ9B8M.root --database ggmroLG8ezURUZiLzGveTG --execute SELECT id, name, tagline, color FROM ventures WHERE name LIKE '%EcoBlend%' OR name LIKE '%Eco%' ORDER BY name;",
+  "rows": [
+    {
+      "id": "ecoblend",
+      "name": "EcoBlend",
+      "tagline": "Advanced Materials Formulation & Distribution",
+      "color": "#51AF37"
+    },
+    {
+      "id": "ecoblend-rd",
+      "name": "EcoBlend R&D",
+      "tagline": "Central IP & Technology Engine",
+      "color": "#51AF37"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\ttagline\tcolor\necoblend\tEcoBlend\tAdvanced Materials Formulation & Distribution\t#51AF37\necoblend-rd\tEcoBlend R&D\tCentral IP & Technology Engine\t#51AF37\n",
+  "stderr": "",
+  "execution_time_ms": 64
+}

@@ -29,7 +29,7 @@ interface VentureFinancials {
 }
 
 const VENTURES: VentureFinancials[] = [
-  { id: "ecoblend", name: "EcoBlend R&D", color: "#22c55e", model: "B2B", monthlyBurn: 18000, cashRunway: 14, revenueActual: 73000, revenueTarget: 120000, totalEquity: 100, esopPool: 15, vestedEquity: 8, licenseRevenue: 73000, investmentRaised: 280000, investmentTarget: 500000 },
+  { id: "ecoblend", name: "EcoRace", color: "#22c55e", model: "B2B", monthlyBurn: 18000, cashRunway: 14, revenueActual: 73000, revenueTarget: 120000, totalEquity: 100, esopPool: 15, vestedEquity: 8, licenseRevenue: 73000, investmentRaised: 280000, investmentTarget: 500000 },
   { id: "bebus", name: "BEBUS", color: "#1d4ed8", model: "B2B", monthlyBurn: 12000, cashRunway: 8, revenueActual: 0, revenueTarget: 80000, totalEquity: 100, esopPool: 25, vestedEquity: 10, licenseRevenue: 0, investmentRaised: 120000, investmentTarget: 400000 },
   { id: "tone", name: "TONE", color: "#7c3aed", model: "D2C", monthlyBurn: 8000, cashRunway: 5, revenueActual: 2500, revenueTarget: 60000, totalEquity: 100, esopPool: 28, vestedEquity: 0, licenseRevenue: 0, investmentRaised: 50000, investmentTarget: 300000 },
   { id: "real", name: "REAL", color: "#f59e0b", model: "D2C", monthlyBurn: 9500, cashRunway: 10, revenueActual: 14200, revenueTarget: 75000, totalEquity: 100, esopPool: 30, vestedEquity: 18, licenseRevenue: 0, investmentRaised: 95000, investmentTarget: 350000 },
@@ -37,18 +37,18 @@ const VENTURES: VentureFinancials[] = [
 
 // 12-month revenue forecast data
 const REVENUE_FORECAST = [
-  { month: "Jan", EcoBlend: 6000, BEBUS: 0, TONE: 0, REAL: 800 },
-  { month: "Feb", EcoBlend: 7200, BEBUS: 0, TONE: 800, REAL: 1400 },
-  { month: "Mar", EcoBlend: 8500, BEBUS: 0, TONE: 1700, REAL: 2200 },
-  { month: "Apr", EcoBlend: 9000, BEBUS: 2000, TONE: 3500, REAL: 3800 },
-  { month: "May", EcoBlend: 10200, BEBUS: 5000, TONE: 5200, REAL: 5500 },
-  { month: "Jun", EcoBlend: 11500, BEBUS: 9000, TONE: 7000, REAL: 7200 },
-  { month: "Jul", EcoBlend: 13000, BEBUS: 12000, TONE: 9500, REAL: 9000 },
-  { month: "Aug", EcoBlend: 14200, BEBUS: 15000, TONE: 11000, REAL: 11500 },
-  { month: "Sep", EcoBlend: 15500, BEBUS: 18000, TONE: 13000, REAL: 13000 },
-  { month: "Oct", EcoBlend: 17000, BEBUS: 22000, TONE: 15000, REAL: 15000 },
-  { month: "Nov", EcoBlend: 18500, BEBUS: 26000, TONE: 17500, REAL: 17000 },
-  { month: "Dec", EcoBlend: 20000, BEBUS: 30000, TONE: 20000, REAL: 19000 },
+  { month: "Jan", EcoComp: 6000, BEBUS: 0, TONE: 0, REAL: 800 },
+  { month: "Feb", EcoComp: 7200, BEBUS: 0, TONE: 800, REAL: 1400 },
+  { month: "Mar", EcoComp: 8500, BEBUS: 0, TONE: 1700, REAL: 2200 },
+  { month: "Apr", EcoComp: 9000, BEBUS: 2000, TONE: 3500, REAL: 3800 },
+  { month: "May", EcoComp: 10200, BEBUS: 5000, TONE: 5200, REAL: 5500 },
+  { month: "Jun", EcoComp: 11500, BEBUS: 9000, TONE: 7000, REAL: 7200 },
+  { month: "Jul", EcoComp: 13000, BEBUS: 12000, TONE: 9500, REAL: 9000 },
+  { month: "Aug", EcoComp: 14200, BEBUS: 15000, TONE: 11000, REAL: 11500 },
+  { month: "Sep", EcoComp: 15500, BEBUS: 18000, TONE: 13000, REAL: 13000 },
+  { month: "Oct", EcoComp: 17000, BEBUS: 22000, TONE: 15000, REAL: 15000 },
+  { month: "Nov", EcoComp: 18500, BEBUS: 26000, TONE: 17500, REAL: 17000 },
+  { month: "Dec", EcoComp: 20000, BEBUS: 30000, TONE: 20000, REAL: 19000 },
 ];
 
 // Burn rate monthly data
@@ -86,7 +86,7 @@ export default function FinancialAnalytics() {
   const totalInvestment = VENTURES.reduce((a, v) => a + v.investmentRaised, 0);
   const avgRunway = Math.round(VENTURES.reduce((a, v) => a + v.cashRunway, 0) / VENTURES.length);
 
-  const forecastKeys = ["EcoBlend", "BEBUS", "TONE", "REAL"];
+  const forecastKeys = ["EcoComp", "BEBUS", "TONE", "REAL"];
   const forecastColors = ["#22c55e", "#1d4ed8", "#7c3aed", "#f59e0b"];
 
   return (

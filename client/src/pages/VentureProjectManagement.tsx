@@ -75,7 +75,7 @@ type ExecutionRisk = {
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const VENTURES_MOCK = [
-  { id: "ecoblend-core", name: "EcoBlend Core" },
+  { id: "ecoblend-core", name: "EcoComp Core" },
   { id: "verdant-packaging", name: "Verdant Packaging" },
   { id: "bioloop", name: "BioLoop" },
   { id: "solaris-agri", name: "Solaris Agri" },

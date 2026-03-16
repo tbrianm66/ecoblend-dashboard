@@ -1,0 +1,15 @@
+{
+  "query": "SELECT id, name, color, status FROM ventures ORDER BY id;\nSELECT DISTINCT venture_id FROM financial_snapshots ORDER BY venture_id LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3HthdpivREJ9B8M.root --database ggmroLG8ezURUZiLzGveTG --execute SELECT id, name, color, status FROM ventures ORDER BY id;\nSELECT DISTINCT venture_id FROM financial_snapshots ORDER BY venture_id LIMIT 10;",
+  "returncode": 1,
+  "logs": [
+    "id\tname\tcolor\tstatus",
+    "bebus\tBEBUS\t#3A97D3\tActive",
+    "ecoblend\tEcoComp\t#51AF37\tActive",
+    "ecoblend-rd\tEcoRace\t#51AF37\tActive",
+    "pipe\tPIPE\t#0ea5e9\tPre-Launch",
+    "real\tREAL\t#ef4444\tPre-Launch",
+    "tone\tTONE\t#F49C13\tActive",
+    "ERROR 1054 (42S22) at line 2: Unknown column 'venture_id' in 'field list'"
+  ]
+}

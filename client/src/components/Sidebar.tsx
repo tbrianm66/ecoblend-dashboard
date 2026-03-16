@@ -245,7 +245,7 @@ export default function Sidebar() {
         <div className="flex flex-col items-center gap-1.5">
           <img
             src={ECOBLEND_LOGO_URL}
-            alt="EcoBlend"
+            alt="EcoComp"
             className="w-24 object-contain"
             style={{ filter: "brightness(0) invert(1)" }}
           />

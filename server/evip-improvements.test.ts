@@ -9,7 +9,7 @@ describe("EVIP Maturity Improvements — Schema & Logic", () => {
     it("should have all required venture fields", () => {
       const venture = {
         id: "ecoblend",
-        name: "EcoBlend",
+        name: "EcoComp",
         tagline: "Advanced Materials Formulation & Distribution",
         sector: "Materials",
         channel: "B2B",

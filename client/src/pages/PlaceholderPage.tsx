@@ -9,7 +9,7 @@ import { Construction } from "lucide-react";
 const PAGE_META: Record<string, { title: string; description: string; color: string }> = {
   "/risk": { title: "Risk Management", description: "Comprehensive risk tracking across Business, Technical, Financial, Marketing, Investment, and People domains.", color: "#dc2626" },
   "/brand": { title: "Brand Readiness", description: "Brand Readiness Level (BRL) tracking for BEBUS, TONE, and REAL — ingredient brand strategy and consistency metrics.", color: "#7c3aed" },
-  "/ip": { title: "IP Management", description: "Centralised IP registry, field-of-use licence tracking, and global licensing pipeline for EcoBlend R&D assets.", color: "#0891b2" },
+  "/ip": { title: "IP Management", description: "Centralised IP registry, field-of-use licence tracking, and global licensing pipeline for EcoRace assets.", color: "#0891b2" },
   "/people": { title: "People & ESOP", description: "ESOP allocation tracking, ZINC VC stipend management, and founder/team equity vesting schedules.", color: "#059669" },
   "/marketing": { title: "Marketing Strategy", description: "VBS-level ingredient brand strategy, B2B OEM outreach for BEBUS, and D2C consumer campaigns for TONE and REAL.", color: "#d97706" },
   "/financial": { title: "Financial Analytics", description: "Revenue projections, capex tracking, unit economics, and financial model validation across the portfolio.", color: "#1d4ed8" },

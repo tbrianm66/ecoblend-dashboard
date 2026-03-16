@@ -1,0 +1,52 @@
+{
+  "query": "SELECT id, name, tagline, color, status FROM ventures ORDER BY name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3HthdpivREJ9B8M.root --database ggmroLG8ezURUZiLzGveTG --execute SELECT id, name, tagline, color, status FROM ventures ORDER BY name;",
+  "rows": [
+    {
+      "id": "bebus",
+      "name": "BEBUS",
+      "tagline": "Eco-Transport Solutions",
+      "color": "#3A97D3",
+      "status": "Active"
+    },
+    {
+      "id": "ecoblend",
+      "name": "EcoBlend",
+      "tagline": "Advanced Materials Formulation & Distribution",
+      "color": "#51AF37",
+      "status": "Active"
+    },
+    {
+      "id": "ecoblend-rd",
+      "name": "EcoBlend R&D",
+      "tagline": "Central IP & Technology Engine",
+      "color": "#51AF37",
+      "status": "Active"
+    },
+    {
+      "id": "pipe",
+      "name": "PIPE",
+      "tagline": "Eco-Water Sport & Performance Brand",
+      "color": "#0ea5e9",
+      "status": "Pre-Launch"
+    },
+    {
+      "id": "real",
+      "name": "REAL",
+      "tagline": "Sports Protection — F1 Science for the Person",
+      "color": "#ef4444",
+      "status": "Pre-Launch"
+    },
+    {
+      "id": "tone",
+      "name": "TONE",
+      "tagline": "Eco-Creative Industry Brand",
+      "color": "#F49C13",
+      "status": "Active"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\ttagline\tcolor\tstatus\nbebus\tBEBUS\tEco-Transport Solutions\t#3A97D3\tActive\necoblend\tEcoBlend\tAdvanced Materials Formulation & Distribution\t#51AF37\tActive\necoblend-rd\tEcoBlend R&D\tCentral IP & Technology Engine\t#51AF37\tActive\npipe\tPIPE\tEco-Water Sport & Performance Brand\t#0ea5e9\tPre-Launch\nreal\tREAL\tSports Protection — F1 Science for the Person\t#ef4444\tPre-Launch\ntone\tTONE\tEco-Creative Industry Brand\t#F49C13\tActive\n",
+  "stderr": "",
+  "execution_time_ms": 102
+}

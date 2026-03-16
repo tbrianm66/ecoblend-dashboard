@@ -305,3 +305,10 @@
 - [x] Render sparkline + trend arrow (up/down/flat) on each venture's financial KPI tile
 - [x] Colour-code sparkline: venture brand colour with gradient fill; trend icon (TrendingUp/TrendingDown/—)
 - [x] Vitest tests for sparkline data helper (sparklines.test.ts — 13 tests, 434 total passing)
+
+## Sprint 28 — Venture Renames (Mar 2026)
+
+- [ ] Rename "EcoBlend" (materials formulation) → "EcoComp" in database
+- [ ] Rename "EcoBlend R&D" → "EcoRace" in database
+- [ ] Update all hardcoded name references in frontend source files
+- [ ] Verify all pages display updated names correctly

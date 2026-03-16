@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // ── Mock getDb ────────────────────────────────────────────────────────────────
 
 const mockVentures = [
-  { id: "v1", name: "EcoBlend", color: "#51AF37", status: "Active" },
+  { id: "v1", name: "EcoComp", color: "#51AF37", status: "Active" },
   { id: "v2", name: "BEBUS",    color: "#3A97D3", status: "Scaling" },
 ];
 
@@ -83,7 +83,7 @@ describe("getVentureRevenueSparklines", () => {
     const result = await getVentureRevenueSparklines();
     const v1 = result.find(r => r.ventureId === "v1");
     expect(v1).toBeDefined();
-    expect(v1?.ventureName).toBe("EcoBlend");
+    expect(v1?.ventureName).toBe("EcoComp");
     expect(v1?.color).toBe("#51AF37");
     expect(typeof v1?.latestRevenue).toBe("number");
     expect(Array.isArray(v1?.points)).toBe(true);
@@ -101,7 +101,7 @@ describe("getVentureRevenueSparklines", () => {
     }
   });
 
-  it("detects upward trend correctly for EcoBlend (10K → 19K)", async () => {
+  it("detects upward trend correctly for EcoComp (10K → 19K)", async () => {
     const db = makeDbMock(mockVentures, mockSnapshots);
     vi.mocked(getDb).mockResolvedValue(db as any);
 

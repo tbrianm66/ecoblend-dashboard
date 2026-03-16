@@ -66,8 +66,8 @@ const mediaCoverageSchema = z.object({
 
 // ── Simulated portfolio data matching data.ts ─────────────────────────────────
 const mockVentures = [
-  { id: "ecoblend-rd", name: "EcoBlend R&D", tagline: "Central IP & Technology Engine", sector: "Deep Tech", channel: "B2B", status: "Active", vrl: 2, vrlPercent: 75, trl: 4, trlPercent: 60, nominatedCharity: "EcoRace Foundation", charityFocus: "Vulnerable children", founder: "Internal", color: "#51AF37", investmentReady: false, description: "Internal lab", bmc: "IP licensing", mmc: "Tech access", isInternalLab: true },
-  { id: "ecoblend", name: "EcoBlend", tagline: "Advanced Materials Formulation & Distribution", sector: "Materials Science", channel: "B2B", status: "Active", vrl: 2, vrlPercent: 60, trl: 4, trlPercent: 70, nominatedCharity: "EcoRace Foundation", charityFocus: "Sustainable materials", founder: "TBC", color: "#51AF37", investmentReady: false, description: "Materials brand", bmc: "Supply agreements", mmc: "Circular economy" },
+  { id: "ecoblend-rd", name: "EcoRace", tagline: "Central IP & Technology Engine", sector: "Deep Tech", channel: "B2B", status: "Active", vrl: 2, vrlPercent: 75, trl: 4, trlPercent: 60, nominatedCharity: "EcoRace Foundation", charityFocus: "Vulnerable children", founder: "Internal", color: "#51AF37", investmentReady: false, description: "Internal lab", bmc: "IP licensing", mmc: "Tech access", isInternalLab: true },
+  { id: "ecoblend", name: "EcoComp", tagline: "Advanced Materials Formulation & Distribution", sector: "Materials Science", channel: "B2B", status: "Active", vrl: 2, vrlPercent: 60, trl: 4, trlPercent: 70, nominatedCharity: "EcoRace Foundation", charityFocus: "Sustainable materials", founder: "TBC", color: "#51AF37", investmentReady: false, description: "Materials brand", bmc: "Supply agreements", mmc: "Circular economy" },
   { id: "bebus", name: "BEBUS", tagline: "Eco-Transport Solutions", sector: "Transport", channel: "B2B", status: "Active", vrl: 2, vrlPercent: 40, trl: 3, trlPercent: 80, nominatedCharity: "Clean Mobility", charityFocus: "Transport access", founder: "TBC", color: "#3A97D3", investmentReady: false, description: "Transport brand", bmc: "OEM supply", mmc: "Clean mobility" },
   { id: "tone", name: "TONE", tagline: "Eco-Creative Industry Brand", sector: "Creative Industries", channel: "D2C", status: "Active", vrl: 1, vrlPercent: 90, trl: 2, trlPercent: 50, nominatedCharity: "Arts Access", charityFocus: "Arts inclusion", founder: "TBC", color: "#F49C13", investmentReady: false, description: "Creative brand", bmc: "D2C sales", mmc: "Arts access" },
   { id: "real", name: "REAL", tagline: "Sports Protection — F1 Science for the Person", sector: "Sports Protection", channel: "D2C", status: "Pre-Launch", vrl: 1, vrlPercent: 55, trl: 2, trlPercent: 20, nominatedCharity: "Sport for All", charityFocus: "Youth sport", founder: "TBC", color: "#ef4444", investmentReady: false, description: "Sports protection brand", bmc: "D2C sales", mmc: "Youth sport" },
@@ -101,7 +101,7 @@ describe("Portfolio Brand Structure", () => {
     expect(pipe!.color).toBe("#0ea5e9");
   });
 
-  it("EcoBlend is a materials formulation brand, not the internal lab", () => {
+  it("EcoComp is a materials formulation brand, not the internal lab", () => {
     const ecoblend = mockVentures.find(v => v.id === "ecoblend");
     expect(ecoblend).toBeDefined();
     expect(ecoblend!.isInternalLab).toBeUndefined();
@@ -142,8 +142,8 @@ describe("PR Module — Press Release Schema", () => {
   it("validates a valid press release", () => {
     const pr = {
       id: "pr1", brandId: "ecoblend",
-      title: "EcoBlend Launches Bio-Composite Range",
-      summary: "EcoBlend announces its first commercial material range.",
+      title: "EcoComp Launches Bio-Composite Range",
+      summary: "EcoComp announces its first commercial material range.",
       status: "Draft", date: "2026-04-15",
     };
     expect(() => pressReleaseSchema.parse(pr)).not.toThrow();
@@ -170,7 +170,7 @@ describe("PR Module — Newsletter Schema", () => {
   it("validates a valid newsletter campaign", () => {
     const nl = {
       id: "nl1", brandId: "ecoblend",
-      subject: "EcoBlend Materials Bulletin Q1 2026",
+      subject: "EcoComp Materials Bulletin Q1 2026",
       preview: "Our first formulation portfolio is ready...",
       status: "Draft", scheduledDate: "2026-04-01",
     };

@@ -1,0 +1,46 @@
+{
+  "query": "SELECT id, name, color, status FROM ventures ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3HthdpivREJ9B8M.root --database ggmroLG8ezURUZiLzGveTG --execute SELECT id, name, color, status FROM ventures ORDER BY id;",
+  "rows": [
+    {
+      "id": "bebus",
+      "name": "BEBUS",
+      "color": "#3A97D3",
+      "status": "Active"
+    },
+    {
+      "id": "ecoblend",
+      "name": "EcoComp",
+      "color": "#51AF37",
+      "status": "Active"
+    },
+    {
+      "id": "ecoblend-rd",
+      "name": "EcoRace",
+      "color": "#51AF37",
+      "status": "Active"
+    },
+    {
+      "id": "pipe",
+      "name": "PIPE",
+      "color": "#0ea5e9",
+      "status": "Pre-Launch"
+    },
+    {
+      "id": "real",
+      "name": "REAL",
+      "color": "#ef4444",
+      "status": "Pre-Launch"
+    },
+    {
+      "id": "tone",
+      "name": "TONE",
+      "color": "#F49C13",
+      "status": "Active"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcolor\tstatus\nbebus\tBEBUS\t#3A97D3\tActive\necoblend\tEcoComp\t#51AF37\tActive\necoblend-rd\tEcoRace\t#51AF37\tActive\npipe\tPIPE\t#0ea5e9\tPre-Launch\nreal\tREAL\t#ef4444\tPre-Launch\ntone\tTONE\t#F49C13\tActive\n",
+  "stderr": "",
+  "execution_time_ms": 55
+}

@@ -134,7 +134,7 @@ export default function TrlAnalytics() {
           <span className="vos-badge vos-badge-blue" style={{ fontSize: "0.65rem" }}>TRL Analytics</span>
         </div>
         <h1 className="vos-page-title mb-1">Technology Readiness Level</h1>
-        <p className="text-sm text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>Technical maturity tracking across all EcoBlend R&D ventures — NASA/EU Horizon 9-level framework</p>
+        <p className="text-sm text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>Technical maturity tracking across all EcoRace ventures — NASA/EU Horizon 9-level framework</p>
       </div>
 
       <div className="p-8 space-y-8">
@@ -181,7 +181,7 @@ export default function TrlAnalytics() {
             );
           })}
         </div>
-        <p className="text-xs text-amber-600 font-medium">⚠ TRL 4–7 represents the "Valley of Death" — where EcoBlend R&D provides critical bridge support</p>
+        <p className="text-xs text-amber-600 font-medium">⚠ TRL 4–7 represents the "Valley of Death" — where EcoRace provides critical bridge support</p>
 
         {/* TRL Progress Chart */}
         <div className="vos-panel p-6">
@@ -207,7 +207,7 @@ export default function TrlAnalytics() {
         {/* Valley of Death Chart */}
         <div className="vos-panel p-6">
           <h3 className="vos-section-title mb-1">The "Valley of Death" — Funding vs. Risk Profile</h3>
-          <p className="text-xs text-gray-400 mb-4">EcoBlend R&D bridges the critical TRL 4–7 gap where traditional funding dries up and execution risk peaks</p>
+          <p className="text-xs text-gray-400 mb-4">EcoRace bridges the critical TRL 4–7 gap where traditional funding dries up and execution risk peaks</p>
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={valleyData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />

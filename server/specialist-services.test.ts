@@ -184,7 +184,7 @@ describe("Investment Readiness financial data", () => {
     const getLabel = (months: number) =>
       months >= 12 ? "Healthy" : months >= 6 ? "Monitor" : "Critical";
 
-    expect(getLabel(14)).toBe("Healthy");  // EcoBlend
+    expect(getLabel(14)).toBe("Healthy");  // EcoComp
     expect(getLabel(8)).toBe("Monitor");   // BEBUS
     expect(getLabel(5)).toBe("Critical");  // TONE
     expect(getLabel(10)).toBe("Monitor");  // REAL

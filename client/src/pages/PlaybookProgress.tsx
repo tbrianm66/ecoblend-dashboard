@@ -9,7 +9,7 @@ import { BookOpen, CheckCircle2, Circle, ChevronDown, ChevronUp, Lock, Zap } fro
 import { useVentures } from "@/contexts/VentureContext";
 
 const VENTURE_OPTIONS = [
-  { id: "ecoblend-rd", label: "EcoBlend R&D", color: "#51AF37" },
+  { id: "ecoblend-rd", label: "EcoRace", color: "#51AF37" },
   { id: "bebus",       label: "BEBUS",         color: "#3A97D3" },
   { id: "tone",        label: "TONE",           color: "#F49C13" },
   { id: "real",        label: "REAL",           color: "#f1c411" },

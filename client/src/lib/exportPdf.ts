@@ -238,7 +238,7 @@ function loadContractsForExport(): ContractSummary[] {
 }
 
 const VENTURE_LABELS: Record<string, string> = {
-  "ecoblend-rd": "EcoBlend R&D",
+  "ecoblend-rd": "EcoRace",
   bebus: "BEBUS",
   tone: "TONE",
   real: "REAL",

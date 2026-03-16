@@ -93,7 +93,7 @@ const PATENTS: Patent[] = [
     title: "Circular Material Tracking and Provenance System",
     reference: "EB-PAT-004",
     ventureId: "ecoblend",
-    ventureName: "EcoBlend R&D",
+    ventureName: "EcoRace",
     ventureColor: "#22c55e",
     trl: 2,
     status: "Filed",
@@ -153,7 +153,7 @@ const PIPELINE: PipelineStage[] = [
     stage: "Basic Research",
     trlRange: "TRL 1–2",
     items: [
-      { title: "Circular Material Tracking System", ventureColor: "#22c55e", ventureName: "EcoBlend R&D" },
+      { title: "Circular Material Tracking System", ventureColor: "#22c55e", ventureName: "EcoRace" },
       { title: "Acoustic Dampening Structure", ventureColor: "#7c3aed", ventureName: "TONE" },
     ],
   },
@@ -221,7 +221,7 @@ export default function IpManagement() {
             Intellectual Property
           </span>
           <span className="text-xs text-gray-400">·</span>
-          <span className="text-xs text-gray-400 font-mono">EcoBlend R&D Lab</span>
+          <span className="text-xs text-gray-400 font-mono">EcoRace Lab</span>
         </div>
         <h1 className="text-2xl font-bold text-gray-900 mb-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           IP Management
@@ -415,7 +415,7 @@ export default function IpManagement() {
           <h3 className="text-sm font-bold text-gray-900 mb-3" style={{ fontFamily: "'DM Sans', sans-serif" }}>IP Governance Principles</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
-              { title: "Centralised Ownership", desc: "All core IP is owned by EcoBlend R&D. Spin-offs receive exclusive, field-of-use licences, protecting the portfolio from single-venture failure.", color: "#22c55e" },
+              { title: "Centralised Ownership", desc: "All core IP is owned by EcoRace. Spin-offs receive exclusive, field-of-use licences, protecting the portfolio from single-venture failure.", color: "#22c55e" },
               { title: "Values-Aligned Licensing", desc: "External licences are only granted to partners who demonstrate alignment with EcoBlend VBS values — sustainability, social impact, and ethical governance.", color: "#1d4ed8" },
               { title: "Global Expansion", desc: "IP licensing to international partners creates a revenue stream that funds further R&D and extends the VBS's social and environmental impact globally.", color: "#7c3aed" },
             ].map(item => (

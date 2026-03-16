@@ -16,8 +16,8 @@ import {
 } from "lucide-react";
 
 const VENTURES = [
-  { id: "ecoblend-rd", name: "EcoBlend R&D", color: "#51AF37" },
-  { id: "ecoblend",    name: "EcoBlend",     color: "#51AF37" },
+  { id: "ecoblend-rd", name: "EcoRace", color: "#51AF37" },
+  { id: "ecoblend",    name: "EcoComp",     color: "#51AF37" },
   { id: "bebus",       name: "BEBUS",        color: "#3A97D3" },
   { id: "tone",        name: "TONE",         color: "#F49C13" },
   { id: "real",        name: "REAL",         color: "#ef4444" },

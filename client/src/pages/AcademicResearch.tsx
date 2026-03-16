@@ -129,7 +129,7 @@ const CLAIM_TYPES = [
 ] as const;
 
 const VENTURE_LABELS: Record<string, string> = {
-  ecoblend: "EcoBlend",
+  ecoblend: "EcoComp",
   tone: "TONE",
   real: "REAL",
   pipe: "PIPE",

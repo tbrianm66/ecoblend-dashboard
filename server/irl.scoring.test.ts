@@ -304,7 +304,7 @@ describe("Total Venture Intelligence Score (TVIS)", () => {
 
 describe("IRL Formula Integration", () => {
   it("computes a realistic venture IRL from component inputs", () => {
-    // EcoBlend R&D: early-stage ESG, partial LCA, no PCF, basic CSR, B Corp in progress
+    // EcoRace: early-stage ESG, partial LCA, no PCF, basic CSR, B Corp in progress
     const esg = computeEsgScore({
       carbonEmissionsScore: 6, energyEfficiencyScore: 5, waterManagementScore: 4,
       wasteCircularityScore: 7, biodiversityScore: 5,

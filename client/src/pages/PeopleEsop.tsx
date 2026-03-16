@@ -114,7 +114,7 @@ const INITIAL_TEAM: TeamMember[] = [
     name: "Dr. Rachel Chen",
     role: "Lead Engineer",
     ventureId: "ecoblend",
-    ventureName: "EcoBlend R&D",
+    ventureName: "EcoRace",
     ventureColor: "#22c55e",
     equityPct: 8,
     vestedPct: 25,
@@ -133,7 +133,7 @@ const INITIAL_TEAM: TeamMember[] = [
     name: "Marcus Webb",
     role: "VBS Mentor",
     ventureId: "ecoblend",
-    ventureName: "EcoBlend R&D",
+    ventureName: "EcoRace",
     ventureColor: "#22c55e",
     equityPct: 3,
     vestedPct: 50,
@@ -378,7 +378,7 @@ export default function PeopleEsop() {
               },
               {
                 title: "VBS Guidance",
-                desc: "In addition to financial support, each founder receives dedicated mentorship from the VBS team, access to the EcoBlend R&D lab, the EcoBlend VBS Playbook, and introductions to the VBS investor network.",
+                desc: "In addition to financial support, each founder receives dedicated mentorship from the VBS team, access to the EcoRace lab, the EcoBlend VBS Playbook, and introductions to the VBS investor network.",
                 color: "#1d4ed8",
               },
             ].map(item => (

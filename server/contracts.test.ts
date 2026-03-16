@@ -30,7 +30,7 @@ describe("Contract Documents — Input Validation", () => {
   it("accepts a valid uploadDocument payload", () => {
     const payload = {
       contractId: "c1",
-      contractTitle: "EcoBlend R&D Founder Agreement",
+      contractTitle: "EcoRace Founder Agreement",
       fileName: "founder-agreement.pdf",
       mimeType: "application/pdf",
       fileSizeBytes: 204800,

@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE ventures SET name = 'EcoComp' WHERE id = 'ecoblend';\nUPDATE ventures SET name = 'EcoRace' WHERE id = 'ecoblend-rd';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3HthdpivREJ9B8M.root --database ggmroLG8ezURUZiLzGveTG --execute UPDATE ventures SET name = 'EcoComp' WHERE id = 'ecoblend';\nUPDATE ventures SET name = 'EcoRace' WHERE id = 'ecoblend-rd';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 86
+}
