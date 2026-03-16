@@ -10,6 +10,7 @@ import {
   getPortfolioSummary, getVrlDistribution, getOpportunityFunnel,
   getPmHealth, getFinancialPerformance, getEsgMetrics,
   getEcosystemNodes, upsertEcosystemNode, getLearningVelocity,
+  getVentureRevenueSparklines,
 } from "./commandCentreDb";
 import {
   listPrograms, getProgram, createProgram, updateProgram, deleteProgram,
@@ -3540,6 +3541,8 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         tooltipText: z.string().optional(),
       }))
       .mutation(({ input }) => upsertEcosystemNode(input)),
+    getRevenueSparklines: publicProcedure
+      .query(() => getVentureRevenueSparklines()),
   }),
 });
 

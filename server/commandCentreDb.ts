@@ -297,6 +297,58 @@ export async function getFinancialPerformance() {
   };
 }
 
+// ── Per-Venture Revenue Sparklines ──────────────────────────────────────────
+
+export async function getVentureRevenueSparklines() {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Fetch all ventures (for name + color) and all snapshots
+  const [allVentures, allSnapshots] = await Promise.all([
+    db.select().from(ventures),
+    db.select().from(financialSnapshots).orderBy(financialSnapshots.month),
+  ]);
+
+  // Build a map: ventureId → sorted monthly revenue array (last 6 months)
+  const byVenture = new Map<string, { month: string; revenue: number }[]>();
+  for (const snap of allSnapshots) {
+    if (!byVenture.has(snap.ventureId)) byVenture.set(snap.ventureId, []);
+    byVenture.get(snap.ventureId)!.push({
+      month: snap.month,
+      revenue: snap.revenueActual ?? 0,
+    });
+  }
+
+  return allVentures.map(v => {
+    const points = (byVenture.get(v.id) ?? []).slice(-6);
+    const values = points.map(p => p.revenue);
+    const first = values[0] ?? 0;
+    const last = values[values.length - 1] ?? 0;
+    const trend: "up" | "down" | "flat" =
+      last > first * 1.02 ? "up" : last < first * 0.98 ? "down" : "flat";
+
+    return {
+      ventureId: v.id,
+      ventureName: v.name,
+      color: v.color ?? "#51AF37",
+      latestRevenue: last,
+      latestBurn: 0, // populated below
+      points,
+      trend,
+    };
+  }).map(item => {
+    // Also pull latest burn rate from snapshots
+    const snaps = byVenture.get(item.ventureId) ?? [];
+    const latestSnap = snaps[snaps.length - 1];
+    return {
+      ...item,
+      latestBurn: latestSnap
+        ? (allSnapshots.find(s => s.ventureId === item.ventureId && s.month === latestSnap.month)?.monthlyBurn ?? 0)
+        : 0,
+    };
+  });
+}
+
 // ── ESG / Impact Metrics ──────────────────────────────────────────────────────
 
 export async function getEsgMetrics() {

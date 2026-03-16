@@ -296,3 +296,12 @@
 - [x] Show success toast with venture name and redirect after 800ms
 - [x] Show 'already converted' banner when convertedToVentureId is set; button hidden when status is Approved for VRL or Rejected
 - [x] Vitest tests for approveForVrl procedure (poiApprove.test.ts — 8 tests, 421 total passing)
+
+## Sprint 27 — Command Centre Revenue Sparklines (Mar 2026)
+
+- [x] Add getVentureRevenueSparklines() helper in commandCentreDb.ts: last 6 months of revenue per venture
+- [x] Add commandCentre.getRevenueSparklines tRPC procedure
+- [x] Add SVG sparkline component to CommandCentre.tsx (inline, no external chart library)
+- [x] Render sparkline + trend arrow (up/down/flat) on each venture's financial KPI tile
+- [x] Colour-code sparkline: venture brand colour with gradient fill; trend icon (TrendingUp/TrendingDown/—)
+- [x] Vitest tests for sparkline data helper (sparklines.test.ts — 13 tests, 434 total passing)

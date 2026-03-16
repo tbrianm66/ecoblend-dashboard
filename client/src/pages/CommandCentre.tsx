@@ -43,6 +43,96 @@ function fmt(n: number, prefix = "") {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
+/** Inline SVG sparkline — no external dependency */
+function Sparkline({
+  points, color, width = 80, height = 28,
+}: {
+  points: number[]; color: string; width?: number; height?: number;
+}) {
+  if (!points.length) return <div style={{ width, height }} className="bg-muted/30 rounded" />;
+
+  const min = Math.min(...points);
+  const max = Math.max(...points);
+  const range = max - min || 1;
+  const step = width / Math.max(points.length - 1, 1);
+
+  const coords = points.map((v, i) => [
+    i * step,
+    height - ((v - min) / range) * (height - 4) - 2,
+  ] as [number, number]);
+
+  const pathD = coords
+    .map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`)
+    .join(" ");
+
+  // Filled area under the line
+  const areaD = `${pathD} L${coords[coords.length - 1][0].toFixed(1)},${height} L0,${height} Z`;
+
+  return (
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="overflow-visible">
+      <defs>
+        <linearGradient id={`sg-${color.replace("#", "")}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity={0.25} />
+          <stop offset="100%" stopColor={color} stopOpacity={0.02} />
+        </linearGradient>
+      </defs>
+      <path d={areaD} fill={`url(#sg-${color.replace("#", "")})`} />
+      <path d={pathD} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+      {/* Last point dot */}
+      <circle
+        cx={coords[coords.length - 1][0]}
+        cy={coords[coords.length - 1][1]}
+        r={2.5}
+        fill={color}
+      />
+    </svg>
+  );
+}
+
+/** Per-venture sparkline card for the financial section */
+function VentureSparklineCard({
+  name, color, latestRevenue, latestBurn, points, trend, onClick,
+}: {
+  name: string; color: string; latestRevenue: number; latestBurn: number;
+  points: number[]; trend: "up" | "down" | "flat"; onClick?: () => void;
+}) {
+  const trendIcon = trend === "up"
+    ? <TrendingUp size={12} className="text-green-500" />
+    : trend === "down"
+    ? <TrendingDown size={12} className="text-red-500" />
+    : <span className="text-xs text-muted-foreground">—</span>;
+
+  return (
+    <Card
+      className="relative overflow-hidden transition-all duration-200 cursor-pointer hover:shadow-md hover:-translate-y-0.5"
+      onClick={onClick}
+    >
+      <div className="absolute inset-0 opacity-5" style={{ background: `linear-gradient(135deg, ${color}, transparent)` }} />
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between mb-2">
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span
+                className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{ background: color }}
+              />
+              <span className="text-xs font-semibold text-foreground truncate max-w-[90px]">{name}</span>
+            </div>
+            <div className="flex items-center gap-1 mt-0.5">
+              <span className="text-lg font-bold" style={{ color, fontFamily: "'Prompt', sans-serif" }}>
+                {fmt(latestRevenue, "£")}
+              </span>
+              {trendIcon}
+            </div>
+            <p className="text-xs text-muted-foreground">Burn: {fmt(latestBurn, "£")}/mo</p>
+          </div>
+          <Sparkline points={points} color={color} width={72} height={32} />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function KpiTile({
   label, value, sub, icon: Icon, color, trend, onClick,
 }: {
@@ -204,6 +294,9 @@ export default function CommandCentre() {
     refetchInterval: REFRESH_INTERVAL,
   });
   const { data: ecosystemNodes } = trpc.commandCentre.getEcosystemNodes.useQuery(undefined, {
+    refetchInterval: REFRESH_INTERVAL,
+  });
+  const { data: sparklines } = trpc.commandCentre.getRevenueSparklines.useQuery(undefined, {
     refetchInterval: REFRESH_INTERVAL,
   });
 
@@ -372,30 +465,87 @@ export default function CommandCentre() {
           </div>
         </div>
 
-        {/* ── Row 2: Financial + ESG KPIs ── */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <KpiTile
-            label="Portfolio Revenue" value={fmt(financial?.totalRevenue ?? 0, "£")}
-            sub={`${financial?.revenueAchievement ?? 0}% of target`}
-            icon={DollarSign} color={ECOBLEND_GREEN}
-            trend={financial?.revenueAchievement && financial.revenueAchievement >= 80 ? "up" : "down"}
-          />
-          <KpiTile
-            label="Investment Raised" value={fmt(financial?.totalInvestment ?? 0, "£")}
-            sub={`Avg runway: ${financial?.avgRunway ?? 0} months`}
-            icon={TrendingUp} color={ECOBLEND_BLUE}
-          />
-          <KpiTile
-            label="Avg ESG Score" value={`${esg?.avgEsg ?? 0}/10`}
-            sub={`${esg?.activeCerts ?? 0} certifications active`}
-            icon={Leaf} color={ECOBLEND_GREEN}
-            trend="neutral"
-          />
-          <KpiTile
-            label="Avg IRL Score" value={`${esg?.avgIrl ?? 0}/10`}
-            sub={`${esg?.bCorpCerts ?? 0} B Corp · ${esg?.isoCerts ?? 0} ISO`}
-            icon={Award} color={ECOBLEND_AMBER}
-          />
+        {/* ── Row 2: Financial — per-venture sparkline cards + ESG KPIs ── */}
+        <div className="space-y-3">
+          {/* Section label */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <DollarSign size={14} style={{ color: ECOBLEND_GREEN }} />
+              <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Revenue Sparklines — 6-Month Trend</span>
+            </div>
+            <Button variant="ghost" size="sm" className="text-xs h-6 px-2" onClick={() => navigate("/financial")}>
+              Financial Analytics →
+            </Button>
+          </div>
+          {/* Per-venture sparkline cards */}
+          {sparklines && sparklines.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+              {sparklines.map(s => (
+                <VentureSparklineCard
+                  key={s.ventureId}
+                  name={s.ventureName}
+                  color={s.color}
+                  latestRevenue={s.latestRevenue}
+                  latestBurn={s.latestBurn}
+                  points={s.points.map(p => p.revenue)}
+                  trend={s.trend}
+                  onClick={() => navigate(`/venture/${s.ventureId}`)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <KpiTile
+                label="Portfolio Revenue" value={fmt(financial?.totalRevenue ?? 0, '£')}
+                sub={`${financial?.revenueAchievement ?? 0}% of target`}
+                icon={DollarSign} color={ECOBLEND_GREEN}
+                trend={financial?.revenueAchievement && financial.revenueAchievement >= 80 ? "up" : "down"}
+              />
+              <KpiTile
+                label="Investment Raised" value={fmt(financial?.totalInvestment ?? 0, '£')}
+                sub={`Avg runway: ${financial?.avgRunway ?? 0} months`}
+                icon={TrendingUp} color={ECOBLEND_BLUE}
+              />
+              <KpiTile
+                label="Avg ESG Score" value={`${esg?.avgEsg ?? 0}/10`}
+                sub={`${esg?.activeCerts ?? 0} certifications active`}
+                icon={Leaf} color={ECOBLEND_GREEN}
+                trend="neutral"
+              />
+              <KpiTile
+                label="Avg IRL Score" value={`${esg?.avgIrl ?? 0}/10`}
+                sub={`${esg?.bCorpCerts ?? 0} B Corp · ${esg?.isoCerts ?? 0} ISO`}
+                icon={Award} color={ECOBLEND_AMBER}
+              />
+            </div>
+          )}
+          {/* Portfolio aggregate row below sparklines */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <KpiTile
+              label="Portfolio Revenue" value={fmt(financial?.totalRevenue ?? 0, '£')}
+              sub={`${financial?.revenueAchievement ?? 0}% of target`}
+              icon={DollarSign} color={ECOBLEND_GREEN}
+              trend={financial?.revenueAchievement && financial.revenueAchievement >= 80 ? "up" : "down"}
+              onClick={() => navigate("/financial")}
+            />
+            <KpiTile
+              label="Investment Raised" value={fmt(financial?.totalInvestment ?? 0, '£')}
+              sub={`Avg runway: ${financial?.avgRunway ?? 0} months`}
+              icon={TrendingUp} color={ECOBLEND_BLUE}
+              onClick={() => navigate("/financial")}
+            />
+            <KpiTile
+              label="Avg ESG Score" value={`${esg?.avgEsg ?? 0}/10`}
+              sub={`${esg?.activeCerts ?? 0} certifications active`}
+              icon={Leaf} color={ECOBLEND_GREEN}
+              trend="neutral"
+            />
+            <KpiTile
+              label="Avg IRL Score" value={`${esg?.avgIrl ?? 0}/10`}
+              sub={`${esg?.bCorpCerts ?? 0} B Corp · ${esg?.isoCerts ?? 0} ISO`}
+              icon={Award} color={ECOBLEND_AMBER}
+            />
+          </div>
         </div>
 
         {/* ── Row 3: Ecosystem Map + VRL Distribution ── */}
