@@ -5,6 +5,7 @@
 // ============================================================
 
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,7 @@ import {
   Package, TrendingUp, CheckCircle2, XCircle, Clock, Plus,
   ChevronRight, BarChart3, Leaf, Zap, DollarSign, Star,
   ArrowRight, AlertTriangle, RefreshCw, Eye, Trash2, FileCheck2,
-  Target, FlaskConical, ShieldCheck, Layers
+  Target, FlaskConical, ShieldCheck, Layers, Rocket
 } from "lucide-react";
 
 // ── Colour helpers ────────────────────────────────────────────────────────────
@@ -343,6 +344,7 @@ function AssessmentPanel({ opportunityId, dimension, onSaved }: {
 // ── Detail Drawer ─────────────────────────────────────────────────────────────
 function OpportunityDetail({ id, onClose }: { id: number; onClose: () => void }) {
   const utils = trpc.useUtils();
+  const [, navigate] = useLocation();
   const { data, isLoading, refetch } = trpc.poi.getOpportunity.useQuery({ id });
   const [activeTab, setActiveTab] = useState<"overview" | "assess" | "review">("overview");
   const [activeDimension, setActiveDimension] = useState(0);
@@ -352,6 +354,34 @@ function OpportunityDetail({ id, onClose }: { id: number; onClose: () => void })
   const [reviewerRole, setReviewerRole] = useState("");
   const [decision, setDecision] = useState<string>("");
   const [rationale, setRationale] = useState("");
+
+  // Approve for VRL modal state
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [approveReviewerName, setApproveReviewerName] = useState("");
+  const [approveReviewerRole, setApproveReviewerRole] = useState("");
+  const [approveRationale, setApproveRationale] = useState("");
+
+  const approveForVrl = trpc.poi.approveForVrl.useMutation({
+    onSuccess: (result) => {
+      utils.poi.listOpportunities.invalidate();
+      refetch();
+      if (result.alreadyConverted) {
+        toast.info("This opportunity has already been converted to a venture.", {
+          description: "Redirecting to the Founder Onboarding wizard...",
+        });
+      } else {
+        toast.success("Opportunity approved! New venture created.", {
+          description: "Redirecting to Founder Onboarding wizard...",
+        });
+      }
+      setShowApproveModal(false);
+      // Navigate to onboarding with the new venture ID as a query param
+      setTimeout(() => navigate(`/onboarding?ventureId=${result.ventureId}`), 800);
+    },
+    onError: (err) => {
+      toast.error("Approval failed", { description: err.message });
+    },
+  });
 
   const addReview = trpc.poi.addReview.useMutation({
     onSuccess: () => {
@@ -579,96 +609,217 @@ function OpportunityDetail({ id, onClose }: { id: number; onClose: () => void })
         )}
 
         {activeTab === "review" && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Add review */}
-            <Card>
-              <CardHeader><CardTitle className="text-sm">Submit Panel Review</CardTitle></CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-xs text-gray-500 mb-1 block">Reviewer Name *</Label>
-                    <Input value={reviewerName} onChange={e => setReviewerName(e.target.value)} placeholder="Full name" className="text-sm" />
+          <div className="space-y-6">
+
+            {/* ── Approve for VRL CTA ── */}
+            {opp.status !== "Approved for VRL" && opp.status !== "Rejected" && (
+              <div
+                className="rounded-xl border-2 p-5 flex items-center justify-between"
+                style={{ borderColor: "#51AF3740", background: "#51AF3708" }}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "#51AF3715" }}>
+                    <Rocket size={20} style={{ color: "#51AF37" }} />
                   </div>
                   <div>
-                    <Label className="text-xs text-gray-500 mb-1 block">Role</Label>
-                    <Input value={reviewerRole} onChange={e => setReviewerRole(e.target.value)} placeholder="e.g. Investment Director" className="text-sm" />
+                    <p className="text-sm font-bold text-gray-900">Ready to enter the VRL pipeline?</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Approving this opportunity will create a new venture record pre-populated with this opportunity's data
+                      and open the Founder Onboarding wizard to complete the setup.
+                    </p>
                   </div>
-                </div>
-                <div>
-                  <Label className="text-xs text-gray-500 mb-1 block">Decision *</Label>
-                  <Select value={decision} onValueChange={setDecision}>
-                    <SelectTrigger className="text-sm">
-                      <SelectValue placeholder="Select decision" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Approve for VRL">✅ Approve for VRL</SelectItem>
-                      <SelectItem value="Defer">⏸ Defer</SelectItem>
-                      <SelectItem value="Request More Data">📋 Request More Data</SelectItem>
-                      <SelectItem value="Reject">❌ Reject</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-xs text-gray-500 mb-1 block">Rationale</Label>
-                  <Textarea value={rationale} onChange={e => setRationale(e.target.value)} placeholder="Explain the decision..." rows={3} className="text-sm" />
                 </div>
                 <Button
-                  className="w-full text-white"
+                  className="ml-4 flex-shrink-0 text-white font-semibold"
                   style={{ background: "#51AF37" }}
-                  disabled={!reviewerName || !decision || addReview.isPending}
-                  onClick={() => addReview.mutate({
-                    productOpportunityId: id,
-                    reviewerName,
-                    reviewerRole: reviewerRole || undefined,
-                    decision: decision as any,
-                    rationale: rationale || undefined,
-                  })}
+                  onClick={() => setShowApproveModal(true)}
                 >
-                  {addReview.isPending ? <RefreshCw size={14} className="animate-spin mr-2" /> : <FileCheck2 size={14} className="mr-2" />}
-                  Submit Review
+                  <Rocket size={14} className="mr-2" />
+                  Approve for VRL
                 </Button>
-              </CardContent>
-            </Card>
+              </div>
+            )}
 
-            {/* Review history */}
-            <Card>
-              <CardHeader><CardTitle className="text-sm">Review History</CardTitle></CardHeader>
-              <CardContent>
-                {!reviews || reviews.length === 0 ? (
-                  <div className="text-center py-8 text-gray-400">
-                    <ShieldCheck size={28} className="mx-auto mb-2 opacity-30" />
-                    <p className="text-sm">No reviews yet</p>
+            {/* Already converted banner */}
+            {opp.convertedToVentureId && (
+              <div
+                className="rounded-xl border p-4 flex items-center gap-3"
+                style={{ borderColor: "#51AF3740", background: "#51AF3710" }}
+              >
+                <CheckCircle2 size={18} style={{ color: "#51AF37" }} />
+                <div>
+                  <p className="text-sm font-semibold" style={{ color: "#51AF37" }}>Converted to venture</p>
+                  <p className="text-xs text-gray-500">Venture ID: {opp.convertedToVentureId}</p>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Add review */}
+              <Card>
+                <CardHeader><CardTitle className="text-sm">Submit Panel Review</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs text-gray-500 mb-1 block">Reviewer Name *</Label>
+                      <Input value={reviewerName} onChange={e => setReviewerName(e.target.value)} placeholder="Full name" className="text-sm" />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500 mb-1 block">Role</Label>
+                      <Input value={reviewerRole} onChange={e => setReviewerRole(e.target.value)} placeholder="e.g. Investment Director" className="text-sm" />
+                    </div>
                   </div>
-                ) : (
-                  <div className="space-y-3">
-                    {reviews.map((r: any) => {
-                      const decisionColors: Record<string, string> = {
-                        "Approve for VRL": "#51AF37",
-                        "Reject": "#ef4444",
-                        "Defer": "#F49C13",
-                        "Request More Data": "#3A97D3",
-                      };
-                      const color = decisionColors[r.decision] ?? "#6b7280";
-                      return (
-                        <div key={r.id} className="rounded-lg border p-3" style={{ borderColor: `${color}30`, background: `${color}08` }}>
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-semibold text-gray-800">{r.reviewerName}</span>
-                            <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: `${color}15`, color }}>
-                              {r.decision}
-                            </span>
-                          </div>
-                          {r.reviewerRole && <p className="text-xs text-gray-400 mb-1">{r.reviewerRole}</p>}
-                          {r.rationale && <p className="text-xs text-gray-600">{r.rationale}</p>}
-                        </div>
-                      );
+                  <div>
+                    <Label className="text-xs text-gray-500 mb-1 block">Decision *</Label>
+                    <Select value={decision} onValueChange={setDecision}>
+                      <SelectTrigger className="text-sm">
+                        <SelectValue placeholder="Select decision" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Approve for VRL">✅ Approve for VRL</SelectItem>
+                        <SelectItem value="Defer">⏸ Defer</SelectItem>
+                        <SelectItem value="Request More Data">📋 Request More Data</SelectItem>
+                        <SelectItem value="Reject">❌ Reject</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-gray-500 mb-1 block">Rationale</Label>
+                    <Textarea value={rationale} onChange={e => setRationale(e.target.value)} placeholder="Explain the decision..." rows={3} className="text-sm" />
+                  </div>
+                  <Button
+                    className="w-full text-white"
+                    style={{ background: "#51AF37" }}
+                    disabled={!reviewerName || !decision || addReview.isPending}
+                    onClick={() => addReview.mutate({
+                      productOpportunityId: id,
+                      reviewerName,
+                      reviewerRole: reviewerRole || undefined,
+                      decision: decision as any,
+                      rationale: rationale || undefined,
                     })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  >
+                    {addReview.isPending ? <RefreshCw size={14} className="animate-spin mr-2" /> : <FileCheck2 size={14} className="mr-2" />}
+                    Submit Review
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Review history */}
+              <Card>
+                <CardHeader><CardTitle className="text-sm">Review History</CardTitle></CardHeader>
+                <CardContent>
+                  {!reviews || reviews.length === 0 ? (
+                    <div className="text-center py-8 text-gray-400">
+                      <ShieldCheck size={28} className="mx-auto mb-2 opacity-30" />
+                      <p className="text-sm">No reviews yet</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {reviews.map((r: any) => {
+                        const decisionColors: Record<string, string> = {
+                          "Approve for VRL": "#51AF37",
+                          "Reject": "#ef4444",
+                          "Defer": "#F49C13",
+                          "Request More Data": "#3A97D3",
+                        };
+                        const color = decisionColors[r.decision] ?? "#6b7280";
+                        return (
+                          <div key={r.id} className="rounded-lg border p-3" style={{ borderColor: `${color}30`, background: `${color}08` }}>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-semibold text-gray-800">{r.reviewerName}</span>
+                              <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: `${color}15`, color }}>
+                                {r.decision}
+                              </span>
+                            </div>
+                            {r.reviewerRole && <p className="text-xs text-gray-400 mb-1">{r.reviewerRole}</p>}
+                            {r.rationale && <p className="text-xs text-gray-600">{r.rationale}</p>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
         )}
       </div>
+
+      {/* ── Approve for VRL Confirmation Modal ── */}
+      <Dialog open={showApproveModal} onOpenChange={setShowApproveModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Rocket size={18} style={{ color: "#51AF37" }} />
+              Approve for VRL Pipeline
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div
+              className="rounded-lg p-3 text-sm"
+              style={{ background: "#51AF3710", border: "1px solid #51AF3730", color: "#1a2332" }}
+            >
+              <p className="font-semibold mb-1">What happens next:</p>
+              <ol className="list-decimal list-inside space-y-1 text-xs text-gray-600">
+                <li>A new venture record is created pre-populated with this opportunity's data</li>
+                <li>This opportunity is marked as <strong>Approved for VRL</strong></li>
+                <li>You are redirected to the Founder Onboarding wizard to complete the setup</li>
+              </ol>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-gray-500 mb-1 block">Your Name *</Label>
+                <Input
+                  value={approveReviewerName}
+                  onChange={e => setApproveReviewerName(e.target.value)}
+                  placeholder="Full name"
+                  className="text-sm"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-gray-500 mb-1 block">Your Role</Label>
+                <Input
+                  value={approveReviewerRole}
+                  onChange={e => setApproveReviewerRole(e.target.value)}
+                  placeholder="e.g. Investment Director"
+                  className="text-sm"
+                />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs text-gray-500 mb-1 block">Approval Rationale</Label>
+              <Textarea
+                value={approveRationale}
+                onChange={e => setApproveRationale(e.target.value)}
+                placeholder="Why is this opportunity ready for the VRL pipeline?"
+                rows={3}
+                className="text-sm"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowApproveModal(false)} disabled={approveForVrl.isPending}>
+              Cancel
+            </Button>
+            <Button
+              className="text-white"
+              style={{ background: "#51AF37" }}
+              disabled={!approveReviewerName || approveForVrl.isPending}
+              onClick={() => approveForVrl.mutate({
+                opportunityId: id,
+                reviewerName: approveReviewerName,
+                reviewerRole: approveReviewerRole || undefined,
+                rationale: approveRationale || undefined,
+              })}
+            >
+              {approveForVrl.isPending
+                ? <><RefreshCw size={14} className="animate-spin mr-2" /> Creating venture...</>
+                : <><Rocket size={14} className="mr-2" /> Confirm Approval</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -3165,7 +3165,74 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       }))
       .mutation(async ({ input }) => {
         await insertOpportunityReview({ ...input, reviewedAt: new Date() });
+        // If decision is Approve for VRL, also update the opportunity status
+        if (input.decision === "Approve for VRL") {
+          await updateProductOpportunity(input.productOpportunityId, { status: "Approved for VRL" });
+        }
         return { success: true };
+      }),
+
+    // Convert an approved opportunity into a new venture and return the venture ID
+    approveForVrl: publicProcedure
+      .input(z.object({
+        opportunityId: z.number(),
+        reviewerName: z.string().min(1),
+        reviewerRole: z.string().optional(),
+        rationale: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        // 1. Fetch the opportunity
+        const opp = await getProductOpportunityById(input.opportunityId);
+        if (!opp) throw new Error("Opportunity not found");
+
+        // Prevent duplicate conversion
+        if (opp.convertedToVentureId) {
+          return { ventureId: opp.convertedToVentureId, alreadyConverted: true };
+        }
+
+        // 2. Generate a venture ID from the opportunity name
+        const slug = opp.name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "")
+          .slice(0, 32);
+        const ventureId = `${slug}-${Date.now().toString(36)}`;
+
+        // 3. Create the new venture record pre-populated from the opportunity
+        await upsertVenture({
+          id: ventureId,
+          name: opp.name,
+          tagline: opp.description ? opp.description.slice(0, 120) : `${opp.sector ?? ""} venture from POI pipeline`,
+          sector: opp.sector ?? undefined,
+          channel: "B2B",
+          status: "Pre-Launch",
+          vrl: 1,
+          vrlPercent: 0,
+          trl: 1,
+          trlPercent: 0,
+          description: opp.description ?? undefined,
+          lifecycleStage: "Opportunity",
+          color: "#51AF37",
+          investmentReady: false,
+        } as any);
+
+        // 4. Record the approval review
+        await insertOpportunityReview({
+          productOpportunityId: input.opportunityId,
+          reviewerName: input.reviewerName,
+          reviewerRole: input.reviewerRole,
+          decision: "Approve for VRL",
+          rationale: input.rationale,
+          reviewedAt: new Date(),
+        });
+
+        // 5. Update the opportunity: mark as Approved for VRL and link the new venture
+        await updateProductOpportunity(input.opportunityId, {
+          status: "Approved for VRL",
+          convertedToVentureId: ventureId,
+        });
+
+        return { ventureId, alreadyConverted: false };
       }),
   }),
 

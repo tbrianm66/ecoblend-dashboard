@@ -287,3 +287,12 @@
 - [x] Seed venture_programs + phases + tasks: 4 programs, 10 phases, 4 workstreams, 18 tasks
 - [x] Seed irl_scores: 6 venture IRL profiles (5.5–7.14/10 range)
 - [x] Verify all Command Centre widgets show real numbers — all 10 seeded tables confirmed
+
+## Sprint 26 — POI → VRL Conversion Flow (Mar 2026)
+
+- [x] Add `poi.approveForVrl` tRPC procedure: create venture from opportunity data, update review status, link convertedToVentureId
+- [x] Pre-populate Founder Onboarding wizard with opportunity name, sector, target market, and description (via ?ventureId= query param)
+- [x] Wire "Approve for VRL" button in POI Review tab to trigger conversion mutation + redirect to /onboarding?ventureId=
+- [x] Show success toast with venture name and redirect after 800ms
+- [x] Show 'already converted' banner when convertedToVentureId is set; button hidden when status is Approved for VRL or Rejected
+- [x] Vitest tests for approveForVrl procedure (poiApprove.test.ts — 8 tests, 421 total passing)
