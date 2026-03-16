@@ -1304,3 +1304,547 @@ export const founderSuitabilityAssessments = mysqlTable("founder_suitability_ass
 });
 export type FounderSuitabilityAssessment = typeof founderSuitabilityAssessments.$inferSelect;
 export type InsertFounderSuitabilityAssessment = typeof founderSuitabilityAssessments.$inferInsert;
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PRODUCT OPPORTUNITY INTELLIGENCE (POI) MODULE
+// Brief: POI_module_prompt_brief.docx
+// POS = (Cost + Performance + Quality + Sustainability) / 4  (each 1–5)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── Product Categories ────────────────────────────────────────────────────────
+export const productCategories = mysqlTable("product_categories", {
+  id:          int("id").autoincrement().primaryKey(),
+  name:        varchar("name", { length: 128 }).notNull(),
+  sector:      varchar("sector", { length: 128 }),
+  description: text("description"),
+  createdAt:   timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:   timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ProductCategory = typeof productCategories.$inferSelect;
+export type InsertProductCategory = typeof productCategories.$inferInsert;
+
+// ── Product Opportunities ─────────────────────────────────────────────────────
+// Core entity: a product/technology/system being evaluated before entering VRL
+export const productOpportunities = mysqlTable("product_opportunities", {
+  id:                  int("id").autoincrement().primaryKey(),
+  name:                varchar("name", { length: 255 }).notNull(),
+  description:         text("description"),
+  categoryId:          int("categoryId"),               // FK → product_categories
+  sector:              varchar("sector", { length: 128 }),
+  targetMarket:        varchar("targetMarket", { length: 255 }),
+  // Lifecycle stage of the product being evaluated
+  productStage:        mysqlEnum("productStage", [
+                         "Concept", "Prototype", "Pilot", "Commercial", "Mature"
+                       ]).default("Concept"),
+  // Pipeline status
+  status:              mysqlEnum("status", [
+                         "Identified", "Under Assessment", "Scored",
+                         "Approved for VRL", "Rejected", "On Hold"
+                       ]).default("Identified"),
+  // Link to venture if converted
+  convertedToVentureId: varchar("convertedToVentureId", { length: 64 }),
+  submittedBy:         varchar("submittedBy", { length: 128 }),
+  notes:               text("notes"),
+  createdAt:           timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:           timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ProductOpportunity = typeof productOpportunities.$inferSelect;
+export type InsertProductOpportunity = typeof productOpportunities.$inferInsert;
+
+// ── Product Baselines ─────────────────────────────────────────────────────────
+// Captures the current-state benchmark for a product before gap analysis
+export const productBaselines = mysqlTable("product_baselines", {
+  id:                    int("id").autoincrement().primaryKey(),
+  productOpportunityId:  int("productOpportunityId").notNull(),
+  // Cost baseline
+  manufacturingCost:     float("manufacturingCost"),       // £ per unit
+  supplyChainCost:       float("supplyChainCost"),
+  lifecycleCost:         float("lifecycleCost"),
+  // Performance baseline
+  technicalCapability:   text("technicalCapability"),
+  efficiencyRating:      float("efficiencyRating"),        // % or index
+  // Quality baseline
+  reliabilityScore:      float("reliabilityScore"),        // 0–10
+  durabilityYears:       float("durabilityYears"),
+  // Sustainability baseline
+  carbonFootprintKg:     float("carbonFootprintKg"),       // kg CO₂e per unit
+  esgComplianceLevel:    mysqlEnum("esgComplianceLevel", [
+                           "None", "Partial", "Compliant", "Certified"
+                         ]).default("None"),
+  circularityScore:      float("circularityScore"),        // 0–10
+  // Meta
+  baselineSource:        varchar("baselineSource", { length: 255 }),
+  baselineDate:          varchar("baselineDate", { length: 32 }),
+  notes:                 text("notes"),
+  createdAt:             timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:             timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ProductBaseline = typeof productBaselines.$inferSelect;
+export type InsertProductBaseline = typeof productBaselines.$inferInsert;
+
+// ── Cost Assessments ──────────────────────────────────────────────────────────
+export const costAssessments = mysqlTable("cost_assessments", {
+  id:                    int("id").autoincrement().primaryKey(),
+  productOpportunityId:  int("productOpportunityId").notNull(),
+  // Dimension scores (1–5 per POI spec)
+  manufacturingCostScore: int("manufacturingCostScore").default(1),   // 1=very high cost gap, 5=minimal gap
+  supplyChainCostScore:   int("supplyChainCostScore").default(1),
+  lifecycleCostScore:     int("lifecycleCostScore").default(1),
+  // Computed average (1–5)
+  costScore:             float("costScore").default(0),
+  // Qualitative detail
+  currentCostEstimate:   float("currentCostEstimate"),
+  targetCostEstimate:    float("targetCostEstimate"),
+  costReductionOpportunity: text("costReductionOpportunity"),
+  assessedBy:            varchar("assessedBy", { length: 128 }),
+  assessedAt:            timestamp("assessedAt"),
+  notes:                 text("notes"),
+  createdAt:             timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:             timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CostAssessment = typeof costAssessments.$inferSelect;
+export type InsertCostAssessment = typeof costAssessments.$inferInsert;
+
+// ── Performance Assessments ───────────────────────────────────────────────────
+export const performanceAssessments = mysqlTable("performance_assessments", {
+  id:                    int("id").autoincrement().primaryKey(),
+  productOpportunityId:  int("productOpportunityId").notNull(),
+  // Dimension scores (1–5)
+  technicalCapabilityScore: int("technicalCapabilityScore").default(1),
+  efficiencyScore:          int("efficiencyScore").default(1),
+  functionalityScore:       int("functionalityScore").default(1),
+  // Computed average (1–5)
+  performanceScore:      float("performanceScore").default(0),
+  // Qualitative detail
+  performanceGapDescription: text("performanceGapDescription"),
+  innovationOpportunity:     text("innovationOpportunity"),
+  assessedBy:            varchar("assessedBy", { length: 128 }),
+  assessedAt:            timestamp("assessedAt"),
+  notes:                 text("notes"),
+  createdAt:             timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:             timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type PerformanceAssessment = typeof performanceAssessments.$inferSelect;
+export type InsertPerformanceAssessment = typeof performanceAssessments.$inferInsert;
+
+// ── Quality Assessments ───────────────────────────────────────────────────────
+export const qualityAssessments = mysqlTable("quality_assessments", {
+  id:                    int("id").autoincrement().primaryKey(),
+  productOpportunityId:  int("productOpportunityId").notNull(),
+  // Dimension scores (1–5)
+  reliabilityScore:      int("reliabilityScore").default(1),
+  durabilityScore:       int("durabilityScore").default(1),
+  userExperienceScore:   int("userExperienceScore").default(1),
+  // Computed average (1–5)
+  qualityScore:          float("qualityScore").default(0),
+  // Qualitative detail
+  qualityGapDescription: text("qualityGapDescription"),
+  improvementOpportunity: text("improvementOpportunity"),
+  assessedBy:            varchar("assessedBy", { length: 128 }),
+  assessedAt:            timestamp("assessedAt"),
+  notes:                 text("notes"),
+  createdAt:             timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:             timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type QualityAssessment = typeof qualityAssessments.$inferSelect;
+export type InsertQualityAssessment = typeof qualityAssessments.$inferInsert;
+
+// ── Sustainability Assessments ────────────────────────────────────────────────
+export const sustainabilityAssessments = mysqlTable("sustainability_assessments", {
+  id:                    int("id").autoincrement().primaryKey(),
+  productOpportunityId:  int("productOpportunityId").notNull(),
+  // Dimension scores (1–5)
+  carbonFootprintScore:  int("carbonFootprintScore").default(1),
+  esgComplianceScore:    int("esgComplianceScore").default(1),
+  circularityScore:      int("circularityScore").default(1),
+  // Computed average (1–5)
+  sustainabilityScore:   float("sustainabilityScore").default(0),
+  // Qualitative detail
+  sustainabilityGapDescription: text("sustainabilityGapDescription"),
+  circularityOpportunity: text("circularityOpportunity"),
+  assessedBy:            varchar("assessedBy", { length: 128 }),
+  assessedAt:            timestamp("assessedAt"),
+  notes:                 text("notes"),
+  createdAt:             timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:             timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type SustainabilityAssessment = typeof sustainabilityAssessments.$inferSelect;
+export type InsertSustainabilityAssessment = typeof sustainabilityAssessments.$inferInsert;
+
+// ── Product Opportunity Scores (POS cache) ────────────────────────────────────
+// POS = (Cost + Performance + Quality + Sustainability) / 4
+export const productOpportunityScores = mysqlTable("product_opportunity_scores", {
+  id:                    int("id").autoincrement().primaryKey(),
+  productOpportunityId:  int("productOpportunityId").notNull().unique(),
+  costScore:             float("costScore").default(0),           // 1–5
+  performanceScore:      float("performanceScore").default(0),    // 1–5
+  qualityScore:          float("qualityScore").default(0),        // 1–5
+  sustainabilityScore:   float("sustainabilityScore").default(0), // 1–5
+  // POS = average of above four (1–5)
+  posScore:              float("posScore").default(0),
+  // Classification band
+  posClassification:     mysqlEnum("posClassification", [
+                           "Low Opportunity",       // 1.0–2.0
+                           "Moderate Opportunity",  // 2.1–3.0
+                           "High Opportunity",      // 3.1–4.0
+                           "Exceptional Opportunity" // 4.1–5.0
+                         ]).default("Low Opportunity"),
+  computedAt:            timestamp("computedAt").defaultNow().notNull(),
+  updatedAt:             timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ProductOpportunityScore = typeof productOpportunityScores.$inferSelect;
+export type InsertProductOpportunityScore = typeof productOpportunityScores.$inferInsert;
+
+// ── Opportunity Reviews ───────────────────────────────────────────────────────
+// Panel review decisions on scored product opportunities
+export const opportunityReviews = mysqlTable("opportunity_reviews", {
+  id:                    int("id").autoincrement().primaryKey(),
+  productOpportunityId:  int("productOpportunityId").notNull(),
+  reviewerName:          varchar("reviewerName", { length: 128 }).notNull(),
+  reviewerRole:          varchar("reviewerRole", { length: 128 }),
+  decision:              mysqlEnum("decision", [
+                           "Approve for VRL", "Reject", "Defer", "Request More Data"
+                         ]).notNull(),
+  rationale:             text("rationale"),
+  conditionsForApproval: text("conditionsForApproval"),
+  reviewedAt:            timestamp("reviewedAt").defaultNow().notNull(),
+  createdAt:             timestamp("createdAt").defaultNow().notNull(),
+});
+export type OpportunityReview = typeof opportunityReviews.$inferSelect;
+export type InsertOpportunityReview = typeof opportunityReviews.$inferInsert;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// VENTURE PROJECT MANAGEMENT MODULE
+// Brief: project_management_module_prompt_brief.docx
+// Hierarchy: Venture → Program → Phase (VRL Stage) → Workstream → Milestone → Task
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── Venture Programs ──────────────────────────────────────────────────────────
+// Top-level execution container for a venture (one or more programs per venture)
+export const venturePrograms = mysqlTable("venture_programs", {
+  id:           int("id").autoincrement().primaryKey(),
+  ventureId:    varchar("ventureId", { length: 64 }).notNull(),
+  name:         varchar("name", { length: 255 }).notNull(),
+  description:  text("description"),
+  status:       mysqlEnum("status", [
+                  "Not Started", "In Progress", "On Hold", "Completed", "Cancelled"
+                ]).default("Not Started"),
+  startDate:    varchar("startDate", { length: 32 }),
+  targetEndDate: varchar("targetEndDate", { length: 32 }),
+  actualEndDate: varchar("actualEndDate", { length: 32 }),
+  programManager: varchar("programManager", { length: 128 }),
+  budget:       int("budget").default(0),                // £
+  budgetSpent:  int("budgetSpent").default(0),
+  notes:        text("notes"),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:    timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type VentureProgram = typeof venturePrograms.$inferSelect;
+export type InsertVentureProgram = typeof venturePrograms.$inferInsert;
+
+// ── Venture Phases ────────────────────────────────────────────────────────────
+// Maps to a VRL stage within a program (e.g., Phase 1 = VRL Stage 1: Opportunity)
+export const venturePhases = mysqlTable("venture_phases", {
+  id:           int("id").autoincrement().primaryKey(),
+  programId:    int("programId").notNull(),              // FK → venture_programs
+  ventureId:    varchar("ventureId", { length: 64 }).notNull(),
+  name:         varchar("name", { length: 255 }).notNull(),
+  vrlStage:     int("vrlStage"),                         // 1–4 VRL stage this phase maps to
+  phaseNumber:  int("phaseNumber").notNull(),             // sequence within program
+  status:       mysqlEnum("status", [
+                  "Not Started", "In Progress", "On Hold", "Completed", "Cancelled"
+                ]).default("Not Started"),
+  startDate:    varchar("startDate", { length: 32 }),
+  targetEndDate: varchar("targetEndDate", { length: 32 }),
+  actualEndDate: varchar("actualEndDate", { length: 32 }),
+  completionPercent: int("completionPercent").default(0), // 0–100
+  gateReviewPassed: boolean("gateReviewPassed").default(false),
+  gateReviewDate:   varchar("gateReviewDate", { length: 32 }),
+  gateReviewNotes:  text("gateReviewNotes"),
+  notes:        text("notes"),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:    timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type VenturePhase = typeof venturePhases.$inferSelect;
+export type InsertVenturePhase = typeof venturePhases.$inferInsert;
+
+// ── Venture Workstreams ───────────────────────────────────────────────────────
+// Parallel workstreams within a phase (e.g., Technical, Commercial, Legal)
+export const ventureWorkstreams = mysqlTable("venture_workstreams", {
+  id:           int("id").autoincrement().primaryKey(),
+  phaseId:      int("phaseId").notNull(),                // FK → venture_phases
+  ventureId:    varchar("ventureId", { length: 64 }).notNull(),
+  name:         varchar("name", { length: 255 }).notNull(),
+  functionalArea: mysqlEnum("functionalArea", [
+                    "Technical", "Commercial", "Legal", "Financial",
+                    "Marketing", "Operations", "People", "ESG", "Other"
+                  ]).default("Other"),
+  owner:        varchar("owner", { length: 128 }),
+  status:       mysqlEnum("status", [
+                  "Not Started", "In Progress", "On Hold", "Completed"
+                ]).default("Not Started"),
+  completionPercent: int("completionPercent").default(0),
+  startDate:    varchar("startDate", { length: 32 }),
+  targetEndDate: varchar("targetEndDate", { length: 32 }),
+  notes:        text("notes"),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:    timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type VentureWorkstream = typeof ventureWorkstreams.$inferSelect;
+export type InsertVentureWorkstream = typeof ventureWorkstreams.$inferInsert;
+
+// ── Venture Milestones (PM module) ────────────────────────────────────────────
+// Formal gate milestones within a workstream (distinct from the simpler
+// `milestones` table which is used for the portfolio overview cards)
+export const ventureMilestones = mysqlTable("venture_milestones", {
+  id:              int("id").autoincrement().primaryKey(),
+  workstreamId:    int("workstreamId").notNull(),         // FK → venture_workstreams
+  phaseId:         int("phaseId").notNull(),
+  ventureId:       varchar("ventureId", { length: 64 }).notNull(),
+  title:           varchar("title", { length: 255 }).notNull(),
+  description:     text("description"),
+  milestoneType:   mysqlEnum("milestoneType", [
+                     "Gate Review", "Deliverable", "Decision Point",
+                     "External Event", "Funding Milestone", "Launch"
+                   ]).default("Deliverable"),
+  status:          mysqlEnum("status", [
+                     "Not Started", "In Progress", "Completed", "Overdue", "Cancelled"
+                   ]).default("Not Started"),
+  targetDate:      varchar("targetDate", { length: 32 }),
+  completedAt:     timestamp("completedAt"),
+  completionEvidence: text("completionEvidence"),
+  sortOrder:       int("sortOrder").default(0),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type VentureMilestone = typeof ventureMilestones.$inferSelect;
+export type InsertVentureMilestone = typeof ventureMilestones.$inferInsert;
+
+// ── Venture Tasks ─────────────────────────────────────────────────────────────
+// Granular tasks within a workstream (supports Kanban and Gantt views)
+export const ventureTasks = mysqlTable("venture_tasks", {
+  id:              int("id").autoincrement().primaryKey(),
+  workstreamId:    int("workstreamId").notNull(),         // FK → venture_workstreams
+  milestoneId:     int("milestoneId"),                    // optional FK → venture_milestones
+  ventureId:       varchar("ventureId", { length: 64 }).notNull(),
+  title:           varchar("title", { length: 255 }).notNull(),
+  description:     text("description"),
+  // Kanban status
+  kanbanStatus:    mysqlEnum("kanbanStatus", [
+                     "Backlog", "To Do", "In Progress", "In Review", "Done", "Blocked"
+                   ]).default("Backlog"),
+  priority:        mysqlEnum("priority", ["Critical", "High", "Medium", "Low"]).default("Medium"),
+  assignee:        varchar("assignee", { length: 128 }),
+  // Gantt scheduling
+  startDate:       varchar("startDate", { length: 32 }),
+  dueDate:         varchar("dueDate", { length: 32 }),
+  completedAt:     timestamp("completedAt"),
+  estimatedHours:  float("estimatedHours").default(0),
+  actualHours:     float("actualHours").default(0),
+  // Dependencies (comma-separated task IDs)
+  dependsOnTaskIds: text("dependsOnTaskIds"),
+  sortOrder:       int("sortOrder").default(0),
+  notes:           text("notes"),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type VentureTask = typeof ventureTasks.$inferSelect;
+export type InsertVentureTask = typeof ventureTasks.$inferInsert;
+
+// ── Venture Resources ─────────────────────────────────────────────────────────
+// People and budget resources allocated to programs/phases
+export const ventureResources = mysqlTable("venture_resources", {
+  id:              int("id").autoincrement().primaryKey(),
+  ventureId:       varchar("ventureId", { length: 64 }).notNull(),
+  programId:       int("programId"),                     // FK → venture_programs
+  phaseId:         int("phaseId"),                       // FK → venture_phases (optional)
+  resourceType:    mysqlEnum("resourceType", [
+                     "Person", "Budget", "Equipment", "External Service"
+                   ]).default("Person"),
+  name:            varchar("name", { length: 128 }).notNull(),
+  role:            varchar("role", { length: 128 }),
+  // Allocation
+  allocationPercent: int("allocationPercent").default(100), // % of time allocated
+  allocationHoursPerWeek: float("allocationHoursPerWeek"),
+  startDate:       varchar("startDate", { length: 32 }),
+  endDate:         varchar("endDate", { length: 32 }),
+  // Cost
+  dayRate:         int("dayRate").default(0),             // £ per day
+  totalBudgeted:   int("totalBudgeted").default(0),
+  totalActual:     int("totalActual").default(0),
+  notes:           text("notes"),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type VentureResource = typeof ventureResources.$inferSelect;
+export type InsertVentureResource = typeof ventureResources.$inferInsert;
+
+// ── Venture Dependencies ──────────────────────────────────────────────────────
+// Explicit dependency links between tasks, milestones, or phases
+export const ventureDependencies = mysqlTable("venture_dependencies", {
+  id:              int("id").autoincrement().primaryKey(),
+  ventureId:       varchar("ventureId", { length: 64 }).notNull(),
+  // Source entity (the item that must be completed first)
+  sourceType:      mysqlEnum("sourceType", ["task", "milestone", "phase"]).notNull(),
+  sourceId:        int("sourceId").notNull(),
+  // Target entity (the item that depends on the source)
+  targetType:      mysqlEnum("targetType", ["task", "milestone", "phase"]).notNull(),
+  targetId:        int("targetId").notNull(),
+  dependencyType:  mysqlEnum("dependencyType", [
+                     "Finish-to-Start",   // target cannot start until source finishes
+                     "Start-to-Start",    // target cannot start until source starts
+                     "Finish-to-Finish",  // target cannot finish until source finishes
+                     "Start-to-Finish",   // target cannot finish until source starts
+                   ]).default("Finish-to-Start"),
+  lagDays:         int("lagDays").default(0),             // delay after dependency is met
+  notes:           text("notes"),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+});
+export type VentureDependency = typeof ventureDependencies.$inferSelect;
+export type InsertVentureDependency = typeof ventureDependencies.$inferInsert;
+
+// ── Venture Documents ─────────────────────────────────────────────────────────
+// Document repository linked to programs, phases, workstreams, or tasks
+export const ventureDocuments = mysqlTable("venture_documents", {
+  id:              int("id").autoincrement().primaryKey(),
+  ventureId:       varchar("ventureId", { length: 64 }).notNull(),
+  // Optional parent context
+  programId:       int("programId"),
+  phaseId:         int("phaseId"),
+  workstreamId:    int("workstreamId"),
+  taskId:          int("taskId"),
+  milestoneId:     int("milestoneId"),
+  // Document metadata
+  title:           varchar("title", { length: 255 }).notNull(),
+  documentType:    mysqlEnum("documentType", [
+                     "Brief", "Report", "Contract", "Presentation", "Spreadsheet",
+                     "Design", "Technical Spec", "Research", "Financial Model",
+                     "Meeting Notes", "Other"
+                   ]).default("Other"),
+  version:         varchar("version", { length: 32 }).default("1.0"),
+  status:          mysqlEnum("status", [
+                     "Draft", "Under Review", "Approved", "Superseded", "Archived"
+                   ]).default("Draft"),
+  // Storage
+  fileName:        varchar("fileName", { length: 255 }).notNull(),
+  fileKey:         varchar("fileKey", { length: 512 }).notNull(),
+  fileUrl:         text("fileUrl").notNull(),
+  mimeType:        varchar("mimeType", { length: 128 }),
+  fileSizeBytes:   int("fileSizeBytes").default(0),
+  // Ownership
+  uploadedBy:      varchar("uploadedBy", { length: 128 }),
+  approvedBy:      varchar("approvedBy", { length: 128 }),
+  approvedAt:      timestamp("approvedAt"),
+  notes:           text("notes"),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type VentureDocument = typeof ventureDocuments.$inferSelect;
+export type InsertVentureDocument = typeof ventureDocuments.$inferInsert;
+
+// ── Execution Risk Register (PM module) ──────────────────────────────────────
+// Execution-level risks tied to specific programs, phases, or workstreams
+// (Distinct from the portfolio-level `risks` table which tracks venture-wide risks)
+export const executionRisks = mysqlTable("execution_risks", {
+  id:              int("id").autoincrement().primaryKey(),
+  ventureId:       varchar("ventureId", { length: 64 }).notNull(),
+  programId:       int("programId"),
+  phaseId:         int("phaseId"),
+  workstreamId:    int("workstreamId"),
+  title:           varchar("title", { length: 255 }).notNull(),
+  description:     text("description"),
+  riskCategory:    mysqlEnum("riskCategory", [
+                     "Schedule", "Budget", "Resource", "Technical", "Dependency",
+                     "Regulatory", "Stakeholder", "Scope", "Quality"
+                   ]).default("Schedule"),
+  likelihood:      mysqlEnum("likelihood", ["Very Low", "Low", "Medium", "High", "Very High"]).default("Medium"),
+  impact:          mysqlEnum("impact", ["Negligible", "Minor", "Moderate", "Major", "Critical"]).default("Moderate"),
+  riskScore:       int("riskScore").default(0),            // likelihood × impact (1–25)
+  riskLevel:       mysqlEnum("riskLevel", ["Low", "Medium", "High", "Critical"]).default("Medium"),
+  mitigationPlan:  text("mitigationPlan"),
+  contingencyPlan: text("contingencyPlan"),
+  owner:           varchar("owner", { length: 128 }),
+  status:          mysqlEnum("status", [
+                     "Open", "Mitigated", "Accepted", "Closed", "Escalated"
+                   ]).default("Open"),
+  reviewDate:      varchar("reviewDate", { length: 32 }),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ExecutionRisk = typeof executionRisks.$inferSelect;
+export type InsertExecutionRisk = typeof executionRisks.$inferInsert;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// COMMAND CENTRE DASHBOARD — AGGREGATION SUPPORT
+// Brief: command_centre_dashboard_prompt_brief.docx
+// Provides pre-computed summary rows for dashboard widgets to avoid
+// expensive real-time aggregations across large venture portfolios.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── Dashboard KPI Snapshots ───────────────────────────────────────────────────
+// Cached portfolio-level KPIs refreshed on a scheduled basis
+export const dashboardKpiSnapshots = mysqlTable("dashboard_kpi_snapshots", {
+  id:                       int("id").autoincrement().primaryKey(),
+  snapshotDate:             varchar("snapshotDate", { length: 32 }).notNull(), // "2026-03"
+  // Venture ecosystem metrics
+  totalVentures:            int("totalVentures").default(0),
+  activeVentures:           int("activeVentures").default(0),
+  prelaunchVentures:        int("prelaunchVentures").default(0),
+  scalingVentures:          int("scalingVentures").default(0),
+  pausedVentures:           int("pausedVentures").default(0),
+  // VRL stage distribution
+  vrlStage1Count:           int("vrlStage1Count").default(0),
+  vrlStage2Count:           int("vrlStage2Count").default(0),
+  vrlStage3Count:           int("vrlStage3Count").default(0),
+  vrlStage4Count:           int("vrlStage4Count").default(0),
+  avgVrlScore:              float("avgVrlScore").default(0),
+  investmentReadyCount:     int("investmentReadyCount").default(0),
+  // Project management metrics
+  activeProjects:           int("activeProjects").default(0),
+  totalMilestonesThisMonth: int("totalMilestonesThisMonth").default(0),
+  milestonesCompletedThisMonth: int("milestonesCompletedThisMonth").default(0),
+  overdueTasksCount:        int("overdueTasksCount").default(0),
+  // Opportunity pipeline metrics
+  opportunitiesIdentified:  int("opportunitiesIdentified").default(0),
+  opportunitiesScored:      int("opportunitiesScored").default(0),
+  opportunitiesApproved:    int("opportunitiesApproved").default(0),
+  avgPosScore:              float("avgPosScore").default(0),
+  // Financial metrics
+  totalRevenueActual:       int("totalRevenueActual").default(0),    // £ across portfolio
+  totalInvestmentRaised:    int("totalInvestmentRaised").default(0), // £ across portfolio
+  portfolioRoi:             float("portfolioRoi").default(0),        // %
+  // Impact / ESG metrics
+  avgIrlScore:              float("avgIrlScore").default(0),
+  avgEsgScore:              float("avgEsgScore").default(0),
+  certifiedVenturesCount:   int("certifiedVenturesCount").default(0),
+  computedAt:               timestamp("computedAt").defaultNow().notNull(),
+});
+export type DashboardKpiSnapshot = typeof dashboardKpiSnapshots.$inferSelect;
+export type InsertDashboardKpiSnapshot = typeof dashboardKpiSnapshots.$inferInsert;
+
+// ── Venture Ecosystem Map Nodes ───────────────────────────────────────────────
+// Stores positioning and metadata for the venture ecosystem map widget
+export const ecosystemMapNodes = mysqlTable("ecosystem_map_nodes", {
+  id:              int("id").autoincrement().primaryKey(),
+  ventureId:       varchar("ventureId", { length: 64 }).notNull().unique(),
+  // Visual positioning (relative coordinates 0–100)
+  posX:            float("posX").default(50),
+  posY:            float("posY").default(50),
+  // Node metadata for the map
+  nodeSize:        int("nodeSize").default(40),              // pixel radius
+  nodeColor:       varchar("nodeColor", { length: 32 }),
+  // Relationship links (comma-separated venture IDs)
+  linkedVentureIds: text("linkedVentureIds"),
+  linkType:        mysqlEnum("linkType", [
+                     "Technology Sharing", "Market Overlap", "Shared Founder",
+                     "Supply Chain", "Co-Investment", "None"
+                   ]).default("None"),
+  // Display labels
+  displayLabel:    varchar("displayLabel", { length: 64 }),
+  tooltipText:     text("tooltipText"),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type EcosystemMapNode = typeof ecosystemMapNodes.$inferSelect;
+export type InsertEcosystemMapNode = typeof ecosystemMapNodes.$inferInsert;

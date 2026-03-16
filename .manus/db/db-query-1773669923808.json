@@ -1,0 +1,90 @@
+{
+  "query": "\nSELECT table_name, table_rows\nFROM information_schema.tables\nWHERE table_schema = DATABASE()\n  AND table_name IN (\n    'product_categories', 'product_opportunities', 'product_baselines',\n    'cost_assessments', 'performance_assessments', 'quality_assessments',\n    'sustainability_assessments', 'product_opportunity_scores', 'opportunity_reviews',\n    'venture_programs', 'venture_phases', 'venture_workstreams',\n    'venture_milestones', 'venture_tasks', 'venture_resources',\n    'venture_dependencies', 'venture_documents', 'execution_risks',\n    'dashboard_kpi_snapshots', 'ecosystem_map_nodes'\n  )\nORDER BY table_name;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3HthdpivREJ9B8M.root --database ggmroLG8ezURUZiLzGveTG --execute \nSELECT table_name, table_rows\nFROM information_schema.tables\nWHERE table_schema = DATABASE()\n  AND table_name IN (\n    'product_categories', 'product_opportunities', 'product_baselines',\n    'cost_assessments', 'performance_assessments', 'quality_assessments',\n    'sustainability_assessments', 'product_opportunity_scores', 'opportunity_reviews',\n    'venture_programs', 'venture_phases', 'venture_workstreams',\n    'venture_milestones', 'venture_tasks', 'venture_resources',\n    'venture_dependencies', 'venture_documents', 'execution_risks',\n    'dashboard_kpi_snapshots', 'ecosystem_map_nodes'\n  )\nORDER BY table_name;\n",
+  "rows": [
+    {
+      "table_name": "cost_assessments",
+      "table_rows": "0"
+    },
+    {
+      "table_name": "dashboard_kpi_snapshots",
+      "table_rows": "0"
+    },
+    {
+      "table_name": "ecosystem_map_nodes",
+      "table_rows": "0"
+    },
+    {
+      "table_name": "execution_risks",
+      "table_rows": "0"
+    },
+    {
+      "table_name": "opportunity_reviews",
+      "table_rows": "0"
+    },
+    {
+      "table_name": "performance_assessments",
+      "table_rows": "0"
+    },
+    {
+      "table_name": "product_baselines",
+      "table_rows": "0"
+    },
+    {
+      "table_name": "product_categories",
+      "table_rows": "0"
+    },
+    {
+      "table_name": "product_opportunities",
+      "table_rows": "0"
+    },
+    {
+      "table_name": "product_opportunity_scores",
+      "table_rows": "0"
+    },
+    {
+      "table_name": "quality_assessments",
+      "table_rows": "0"
+    },
+    {
+      "table_name": "sustainability_assessments",
+      "table_rows": "0"
+    },
+    {
+      "table_name": "venture_dependencies",
+      "table_rows": "0"
+    },
+    {
+      "table_name": "venture_documents",
+      "table_rows": "0"
+    },
+    {
+      "table_name": "venture_milestones",
+      "table_rows": "0"
+    },
+    {
+      "table_name": "venture_phases",
+      "table_rows": "0"
+    },
+    {
+      "table_name": "venture_programs",
+      "table_rows": "0"
+    },
+    {
+      "table_name": "venture_resources",
+      "table_rows": "0"
+    },
+    {
+      "table_name": "venture_tasks",
+      "table_rows": "0"
+    },
+    {
+      "table_name": "venture_workstreams",
+      "table_rows": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "table_name\ttable_rows\ncost_assessments\t0\ndashboard_kpi_snapshots\t0\necosystem_map_nodes\t0\nexecution_risks\t0\nopportunity_reviews\t0\nperformance_assessments\t0\nproduct_baselines\t0\nproduct_categories\t0\nproduct_opportunities\t0\nproduct_opportunity_scores\t0\nquality_assessments\t0\nsustainability_assessments\t0\nventure_dependencies\t0\nventure_documents\t0\nventure_milestones\t0\nventure_phases\t0\nventure_programs\t0\nventure_resources\t0\nventure_tasks\t0\nventure_workstreams\t0\n",
+  "stderr": "",
+  "execution_time_ms": 1280
+}

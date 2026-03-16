@@ -114,6 +114,30 @@ import {
   getDb,
 } from "./db";
 import { searchSemanticScholar, extractKeywords } from "./semanticScholar";
+import {
+  getAllProductCategories,
+  insertProductCategory,
+  getAllProductOpportunities,
+  getProductOpportunityById,
+  insertProductOpportunity,
+  updateProductOpportunity,
+  deleteProductOpportunity,
+  getBaselineForOpportunity,
+  upsertProductBaseline,
+  getCostAssessment,
+  upsertCostAssessment,
+  getPerformanceAssessment,
+  upsertPerformanceAssessment,
+  getQualityAssessment,
+  upsertQualityAssessment,
+  getSustainabilityAssessment,
+  upsertSustainabilityAssessment,
+  getPosScore,
+  getAllPosScores,
+  getReviewsForOpportunity,
+  insertOpportunityReview,
+  getFullOpportunityDetail,
+} from "./poiDb";
 
 export const appRouter = router({
   system: systemRouter,
@@ -2924,6 +2948,209 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         criticalGaps: criticalGapsResult?.critical ?? 0,
       };
     }),
+  }),
+  // ── POI Module ─────────────────────────────────────────────────────────────
+  poi: router({
+    // Categories
+    listCategories: publicProcedure.query(async () => getAllProductCategories()),
+
+    addCategory: publicProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        sector: z.string().optional(),
+        description: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await insertProductCategory(input);
+        return { success: true };
+      }),
+
+    // Opportunities
+    listOpportunities: publicProcedure.query(async () => {
+      const [opps, scores] = await Promise.all([getAllProductOpportunities(), getAllPosScores()]);
+      const scoreMap = new Map(scores.map(s => [s.productOpportunityId, s]));
+      return opps.map(o => ({ ...o, pos: scoreMap.get(o.id) ?? null }));
+    }),
+
+    getOpportunity: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => getFullOpportunityDetail(input.id)),
+
+    addOpportunity: publicProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        description: z.string().optional(),
+        categoryId: z.number().optional(),
+        sector: z.string().optional(),
+        targetMarket: z.string().optional(),
+        productStage: z.enum(["Concept", "Prototype", "Pilot", "Commercial", "Mature"]).optional(),
+        submittedBy: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const id = await insertProductOpportunity({ ...input, status: "Identified" });
+        return { success: true, id };
+      }),
+
+    updateOpportunity: publicProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        description: z.string().optional(),
+        sector: z.string().optional(),
+        targetMarket: z.string().optional(),
+        productStage: z.enum(["Concept", "Prototype", "Pilot", "Commercial", "Mature"]).optional(),
+        status: z.enum(["Identified", "Under Assessment", "Scored", "Approved for VRL", "Rejected", "On Hold"]).optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await updateProductOpportunity(id, data);
+        return { success: true };
+      }),
+
+    deleteOpportunity: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await deleteProductOpportunity(input.id);
+        return { success: true };
+      }),
+
+    // Baseline
+    getBaseline: publicProcedure
+      .input(z.object({ opportunityId: z.number() }))
+      .query(async ({ input }) => getBaselineForOpportunity(input.opportunityId)),
+
+    upsertBaseline: publicProcedure
+      .input(z.object({
+        productOpportunityId: z.number(),
+        manufacturingCost: z.number().optional(),
+        supplyChainCost: z.number().optional(),
+        lifecycleCost: z.number().optional(),
+        technicalCapability: z.string().optional(),
+        efficiencyRating: z.number().optional(),
+        reliabilityScore: z.number().optional(),
+        durabilityYears: z.number().optional(),
+        carbonFootprintKg: z.number().optional(),
+        esgComplianceLevel: z.enum(["None", "Partial", "Compliant", "Certified"]).optional(),
+        circularityScore: z.number().optional(),
+        baselineSource: z.string().optional(),
+        baselineDate: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await upsertProductBaseline(input);
+        return { success: true };
+      }),
+
+    // Cost Assessment
+    getCostAssessment: publicProcedure
+      .input(z.object({ opportunityId: z.number() }))
+      .query(async ({ input }) => getCostAssessment(input.opportunityId)),
+
+    upsertCostAssessment: publicProcedure
+      .input(z.object({
+        productOpportunityId: z.number(),
+        manufacturingCostScore: z.number().min(1).max(5),
+        supplyChainCostScore: z.number().min(1).max(5),
+        lifecycleCostScore: z.number().min(1).max(5),
+        currentCostEstimate: z.number().optional(),
+        targetCostEstimate: z.number().optional(),
+        costReductionOpportunity: z.string().optional(),
+        assessedBy: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await upsertCostAssessment(input);
+        return { success: true };
+      }),
+
+    // Performance Assessment
+    getPerformanceAssessment: publicProcedure
+      .input(z.object({ opportunityId: z.number() }))
+      .query(async ({ input }) => getPerformanceAssessment(input.opportunityId)),
+
+    upsertPerformanceAssessment: publicProcedure
+      .input(z.object({
+        productOpportunityId: z.number(),
+        technicalCapabilityScore: z.number().min(1).max(5),
+        efficiencyScore: z.number().min(1).max(5),
+        functionalityScore: z.number().min(1).max(5),
+        performanceGapDescription: z.string().optional(),
+        innovationOpportunity: z.string().optional(),
+        assessedBy: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await upsertPerformanceAssessment(input);
+        return { success: true };
+      }),
+
+    // Quality Assessment
+    getQualityAssessment: publicProcedure
+      .input(z.object({ opportunityId: z.number() }))
+      .query(async ({ input }) => getQualityAssessment(input.opportunityId)),
+
+    upsertQualityAssessment: publicProcedure
+      .input(z.object({
+        productOpportunityId: z.number(),
+        reliabilityScore: z.number().min(1).max(5),
+        durabilityScore: z.number().min(1).max(5),
+        userExperienceScore: z.number().min(1).max(5),
+        qualityGapDescription: z.string().optional(),
+        improvementOpportunity: z.string().optional(),
+        assessedBy: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await upsertQualityAssessment(input);
+        return { success: true };
+      }),
+
+    // Sustainability Assessment
+    getSustainabilityAssessment: publicProcedure
+      .input(z.object({ opportunityId: z.number() }))
+      .query(async ({ input }) => getSustainabilityAssessment(input.opportunityId)),
+
+    upsertSustainabilityAssessment: publicProcedure
+      .input(z.object({
+        productOpportunityId: z.number(),
+        carbonFootprintScore: z.number().min(1).max(5),
+        esgComplianceScore: z.number().min(1).max(5),
+        circularityScore: z.number().min(1).max(5),
+        sustainabilityGapDescription: z.string().optional(),
+        circularityOpportunity: z.string().optional(),
+        assessedBy: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await upsertSustainabilityAssessment(input);
+        return { success: true };
+      }),
+
+    // POS Score
+    getPosScore: publicProcedure
+      .input(z.object({ opportunityId: z.number() }))
+      .query(async ({ input }) => getPosScore(input.opportunityId)),
+
+    // Reviews
+    getReviews: publicProcedure
+      .input(z.object({ opportunityId: z.number() }))
+      .query(async ({ input }) => getReviewsForOpportunity(input.opportunityId)),
+
+    addReview: publicProcedure
+      .input(z.object({
+        productOpportunityId: z.number(),
+        reviewerName: z.string().min(1),
+        reviewerRole: z.string().optional(),
+        decision: z.enum(["Approve for VRL", "Reject", "Defer", "Request More Data"]),
+        rationale: z.string().optional(),
+        conditionsForApproval: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await insertOpportunityReview({ ...input, reviewedAt: new Date() });
+        return { success: true };
+      }),
   }),
 });
 export type AppRouter = typeof appRouter;

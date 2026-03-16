@@ -34,6 +34,7 @@ import BrlAnalytics from "./pages/BrlAnalytics";
 import ImpactGovernance from "./pages/ImpactGovernance";
 import KnowledgeBase from "./pages/KnowledgeBase";
 import PeopleIntelligence from "./pages/PeopleIntelligence";
+import ProductOpportunityIntelligence from "./pages/ProductOpportunityIntelligence";
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
@@ -66,6 +67,7 @@ function Router() {
       <Route path="/impact" component={ImpactGovernance} />
       <Route path="/knowledge" component={KnowledgeBase} />
       <Route path="/people-intelligence" component={PeopleIntelligence} />
+      <Route path="/poi" component={ProductOpportunityIntelligence} />
       <Route component={Home} />
     </Switch>
   );

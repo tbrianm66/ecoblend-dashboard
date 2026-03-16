@@ -242,3 +242,14 @@
 - [ ] Add People Intelligence to sidebar under Intelligence section
 - [ ] Wire route in App.tsx
 - [ ] Vitest tests for PVF scoring engine
+
+## Sprint 21 — Product Opportunity Intelligence (POI) Module (Mar 2026)
+
+- [x] Add 9 POI tables to schema: product_categories, product_opportunities, product_baselines, cost_assessments, performance_assessments, quality_assessments, sustainability_assessments, product_opportunity_scores, opportunity_reviews (migration 0014 applied)
+- [x] Build server/poiDb.ts: all CRUD helpers plus auto-recompute POS = (Cost + Performance + Quality + Sustainability) / 4 on each assessment save
+- [x] Add tRPC poi router to routers.ts: listCategories, addCategory, listOpportunities, getOpportunity, addOpportunity, updateOpportunity, deleteOpportunity, getBaseline, upsertBaseline, getCostAssessment, upsertCostAssessment, getPerformanceAssessment, upsertPerformanceAssessment, getQualityAssessment, upsertQualityAssessment, getSustainabilityAssessment, upsertSustainabilityAssessment, getPosScore, getReviews, addReview
+- [x] Build ProductOpportunityIntelligence.tsx: pipeline list with KPI tiles, POS gauges, dimension score bars, status filter, search
+- [x] Opportunity detail view: Overview tab (description, status management, POS breakdown), Assess tab (4-dimension scoring with 1-5 sub-scores), Review tab (panel decision workflow)
+- [x] Add "Product Opportunity" to Sidebar Intelligence group (Package icon, /poi route)
+- [x] Register /poi route in App.tsx
+- [x] Vitest tests: 14 tests covering POS formula, classification boundaries, dimension scoring, pipeline scenarios (338 total passing, 0 TypeScript errors)
