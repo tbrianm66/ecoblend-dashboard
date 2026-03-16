@@ -3,7 +3,7 @@
  * Real-time portfolio intelligence overview for founders, operators and investors.
  * Aggregates data from: Ventures, POI, Project Management, Financial, ESG modules.
  */
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -199,10 +199,27 @@ function FunnelBar({ label, value, max, color }: { label: string; value: number;
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function CommandCentre() {
   const [, navigate] = useLocation();
-  const { data, isLoading, refetch } = trpc.commandCentre.getLiveMetrics.useQuery(undefined, {
-    refetchInterval: 60_000, // auto-refresh every 60 s
+  const REFRESH_INTERVAL = 60_000;
+  const { data, isLoading, refetch, dataUpdatedAt } = trpc.commandCentre.getLiveMetrics.useQuery(undefined, {
+    refetchInterval: REFRESH_INTERVAL,
   });
-  const { data: ecosystemNodes } = trpc.commandCentre.getEcosystemNodes.useQuery();
+  const { data: ecosystemNodes } = trpc.commandCentre.getEcosystemNodes.useQuery(undefined, {
+    refetchInterval: REFRESH_INTERVAL,
+  });
+
+  // Countdown timer — counts down from 60 to 0, resets on each refetch
+  const [countdown, setCountdown] = useState(60);
+  useEffect(() => {
+    setCountdown(60);
+    const interval = setInterval(() => {
+      setCountdown(prev => (prev <= 1 ? 60 : prev - 1));
+    }, 1_000);
+    return () => clearInterval(interval);
+  }, [dataUpdatedAt]);
+
+  const lastUpdated = dataUpdatedAt
+    ? new Date(dataUpdatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+    : null;
 
   const portfolio = data?.portfolio;
   const vrlDist   = data?.vrlDist;
@@ -273,18 +290,48 @@ export default function CommandCentre() {
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b px-8 py-4 flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2 mb-0.5">
+            {/* Animated pulse dot */}
+            <span className="relative flex h-2 w-2">
+              <span
+                className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+                style={{ background: ECOBLEND_GREEN }}
+              />
+              <span
+                className="relative inline-flex rounded-full h-2 w-2"
+                style={{ background: ECOBLEND_GREEN }}
+              />
+            </span>
             <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: `${ECOBLEND_GREEN}15`, color: ECOBLEND_GREEN }}>
               Live
             </span>
-            <span className="text-xs text-muted-foreground font-mono">Auto-refresh every 60s</span>
+            <span className="text-xs text-muted-foreground font-mono">
+              {lastUpdated ? `Updated ${lastUpdated}` : "Auto-refresh every 60s"}
+            </span>
           </div>
           <h1 className="text-xl font-bold text-foreground" style={{ fontFamily: "'Prompt', sans-serif" }}>
             Command Centre
           </h1>
         </div>
-        <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => refetch()}>
-          <RefreshCw size={12} /> Refresh
-        </Button>
+        <div className="flex items-center gap-3">
+          {/* Countdown ring */}
+          <div className="flex items-center gap-1.5">
+            <svg width="28" height="28" viewBox="0 0 28 28" className="-rotate-90">
+              <circle cx="14" cy="14" r="11" fill="none" stroke="#e5e7eb" strokeWidth="2.5" />
+              <circle
+                cx="14" cy="14" r="11" fill="none"
+                stroke={ECOBLEND_GREEN} strokeWidth="2.5"
+                strokeDasharray={`${2 * Math.PI * 11}`}
+                strokeDashoffset={`${2 * Math.PI * 11 * (1 - countdown / 60)}`}
+                strokeLinecap="round"
+                style={{ transition: "stroke-dashoffset 1s linear" }}
+              />
+            </svg>
+            <span className="text-xs font-mono text-muted-foreground w-5 text-right">{countdown}s</span>
+          </div>
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => { refetch(); setCountdown(60); }}>
+            <RefreshCw size={12} /> Refresh
+          </Button>
+        </div>
       </div>
 
       <div className="p-8 space-y-8">

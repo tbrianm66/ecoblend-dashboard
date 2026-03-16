@@ -271,3 +271,9 @@
 - [x] Add "Command Centre" to Sidebar (Dashboard group, top position) with Zap icon, /command-centre route
 - [x] Register /command-centre route in App.tsx
 - [x] Vitest tests for Command Centre aggregation logic (45 tests, 413 total passing)
+
+## Sprint 24 — Command Centre Auto-Refresh (Mar 2026)
+
+- [x] Add 60-second refetchInterval to all 8 Command Centre tRPC queries
+- [x] Add live "Last updated" timestamp indicator to Command Centre header
+- [x] Add animated pulse indicator showing auto-refresh is active
