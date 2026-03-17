@@ -372,3 +372,21 @@
 - [x] Architecture Map: four-layer accordion with 20 contract types, risk levels, status badges, inline edit
 - [x] Legal Risk Map: risk zone callout, mitigation strategies, linked contracts, inline status/owner edit
 - [x] 449 tests passing, 0 TypeScript errors
+
+## Sprint 34 — Legal Module Enhancements (Mar 2026)
+- [ ] Add expiryDate and architectureLayer fields to legal_contracts table (db:push)
+- [ ] Add tRPC procedures: contracts.getExpiring (within 60 days), contracts.renewContract (set status to Under Review)
+- [ ] Add "Expiring Soon" banner to Contracts tab listing contracts expiring within 60 days with Renew CTA
+- [ ] Add architectureLayer tag selector to contract add/edit dialog
+- [ ] Architecture Map: clicking a layer filters the Contracts tab to show only contracts in that layer
+- [ ] Add Risk Owners summary panel at top of Legal Risk Map tab (owner name, assigned count, open/mitigated split)
+- [ ] Vitest tests for expiry alert and layer filter procedures
+
+## Sprint 34 — Legal Module Enhancements (Mar 2026)
+- [x] Add expiryDate column to contractTypeRegistry table (migration 0018)
+- [x] Add tRPC procedures: contracts.getExpiring (days param), contracts.renewContract, contracts.updateExpiryDate
+- [x] Add "Expiring Soon" banner to Contracts tab (contracts expiring within 60 days, with Renew button)
+- [x] Add "Filter Contracts" button to each Architecture Map layer header (navigates to Contracts tab with layer filter active)
+- [x] Add layer filter active banner in Contracts tab with Clear button
+- [x] Add Risk Owner Assignments summary panel to Legal Risk Map tab (grouped by owner, open/monitoring/mitigated counts, progress bar)
+- [x] 449 tests passing, 0 TypeScript errors

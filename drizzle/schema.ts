@@ -1,5 +1,6 @@
 import {
   boolean,
+  date,
   float,
   int,
   mysqlEnum,
@@ -2036,6 +2037,7 @@ export const contractTypeRegistry = mysqlTable("contract_type_registry", {
   status:       mysqlEnum("status", ["Active", "Draft", "Pending", "Not Required", "Expired"]).default("Draft"),
   owner:        varchar("owner", { length: 128 }),
   notes:        text("notes"),
+  expiryDate:   date("expiryDate"),
   createdAt:    timestamp("createdAt").defaultNow().notNull(),
   updatedAt:    timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

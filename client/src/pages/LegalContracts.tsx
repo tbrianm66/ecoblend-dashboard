@@ -15,7 +15,7 @@ import {
   Users, Lock, Handshake, Heart, TrendingUp, ChevronDown, ChevronUp,
   Download, Eye, Trash2, Edit3, Upload, Paperclip, Loader2, File,
   Layers, ShieldAlert, Building2, Database, UserCheck, Scale,
-  CheckCheck, AlertCircle, Info, RefreshCw,
+  CheckCheck, AlertCircle, Info, RefreshCw, Filter, User,
 } from "lucide-react";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -452,8 +452,8 @@ function AddContractDialog({ open, onClose, onAdd }: { open: boolean; onClose: (
   );
 }
 
-// ── Architecture Map Tab ──────────────────────────────────────────────────────
-function ArchitectureMapTab() {
+// ── Architecture Map Tab ──────────────────────────────────────────────
+function ArchitectureMapTab({ onLayerFilter }: { onLayerFilter?: (layerKey: string) => void }) {
   const { data: layers = [], isLoading: layersLoading } = trpc.contracts.getLayers.useQuery();
   const { data: registry = [], isLoading: registryLoading } = trpc.contracts.getContractRegistry.useQuery({});
   const utils = trpc.useUtils();
@@ -507,11 +507,11 @@ function ArchitectureMapTab() {
           <div key={layer.layerKey} className="bg-white rounded-2xl border shadow-sm overflow-hidden" style={{ borderColor: "#e5e7eb", borderLeft: `5px solid ${layer.color ?? "#3A97D3"}` }}>
             {/* Layer header */}
             <div className="px-6 py-4 border-b" style={{ borderColor: "#f3f4f6", background: `${layer.color ?? "#3A97D3"}06` }}>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 justify-between">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${layer.color ?? "#3A97D3"}15` }}>
                   <LayerIcon size={18} style={{ color: layer.color ?? "#3A97D3" }} />
                 </div>
-                <div>
+                <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <h3 className="text-sm font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>{layer.name}</h3>
                     <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: `${layer.color ?? "#3A97D3"}15`, color: layer.color ?? "#3A97D3", fontFamily: "'Nunito', sans-serif" }}>
@@ -520,6 +520,15 @@ function ArchitectureMapTab() {
                   </div>
                   <p className="text-xs text-gray-500 mt-0.5" style={{ fontFamily: "'Nunito', sans-serif" }}>{layer.description}</p>
                 </div>
+                {onLayerFilter && (
+                  <button
+                    onClick={() => onLayerFilter(layer.layerKey)}
+                    className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all hover:opacity-80 flex-shrink-0"
+                    style={{ background: `${layer.color ?? "#3A97D3"}12`, color: layer.color ?? "#3A97D3", border: `1px solid ${layer.color ?? "#3A97D3"}30`, fontFamily: "'Nunito', sans-serif" }}
+                  >
+                    <Filter size={10} /> Filter Contracts
+                  </button>
+                )}
               </div>
             </div>
 
@@ -616,6 +625,18 @@ function LegalRiskMapTab() {
   const mitigatedCount = risks.filter(r => r.status === "Mitigated").length;
   const monitoringCount = risks.filter(r => r.status === "Monitoring").length;
 
+  // Build owner summary: group risks by owner
+  const ownerMap: Record<string, { open: number; monitoring: number; mitigated: number; total: number }> = {};
+  risks.forEach(r => {
+    const owner = r.owner ?? "Unassigned";
+    if (!ownerMap[owner]) ownerMap[owner] = { open: 0, monitoring: 0, mitigated: 0, total: 0 };
+    ownerMap[owner].total++;
+    if (r.status === "Open") ownerMap[owner].open++;
+    else if (r.status === "Monitoring") ownerMap[owner].monitoring++;
+    else if (r.status === "Mitigated") ownerMap[owner].mitigated++;
+  });
+  const ownerEntries = Object.entries(ownerMap).sort((a, b) => b[1].open - a[1].open);
+
   return (
     <div className="space-y-6">
       {/* Summary */}
@@ -652,6 +673,41 @@ function LegalRiskMapTab() {
                 {r.riskArea}
               </span>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Risk Owner Assignments Panel */}
+      {ownerEntries.length > 0 && (
+        <div className="bg-white rounded-2xl border shadow-sm p-5" style={{ borderColor: "#e5e7eb" }}>
+          <div className="flex items-center gap-2 mb-4">
+            <User size={15} style={{ color: "#3A97D3" }} />
+            <span className="text-sm font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>Risk Owner Assignments</span>
+            <span className="text-xs text-gray-400 ml-auto" style={{ fontFamily: "'Nunito', sans-serif" }}>{ownerEntries.length} owner{ownerEntries.length > 1 ? "s" : ""}</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {ownerEntries.map(([owner, counts]) => {
+              const mitigatedPct = counts.total > 0 ? Math.round((counts.mitigated / counts.total) * 100) : 0;
+              return (
+                <div key={owner} className="rounded-xl border p-4" style={{ borderColor: "#e5e7eb", background: "#f9fafb" }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "#3A97D315" }}>
+                      <User size={12} style={{ color: "#3A97D3" }} />
+                    </div>
+                    <span className="text-xs font-bold text-gray-800 truncate" style={{ fontFamily: "'Nunito', sans-serif" }}>{owner}</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs mb-2" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                    <span style={{ color: "#ef4444" }}>{counts.open} Open</span>
+                    <span style={{ color: "#F49C13" }}>{counts.monitoring} Monitoring</span>
+                    <span style={{ color: "#51AF37" }}>{counts.mitigated} Mitigated</span>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full bg-gray-200 overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-500" style={{ width: `${mitigatedPct}%`, background: "#51AF37" }} />
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1" style={{ fontFamily: "'Nunito', sans-serif" }}>{mitigatedPct}% mitigated · {counts.total} total</div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -771,6 +827,15 @@ export default function LegalContracts() {
   const [filterVenture, setFilterVenture] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<ContractStatus | "All">("All");
   const [addOpen, setAddOpen] = useState(false);
+  const [layerFilter, setLayerFilter] = useState<string | null>(null);
+
+  // Expiry alert query (contracts expiring within 60 days)
+  const { data: expiringContracts = [] } = trpc.contracts.getExpiring.useQuery({ days: 60 });
+  const utils = trpc.useUtils();
+  const renewMutation = trpc.contracts.renewContract.useMutation({
+    onSuccess: () => { utils.contracts.getExpiring.invalidate(); utils.contracts.getContractRegistry.invalidate({}); toast.success("Contract marked as Pending Renewal"); },
+    onError: (err) => toast.error(`Renew failed: ${err.message}`),
+  });
 
   const persist = (updated: Contract[]) => { setContracts(updated); saveContracts(updated); };
   const handleUpdate = (updated: Contract) => persist(contracts.map(c => c.id === updated.id ? updated : c));
@@ -781,6 +846,17 @@ export default function LegalContracts() {
     if (filterCategory !== "All" && c.category !== filterCategory) return false;
     if (filterVenture !== "all" && c.ventureId !== filterVenture) return false;
     if (filterStatus !== "All" && c.status !== filterStatus) return false;
+    // Layer filter: match contracts whose category maps to the selected architecture layer
+    if (layerFilter) {
+      const LAYER_CATEGORY_MAP: Record<string, string[]> = {
+        "platform-infrastructure": ["IP Licence"],
+        "data-intelligence": ["Founder Agreement"],
+        "user-commercial": ["OEM Partnership", "Charity MoU"],
+        "governance-compliance": ["Investor Term Sheet"],
+      };
+      const allowed = LAYER_CATEGORY_MAP[layerFilter] ?? [];
+      if (!allowed.includes(c.category)) return false;
+    }
     return true;
   });
 
@@ -883,6 +959,23 @@ export default function LegalContracts() {
               })}
             </div>
 
+            {/* Layer filter active banner */}
+            {layerFilter && (
+              <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl border" style={{ borderColor: "#3A97D330", background: "#3A97D308" }}>
+                <Filter size={12} style={{ color: "#3A97D3" }} />
+                <span className="text-xs font-semibold" style={{ color: "#3A97D3", fontFamily: "'Nunito', sans-serif" }}>
+                  Filtered by layer: {layerFilter.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase())}
+                </span>
+                <button
+                  onClick={() => setLayerFilter(null)}
+                  className="ml-auto text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1"
+                  style={{ fontFamily: "'Nunito', sans-serif" }}
+                >
+                  <XCircle size={12} /> Clear
+                </button>
+              </div>
+            )}
+
             {/* Filters */}
             <div className="flex items-center gap-3 flex-wrap">
               <span className="text-xs font-bold uppercase tracking-widest text-gray-400" style={{ fontFamily: "'Nunito', sans-serif" }}>Filter:</span>
@@ -901,6 +994,37 @@ export default function LegalContracts() {
               )}
               <span className="text-xs text-gray-400 ml-auto" style={{ fontFamily: "'Nunito', sans-serif" }}>{filtered.length} of {contracts.length} contracts</span>
             </div>
+
+            {/* Expiring Soon Banner */}
+            {expiringContracts.length > 0 && (
+              <div className="rounded-xl border p-4" style={{ borderColor: "#fde68a", background: "#fffbeb" }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <Clock size={15} style={{ color: "#d97706" }} />
+                  <span className="text-sm font-bold text-amber-700" style={{ fontFamily: "'Prompt', sans-serif" }}>Expiring Soon — {expiringContracts.length} contract{expiringContracts.length > 1 ? "s" : ""} expiring within 60 days</span>
+                </div>
+                <div className="space-y-2">
+                  {expiringContracts.map(c => (
+                    <div key={c.id} className="flex items-center justify-between bg-white rounded-lg px-4 py-2.5 border" style={{ borderColor: "#fde68a" }}>
+                      <div>
+                        <span className="text-xs font-semibold text-gray-800" style={{ fontFamily: "'Nunito', sans-serif" }}>{c.contractType}</span>
+                        <span className="text-xs text-gray-500 ml-2" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                          Expires {c.expiryDate ? new Date(c.expiryDate).toLocaleDateString("en-GB") : "Unknown"}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => renewMutation.mutate({ id: c.id })}
+                        disabled={renewMutation.isPending}
+                        className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all hover:opacity-80 disabled:opacity-50"
+                        style={{ background: "#F49C1315", color: "#d97706", border: "1px solid #fde68a", fontFamily: "'Nunito', sans-serif" }}
+                      >
+                        {renewMutation.isPending ? <Loader2 size={10} className="animate-spin" /> : <RefreshCw size={10} />}
+                        Renew
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Contract list */}
             <div className="space-y-3">
@@ -922,7 +1046,15 @@ export default function LegalContracts() {
         )}
 
         {/* ── Architecture Map Tab ── */}
-        {activeTab === "architecture" && <ArchitectureMapTab />}
+        {activeTab === "architecture" && (
+          <ArchitectureMapTab
+            onLayerFilter={(layerKey) => {
+              setLayerFilter(layerKey);
+              setActiveTab("contracts");
+              toast.success(`Showing contracts in: ${layerKey.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase())}`);
+            }}
+          />
+        )}
 
         {/* ── Legal Risk Map Tab ── */}
         {activeTab === "risk-map" && <LegalRiskMapTab />}

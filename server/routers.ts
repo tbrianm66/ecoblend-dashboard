@@ -744,6 +744,58 @@ Return a JSON object with exactly these fields:
           .where(eq(legalRiskItems.id, input.id));
         return { success: true };
       }),
+
+    // Returns contracts expiring within the next `days` days (default 60)
+    getExpiring: publicProcedure
+      .input(z.object({ days: z.number().default(60) }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return [];
+        const all = await db.select().from(contractTypeRegistry)
+          .where(eq(contractTypeRegistry.status, "Active"));
+        const now = Date.now();
+        const cutoff = now + input.days * 24 * 60 * 60 * 1000;
+        return all.filter(c => {
+          if (!c.expiryDate) return false;
+          const exp = new Date(c.expiryDate).getTime();
+          return exp > now && exp <= cutoff;
+        });
+      }),
+
+    // Marks a contract as Under Review (renew action)
+    renewContract: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB unavailable");
+        await db.update(contractTypeRegistry)
+          .set({ status: "Pending" })
+          .where(eq(contractTypeRegistry.id, input.id));
+        return { success: true };
+      }),
+
+    // Updates expiry date and/or layer for a contract type
+    updateContractMeta: publicProcedure
+      .input(z.object({
+        id: z.number(),
+        expiryDate: z.string().optional(),
+        layerKey: z.string().optional(),
+        status: z.enum(["Active", "Draft", "Pending", "Not Required", "Expired"]).optional(),
+        owner: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB unavailable");
+        const updates: Record<string, unknown> = {};
+        if (input.expiryDate !== undefined) updates.expiryDate = input.expiryDate || null;
+        if (input.layerKey !== undefined) updates.layerKey = input.layerKey;
+        if (input.status !== undefined) updates.status = input.status;
+        if (input.owner !== undefined) updates.owner = input.owner;
+        await db.update(contractTypeRegistry)
+          .set(updates)
+          .where(eq(contractTypeRegistry.id, input.id));
+        return { success: true };
+      }),
   }),
 
   // ── Academic Research ─────────────────────────────────────────────────────────
