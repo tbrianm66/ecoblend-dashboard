@@ -13,10 +13,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Streamdown } from "streamdown";
+import { useLocation } from "wouter";
 import {
   Plus, ChevronRight, TrendingUp, Target, Leaf, Users,
   CheckCircle2, XCircle, ArrowRight, Lightbulb, BarChart3,
   Sparkles, FileText, Loader2, BookOpen, ExternalLink, Zap, AlertTriangle, Edit3,
+  GitBranch, Rocket, RefreshCw, LayoutGrid, List,
 } from "lucide-react";
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer,
@@ -472,10 +474,37 @@ function ReportsPanelDialog({ opp, open, onClose }: { opp: any; open: boolean; o
   );
 }
 
+// ── Pipeline Kanban Stage config ─────────────────────────────────────────────
+const PIPELINE_STAGES = [
+  { key: "Identified",          label: "Identified",          icon: Lightbulb,     color: "#6b7280", bg: "#6b728010", desc: "Opportunity logged, no matches yet" },
+  { key: "Matched",             label: "Matched",             icon: Users,         color: "#3A97D3", bg: "#3A97D310", desc: "Founders matched to this opportunity" },
+  { key: "Spin-Off Configured", label: "Spin-Off Configured", icon: GitBranch,     color: "#F49C13", bg: "#F49C1310", desc: "Spin-Off OS configuration created" },
+  { key: "Approved",            label: "Approved",            icon: CheckCircle2,  color: "#8b5cf6", bg: "#8b5cf610", desc: "Configuration approved by VBS team" },
+  { key: "Launched",            label: "Launched",            icon: Rocket,        color: "#51AF37", bg: "#51AF3710", desc: "Live venture created in portfolio" },
+] as const;
+
+type PipelineStageKey = typeof PIPELINE_STAGES[number]["key"];
+
+type PipelineKanbanItem = {
+  id: number;
+  name: string;
+  sector: string;
+  status: string;
+  description: string;
+  matchCount: number;
+  spinoffConfigId: number | null;
+  spinoffStatus: string | null;
+  convertedToVentureId: string | null;
+  stage: PipelineStageKey;
+};
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function OpportunityPipeline() {
   const utils = trpc.useUtils();
+  const [, navigate] = useLocation();
   const { data: opps = [], isLoading } = trpc.opportunities.list.useQuery();
+  const [viewMode, setViewMode] = useState<"intake" | "pipeline">("intake");
+  const pipelineQuery = trpc.matching.getPipelineView.useQuery(undefined, { enabled: viewMode === "pipeline" });
 
   const [showAdd, setShowAdd] = useState(false);
   const [showScore, setShowScore] = useState<any | null>(null);
@@ -589,14 +618,33 @@ export default function OpportunityPipeline() {
               Add a problem statement to unlock AI-powered commercial research reports.
             </p>
           </div>
-          <Button
-            size="sm"
-            className="gap-1.5 text-xs"
-            style={{ background: "#7c3aed", color: "white" }}
-            onClick={() => setShowAdd(true)}
-          >
-            <Plus size={13} /> Add Opportunity
-          </Button>
+          <div className="flex items-center gap-2">
+            {/* View toggle */}
+            <div className="flex items-center rounded-lg border overflow-hidden" style={{ borderColor: "#e5e7eb" }}>
+              <button
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold transition-colors"
+                style={viewMode === "intake" ? { background: "#7c3aed", color: "white" } : { background: "white", color: "#6b7280" }}
+                onClick={() => setViewMode("intake")}
+              >
+                <List size={12} /> Intake
+              </button>
+              <button
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold transition-colors"
+                style={viewMode === "pipeline" ? { background: "#51AF37", color: "white" } : { background: "white", color: "#6b7280" }}
+                onClick={() => setViewMode("pipeline")}
+              >
+                <LayoutGrid size={12} /> Pipeline Map
+              </button>
+            </div>
+            <Button
+              size="sm"
+              className="gap-1.5 text-xs"
+              style={{ background: "#7c3aed", color: "white" }}
+              onClick={() => setShowAdd(true)}
+            >
+              <Plus size={13} /> Add Opportunity
+            </Button>
+          </div>
         </div>
 
         {/* KPI strip */}
@@ -617,6 +665,122 @@ export default function OpportunityPipeline() {
       </div>
 
       <div className="p-8">
+        {/* ── Pipeline Map (Kanban) view ── */}
+        {viewMode === "pipeline" && (
+          <div>
+            {/* Progress bar */}
+            <div className="mb-6 bg-white rounded-xl border p-4" style={{ borderColor: "#e5e7eb" }}>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Pipeline Flow</span>
+                <Button
+                  size="sm" variant="outline" className="ml-auto gap-1 text-xs h-6"
+                  style={{ borderColor: "#3A97D3", color: "#3A97D3" }}
+                  onClick={() => pipelineQuery.refetch()}
+                  disabled={pipelineQuery.isFetching}
+                >
+                  <RefreshCw size={11} className={pipelineQuery.isFetching ? "animate-spin" : ""} /> Refresh
+                </Button>
+              </div>
+              {pipelineQuery.data && (() => {
+                const total = pipelineQuery.data.columns.reduce((s, c) => s + c.items.length, 0);
+                return (
+                  <>
+                    <div className="flex h-3 rounded-full overflow-hidden gap-0.5">
+                      {PIPELINE_STAGES.map(stage => {
+                        const col = pipelineQuery.data!.columns.find(c => c.stage === stage.key);
+                        const count = col?.items.length ?? 0;
+                        const width = total > 0 ? (count / total) * 100 : 0;
+                        return width > 0 ? (
+                          <div key={stage.key} className="h-full" style={{ width: `${width}%`, background: stage.color, minWidth: 4 }}
+                            title={`${stage.label}: ${count}`} />
+                        ) : null;
+                      })}
+                    </div>
+                    <div className="flex items-center gap-4 mt-2 flex-wrap">
+                      {PIPELINE_STAGES.map(stage => {
+                        const col = pipelineQuery.data!.columns.find(c => c.stage === stage.key);
+                        const count = col?.items.length ?? 0;
+                        const Icon = stage.icon;
+                        return (
+                          <span key={stage.key} className="flex items-center gap-1 text-xs text-gray-500">
+                            <Icon size={10} style={{ color: stage.color }} />
+                            {stage.label}: <strong>{count}</strong>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+            {/* Kanban columns */}
+            {pipelineQuery.isLoading ? (
+              <div className="flex items-center justify-center h-48 text-gray-400 text-sm"><Loader2 size={16} className="animate-spin mr-2" /> Loading pipeline…</div>
+            ) : (
+              <div className="flex gap-4 overflow-x-auto pb-4" style={{ alignItems: "flex-start" }}>
+                {PIPELINE_STAGES.map(stage => {
+                  const col = pipelineQuery.data?.columns.find(c => c.stage === stage.key);
+                  const items = (col?.items ?? []) as PipelineKanbanItem[];
+                  const Icon = stage.icon;
+                  return (
+                    <div key={stage.key} className="flex flex-col" style={{ minWidth: 220, maxWidth: 280, flex: "1 1 220px" }}>
+                      <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl mb-3"
+                        style={{ background: stage.bg, border: `1px solid ${stage.color}25` }}>
+                        <Icon size={14} style={{ color: stage.color }} />
+                        <span className="text-xs font-bold uppercase tracking-wide" style={{ color: stage.color }}>{stage.label}</span>
+                        <span className="ml-auto text-xs font-bold px-1.5 py-0.5 rounded-full" style={{ background: stage.color, color: "#fff" }}>{items.length}</span>
+                      </div>
+                      <div className="flex flex-col gap-3">
+                        {items.length === 0 ? (
+                          <div className="rounded-xl border-2 border-dashed p-4 text-center" style={{ borderColor: `${stage.color}30` }}>
+                            <p className="text-xs text-gray-400">{stage.desc}</p>
+                          </div>
+                        ) : items.map(item => (
+                          <div key={item.id}
+                            className="bg-white rounded-xl border p-4 cursor-pointer hover:shadow-md transition-all duration-200 group"
+                            style={{ borderColor: "#e5e7eb", borderLeft: `3px solid ${stage.color}` }}
+                            onClick={() => {
+                              if (item.convertedToVentureId) navigate(`/venture/${item.convertedToVentureId}`);
+                              else if (item.spinoffConfigId) navigate(`/spinoff?configId=${item.spinoffConfigId}`);
+                              else if (item.matchCount > 0) navigate(`/matching?oppId=${item.id}`);
+                              else navigate(`/poi?id=${item.id}`);
+                            }}
+                          >
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <h4 className="text-sm font-bold text-gray-900 leading-tight" style={{ fontFamily: "'Prompt', sans-serif" }}>{item.name}</h4>
+                              <ExternalLink size={12} className="text-gray-300 group-hover:text-gray-500 shrink-0 mt-0.5" />
+                            </div>
+                            {item.sector && (
+                              <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full mb-2"
+                                style={{ background: `${stage.color}15`, color: stage.color }}>{item.sector}</span>
+                            )}
+                            {item.description && (
+                              <p className="text-xs text-gray-400 mb-3 line-clamp-2 leading-relaxed">{item.description}</p>
+                            )}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {item.matchCount > 0 && (
+                                <span className="flex items-center gap-1 text-xs text-gray-500"><Users size={10} /> {item.matchCount} match{item.matchCount !== 1 ? "es" : ""}</span>
+                              )}
+                              {item.spinoffConfigId && (
+                                <span className="flex items-center gap-1 text-xs text-gray-500"><GitBranch size={10} /> Config #{item.spinoffConfigId}</span>
+                              )}
+                              {item.convertedToVentureId && (
+                                <span className="flex items-center gap-1 text-xs font-semibold" style={{ color: "#51AF37" }}><Rocket size={10} /> {item.convertedToVentureId}</span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Intake view (original) ── */}
+        {viewMode === "intake" && <>
         {/* Pipeline columns */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
           {pipelineStages.map(({ status, items }) => {
@@ -679,6 +843,7 @@ export default function OpportunityPipeline() {
             </div>
           </div>
         )}
+        </> /* end intake view */}
       </div>
 
       {/* Add Opportunity Dialog */}

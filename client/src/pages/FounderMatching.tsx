@@ -98,12 +98,17 @@ function MatchCard({
     recommendedRole: string | null;
     status: string;
     talentProfileId: number;
+    computedAt?: Date | string | null;
   };
   onLaunchSpinoff: (profileId: number) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const badge = scoreBadge(match.overallMatchScore);
   const color = scoreColor(match.overallMatchScore);
+  // Stale if scored more than 30 days ago
+  const isStale = match.computedAt
+    ? (Date.now() - new Date(match.computedAt).getTime()) > 30 * 24 * 60 * 60 * 1000
+    : false;
 
   return (
     <Card className="p-5 border hover:shadow-md transition-all duration-200" style={{ borderColor: "#e5e7eb" }}>
@@ -123,6 +128,15 @@ function MatchCard({
               <p className="text-xs text-gray-500">{match.founderRole}</p>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
+              {isStale && (
+                <span
+                  className="text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1"
+                  style={{ background: "#F49C1315", color: "#F49C13" }}
+                  title="Score is older than 30 days — consider re-running matching"
+                >
+                  <AlertCircle size={10} /> Stale
+                </span>
+              )}
               <span
                 className="text-xs font-semibold px-2 py-0.5 rounded-full"
                 style={{ background: badge.bg, color: badge.color }}

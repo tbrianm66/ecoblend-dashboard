@@ -22,8 +22,15 @@ import {
   getExecutionPlan,
   updateExecutionPlanStatus,
 } from "./matchingDb";
-import { spinoffStatusHistory } from "../drizzle/schema";
-import { eq, desc } from "drizzle-orm";
+import {
+  spinoffStatusHistory,
+  productOpportunities,
+  spinoffConfigurations,
+  founderMatchScores,
+  type SpinoffConfiguration,
+  type ProductOpportunity,
+} from "../drizzle/schema";
+import { eq, desc, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import {
   getPortfolioSummary, getVrlDistribution, getOpportunityFunnel,
@@ -3788,6 +3795,34 @@ Be specific, actionable, and grounded in the Lean Startup methodology. Use the E
             reason: input.reason ?? undefined,
           });
         }
+        // ── Auto-create venture when status advances to Launched ──────────────
+        let newVentureId: string | null = null;
+        if (input.newStatus === "Launched" && current && !current.convertedToVentureId) {
+          // Build a slug-style venture ID from the proposed name
+          const slug = (current.proposedVentureName ?? `spinoff-${input.id}`)
+            .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48);
+          newVentureId = slug || `spinoff-${input.id}`;
+          await upsertVenture({
+            id: newVentureId,
+            name: current.proposedVentureName ?? `Spin-Off #${input.id}`,
+            tagline: current.proposedTagline ?? undefined,
+            sector: current.proposedSector ?? undefined,
+            channel: (current.proposedChannel as "B2B" | "D2C" | "B2B2C") ?? "B2B",
+            color: current.proposedBrandColor ?? "#22c55e",
+            status: "Pre-Launch",
+            lifecycleStage: "Opportunity",
+            strategicClassification: (current.strategicClassification as "Sustaining" | "Disruptive-NewMarket" | "Disruptive-LowEnd") ?? "Sustaining",
+            engineOfGrowth: (current.engineOfGrowth as "Sticky" | "Viral" | "Paid" | undefined) ?? undefined,
+            vrl: 1,
+            trl: 1,
+          });
+          // Link spinoff config back to the new venture
+          await updateSpinoffConfig(input.id, { convertedToVentureId: newVentureId });
+          await notifyOwner({
+            title: `New Venture Created: ${current.proposedVentureName ?? `Spin-Off #${input.id}`}`,
+            content: `Spin-Off OS configuration #${input.id} has been launched. A new venture record has been created with ID \`${newVentureId}\`. Navigate to the VRL/TRL dashboard to begin tracking readiness.`,
+          });
+        }
         const statusLabels: Record<string, string> = {
           "Under Review": "submitted for review",
           "Approved": "approved",
@@ -3803,7 +3838,7 @@ Be specific, actionable, and grounded in the Lean Startup methodology. Use the E
             input.reason ? `Reason: ${input.reason}` : "",
           ].filter(Boolean).join("\n"),
         });
-        return { success: true, newStatus: input.newStatus };
+        return { success: true, newStatus: input.newStatus, newVentureId };
       }),
 
     // ── Co-founder compatibility matrix: compare two profiles ────────────────
@@ -4010,6 +4045,64 @@ Be specific, actionable, and grounded in the Lean Startup methodology. Use the E
         const { url } = await storagePut(pdfKey, Buffer.from(html, "utf-8"), "text/html");
         return { url, pairingScore, verdict, nameA, nameB, overallA, overallB };
       }),
+
+    // ── Opportunity-to-Spin-Off Pipeline Kanban view ───────────────────────────────
+    // Returns all product opportunities enriched with their match count and
+    // spinoff config status, bucketed into 5 pipeline stages.
+    getPipelineView: publicProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return { columns: [] };
+
+      const [opps, configs, matchCounts] = await Promise.all([
+        db.select().from(productOpportunities),
+        db.select().from(spinoffConfigurations),
+        db.select({
+          productOpportunityId: founderMatchScores.productOpportunityId,
+          count: sql`COUNT(*)`.as("count"),
+        }).from(founderMatchScores).groupBy(founderMatchScores.productOpportunityId),
+      ]);
+
+      const configMap = new Map(configs.map((c: SpinoffConfiguration) => [c.productOpportunityId, c]));
+      const matchCountMap = new Map(matchCounts.map((m: { productOpportunityId: number; count: unknown }) => [m.productOpportunityId, Number(m.count)]));
+
+      // Determine pipeline stage for each opportunity
+      const enriched = opps.map((o: ProductOpportunity) => {
+        const config = configMap.get(o.id);
+        const matchCount = matchCountMap.get(o.id) ?? 0;
+        let stage: "Identified" | "Matched" | "Spin-Off Configured" | "Approved" | "Launched";
+        if (config?.status === "Launched") {
+          stage = "Launched";
+        } else if (config?.status === "Approved") {
+          stage = "Approved";
+        } else if (config) {
+          stage = "Spin-Off Configured";
+        } else if (matchCount > 0) {
+          stage = "Matched";
+        } else {
+          stage = "Identified";
+        }
+        return {
+          id: o.id,
+          name: o.name ?? "Unnamed Opportunity",
+          sector: o.sector ?? "",
+          status: o.status ?? "Identified",
+          description: o.description ?? "",
+          matchCount,
+          spinoffConfigId: config?.id ?? null,
+          spinoffStatus: config?.status ?? null,
+          convertedToVentureId: config?.convertedToVentureId ?? null,
+          stage,
+        };
+      });
+
+      const STAGES = ["Identified", "Matched", "Spin-Off Configured", "Approved", "Launched"] as const;
+      const columns = STAGES.map(stage => ({
+        stage,
+        items: enriched.filter(o => o.stage === stage),
+      }));
+
+      return { columns };
+    }),
   }),
 });
 

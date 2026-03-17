@@ -353,3 +353,12 @@
 - [x] Add tRPC procedure: matching.getCoFounderMatrixPdf (returns HTML report via S3)
 - [x] Add "Download Report" button on Co-Founder Compatibility Matrix page
 - [x] Vitest tests passing (449 tests, 0 failures)
+
+## Sprint 32 — Pipeline Intelligence (Mar 2026)
+- [x] Wire advanceSpinoffStatus "Launched" → auto-create venture and show "View Venture" CTA in Spin-Off OS
+- [x] Add stale badge (>30 days) to match cards in FounderMatching.tsx (uses existing computedAt field)
+- [x] Add "Pipeline Map" tab to OpportunityPipeline.tsx — Kanban board with 5 columns: Identified → Matched → Spin-Off Configured → Approved → Launched
+- [x] Pipeline progress bar showing distribution across all 5 stages
+- [x] Card click navigates to relevant module (venture/spinoff/matching/poi)
+- [x] getPipelineView tRPC procedure: enriches opportunities with match count and spinoff config status
+- [x] 449 tests passing, 0 TypeScript errors

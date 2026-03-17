@@ -288,7 +288,20 @@ export default function SpinoffOS() {
 
   const advanceStatus = trpc.matching.advanceSpinoffStatus.useMutation({
     onSuccess: (result) => {
-      toast.success(`Status updated to ${result.newStatus}`);
+      if (result.newStatus === "Launched" && result.newVentureId) {
+        toast.success(
+          `Venture launched! "${result.newVentureId}" has been created in the portfolio.`,
+          {
+            duration: 8000,
+            action: {
+              label: "View Venture",
+              onClick: () => navigate(`/venture/${result.newVentureId}`),
+            },
+          }
+        );
+      } else {
+        toast.success(`Status updated to ${result.newStatus}`);
+      }
       configsQuery.refetch();
       activeConfigQuery.refetch();
     },
