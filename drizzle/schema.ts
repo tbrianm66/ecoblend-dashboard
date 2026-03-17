@@ -2010,3 +2010,52 @@ export const spinoffStatusHistory = mysqlTable("spinoff_status_history", {
 });
 export type SpinoffStatusHistory = typeof spinoffStatusHistory.$inferSelect;
 export type InsertSpinoffStatusHistory = typeof spinoffStatusHistory.$inferInsert;
+
+// ── Contract Architecture Layers ─────────────────────────────────────────────
+// Four-layer contract architecture from the Contract Architecture Map document.
+export const contractLayers = mysqlTable("contract_layers", {
+  id:          int("id").autoincrement().primaryKey(),
+  layerKey:    varchar("layerKey", { length: 64 }).notNull().unique(),
+  name:        varchar("name", { length: 128 }).notNull(),
+  description: text("description"),
+  color:       varchar("color", { length: 16 }),
+  sortOrder:   int("sortOrder").default(0),
+  createdAt:   timestamp("createdAt").defaultNow().notNull(),
+});
+export type ContractLayer = typeof contractLayers.$inferSelect;
+export type InsertContractLayer = typeof contractLayers.$inferInsert;
+
+// ── Contract Type Registry ────────────────────────────────────────────────────
+// Full 20-contract type registry from the Commercial Contracts Matrix document.
+export const contractTypeRegistry = mysqlTable("contract_type_registry", {
+  id:           int("id").autoincrement().primaryKey(),
+  layerKey:     varchar("layerKey", { length: 64 }).notNull(),
+  contractType: varchar("contractType", { length: 128 }).notNull(),
+  useCase:      text("useCase").notNull(),
+  riskLevel:    mysqlEnum("riskLevel", ["Low", "Medium", "High", "Critical"]).default("Medium"),
+  status:       mysqlEnum("status", ["Active", "Draft", "Pending", "Not Required", "Expired"]).default("Draft"),
+  owner:        varchar("owner", { length: 128 }),
+  notes:        text("notes"),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:    timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ContractTypeRegistry = typeof contractTypeRegistry.$inferSelect;
+export type InsertContractTypeRegistry = typeof contractTypeRegistry.$inferInsert;
+
+// ── Legal Risk Items ──────────────────────────────────────────────────────────
+// Legal Risk Map: key risk areas, mitigations, and high-risk zones.
+export const legalRiskItems = mysqlTable("legal_risk_items", {
+  id:              int("id").autoincrement().primaryKey(),
+  riskArea:        varchar("riskArea", { length: 128 }).notNull(),
+  description:     text("description"),
+  riskZone:        mysqlEnum("riskZone", ["High", "Medium", "Low"]).default("Medium"),
+  mitigation:      text("mitigation"),
+  linkedLayer:     varchar("linkedLayer", { length: 64 }),
+  linkedContracts: text("linkedContracts"),
+  status:          mysqlEnum("status", ["Open", "Mitigated", "Monitoring", "Closed"]).default("Open"),
+  owner:           varchar("owner", { length: 128 }),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type LegalRiskItem = typeof legalRiskItems.$inferSelect;
+export type InsertLegalRiskItem = typeof legalRiskItems.$inferInsert;

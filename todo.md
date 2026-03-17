@@ -362,3 +362,13 @@
 - [x] Card click navigates to relevant module (venture/spinoff/matching/poi)
 - [x] getPipelineView tRPC procedure: enriches opportunities with match count and spinoff config status
 - [x] 449 tests passing, 0 TypeScript errors
+
+## Sprint 33 — Legal Module Architecture Update (Mar 2026)
+- [x] Read current LegalContracts.tsx and legal-related DB schema/procedures
+- [x] Add contract_layers, contract_type_registry, and legal_risk_items tables to schema (migration 0017)
+- [x] Seed 4 layers, 20 contract types, and Legal Risk Map data via seed-legal.mjs
+- [x] Add tRPC procedures: contracts.getLayers, contracts.getContractRegistry, contracts.getLegalRiskMap, contracts.updateContractStatus, contracts.updateRiskStatus
+- [x] Rebuild LegalContracts.tsx: three-tab layout (Contracts | Architecture Map | Legal Risk Map)
+- [x] Architecture Map: four-layer accordion with 20 contract types, risk levels, status badges, inline edit
+- [x] Legal Risk Map: risk zone callout, mitigation strategies, linked contracts, inline status/owner edit
+- [x] 449 tests passing, 0 TypeScript errors

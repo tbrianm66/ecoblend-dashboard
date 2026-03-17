@@ -27,6 +27,9 @@ import {
   productOpportunities,
   spinoffConfigurations,
   founderMatchScores,
+  contractLayers,
+  contractTypeRegistry,
+  legalRiskItems,
   type SpinoffConfiguration,
   type ProductOpportunity,
 } from "../drizzle/schema";
@@ -685,6 +688,60 @@ Return a JSON object with exactly these fields:
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await deleteContractDocument(input.id);
+        return { success: true };
+      }),
+
+    // ── Contract Architecture Layer Procedures ──────────────────────────────
+    getLayers: publicProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      return db.select().from(contractLayers).orderBy(contractLayers.sortOrder);
+    }),
+
+    getContractRegistry: publicProcedure
+      .input(z.object({ layerKey: z.string().optional() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return [];
+        const rows = await db.select().from(contractTypeRegistry).orderBy(contractTypeRegistry.id);
+        if (input.layerKey) return rows.filter(r => r.layerKey === input.layerKey);
+        return rows;
+      }),
+
+    updateContractStatus: publicProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["Active", "Draft", "Pending", "Not Required", "Expired"]),
+        owner: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB unavailable");
+        await db.update(contractTypeRegistry)
+          .set({ status: input.status, owner: input.owner ?? null, notes: input.notes ?? null })
+          .where(eq(contractTypeRegistry.id, input.id));
+        return { success: true };
+      }),
+
+    getLegalRiskMap: publicProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      return db.select().from(legalRiskItems).orderBy(legalRiskItems.riskZone, legalRiskItems.id);
+    }),
+
+    updateRiskStatus: publicProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["Open", "Mitigated", "Monitoring", "Closed"]),
+        owner: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB unavailable");
+        await db.update(legalRiskItems)
+          .set({ status: input.status, owner: input.owner ?? null })
+          .where(eq(legalRiskItems.id, input.id));
         return { success: true };
       }),
   }),
