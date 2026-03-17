@@ -5,6 +5,22 @@ import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { storagePut } from "./storage";
 import { invokeLLM } from "./_core/llm";
+import {
+  computeAndSaveMatchScore,
+  computeAllMatchesForOpportunity,
+  computeAllMatchesForFounder,
+  computeCoFounderCompatibility,
+  getTopMatchesForOpportunity,
+  getTopMatchesForFounder,
+  getAllTalentProfiles,
+  createSpinoffConfig,
+  getSpinoffConfig,
+  listSpinoffConfigs,
+  updateSpinoffConfig,
+  saveExecutionPlan,
+  getExecutionPlan,
+  updateExecutionPlanStatus,
+} from "./matchingDb";
 import { nanoid } from "nanoid";
 import {
   getPortfolioSummary, getVrlDistribution, getOpportunityFunnel,
@@ -3543,6 +3559,195 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       .mutation(({ input }) => upsertEcosystemNode(input)),
     getRevenueSparklines: publicProcedure
       .query(() => getVentureRevenueSparklines()),
+  }),
+
+  // ── Matching Engine & Spin-Off OS ─────────────────────────────────────────
+  matching: router({
+    // Founder ↔ Opportunity scoring
+    computeMatchScore: publicProcedure
+      .input(z.object({ talentProfileId: z.number(), productOpportunityId: z.number() }))
+      .mutation(({ input }) => computeAndSaveMatchScore(input.talentProfileId, input.productOpportunityId)),
+
+    computeAllForOpportunity: publicProcedure
+      .input(z.object({ productOpportunityId: z.number() }))
+      .mutation(({ input }) => computeAllMatchesForOpportunity(input.productOpportunityId)),
+
+    computeAllForFounder: publicProcedure
+      .input(z.object({ talentProfileId: z.number() }))
+      .mutation(({ input }) => computeAllMatchesForFounder(input.talentProfileId)),
+
+    getTopMatchesForOpportunity: publicProcedure
+      .input(z.object({ productOpportunityId: z.number(), limit: z.number().optional() }))
+      .query(({ input }) => getTopMatchesForOpportunity(input.productOpportunityId, input.limit)),
+
+    getTopMatchesForFounder: publicProcedure
+      .input(z.object({ talentProfileId: z.number(), limit: z.number().optional() }))
+      .query(({ input }) => getTopMatchesForFounder(input.talentProfileId, input.limit)),
+
+    computeCoFounderCompatibility: publicProcedure
+      .input(z.object({ profileIdA: z.number(), profileIdB: z.number(), opportunityId: z.number().optional() }))
+      .mutation(({ input }) => computeCoFounderCompatibility(input.profileIdA, input.profileIdB, input.opportunityId)),
+
+    getAllTalentProfiles: publicProcedure
+      .query(() => getAllTalentProfiles()),
+
+    // Spin-Off OS
+    createSpinoffConfig: publicProcedure
+      .input(z.object({
+        productOpportunityId: z.number(),
+        founderProfileIds: z.array(z.number()),
+        proposedVentureName: z.string().optional(),
+        proposedTagline: z.string().optional(),
+        proposedSector: z.string().optional(),
+        proposedChannel: z.enum(["B2B", "D2C", "B2B2C"]).optional(),
+        proposedBrandColor: z.string().optional(),
+        strategicClassification: z.enum(["Sustaining", "Disruptive-NewMarket", "Disruptive-LowEnd"]).optional(),
+        engineOfGrowth: z.enum(["Sticky", "Viral", "Paid"]).optional(),
+        estimatedBurnRateMonthly: z.number().optional(),
+        estimatedRunwayMonths: z.number().optional(),
+        fundingAskAmount: z.number().optional(),
+        nominatedCharity: z.string().optional(),
+        assignedMentor: z.string().optional(),
+        vbsSupportLevel: z.enum(["Full Incubation", "Accelerator", "Advisory Only"]).optional(),
+      }))
+      .mutation(({ input }) => createSpinoffConfig(input)),
+
+    getSpinoffConfig: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(({ input }) => getSpinoffConfig(input.id)),
+
+    listSpinoffConfigs: publicProcedure
+      .query(() => listSpinoffConfigs()),
+
+    updateSpinoffConfig: publicProcedure
+      .input(z.object({
+        id: z.number(),
+        proposedVentureName: z.string().optional(),
+        proposedTagline: z.string().optional(),
+        proposedSector: z.string().optional(),
+        proposedChannel: z.enum(["B2B", "D2C", "B2B2C"]).optional(),
+        proposedBrandColor: z.string().optional(),
+        strategicClassification: z.enum(["Sustaining", "Disruptive-NewMarket", "Disruptive-LowEnd"]).optional(),
+        engineOfGrowth: z.enum(["Sticky", "Viral", "Paid"]).optional(),
+        estimatedBurnRateMonthly: z.number().optional(),
+        estimatedRunwayMonths: z.number().optional(),
+        fundingAskAmount: z.number().optional(),
+        nominatedCharity: z.string().optional(),
+        assignedMentor: z.string().optional(),
+        vbsSupportLevel: z.enum(["Full Incubation", "Accelerator", "Advisory Only"]).optional(),
+        status: z.enum(["Draft", "Under Review", "Approved", "Rejected", "Launched"]).optional(),
+        convertedToVentureId: z.string().optional(),
+      }))
+      .mutation(({ input }) => { const { id, ...rest } = input; return updateSpinoffConfig(id, rest); }),
+
+    // Execution Plan (LLM-generated)
+    generateExecutionPlan: publicProcedure
+      .input(z.object({ spinoffConfigId: z.number() }))
+      .mutation(async ({ input }) => {
+        const config = await getSpinoffConfig(input.spinoffConfigId);
+        if (!config) throw new Error("Spin-off configuration not found");
+
+        const founderIds = config.founderProfileIds.split(",").map(Number).filter(Boolean);
+        const founders = await getAllTalentProfiles();
+        const selectedFounders = founders.filter((f: { id: number }) => founderIds.includes(f.id));
+        const founderSummary = selectedFounders
+          .map((f: { name: string; currentRole?: string | null; industryExpertise?: string | null; yearsExperience?: number | null }) =>
+            `${f.name} (${f.currentRole ?? "Founder"}) — ${f.industryExpertise ?? "General"} — ${f.yearsExperience ?? 0} yrs exp`
+          ).join("\n");
+
+        const prompt = `You are a venture studio strategist generating a 90-day execution plan for a new spin-off venture.
+
+Venture: ${config.proposedVentureName}
+Tagline: ${config.proposedTagline}
+Sector: ${config.proposedSector}
+Channel: ${config.proposedChannel}
+Strategic Classification: ${config.strategicClassification}
+Engine of Growth: ${config.engineOfGrowth}
+Monthly Burn Rate: £${config.estimatedBurnRateMonthly?.toLocaleString()}
+Runway: ${config.estimatedRunwayMonths} months
+Funding Ask: £${config.fundingAskAmount?.toLocaleString()}
+VBS Support Level: ${config.vbsSupportLevel}
+
+Founding Team:
+${founderSummary}
+
+Generate a comprehensive 90-day execution plan in Markdown with the following sections:
+1. Executive Summary (2-3 paragraphs)
+2. Strategic Objectives (3-5 SMART goals)
+3. 90-Day Milestone Roadmap (Week 1-4, Week 5-8, Week 9-12 with deliverables and owners)
+4. Resource Allocation Plan (team roles, budget breakdown, VBS support)
+5. KPI Framework (5 primary KPIs with targets and measurement cadence)
+6. Risk Register (top 5 risks with likelihood, impact, and mitigation)
+7. Go-to-Market Strategy (target customer, value proposition, first 3 sales actions)
+8. Funding & Investment Readiness (milestones to unlock next funding round)
+
+Be specific, actionable, and grounded in the Lean Startup methodology. Use the EcoRace VBS framework context.`;
+
+        const response = await invokeLLM({
+          messages: [
+            { role: "system", content: "You are an expert venture studio strategist. Generate precise, actionable execution plans for early-stage spin-off ventures. Always use Markdown formatting." },
+            { role: "user", content: prompt },
+          ],
+        });
+
+        const rawContent = response.choices[0]?.message?.content;
+        const fullPlanMarkdown = typeof rawContent === "string" ? rawContent : "Plan generation failed.";
+        const executiveSummary = fullPlanMarkdown.split("\n").slice(0, 10).join("\n");
+
+        const milestones = [
+          { week: "1-4",  title: "Foundation & Validation", owner: selectedFounders[0]?.name ?? "Founder", deliverable: "Problem-solution fit validated with 20 beneficiary interviews", kpi: "Interview completion rate" },
+          { week: "5-8",  title: "Build & Test",            owner: selectedFounders[0]?.name ?? "Founder", deliverable: "MVP prototype built and tested with 5 pilot customers", kpi: "MVP test completion" },
+          { week: "9-12", title: "Launch & Iterate",        owner: selectedFounders[0]?.name ?? "Founder", deliverable: "First paying customer acquired, revenue model validated", kpi: "Revenue / customer count" },
+        ];
+
+        const risks = [
+          { risk: "Market demand lower than expected", likelihood: "Medium", impact: "High", mitigation: "Conduct 20+ beneficiary interviews before MVP build" },
+          { risk: "Technical complexity underestimated", likelihood: "Medium", impact: "Medium", mitigation: "Leverage EcoRace lab and TRL framework for staged development" },
+          { risk: "Funding gap before revenue", likelihood: "Low", impact: "High", mitigation: `${config.estimatedRunwayMonths}-month runway secured; ZINC VC stipend applied` },
+          { risk: "Co-founder misalignment", likelihood: "Low", impact: "High", mitigation: "ESOP structure and VBS mentor assigned from Day 1" },
+          { risk: "Regulatory / compliance delays", likelihood: "Low", impact: "Medium", mitigation: "Legal structure registered in Week 1; VBS legal support engaged" },
+        ];
+
+        const kpis = {
+          primary: [
+            { name: "Monthly Recurring Revenue", target: `£${Math.round((config.estimatedBurnRateMonthly ?? 15000) * 0.5).toLocaleString()} by Month 3`, cadence: "Monthly" },
+            { name: "Beneficiary Interviews", target: "20 completed in Week 1-4", cadence: "Weekly" },
+            { name: "Experiment Pass Rate", target: ">60% by Month 2", cadence: "Bi-weekly" },
+            { name: "VRL Stage", target: "VRL 2 by end of 90 days", cadence: "Monthly" },
+            { name: "Burn Rate vs Budget", target: `<£${config.estimatedBurnRateMonthly?.toLocaleString()}/month`, cadence: "Monthly" },
+          ],
+        };
+
+        const resourceAllocation = {
+          founders: selectedFounders.map((f: { name: string; currentRole?: string | null }) => ({ name: f.name, role: f.currentRole ?? "Co-Founder", allocation: "Full-time" })),
+          budget: { monthlyBurn: config.estimatedBurnRateMonthly, runway: config.estimatedRunwayMonths, fundingAsk: config.fundingAskAmount },
+          vbsSupport: config.vbsSupportLevel,
+          mentor: config.assignedMentor,
+        };
+
+        return saveExecutionPlan({
+          spinoffConfigId: input.spinoffConfigId,
+          planTitle: `${config.proposedVentureName} — 90-Day Execution Plan`,
+          executiveSummary,
+          fullPlanMarkdown,
+          milestonesJson: JSON.stringify(milestones),
+          resourceAllocationJson: JSON.stringify(resourceAllocation),
+          risksJson: JSON.stringify(risks),
+          kpiFrameworkJson: JSON.stringify(kpis),
+        });
+      }),
+
+    getExecutionPlan: publicProcedure
+      .input(z.object({ spinoffConfigId: z.number() }))
+      .query(({ input }) => getExecutionPlan(input.spinoffConfigId)),
+
+    updateExecutionPlanStatus: publicProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["Draft", "Under Review", "Approved", "Superseded"]),
+        reviewedBy: z.string().optional(),
+      }))
+      .mutation(({ input }) => updateExecutionPlanStatus(input.id, input.status, input.reviewedBy)),
   }),
 });
 

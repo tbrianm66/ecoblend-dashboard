@@ -1848,3 +1848,150 @@ export const ecosystemMapNodes = mysqlTable("ecosystem_map_nodes", {
 });
 export type EcosystemMapNode = typeof ecosystemMapNodes.$inferSelect;
 export type InsertEcosystemMapNode = typeof ecosystemMapNodes.$inferInsert;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MATCHING ENGINE & SPIN-OFF OS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── Founder Match Scores ──────────────────────────────────────────────────────
+// Stores computed compatibility scores between a founder (talent_profile) and
+// a product opportunity (product_opportunities). Recomputed on demand or on
+// new founder onboarding.
+export const founderMatchScores = mysqlTable("founder_match_scores", {
+  id:                   int("id").autoincrement().primaryKey(),
+  // The founder being evaluated (references talent_profiles.id)
+  talentProfileId:      int("talentProfileId").notNull(),
+  // The opportunity being matched against (references product_opportunities.id)
+  productOpportunityId: int("productOpportunityId").notNull(),
+  // Dimension scores (0–100 each)
+  sectorAlignmentScore:     int("sectorAlignmentScore").default(0),   // sector tag overlap
+  capabilityFitScore:       int("capabilityFitScore").default(0),     // capability vs opportunity requirements
+  availabilityScore:        int("availabilityScore").default(0),      // hours/week vs estimated demand
+  pvfScore:                 int("pvfScore").default(0),               // personal values fit (ESG/mission)
+  experienceScore:          int("experienceScore").default(0),        // years + previous ventures
+  networkScore:             int("networkScore").default(0),           // investor/customer/supplier network
+  // Composite match score (weighted average, 0–100)
+  overallMatchScore:        int("overallMatchScore").default(0),
+  // Recommended role for this founder on this opportunity
+  recommendedRole:          varchar("recommendedRole", { length: 128 }),
+  // Narrative explanation (LLM-generated)
+  matchRationale:           text("matchRationale"),
+  // Status of this match
+  status:                   mysqlEnum("status", [
+                              "Suggested",    // auto-generated, not yet reviewed
+                              "Reviewed",     // VBS team has reviewed
+                              "Accepted",     // founder accepted the match
+                              "Declined",     // founder declined
+                              "Converted"     // match led to a spin-off
+                            ]).default("Suggested"),
+  computedAt:               timestamp("computedAt").defaultNow().notNull(),
+  updatedAt:                timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type FounderMatchScore = typeof founderMatchScores.$inferSelect;
+export type InsertFounderMatchScore = typeof founderMatchScores.$inferInsert;
+
+// ── Co-Founder Compatibility Scores ──────────────────────────────────────────
+// Pairwise compatibility between two talent profiles for a given opportunity.
+// Captures complementarity (different strengths) rather than similarity.
+export const coFounderCompatibility = mysqlTable("co_founder_compatibility", {
+  id:                   int("id").autoincrement().primaryKey(),
+  talentProfileIdA:     int("talentProfileIdA").notNull(),
+  talentProfileIdB:     int("talentProfileIdB").notNull(),
+  productOpportunityId: int("productOpportunityId"),    // optional — context-specific
+  // Complementarity dimensions (0–100)
+  capabilityComplementScore: int("capabilityComplementScore").default(0), // different strengths
+  valueAlignmentScore:       int("valueAlignmentScore").default(0),       // shared mission/values
+  workingStyleScore:         int("workingStyleScore").default(0),         // collaboration fit
+  networkComplementScore:    int("networkComplementScore").default(0),    // different networks
+  // Composite
+  overallCompatibilityScore: int("overallCompatibilityScore").default(0),
+  compatibilityRationale:    text("compatibilityRationale"),
+  computedAt:                timestamp("computedAt").defaultNow().notNull(),
+});
+export type CoFounderCompatibility = typeof coFounderCompatibility.$inferSelect;
+export type InsertCoFounderCompatibility = typeof coFounderCompatibility.$inferInsert;
+
+// ── Spin-Off Configurations ───────────────────────────────────────────────────
+// The "operating system" record for a new spin-off. Aggregates all inputs:
+// the opportunity, the founding team, the resource plan, and the VBS support
+// structure. This is the single source of truth before a venture is created.
+export const spinoffConfigurations = mysqlTable("spinoff_configurations", {
+  id:                   int("id").autoincrement().primaryKey(),
+  // Core linkages
+  productOpportunityId: int("productOpportunityId").notNull(),
+  // Founding team (comma-separated talent_profile IDs)
+  founderProfileIds:    text("founderProfileIds").notNull(),
+  // Venture identity
+  proposedVentureName:  varchar("proposedVentureName", { length: 128 }),
+  proposedTagline:      text("proposedTagline"),
+  proposedSector:       varchar("proposedSector", { length: 128 }),
+  proposedChannel:      mysqlEnum("proposedChannel", ["B2B", "D2C", "B2B2C"]).default("B2B"),
+  proposedBrandColor:   varchar("proposedBrandColor", { length: 32 }).default("#22c55e"),
+  // Strategic classification
+  strategicClassification: mysqlEnum("strategicClassification", [
+    "Sustaining", "Disruptive-NewMarket", "Disruptive-LowEnd"
+  ]).default("Sustaining"),
+  engineOfGrowth:       mysqlEnum("engineOfGrowth", ["Sticky", "Viral", "Paid"]),
+  // Resource plan
+  estimatedBurnRateMonthly: int("estimatedBurnRateMonthly").default(0),  // £/month
+  estimatedRunwayMonths:    int("estimatedRunwayMonths").default(12),
+  fundingAskAmount:         int("fundingAskAmount").default(0),           // £
+  nominatedCharity:         varchar("nominatedCharity", { length: 255 }),
+  // VBS support
+  assignedMentor:           varchar("assignedMentor", { length: 128 }),
+  vbsSupportLevel:          mysqlEnum("vbsSupportLevel", [
+                              "Full Incubation",   // full studio support
+                              "Accelerator",       // 3-month intensive
+                              "Advisory Only"      // light-touch
+                            ]).default("Full Incubation"),
+  // Workflow status
+  status:                   mysqlEnum("status", [
+                              "Draft",
+                              "Under Review",
+                              "Approved",
+                              "Rejected",
+                              "Launched"          // venture record created
+                            ]).default("Draft"),
+  convertedToVentureId:     varchar("convertedToVentureId", { length: 64 }),
+  // Timestamps
+  createdAt:                timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:                timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type SpinoffConfiguration = typeof spinoffConfigurations.$inferSelect;
+export type InsertSpinoffConfiguration = typeof spinoffConfigurations.$inferInsert;
+
+// ── Spin-Off Execution Plans ──────────────────────────────────────────────────
+// The auto-generated 90-day execution plan for a spin-off. Contains structured
+// milestones, resource assignments, and risk flags. Generated by the LLM from
+// the spinoff_configuration inputs.
+export const spinoffExecutionPlans = mysqlTable("spinoff_execution_plans", {
+  id:                   int("id").autoincrement().primaryKey(),
+  spinoffConfigId:      int("spinoffConfigId").notNull(),
+  // Plan metadata
+  planVersion:          int("planVersion").default(1),
+  planTitle:            varchar("planTitle", { length: 255 }),
+  executiveSummary:     text("executiveSummary"),
+  // Full plan content (LLM-generated markdown)
+  fullPlanMarkdown:     text("fullPlanMarkdown"),
+  // Structured milestones (JSON array: [{week, title, owner, deliverable, kpi}])
+  milestonesJson:       text("milestonesJson"),
+  // Resource allocation (JSON: {founders: [], mentors: [], budget: {}})
+  resourceAllocationJson: text("resourceAllocationJson"),
+  // Risk register (JSON array: [{risk, likelihood, impact, mitigation}])
+  risksJson:            text("risksJson"),
+  // KPI framework (JSON: {primary: [], secondary: []})
+  kpiFrameworkJson:     text("kpiFrameworkJson"),
+  // Generation metadata
+  generatedBy:          varchar("generatedBy", { length: 64 }).default("llm"),
+  generatedAt:          timestamp("generatedAt").defaultNow().notNull(),
+  // Review status
+  reviewedBy:           varchar("reviewedBy", { length: 128 }),
+  reviewedAt:           timestamp("reviewedAt"),
+  status:               mysqlEnum("status", [
+                          "Draft", "Under Review", "Approved", "Superseded"
+                        ]).default("Draft"),
+  createdAt:            timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:            timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type SpinoffExecutionPlan = typeof spinoffExecutionPlans.$inferSelect;
+export type InsertSpinoffExecutionPlan = typeof spinoffExecutionPlans.$inferInsert;

@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { nanoid } from "nanoid";
 import {
   ChevronRight, ChevronLeft, CheckCircle2, Rocket, FlaskConical,
-  TrendingUp, Users, Target, BookOpen, Lightbulb, Building2
+  TrendingUp, Users, Target, BookOpen, Lightbulb, Building2, Shuffle, GitBranch
 } from "lucide-react";
 
 const STEPS = [
@@ -214,10 +214,16 @@ export default function FounderOnboarding() {
             Your next step is to complete Tasks 1–17 in the EcoBlend VBS Playbook and update your VRL progress on the dashboard.
           </p>
           <div className="space-y-3">
-            <Button className="w-full gap-2" style={{ background: form.brandColor, color: "white" }} onClick={() => navigate("/")}>
+            <Button className="w-full gap-2" style={{ background: form.brandColor, color: "white" }} onClick={() => navigate("/matching")}>
+              <Shuffle size={15} /> Find Founder Matches &amp; Opportunities
+            </Button>
+            <Button className="w-full gap-2" variant="outline" style={{ borderColor: "#3A97D3", color: "#3A97D3" }} onClick={() => navigate("/spinoff")}>
+              <GitBranch size={15} /> Launch Spin-Off OS
+            </Button>
+            <Button variant="outline" className="w-full" onClick={() => navigate("/")}>
               <Rocket size={15} /> View Portfolio Dashboard
             </Button>
-            <Button variant="outline" className="w-full" onClick={() => { setCompleted(false); setStep(1); setForm({ ventureName: "", tagline: "", sector: "", channel: "", founderName: "", founderEmail: "", nominatedCharity: "", brandColor: "#22c55e", bmc: "", mmc: "", checkedTasks: {} }); }}>
+            <Button variant="outline" className="w-full text-gray-400" onClick={() => { setCompleted(false); setStep(1); setForm({ ventureName: "", tagline: "", sector: "", channel: "", founderName: "", founderEmail: "", nominatedCharity: "", brandColor: "#22c55e", bmc: "", mmc: "", checkedTasks: {} }); }}>
               Onboard Another Founder
             </Button>
           </div>

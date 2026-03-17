@@ -37,6 +37,8 @@ import PeopleIntelligence from "./pages/PeopleIntelligence";
 import ProductOpportunityIntelligence from "./pages/ProductOpportunityIntelligence";
 import VentureProjectManagement from "./pages/VentureProjectManagement";
 import CommandCentre from "./pages/CommandCentre";
+import FounderMatching from "./pages/FounderMatching";
+import SpinoffOS from "./pages/SpinoffOS";
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
@@ -72,6 +74,8 @@ function Router() {
       <Route path="/poi" component={ProductOpportunityIntelligence} />
       <Route path="/project-management" component={VentureProjectManagement} />
       <Route path="/command-centre" component={CommandCentre} />
+      <Route path="/matching" component={FounderMatching} />
+      <Route path="/spinoff" component={SpinoffOS} />
       <Route component={Home} />
     </Switch>
   );

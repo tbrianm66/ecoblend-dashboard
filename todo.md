@@ -308,7 +308,18 @@
 
 ## Sprint 28 — Venture Renames (Mar 2026)
 
-- [ ] Rename "EcoBlend" (materials formulation) → "EcoComp" in database
-- [ ] Rename "EcoBlend R&D" → "EcoRace" in database
-- [ ] Update all hardcoded name references in frontend source files
-- [ ] Verify all pages display updated names correctly
+- [x] Rename "EcoBlend" (materials formulation) → "EcoComp" in database
+- [x] Rename "EcoBlend R&D" → "EcoRace" in database
+- [x] Update all hardcoded name references in frontend source files
+- [x] Verify all pages display updated names correctly
+
+## Sprint 29 — Founder Matching Engine & Spin-Off OS (Mar 2026)
+- [x] Add DB schema: founder_match_scores, spinoff_configurations, spinoff_execution_plans tables
+- [x] Build matchingDb.ts: compute founder↔opportunity compatibility scores (sector, capability, availability, PVF)
+- [x] Build spinoffDb.ts: aggregate all inputs (founder, POI, talent gaps, resources) into a spin-off configuration
+- [x] Add tRPC matching router: getFounderMatches, getOpportunityMatches, createSpinoffConfig, generateExecutionPlan (LLM)
+- [x] Build FounderMatching.tsx page: match cards with compatibility scores, co-founder pairing, problem-statement ranking
+- [x] Build SpinoffOS.tsx page: input mapping wizard (5 steps), venture configuration panel, AI-generated execution report
+- [x] Wire Founder Onboarding completion → auto-trigger matching engine → redirect to match results
+- [x] Add "Matching Engine" and "Spin-Off OS" to Sidebar Intelligence group
+- [x] Vitest tests for matching algorithm and spinoff configuration logic
