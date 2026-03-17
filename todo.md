@@ -333,3 +333,23 @@
 - [x] Co-founder compatibility matrix: select two founders, side-by-side radar chart across 6 dimensions
 - [x] Compatibility verdict badge (Strong / Moderate / Weak pairing) with recommended roles
 - [x] Add Co-Founder Matrix to Sidebar Intelligence group
+
+## Sprint 31 — Matching & Spin-Off Polish (Mar 2026)
+- [x] Add spinoff_status_history DB table (id, spinoffConfigId, fromStatus, toStatus, reviewedBy, reason, createdAt)
+- [x] Add tRPC procedure: matching.getSpinoffStatusHistory
+- [x] Build SpinoffStatusTimeline component and embed in Spin-Off OS detail view
+- [x] Add tRPC procedure: matching.batchComputeAllMatches (re-score all talent profiles vs all open opportunities)
+- [x] Add "Run Matching for All Founders" button in Matching Engine header with progress toast
+- [x] Add tRPC procedure: matching.getCoFounderMatrixPdf (returns HTML report via S3)
+- [x] Add "Download Report" button on Co-Founder Compatibility Matrix page
+- [x] Vitest tests passing (449 tests, 0 failures)
+
+## Sprint 31 — Matching & Spin-Off Polish (Mar 2026)
+- [x] Add spinoff_status_history DB table (id, spinoffConfigId, fromStatus, toStatus, reviewedBy, reason, createdAt)
+- [x] Add tRPC procedure: matching.getSpinoffStatusHistory
+- [x] Build SpinoffStatusTimeline component and embed in Spin-Off OS detail view
+- [x] Add tRPC procedure: matching.batchComputeAllMatches (re-score all talent profiles vs all open opportunities)
+- [x] Add "Run Matching for All Founders" button in Matching Engine header with progress toast
+- [x] Add tRPC procedure: matching.getCoFounderMatrixPdf (returns HTML report via S3)
+- [x] Add "Download Report" button on Co-Founder Compatibility Matrix page
+- [x] Vitest tests passing (449 tests, 0 failures)

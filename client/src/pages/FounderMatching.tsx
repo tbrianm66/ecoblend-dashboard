@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import {
   Shuffle, Users, Target, Zap, TrendingUp, Award,
   Network, Clock, Briefcase, ChevronRight, RefreshCw,
-  GitBranch, Star, CheckCircle2, AlertCircle,
+  GitBranch, Star, CheckCircle2, AlertCircle, Loader2,
 } from "lucide-react";
 
 // ── Score ring component ────────────────────────────────────────────────────
@@ -250,6 +250,15 @@ export default function FounderMatching() {
     onError: () => toast.error("Failed to compute co-founder compatibility"),
   });
 
+  const batchMatch = trpc.matching.batchComputeAllMatches.useMutation({
+    onSuccess: (result) => {
+      toast.success(`Batch complete — ${result.profilesProcessed} founders scored across ${result.matchesScored} matches`);
+      matchesQuery.refetch();
+      profilesQuery.refetch();
+    },
+    onError: () => toast.error("Batch matching failed"),
+  });
+
   const opportunities = oppsQuery.data ?? [];
   const profiles = profilesQuery.data ?? [];
   const matches = matchesQuery.data ?? [];
@@ -289,15 +298,28 @@ export default function FounderMatching() {
               Automatically match onboarded founders to problem statements and product opportunities using multi-dimensional compatibility scoring.
             </p>
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            className="gap-1.5 text-xs"
-            style={{ borderColor: "#3A97D3", color: "#3A97D3" }}
-            onClick={() => navigate("/spinoff")}
-          >
-            <GitBranch size={13} /> Open Spin-Off OS
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 text-xs"
+              style={{ borderColor: "#51AF37", color: "#51AF37" }}
+              onClick={() => batchMatch.mutate()}
+              disabled={batchMatch.isPending}
+            >
+              {batchMatch.isPending ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+              {batchMatch.isPending ? "Running…" : "Run Matching for All Founders"}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 text-xs"
+              style={{ borderColor: "#3A97D3", color: "#3A97D3" }}
+              onClick={() => navigate("/spinoff")}
+            >
+              <GitBranch size={13} /> Open Spin-Off OS
+            </Button>
+          </div>
         </div>
       </div>
 

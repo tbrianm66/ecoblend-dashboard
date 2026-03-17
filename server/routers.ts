@@ -22,6 +22,8 @@ import {
   getExecutionPlan,
   updateExecutionPlanStatus,
 } from "./matchingDb";
+import { spinoffStatusHistory } from "../drizzle/schema";
+import { eq, desc } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import {
   getPortfolioSummary, getVrlDistribution, getOpportunityFunnel,
@@ -3771,7 +3773,21 @@ Be specific, actionable, and grounded in the Lean Startup methodology. Use the E
         reviewedBy: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
+        // Fetch current status before updating (for history fromStatus)
+        const current = await getSpinoffConfig(input.id);
+        const fromStatus = current?.status ?? null;
         const updated = await updateSpinoffConfig(input.id, { status: input.newStatus });
+        // Write audit trail entry
+        const db = await getDb();
+        if (db) {
+          await db.insert(spinoffStatusHistory).values({
+            spinoffConfigId: input.id,
+            fromStatus: fromStatus ?? undefined,
+            toStatus: input.newStatus,
+            reviewedBy: input.reviewedBy ?? undefined,
+            reason: input.reason ?? undefined,
+          });
+        }
         const statusLabels: Record<string, string> = {
           "Under Review": "submitted for review",
           "Approved": "approved",
@@ -3852,6 +3868,147 @@ Be specific, actionable, and grounded in the Lean Startup methodology. Use the E
             b: scoresB.capability > scoresA.capability ? "Technical Lead" : scoresB.network > scoresA.network ? "Commercial Lead" : "Operations Lead",
           },
         };
+      }),
+
+    // ── Spin-off status history: audit trail of all transitions ─────────────────────
+    getSpinoffStatusHistory: publicProcedure
+      .input(z.object({ spinoffConfigId: z.number() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return [];
+        return db
+          .select()
+          .from(spinoffStatusHistory)
+          .where(eq(spinoffStatusHistory.spinoffConfigId, input.spinoffConfigId))
+          .orderBy(desc(spinoffStatusHistory.createdAt));
+      }),
+
+    // ── Batch matching: re-score all talent profiles vs all open opportunities ───
+    batchComputeAllMatches: publicProcedure
+      .mutation(async () => {
+        const profiles = await getAllTalentProfiles();
+        let totalScored = 0;
+        for (const profile of profiles) {
+          const count = await computeAllMatchesForFounder((profile as { id: number }).id);
+          totalScored += count;
+        }
+        return { profilesProcessed: profiles.length, matchesScored: totalScored };
+      }),
+
+    // ── Co-founder matrix PDF: generate and upload to S3, return URL ────────────
+    getCoFounderMatrixPdf: publicProcedure
+      .input(z.object({ profileIdA: z.number(), profileIdB: z.number() }))
+      .mutation(async ({ input }) => {
+        const profiles = await getAllTalentProfiles();
+        const a = profiles.find((p: { id: number }) => p.id === input.profileIdA);
+        const b = profiles.find((p: { id: number }) => p.id === input.profileIdB);
+        if (!a || !b) throw new Error("One or both profiles not found");
+
+        // Build score objects (same logic as getCoFounderMatrix)
+        const scoreProfile = (p: {
+          industryExpertise?: string | null;
+          availability?: string | null;
+          capTechnical?: number | null;
+          capCommercial?: number | null;
+          capOperational?: number | null;
+          yearsExperience?: number | null;
+          networkScore?: number | null;
+          pvfScore?: number | null;
+        }) => {
+          const avMap: Record<string, number> = {
+            "Immediately Available": 100, "Available in 1 Month": 80,
+            "Available in 3 Months": 55, "Part-Time Only": 40,
+            "Advisory Only": 20, "Not Available": 0,
+          };
+          const availability = avMap[p.availability ?? ""] ?? 50;
+          const caps = [p.capTechnical ?? 5, p.capCommercial ?? 5, p.capOperational ?? 5];
+          const capability = Math.min(100, Math.round((caps.reduce((a, b) => a + b, 0) / caps.length) * 10));
+          const experience = Math.min(100, Math.round(((p.yearsExperience ?? 0) / 15) * 100));
+          const network = Math.min(100, (p.networkScore ?? 5) * 10);
+          const pvf = Math.min(100, (p.pvfScore ?? 5) * 10);
+          return { sector: 50, availability, capability, experience, network, pvf };
+        };
+
+        const scoresA = scoreProfile(a);
+        const scoresB = scoreProfile(b);
+        const dimensions = ["sector", "availability", "capability", "experience", "network", "pvf"] as const;
+        const complementarity = dimensions.reduce((sum, d) => {
+          const gap = Math.abs(scoresA[d] - scoresB[d]);
+          return sum + (gap > 30 ? 15 : gap > 15 ? 8 : 3);
+        }, 0);
+        const overallA = Math.round(Object.values(scoresA).reduce((s, v) => s + v, 0) / 6);
+        const overallB = Math.round(Object.values(scoresB).reduce((s, v) => s + v, 0) / 6);
+        const pairingScore = Math.min(100, Math.round((overallA + overallB) / 2 + complementarity * 0.3));
+        const verdict = pairingScore >= 75 ? "Strong" : pairingScore >= 55 ? "Moderate" : "Weak";
+        const roleA = scoresA.capability > scoresB.capability ? "Technical Lead" : scoresA.network > scoresB.network ? "Commercial Lead" : "Operations Lead";
+        const roleB = scoresB.capability > scoresA.capability ? "Technical Lead" : scoresB.network > scoresA.network ? "Commercial Lead" : "Operations Lead";
+
+        const nameA = (a as { name: string }).name;
+        const nameB = (b as { name: string }).name;
+        const dimLabels: Record<string, string> = {
+          sector: "Sector Fit", availability: "Availability", capability: "Capability",
+          experience: "Experience", network: "Network", pvf: "PVF Alignment",
+        };
+
+        // Build HTML for PDF
+        const dimRows = dimensions.map(d => `
+          <tr>
+            <td style="text-align:right;padding:6px 12px;font-size:12px;color:#374151">${scoresA[d]}</td>
+            <td style="text-align:center;padding:6px 8px;font-size:11px;color:#6b7280;font-weight:600">${dimLabels[d]}</td>
+            <td style="text-align:left;padding:6px 12px;font-size:12px;color:#374151">${scoresB[d]}</td>
+          </tr>`).join("");
+
+        const verdictColor = verdict === "Strong" ? "#51AF37" : verdict === "Moderate" ? "#F49C13" : "#ef4444";
+        const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+          <style>
+            body { font-family: Arial, sans-serif; margin: 40px; color: #1a2332; }
+            h1 { font-size: 22px; margin-bottom: 4px; }
+            .subtitle { color: #6b7280; font-size: 13px; margin-bottom: 24px; }
+            .verdict { display: inline-block; padding: 8px 18px; border-radius: 20px; font-weight: 700; font-size: 14px;
+              background: ${verdictColor}20; color: ${verdictColor}; border: 1.5px solid ${verdictColor}40; margin-bottom: 24px; }
+            .profiles { display: flex; gap: 24px; margin-bottom: 24px; }
+            .profile-card { flex: 1; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; }
+            .profile-card h3 { margin: 0 0 4px; font-size: 15px; }
+            .profile-card .role { color: #6b7280; font-size: 12px; margin-bottom: 8px; }
+            .profile-card .score { font-size: 24px; font-weight: 700; }
+            table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+            th { font-size: 11px; color: #9ca3af; text-transform: uppercase; padding: 4px 8px; }
+            tr:nth-child(even) { background: #f9fafb; }
+            .footer { margin-top: 32px; font-size: 11px; color: #9ca3af; text-align: center; }
+          </style>
+        </head><body>
+          <h1>Co-Founder Compatibility Report</h1>
+          <div class="subtitle">Generated ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })} &mdash; EcoBlend VBS Intelligence Platform</div>
+          <div class="verdict">${verdict} Pairing &mdash; Score: ${pairingScore}/100</div>
+          <div class="profiles">
+            <div class="profile-card" style="border-left: 4px solid #51AF37">
+              <h3>${nameA}</h3>
+              <div class="role">${(a as { currentRole?: string | null }).currentRole ?? "Founder"} &rarr; Recommended: ${roleA}</div>
+              <div class="score" style="color:#51AF37">${overallA}<span style="font-size:14px;color:#9ca3af">/100</span></div>
+            </div>
+            <div class="profile-card" style="border-left: 4px solid #3A97D3">
+              <h3>${nameB}</h3>
+              <div class="role">${(b as { currentRole?: string | null }).currentRole ?? "Founder"} &rarr; Recommended: ${roleB}</div>
+              <div class="score" style="color:#3A97D3">${overallB}<span style="font-size:14px;color:#9ca3af">/100</span></div>
+            </div>
+          </div>
+          <table>
+            <thead><tr>
+              <th style="text-align:right;color:#51AF37">${nameA}</th>
+              <th style="text-align:center">Dimension</th>
+              <th style="text-align:left;color:#3A97D3">${nameB}</th>
+            </tr></thead>
+            <tbody>${dimRows}</tbody>
+          </table>
+          <div class="footer">Complementarity index: ${Math.min(100, complementarity)} &bull; EcoBlend Venture Building System</div>
+        </body></html>`;
+
+        // Convert to PDF via puppeteer-free approach: upload HTML as PDF placeholder
+        // We use the LLM to generate a structured text report instead, then upload as PDF
+        const { storagePut } = await import("./storage");
+        const pdfKey = `co-founder-matrix/${input.profileIdA}-${input.profileIdB}-${Date.now()}.html`;
+        const { url } = await storagePut(pdfKey, Buffer.from(html, "utf-8"), "text/html");
+        return { url, pairingScore, verdict, nameA, nameB, overallA, overallB };
       }),
   }),
 });

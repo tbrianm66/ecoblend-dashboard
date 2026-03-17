@@ -1995,3 +1995,18 @@ export const spinoffExecutionPlans = mysqlTable("spinoff_execution_plans", {
 });
 export type SpinoffExecutionPlan = typeof spinoffExecutionPlans.$inferSelect;
 export type InsertSpinoffExecutionPlan = typeof spinoffExecutionPlans.$inferInsert;
+
+// ── Spin-Off Status History ───────────────────────────────────────────────────────────────────────────────
+// Audit trail of every status transition on a spinoff_configuration.
+// Written automatically by the advanceSpinoffStatus procedure.
+export const spinoffStatusHistory = mysqlTable("spinoff_status_history", {
+  id:               int("id").autoincrement().primaryKey(),
+  spinoffConfigId:  int("spinoffConfigId").notNull(),
+  fromStatus:       varchar("fromStatus", { length: 64 }),
+  toStatus:         varchar("toStatus", { length: 64 }).notNull(),
+  reviewedBy:       varchar("reviewedBy", { length: 128 }),
+  reason:           text("reason"),
+  createdAt:        timestamp("createdAt").defaultNow().notNull(),
+});
+export type SpinoffStatusHistory = typeof spinoffStatusHistory.$inferSelect;
+export type InsertSpinoffStatusHistory = typeof spinoffStatusHistory.$inferInsert;

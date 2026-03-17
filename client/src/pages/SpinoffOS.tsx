@@ -257,6 +257,7 @@ export default function SpinoffOS() {
   // Active config / plan
   const [activeConfigId, setActiveConfigId] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<"wizard" | "list" | "detail">("list");
+  const [showHistory, setShowHistory] = useState(false);
 
   // Queries
   const oppsQuery = trpc.poi.listOpportunities.useQuery();
@@ -302,6 +303,10 @@ export default function SpinoffOS() {
   const activeConfigQuery = trpc.matching.getSpinoffConfig.useQuery(
     { id: activeConfigId! },
     { enabled: !!activeConfigId }
+  );
+  const historyQuery = trpc.matching.getSpinoffStatusHistory.useQuery(
+    { spinoffConfigId: activeConfigId! },
+    { enabled: !!activeConfigId && showHistory }
   );
 
   const opportunities = oppsQuery.data ?? [];
@@ -727,6 +732,51 @@ export default function SpinoffOS() {
         </Dialog>
 
         <div className="p-8">
+          {/* Status History Timeline */}
+          <div className="mb-6">
+            <button
+              className="flex items-center gap-2 text-xs font-semibold text-gray-400 hover:text-gray-700 transition-colors mb-3"
+              onClick={() => setShowHistory(h => !h)}
+            >
+              <Clock size={13} />
+              Status History
+              <ChevronRight size={12} className={`transition-transform ${showHistory ? "rotate-90" : ""}`} />
+            </button>
+            {showHistory && (
+              <div className="bg-gray-50 rounded-xl border p-4 mb-4" style={{ borderColor: "#e5e7eb" }}>
+                {historyQuery.isLoading && <p className="text-xs text-gray-400">Loading history…</p>}
+                {historyQuery.data && historyQuery.data.length === 0 && (
+                  <p className="text-xs text-gray-400">No status transitions recorded yet.</p>
+                )}
+                {historyQuery.data && historyQuery.data.length > 0 && (
+                  <div className="space-y-3">
+                    {historyQuery.data.map((entry: { id: number; fromStatus: string | null; toStatus: string; reviewedBy: string | null; reason: string | null; createdAt: Date }) => {
+                      const statusColors: Record<string, string> = {
+                        Draft: "#9ca3af", "Under Review": "#F49C13", Approved: "#51AF37", Rejected: "#ef4444", Launched: "#3A97D3",
+                      };
+                      return (
+                        <div key={entry.id} className="flex items-start gap-3">
+                          <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: statusColors[entry.toStatus] ?? "#9ca3af" }} />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {entry.fromStatus && (
+                                <span className="text-xs text-gray-400">{entry.fromStatus} →</span>
+                              )}
+                              <span className="text-xs font-semibold" style={{ color: statusColors[entry.toStatus] ?? "#9ca3af" }}>{entry.toStatus}</span>
+                              {entry.reviewedBy && <span className="text-xs text-gray-400">by {entry.reviewedBy}</span>}
+                              <span className="text-xs text-gray-300 ml-auto">{new Date(entry.createdAt).toLocaleString()}</span>
+                            </div>
+                            {entry.reason && <p className="text-xs text-gray-500 mt-0.5 italic">{entry.reason}</p>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           {planQuery.isLoading && (
             <div className="flex items-center justify-center py-20">
               <Loader2 size={24} className="animate-spin text-gray-300" />

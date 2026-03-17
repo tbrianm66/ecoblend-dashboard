@@ -13,7 +13,9 @@ import { useLocation } from "wouter";
 import {
   Users, Shuffle, CheckCircle2, AlertTriangle, XCircle,
   TrendingUp, Zap, Globe, Clock, Award, Target, ArrowRight,
+  Loader2, Download,
 } from "lucide-react";
+import { toast } from "sonner";
 
 // ── Radar Chart (pure SVG, no external library) ──────────────────────────────
 const DIMS = [
@@ -204,6 +206,15 @@ export default function CoFounderMatrix() {
 
   const matrix = matrixQuery.data;
 
+  const downloadPdf = trpc.matching.getCoFounderMatrixPdf.useMutation({
+    onSuccess: (result) => {
+      // Open the HTML report in a new tab (user can print to PDF from there)
+      window.open(result.url, "_blank");
+      toast.success(`Report ready — ${result.nameA} & ${result.nameB} (${result.verdict} pairing, ${result.pairingScore}/100)`);
+    },
+    onError: () => toast.error("Failed to generate report"),
+  });
+
   const COLOR_A = "#51AF37";
   const COLOR_B = "#3A97D3";
 
@@ -229,6 +240,19 @@ export default function CoFounderMatrix() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {profileIdA && profileIdB && profileIdA !== profileIdB && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 text-xs"
+                style={{ borderColor: "#F49C13", color: "#F49C13" }}
+                onClick={() => downloadPdf.mutate({ profileIdA: profileIdA!, profileIdB: profileIdB! })}
+                disabled={downloadPdf.isPending}
+              >
+                {downloadPdf.isPending ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
+                {downloadPdf.isPending ? "Generating…" : "Download Report"}
+              </Button>
+            )}
             <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => navigate("/matching")}>
               <Shuffle size={13} /> Matching Engine
             </Button>
