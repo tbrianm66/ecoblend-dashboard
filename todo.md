@@ -390,3 +390,15 @@
 - [x] Add layer filter active banner in Contracts tab with Clear button
 - [x] Add Risk Owner Assignments summary panel to Legal Risk Map tab (grouped by owner, open/monitoring/mitigated counts, progress bar)
 - [x] 449 tests passing, 0 TypeScript errors
+
+## Sprint 35 — Legal Module Document & Escalation Features (Mar 2026)
+- [x] Add documentUrl and documentKey columns to contractTypeRegistry table (migration 0019)
+- [x] Add tRPC procedures: uploadRegistryDocument, removeRegistryDocument (S3 upload/delete, saves url/key to DB)
+- [x] Add file upload button and document viewer link to each Architecture Map contract row
+- [x] Add inline date picker to Architecture Map contract type rows (updateExpiryDate procedure)
+- [x] Add legalRiskEscalations table: id, riskItemId, escalatedBy, reason, status, createdAt (migration 0019)
+- [x] Add tRPC procedures: escalateRisk (inserts escalation row, sends owner notification), getEscalations, getAllEscalations
+- [x] Add Escalate button to High/Medium Open risk items in Legal Risk Map tab (with note input)
+- [x] Show escalation history (escalated by, reason, date) on each risk item card (collapsible)
+- [x] Escalation count badge on risk items with prior escalations
+- [x] 449 tests passing, 0 TypeScript errors

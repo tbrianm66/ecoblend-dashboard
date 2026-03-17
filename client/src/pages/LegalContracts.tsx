@@ -460,6 +460,11 @@ function ArchitectureMapTab({ onLayerFilter }: { onLayerFilter?: (layerKey: stri
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editStatus, setEditStatus] = useState<string>("");
   const [editOwner, setEditOwner] = useState<string>("");
+  const [editExpiryId, setEditExpiryId] = useState<number | null>(null);
+  const [editExpiry, setEditExpiry] = useState<string>("");
+  const [uploadingId, setUploadingId] = useState<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingUploadId, setPendingUploadId] = useState<number | null>(null);
 
   const updateMutation = trpc.contracts.updateContractStatus.useMutation({
     onSuccess: () => {
@@ -469,6 +474,49 @@ function ArchitectureMapTab({ onLayerFilter }: { onLayerFilter?: (layerKey: stri
     },
     onError: (err) => toast.error(`Update failed: ${err.message}`),
   });
+
+  const updateMetaMutation = trpc.contracts.updateContractMeta.useMutation({
+    onSuccess: () => {
+      utils.contracts.getContractRegistry.invalidate({});
+      toast.success("Expiry date saved");
+      setEditExpiryId(null);
+    },
+    onError: (err) => toast.error(`Update failed: ${err.message}`),
+  });
+
+  const uploadDocMutation = trpc.contracts.uploadRegistryDocument.useMutation({
+    onSuccess: (result) => {
+      utils.contracts.getContractRegistry.invalidate({});
+      toast.success("Document uploaded successfully");
+      setUploadingId(null);
+      setPendingUploadId(null);
+    },
+    onError: (err) => { toast.error(`Upload failed: ${err.message}`); setUploadingId(null); },
+  });
+
+  const removeDocMutation = trpc.contracts.removeRegistryDocument.useMutation({
+    onSuccess: () => { utils.contracts.getContractRegistry.invalidate({}); toast.success("Document removed"); },
+    onError: (err) => toast.error(`Remove failed: ${err.message}`),
+  });
+
+  const handleFileSelect = (contractId: number) => {
+    setPendingUploadId(contractId);
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !pendingUploadId) return;
+    if (file.size > 16 * 1024 * 1024) { toast.error("File must be under 16 MB"); return; }
+    setUploadingId(pendingUploadId);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = (reader.result as string).split(",")[1];
+      uploadDocMutation.mutate({ id: pendingUploadId, fileName: file.name, mimeType: file.type || "application/pdf", base64Data: base64 });
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
 
   if (layersLoading || registryLoading) {
     return <div className="flex items-center justify-center py-20"><Loader2 className="animate-spin" size={24} style={{ color: "#51AF37" }} /></div>;
@@ -483,6 +531,9 @@ function ArchitectureMapTab({ onLayerFilter }: { onLayerFilter?: (layerKey: stri
 
   return (
     <div className="space-y-6">
+      {/* Hidden file input for document upload */}
+      <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.txt" className="hidden" onChange={handleFileChange} />
+
       {/* Summary KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {[
@@ -551,6 +602,58 @@ function ArchitectureMapTab({ onLayerFilter }: { onLayerFilter?: (layerKey: stri
                     {ct.owner && <p className="text-xs text-gray-400 mt-0.5" style={{ fontFamily: "'Nunito', sans-serif" }}>Owner: {ct.owner}</p>}
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
+                    {/* Expiry date editor */}
+                    {editExpiryId === ct.id ? (
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="date"
+                          className="text-xs rounded-lg border px-2 py-1"
+                          style={{ borderColor: "#e5e7eb", fontFamily: "'Nunito', sans-serif" }}
+                          value={editExpiry}
+                          onChange={e => setEditExpiry(e.target.value)}
+                        />
+                        <button
+                          onClick={() => updateMetaMutation.mutate({ id: ct.id, expiryDate: editExpiry })}
+                          className="text-xs font-semibold px-2 py-1 rounded-lg text-white"
+                          style={{ background: "#3A97D3" }}
+                        >
+                          {updateMetaMutation.isPending ? <Loader2 size={10} className="animate-spin" /> : <CheckCheck size={12} />}
+                        </button>
+                        <button onClick={() => setEditExpiryId(null)} className="text-xs text-gray-400 hover:text-gray-600"><XCircle size={12} /></button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => { setEditExpiryId(ct.id); setEditExpiry(ct.expiryDate ? String(ct.expiryDate) : ""); }}
+                        className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg hover:bg-gray-100"
+                        style={{ color: ct.expiryDate ? "#3A97D3" : "#9ca3af", fontFamily: "'Nunito', sans-serif" }}
+                        title={ct.expiryDate ? `Expires: ${ct.expiryDate}` : "Set expiry date"}
+                      >
+                        <Clock size={10} />
+                        {ct.expiryDate ? String(ct.expiryDate) : "Set expiry"}
+                      </button>
+                    )}
+
+                    {/* Document upload/view */}
+                    {ct.documentUrl ? (
+                      <div className="flex items-center gap-1">
+                        <a href={ct.documentUrl} target="_blank" rel="noopener noreferrer" className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-blue-50" title="View document">
+                          <Eye size={12} style={{ color: "#3A97D3" }} />
+                        </a>
+                        <button onClick={() => removeDocMutation.mutate({ id: ct.id })} className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-red-50" title="Remove document">
+                          <Trash2 size={12} style={{ color: "#ef4444" }} />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleFileSelect(ct.id)}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-gray-100"
+                        title="Attach document"
+                        disabled={uploadingId === ct.id}
+                      >
+                        {uploadingId === ct.id ? <Loader2 size={12} className="animate-spin" style={{ color: "#51AF37" }} /> : <Paperclip size={12} style={{ color: "#9ca3af" }} />}
+                      </button>
+                    )}
+
                     {editingId === ct.id ? (
                       <div className="flex items-center gap-2">
                         <select
@@ -601,10 +704,14 @@ function ArchitectureMapTab({ onLayerFilter }: { onLayerFilter?: (layerKey: stri
 // ── Legal Risk Map Tab ────────────────────────────────────────────────────────
 function LegalRiskMapTab() {
   const { data: risks = [], isLoading } = trpc.contracts.getLegalRiskMap.useQuery();
+  const { data: escalations = [] } = trpc.contracts.getAllEscalations.useQuery();
   const utils = trpc.useUtils();
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editStatus, setEditStatus] = useState<string>("");
   const [editOwner, setEditOwner] = useState<string>("");
+  const [escalatingId, setEscalatingId] = useState<number | null>(null);
+  const [escalateNote, setEscalateNote] = useState<string>("");
+  const [showHistoryId, setShowHistoryId] = useState<number | null>(null);
 
   const updateMutation = trpc.contracts.updateRiskStatus.useMutation({
     onSuccess: () => {
@@ -613,6 +720,17 @@ function LegalRiskMapTab() {
       setEditingId(null);
     },
     onError: (err) => toast.error(`Update failed: ${err.message}`),
+  });
+
+  const escalateMutation = trpc.contracts.escalateRisk.useMutation({
+    onSuccess: () => {
+      utils.contracts.getLegalRiskMap.invalidate();
+      utils.contracts.getEscalations.invalidate();
+      toast.success("Risk escalated — owner notified");
+      setEscalatingId(null);
+      setEscalateNote("");
+    },
+    onError: (err) => toast.error(`Escalation failed: ${err.message}`),
   });
 
   if (isLoading) {
@@ -767,6 +885,49 @@ function LegalRiskMapTab() {
                       <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: `${RISK_STATUS_COLOURS[risk.status ?? "Open"]}15`, color: RISK_STATUS_COLOURS[risk.status ?? "Open"], fontFamily: "'Nunito', sans-serif", border: `1px solid ${RISK_STATUS_COLOURS[risk.status ?? "Open"]}30` }}>
                         {risk.status}
                       </span>
+                      {/* Escalation history toggle */}
+                      {escalations.filter(e => e.riskItemId === risk.id).length > 0 && (
+                        <button
+                          onClick={() => setShowHistoryId(showHistoryId === risk.id ? null : risk.id)}
+                          className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg hover:bg-orange-50"
+                          style={{ color: "#dc2626", fontFamily: "'Nunito', sans-serif" }}
+                          title="View escalation history"
+                        >
+                          <AlertTriangle size={10} />
+                          {escalations.filter(e => e.riskItemId === risk.id).length}
+                        </button>
+                      )}
+                      {/* Escalate button — only for High/Medium Open risks */}
+                      {(risk.riskZone === "High" || risk.riskZone === "Medium") && risk.status !== "Mitigated" && risk.status !== "Closed" && (
+                        escalatingId === risk.id ? (
+                          <div className="flex items-center gap-1">
+                            <input
+                              className="text-xs rounded-lg border px-2 py-1 w-32"
+                              style={{ borderColor: "#fca5a5", fontFamily: "'Nunito', sans-serif" }}
+                              placeholder="Escalation note"
+                              value={escalateNote}
+                              onChange={e => setEscalateNote(e.target.value)}
+                            />
+                            <button
+                              onClick={() => escalateMutation.mutate({ riskItemId: risk.id, escalatedBy: "Legal Team", reason: escalateNote || undefined })}
+                              className="text-xs font-semibold px-2 py-1 rounded-lg text-white"
+                              style={{ background: "#dc2626" }}
+                            >
+                              {escalateMutation.isPending ? <Loader2 size={10} className="animate-spin" /> : "Escalate"}
+                            </button>
+                            <button onClick={() => setEscalatingId(null)} className="text-xs text-gray-400 hover:text-gray-600"><XCircle size={12} /></button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setEscalatingId(risk.id)}
+                            className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg hover:bg-red-50"
+                            style={{ color: "#dc2626", fontFamily: "'Nunito', sans-serif", border: "1px solid #fca5a5" }}
+                            title="Escalate this risk"
+                          >
+                            <AlertTriangle size={10} /> Escalate
+                          </button>
+                        )
+                      )}
                       <button onClick={() => { setEditingId(risk.id); setEditStatus(risk.status ?? "Open"); setEditOwner(risk.owner ?? ""); }} className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-gray-100">
                         <Edit3 size={12} style={{ color: "#6b7280" }} />
                       </button>
@@ -802,6 +963,23 @@ function LegalRiskMapTab() {
 
               {risk.owner && (
                 <div className="mt-2 ml-12 text-xs text-gray-400" style={{ fontFamily: "'Nunito', sans-serif" }}>Owner: <span className="font-semibold text-gray-600">{risk.owner}</span></div>
+              )}
+
+              {/* Escalation history */}
+              {showHistoryId === risk.id && (
+                <div className="mt-3 ml-12 rounded-lg border p-3 space-y-2" style={{ borderColor: "#fca5a5", background: "#fff5f5" }}>
+                  <div className="text-xs font-bold text-red-700 mb-2" style={{ fontFamily: "'Nunito', sans-serif" }}>Escalation History</div>
+                  {escalations.filter(e => e.riskItemId === risk.id).map((esc, i) => (
+                    <div key={i} className="flex items-start gap-2 text-xs" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                      <AlertTriangle size={10} style={{ color: "#dc2626", marginTop: 2, flexShrink: 0 }} />
+                      <div>
+                        <span className="font-semibold text-red-700">{esc.escalatedBy}</span>
+                        {esc.reason && <span className="text-red-600"> — {esc.reason}</span>}
+                        <span className="text-gray-400 ml-2">{new Date(esc.createdAt ?? "").toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           </div>

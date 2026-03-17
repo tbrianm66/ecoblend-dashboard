@@ -2038,6 +2038,8 @@ export const contractTypeRegistry = mysqlTable("contract_type_registry", {
   owner:        varchar("owner", { length: 128 }),
   notes:        text("notes"),
   expiryDate:   date("expiryDate"),
+  documentUrl:  text("documentUrl"),
+  documentKey:  varchar("documentKey", { length: 512 }),
   createdAt:    timestamp("createdAt").defaultNow().notNull(),
   updatedAt:    timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -2061,3 +2063,17 @@ export const legalRiskItems = mysqlTable("legal_risk_items", {
 });
 export type LegalRiskItem = typeof legalRiskItems.$inferSelect;
 export type InsertLegalRiskItem = typeof legalRiskItems.$inferInsert;
+
+// ── Legal Risk Escalations ────────────────────────────────────────────────────────────────────────────────
+// Audit trail for escalated legal risks.
+export const legalRiskEscalations = mysqlTable("legal_risk_escalations", {
+  id:          int("id").autoincrement().primaryKey(),
+  riskItemId:  int("riskItemId").notNull(),
+  escalatedBy: varchar("escalatedBy", { length: 128 }).notNull(),
+  reason:      text("reason"),
+  notifiedAt:  timestamp("notifiedAt").defaultNow().notNull(),
+  resolvedAt:  timestamp("resolvedAt"),
+  createdAt:   timestamp("createdAt").defaultNow().notNull(),
+});
+export type LegalRiskEscalation = typeof legalRiskEscalations.$inferSelect;
+export type InsertLegalRiskEscalation = typeof legalRiskEscalations.$inferInsert;

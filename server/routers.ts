@@ -30,6 +30,7 @@ import {
   contractLayers,
   contractTypeRegistry,
   legalRiskItems,
+  legalRiskEscalations,
   type SpinoffConfiguration,
   type ProductOpportunity,
 } from "../drizzle/schema";
@@ -795,6 +796,92 @@ Return a JSON object with exactly these fields:
           .set(updates)
           .where(eq(contractTypeRegistry.id, input.id));
         return { success: true };
+      }),
+
+    // Upload a contract document to S3 and link it to the contract type registry entry
+    uploadRegistryDocument: publicProcedure
+      .input(z.object({
+        id: z.number(),
+        fileName: z.string(),
+        mimeType: z.string().default("application/pdf"),
+        base64Data: z.string(), // base64-encoded file content
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB unavailable");
+        const buffer = Buffer.from(input.base64Data, "base64");
+        const suffix = nanoid(8);
+        const fileKey = `contracts/${input.id}-${suffix}-${input.fileName}`;
+        const { url } = await storagePut(fileKey, buffer, input.mimeType);
+        await db.update(contractTypeRegistry)
+          .set({ documentUrl: url, documentKey: fileKey })
+          .where(eq(contractTypeRegistry.id, input.id));
+        return { success: true, url, fileKey };
+      }),
+
+    // Remove a contract document from a contract type registry entry
+    removeRegistryDocument: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB unavailable");
+        await db.update(contractTypeRegistry)
+          .set({ documentUrl: null, documentKey: null })
+          .where(eq(contractTypeRegistry.id, input.id));
+        return { success: true };
+      }),
+
+    // Escalate a legal risk item: sets status to Escalated, inserts escalation row, notifies owner
+    escalateRisk: publicProcedure
+      .input(z.object({
+        riskItemId: z.number(),
+        escalatedBy: z.string(),
+        reason: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("DB unavailable");
+        // Fetch the risk item for context
+        const [risk] = await db.select().from(legalRiskItems)
+          .where(eq(legalRiskItems.id, input.riskItemId));
+        if (!risk) throw new Error("Risk item not found");
+        // Update status to Monitoring (escalated)
+        await db.update(legalRiskItems)
+          .set({ status: "Monitoring" })
+          .where(eq(legalRiskItems.id, input.riskItemId));
+        // Insert escalation audit row
+        await db.insert(legalRiskEscalations).values({
+          riskItemId: input.riskItemId,
+          escalatedBy: input.escalatedBy,
+          reason: input.reason ?? null,
+          notifiedAt: new Date(),
+        });
+        // Notify owner
+        await notifyOwner({
+          title: `⚠️ Legal Risk Escalated: ${risk.riskArea}`,
+          content: `Risk area "${risk.riskArea}" (${risk.riskZone} zone) has been escalated by ${input.escalatedBy}.\n\nReason: ${input.reason ?? "Not specified"}\n\nMitigation: ${risk.mitigation ?? "None recorded"}`,
+        });
+        return { success: true };
+      }),
+
+    // Get escalation history for a risk item
+    getEscalations: publicProcedure
+      .input(z.object({ riskItemId: z.number() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return [];
+        return db.select().from(legalRiskEscalations)
+          .where(eq(legalRiskEscalations.riskItemId, input.riskItemId))
+          .orderBy(desc(legalRiskEscalations.createdAt));
+      }),
+
+    // Get all escalations (for overview)
+    getAllEscalations: publicProcedure
+      .query(async () => {
+        const db = await getDb();
+        if (!db) return [];
+        return db.select().from(legalRiskEscalations)
+          .orderBy(desc(legalRiskEscalations.createdAt));
       }),
   }),
 
