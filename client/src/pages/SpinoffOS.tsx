@@ -19,13 +19,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Streamdown } from "streamdown";
 import {
   GitBranch, ChevronRight, ChevronLeft, Zap, CheckCircle2,
   Target, Users, Settings, Rocket, FileText, RefreshCw,
   Download, Eye, Edit3, Package, Clock, TrendingUp, DollarSign,
-  Award, Shuffle, ArrowRight, Loader2,
+  Award, Shuffle, ArrowRight, Loader2, CheckSquare, XCircle, PlayCircle,
 } from "lucide-react";
 
 // ── Step indicator ──────────────────────────────────────────────────────────
@@ -282,6 +284,25 @@ export default function SpinoffOS() {
     },
     onError: () => toast.error("Failed to generate execution plan"),
   });
+
+  const advanceStatus = trpc.matching.advanceSpinoffStatus.useMutation({
+    onSuccess: (result) => {
+      toast.success(`Status updated to ${result.newStatus}`);
+      configsQuery.refetch();
+      activeConfigQuery.refetch();
+    },
+    onError: () => toast.error("Failed to update status"),
+  });
+
+  const [showStatusDialog, setShowStatusDialog] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState<string | null>(null);
+  const [statusReason, setStatusReason] = useState("");
+  const [reviewerName, setReviewerName] = useState("");
+
+  const activeConfigQuery = trpc.matching.getSpinoffConfig.useQuery(
+    { id: activeConfigId! },
+    { enabled: !!activeConfigId }
+  );
 
   const opportunities = oppsQuery.data ?? [];
   const profiles = profilesQuery.data ?? [];
@@ -604,25 +625,106 @@ export default function SpinoffOS() {
   // ── Detail view (execution plan) ─────────────────────────────────────────
   if (viewMode === "detail" && activeConfigId) {
     const plan = planQuery.data;
+    const activeConfig = activeConfigQuery.data;
+    const currentStatus = activeConfig?.status ?? "Draft";
+
+    const STATUS_FLOW: Record<string, { next: string; label: string; icon: typeof CheckSquare; color: string }[]> = {
+      Draft:          [{ next: "Under Review", label: "Submit for Review", icon: Eye,          color: "#F49C13" }],
+      "Under Review": [{ next: "Approved",     label: "Approve",          icon: CheckSquare,  color: "#51AF37" },
+                       { next: "Rejected",     label: "Reject",           icon: XCircle,      color: "#ef4444" }],
+      Approved:       [{ next: "Launched",     label: "Mark as Launched", icon: PlayCircle,   color: "#3A97D3" }],
+      Rejected:       [{ next: "Draft",        label: "Reopen as Draft",  icon: RefreshCw,    color: "#9ca3af" }],
+      Launched:       [],
+    };
+    const nextActions = STATUS_FLOW[currentStatus] ?? [];
+    const statusColors: Record<string, string> = {
+      Draft: "#9ca3af", "Under Review": "#F49C13", Approved: "#51AF37", Rejected: "#ef4444", Launched: "#3A97D3",
+    };
+
     return (
       <div className="flex-1 overflow-y-auto">
         <div className="px-8 py-6 border-b bg-white" style={{ borderColor: "#e5e7eb" }}>
-          <div className="flex items-center justify-between">
+          <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#3A97D315", color: "#3A97D3" }}>
                   Spin-Off OS
                 </span>
+                <span
+                  className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                  style={{ background: `${statusColors[currentStatus]}15`, color: statusColors[currentStatus] }}
+                >
+                  {currentStatus}
+                </span>
               </div>
               <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
-                Execution Plan
+                {activeConfig?.proposedVentureName ?? "Execution Plan"}
               </h1>
+              <p className="text-sm text-gray-400 mt-0.5">{activeConfig?.proposedTagline ?? ""}</p>
             </div>
-            <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => setViewMode("list")}>
-              <ChevronLeft size={13} /> All Spin-Offs
-            </Button>
+            <div className="flex items-center gap-2">
+              {nextActions.map(action => {
+                const ActionIcon = action.icon;
+                return (
+                  <Button
+                    key={action.next}
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 text-xs"
+                    style={{ borderColor: action.color, color: action.color }}
+                    onClick={() => { setPendingStatus(action.next); setStatusReason(""); setReviewerName(""); setShowStatusDialog(true); }}
+                    disabled={advanceStatus.isPending}
+                  >
+                    <ActionIcon size={13} /> {action.label}
+                  </Button>
+                );
+              })}
+              <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => setViewMode("list")}>
+                <ChevronLeft size={13} /> All Spin-Offs
+              </Button>
+            </div>
           </div>
         </div>
+
+        {/* Status Transition Dialog */}
+        <Dialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Advance to {pendingStatus}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div>
+                <Label className="text-xs font-semibold text-gray-500 mb-1 block">Reviewed by (optional)</Label>
+                <Input placeholder="Your name or role" value={reviewerName} onChange={e => setReviewerName(e.target.value)} />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-gray-500 mb-1 block">Reason / notes (optional)</Label>
+                <Textarea placeholder="Add context for this decision…" value={statusReason} onChange={e => setStatusReason(e.target.value)} rows={3} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" size="sm" onClick={() => setShowStatusDialog(false)}>Cancel</Button>
+              <Button
+                size="sm"
+                style={{ background: statusColors[pendingStatus ?? ""] ?? "#1a2332", color: "white" }}
+                disabled={advanceStatus.isPending}
+                onClick={() => {
+                  if (!pendingStatus) return;
+                  advanceStatus.mutate({
+                    id: activeConfigId,
+                    newStatus: pendingStatus as "Draft" | "Under Review" | "Approved" | "Rejected" | "Launched",
+                    reason: statusReason || undefined,
+                    reviewedBy: reviewerName || undefined,
+                  });
+                  setShowStatusDialog(false);
+                }}
+              >
+                {advanceStatus.isPending ? <Loader2 size={13} className="animate-spin mr-1" /> : null}
+                Confirm
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <div className="p-8">
           {planQuery.isLoading && (

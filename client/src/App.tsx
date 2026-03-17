@@ -39,6 +39,7 @@ import VentureProjectManagement from "./pages/VentureProjectManagement";
 import CommandCentre from "./pages/CommandCentre";
 import FounderMatching from "./pages/FounderMatching";
 import SpinoffOS from "./pages/SpinoffOS";
+import CoFounderMatrix from "./pages/CoFounderMatrix";
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
@@ -76,6 +77,7 @@ function Router() {
       <Route path="/command-centre" component={CommandCentre} />
       <Route path="/matching" component={FounderMatching} />
       <Route path="/spinoff" component={SpinoffOS} />
+      <Route path="/co-founder-matrix" component={CoFounderMatrix} />
       <Route component={Home} />
     </Switch>
   );

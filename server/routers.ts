@@ -5,6 +5,7 @@ import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { storagePut } from "./storage";
 import { invokeLLM } from "./_core/llm";
+import { notifyOwner } from "./_core/notification";
 import {
   computeAndSaveMatchScore,
   computeAllMatchesForOpportunity,
@@ -3748,6 +3749,110 @@ Be specific, actionable, and grounded in the Lean Startup methodology. Use the E
         reviewedBy: z.string().optional(),
       }))
       .mutation(({ input }) => updateExecutionPlanStatus(input.id, input.status, input.reviewedBy)),
+
+    // ── Auto-trigger: compute all matches for a newly onboarded founder ───────
+    autoTriggerMatchingForFounder: publicProcedure
+      .input(z.object({ talentProfileId: z.number() }))
+      .mutation(async ({ input }) => {
+        const count = await computeAllMatchesForFounder(input.talentProfileId);
+        await notifyOwner({
+          title: "Matching Engine: New Founder Scored",
+          content: `Talent profile #${input.talentProfileId} has been scored against ${count} opportunities. Visit the Matching Engine to review results.`,
+        });
+        return { matchesComputed: count };
+      }),
+
+    // ── Spin-Off status workflow ──────────────────────────────────────────────
+    advanceSpinoffStatus: publicProcedure
+      .input(z.object({
+        id: z.number(),
+        newStatus: z.enum(["Draft", "Under Review", "Approved", "Rejected", "Launched"]),
+        reason: z.string().optional(),
+        reviewedBy: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const updated = await updateSpinoffConfig(input.id, { status: input.newStatus });
+        const statusLabels: Record<string, string> = {
+          "Under Review": "submitted for review",
+          "Approved": "approved",
+          "Rejected": "rejected",
+          "Launched": "launched as a live venture",
+        };
+        const label = statusLabels[input.newStatus] ?? `moved to ${input.newStatus}`;
+        await notifyOwner({
+          title: `Spin-Off OS: Configuration #${input.id} ${label}`,
+          content: [
+            `Status changed to: **${input.newStatus}**`,
+            input.reviewedBy ? `Reviewed by: ${input.reviewedBy}` : "",
+            input.reason ? `Reason: ${input.reason}` : "",
+          ].filter(Boolean).join("\n"),
+        });
+        return { success: true, newStatus: input.newStatus };
+      }),
+
+    // ── Co-founder compatibility matrix: compare two profiles ────────────────
+    getCoFounderMatrix: publicProcedure
+      .input(z.object({ profileIdA: z.number(), profileIdB: z.number(), opportunityId: z.number().optional() }))
+      .query(async ({ input }) => {
+        const profiles = await getAllTalentProfiles();
+        const a = profiles.find((p: { id: number }) => p.id === input.profileIdA);
+        const b = profiles.find((p: { id: number }) => p.id === input.profileIdB);
+        if (!a || !b) return null;
+
+        // Compute individual scores for both profiles
+        const scoreProfile = (p: {
+          industryExpertise?: string | null;
+          availability?: string | null;
+          capTechnical?: number | null;
+          capCommercial?: number | null;
+          capOperational?: number | null;
+          yearsExperience?: number | null;
+          networkScore?: number | null;
+          pvfScore?: number | null;
+        }) => {
+          const sector = 50; // neutral without specific opportunity
+          const avMap: Record<string, number> = {
+            "Immediately Available": 100, "Available in 1 Month": 80,
+            "Available in 3 Months": 55, "Part-Time Only": 40,
+            "Advisory Only": 20, "Not Available": 0,
+          };
+          const availability = avMap[p.availability ?? ""] ?? 50;
+          const caps = [p.capTechnical ?? 5, p.capCommercial ?? 5, p.capOperational ?? 5];
+          const capability = Math.min(100, Math.round((caps.reduce((a, b) => a + b, 0) / caps.length) * 10));
+          const experience = Math.min(100, Math.round(((p.yearsExperience ?? 0) / 15) * 100));
+          const network = Math.min(100, (p.networkScore ?? 5) * 10);
+          const pvf = Math.min(100, (p.pvfScore ?? 5) * 10);
+          return { sector, availability, capability, experience, network, pvf };
+        };
+
+        const scoresA = scoreProfile(a);
+        const scoresB = scoreProfile(b);
+
+        // Complementarity: how well do they fill each other's gaps?
+        const dimensions = ["sector", "availability", "capability", "experience", "network", "pvf"] as const;
+        const complementarity = dimensions.reduce((sum, d) => {
+          const gap = Math.abs(scoresA[d] - scoresB[d]);
+          return sum + (gap > 30 ? 15 : gap > 15 ? 8 : 3); // reward complementary gaps
+        }, 0);
+
+        const overallA = Math.round(Object.values(scoresA).reduce((s, v) => s + v, 0) / 6);
+        const overallB = Math.round(Object.values(scoresB).reduce((s, v) => s + v, 0) / 6);
+        const pairingScore = Math.min(100, Math.round((overallA + overallB) / 2 + complementarity * 0.3));
+
+        const verdict = pairingScore >= 75 ? "Strong" : pairingScore >= 55 ? "Moderate" : "Weak";
+
+        return {
+          profileA: { id: a.id, name: (a as { name: string }).name, role: (a as { currentRole?: string | null }).currentRole ?? "Founder", scores: scoresA, overall: overallA },
+          profileB: { id: b.id, name: (b as { name: string }).name, role: (b as { currentRole?: string | null }).currentRole ?? "Founder", scores: scoresB, overall: overallB },
+          pairingScore,
+          verdict,
+          complementarity: Math.min(100, complementarity),
+          recommendedRoles: {
+            a: scoresA.capability > scoresB.capability ? "Technical Lead" : scoresA.network > scoresB.network ? "Commercial Lead" : "Operations Lead",
+            b: scoresB.capability > scoresA.capability ? "Technical Lead" : scoresB.network > scoresA.network ? "Commercial Lead" : "Operations Lead",
+          },
+        };
+      }),
   }),
 });
 

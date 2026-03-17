@@ -13,7 +13,7 @@ import {
   Award, Heart, ChevronRight, Rocket, MessageSquare, BookOpen,
   Bell, X, AlertTriangle, FileText, Newspaper, Briefcase,
   Lightbulb, TestTube2, UserCircle2, FolderOpen, Globe,
-  Building2, ChevronDown, GraduationCap, Search, PieChart, Leaf, Database, UserCheck, Package, ClipboardList, Zap, Shuffle, GitBranch
+  Building2, ChevronDown, GraduationCap, Search, PieChart, Leaf, Database, UserCheck, Package, ClipboardList, Zap, Shuffle, GitBranch, Users2
 } from "lucide-react";
 import { useVentures } from "@/contexts/VentureContext";
 
@@ -23,7 +23,7 @@ const iconMap: Record<string, React.ComponentType<{ size?: number; className?: s
   DollarSign, Layers, Lock, Users, Megaphone, BarChart2,
   Award, Heart, Rocket, MessageSquare, BookOpen, FileText,
   Newspaper, Briefcase, Lightbulb, TestTube2, UserCircle2,
-  FolderOpen, Globe, Building2, GraduationCap, Search, PieChart, Leaf, Database, UserCheck, Package, ClipboardList, Zap, Shuffle, GitBranch,
+  FolderOpen, Globe, Building2, GraduationCap, Search, PieChart, Leaf, Database, UserCheck, Package, ClipboardList, Zap, Shuffle, GitBranch, Users2,
 };
 
 interface NavItem {
@@ -120,6 +120,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: "pm",          label: "Project Management",   icon: "ClipboardList",   href: "/project-management" },
       { id: "matching",    label: "Matching Engine",       icon: "Shuffle",         href: "/matching" },
       { id: "spinoff",     label: "Spin-Off OS",           icon: "GitBranch",       href: "/spinoff" },
+      { id: "co-founder",  label: "Co-Founder Matrix",    icon: "Users2",          href: "/co-founder-matrix" },
     ],
   },
 ];

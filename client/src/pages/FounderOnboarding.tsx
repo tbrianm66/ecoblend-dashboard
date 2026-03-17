@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { nanoid } from "nanoid";
+import { trpc } from "@/lib/trpc";
 import {
   ChevronRight, ChevronLeft, CheckCircle2, Rocket, FlaskConical,
   TrendingUp, Users, Target, BookOpen, Lightbulb, Building2, Shuffle, GitBranch
@@ -125,6 +126,7 @@ interface FormData {
 
 export default function FounderOnboarding() {
   const [, navigate] = useLocation();
+  const { addVentures } = useVentures() as { addVentures?: unknown } & ReturnType<typeof useVentures>;
   const { addVenture } = useVentures();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormData>({
@@ -141,6 +143,20 @@ export default function FounderOnboarding() {
     checkedTasks: {},
   });
   const [completed, setCompleted] = useState(false);
+  const [matchCount, setMatchCount] = useState<number | null>(null);
+  const [savedProfileId, setSavedProfileId] = useState<number | null>(null);
+
+  const upsertTalent = trpc.people.upsertTalent.useMutation();
+  const autoTriggerMatching = trpc.matching.autoTriggerMatchingForFounder.useMutation({
+    onSuccess: (result) => {
+      setMatchCount(result.matchesComputed);
+      if (result.matchesComputed > 0) {
+        toast.success(`${result.matchesComputed} opportunity match${result.matchesComputed !== 1 ? "es" : ""} computed`, {
+          description: "Visit the Matching Engine to review your results.",
+        });
+      }
+    },
+  });
 
   const currentStep = STEPS[step - 1];
   const StepIcon = currentStep.icon;
@@ -158,7 +174,7 @@ export default function FounderOnboarding() {
     return true;
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     const newVenture: Venture = {
       id: nanoid(8),
       name: form.ventureName,
@@ -195,6 +211,23 @@ export default function FounderOnboarding() {
     toast.success(`${form.ventureName} added to the portfolio!`, {
       description: "Your venture card is now live on the dashboard.",
     });
+
+    // Save founder as talent profile and auto-trigger matching engine
+    try {
+      const result = await upsertTalent.mutateAsync({
+        name: form.founderName,
+        email: form.founderEmail || undefined,
+        currentRole: "Founder",
+        industryExpertise: form.sector,
+        availability: "Immediately Available",
+      });
+      const profileId = result.id;
+      setSavedProfileId(profileId);
+      // Fire-and-forget: compute matches in background
+      autoTriggerMatching.mutate({ talentProfileId: profileId });
+    } catch {
+      // Non-critical: matching will still work manually
+    }
   };
 
   if (completed) {
@@ -210,9 +243,22 @@ export default function FounderOnboarding() {
           <p className="text-gray-500 mb-2">
             <strong style={{ color: form.brandColor }}>{form.ventureName}</strong> has been added to the EcoBlend portfolio at VRL 1 — Fundamentals.
           </p>
-          <p className="text-sm text-gray-400 mb-8">
+          <p className="text-sm text-gray-400 mb-6">
             Your next step is to complete Tasks 1–17 in the EcoBlend VBS Playbook and update your VRL progress on the dashboard.
           </p>
+          {/* Matching status badge */}
+          {autoTriggerMatching.isPending && (
+            <div className="flex items-center justify-center gap-2 mb-6 text-xs text-gray-400">
+              <div className="w-3 h-3 rounded-full border-2 border-gray-300 border-t-green-500 animate-spin" />
+              Computing opportunity matches in background…
+            </div>
+          )}
+          {matchCount !== null && matchCount > 0 && (
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-6" style={{ background: "#f0fdf4", color: "#16a34a" }}>
+              <Shuffle size={12} />
+              {matchCount} opportunity match{matchCount !== 1 ? "es" : ""} ready to review
+            </div>
+          )}
           <div className="space-y-3">
             <Button className="w-full gap-2" style={{ background: form.brandColor, color: "white" }} onClick={() => navigate("/matching")}>
               <Shuffle size={15} /> Find Founder Matches &amp; Opportunities

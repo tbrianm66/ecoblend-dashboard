@@ -323,3 +323,13 @@
 - [x] Wire Founder Onboarding completion → auto-trigger matching engine → redirect to match results
 - [x] Add "Matching Engine" and "Spin-Off OS" to Sidebar Intelligence group
 - [x] Vitest tests for matching algorithm and spinoff configuration logic
+
+## Sprint 30 — Matching Engine Enhancements (Mar 2026)
+- [x] Auto-trigger computeAndSaveMatchScores after founder onboarding save (background scoring)
+- [x] Show "Matches computed" toast and badge count on redirect to Matching Engine
+- [x] Spin-Off status workflow: Draft → Under Review → Approved → Launched transitions
+- [x] Owner notification sent at each spin-off stage transition
+- [x] Status action buttons in Spin-Off OS detail view (advance/reject with reason)
+- [x] Co-founder compatibility matrix: select two founders, side-by-side radar chart across 6 dimensions
+- [x] Compatibility verdict badge (Strong / Moderate / Weak pairing) with recommended roles
+- [x] Add Co-Founder Matrix to Sidebar Intelligence group
