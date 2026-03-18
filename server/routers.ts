@@ -5146,5 +5146,347 @@ Output: Output ONLY the drafted text for the requested section, formatted in cle
         };
       }),
   }),
+
+  // ── LCSSA Governance Module ────────────────────────────────────────────────
+  lcssa: router({
+    // ── Environmental LCA ──────────────────────────────────────────────────
+    getEnvironmental: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { lcssaEnvironmental } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const [row] = await db.select().from(lcssaEnvironmental)
+          .where(eq(lcssaEnvironmental.ventureId, input.ventureId));
+        return row ?? null;
+      }),
+
+    upsertEnvironmental: publicProcedure
+      .input(z.object({
+        ventureId: z.string(),
+        carbonFootprintKg: z.number().optional(),
+        carbonFootprintScope1: z.number().optional(),
+        carbonFootprintScope2: z.number().optional(),
+        carbonFootprintScope3: z.number().optional(),
+        carbonReductionTarget: z.number().optional(),
+        energyConsumptionKwh: z.number().optional(),
+        waterUsageLitres: z.number().optional(),
+        renewableEnergyPct: z.number().optional(),
+        materialEfficiencyPct: z.number().optional(),
+        wasteGeneratedKg: z.number().optional(),
+        wasteRecycledPct: z.number().optional(),
+        airPollutionIndex: z.number().optional(),
+        waterPollutionIndex: z.number().optional(),
+        biodiversityScore: z.number().optional(),
+        landUseHectares: z.number().optional(),
+        ecosystemServicesScore: z.number().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { lcssaEnvironmental } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const { ventureId, notes, ...metrics } = input;
+        // Compute environmental score: weighted average across 4 pillars
+        const carbonScore = Math.max(0, 100 - ((metrics.carbonFootprintKg ?? 0) / 1000) * 10);
+        const resourceScore = (metrics.renewableEnergyPct ?? 0) * 0.5 + (metrics.materialEfficiencyPct ?? 0) * 0.5;
+        const wasteScore = (metrics.wasteRecycledPct ?? 0);
+        const ecosystemScore = ((metrics.biodiversityScore ?? 0) / 10) * 100;
+        const environmentalScore = Math.min(100, (carbonScore * 0.35 + resourceScore * 0.25 + wasteScore * 0.25 + ecosystemScore * 0.15));
+        const [existing] = await db.select().from(lcssaEnvironmental)
+          .where(eq(lcssaEnvironmental.ventureId, ventureId));
+        if (existing) {
+          await db.update(lcssaEnvironmental)
+            .set({ ...metrics, environmentalScore, notes: notes ?? existing.notes })
+            .where(eq(lcssaEnvironmental.ventureId, ventureId));
+        } else {
+          await db.insert(lcssaEnvironmental).values({ ventureId, ...metrics, environmentalScore, notes });
+        }
+        const [updated] = await db.select().from(lcssaEnvironmental)
+          .where(eq(lcssaEnvironmental.ventureId, ventureId));
+        return updated;
+      }),
+
+    // ── Social LCA ─────────────────────────────────────────────────────────
+    getSocial: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { lcssaSocial } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const [row] = await db.select().from(lcssaSocial)
+          .where(eq(lcssaSocial.ventureId, input.ventureId));
+        return row ?? null;
+      }),
+
+    upsertSocial: publicProcedure
+      .input(z.object({
+        ventureId: z.string(),
+        livingWageCompliance: z.boolean().optional(),
+        avgWorkingHoursPerWeek: z.number().optional(),
+        employeeTurnoverPct: z.number().optional(),
+        collectiveBargaining: z.boolean().optional(),
+        humanRightsDueDiligence: z.boolean().optional(),
+        supplyChainAuditScore: z.number().optional(),
+        childLaborRisk: z.enum(["Low", "Medium", "High"]).optional(),
+        forcedLaborRisk: z.enum(["Low", "Medium", "High"]).optional(),
+        localHiringPct: z.number().optional(),
+        communityInvestmentGbp: z.number().optional(),
+        communityEngagementScore: z.number().optional(),
+        ltifr: z.number().optional(),
+        nearMissReports: z.number().optional(),
+        safetyTrainingHours: z.number().optional(),
+        healthSafetyScore: z.number().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { lcssaSocial } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const { ventureId, notes, ...metrics } = input;
+        // Compute social score: 4 pillars weighted equally
+        const laborScore = ((metrics.livingWageCompliance ? 25 : 0) + (metrics.collectiveBargaining ? 25 : 0) +
+          Math.max(0, 25 - (metrics.employeeTurnoverPct ?? 0)) + Math.max(0, 25 - Math.max(0, ((metrics.avgWorkingHoursPerWeek ?? 40) - 40) * 2)));
+        const hrScore = ((metrics.humanRightsDueDiligence ? 40 : 0) + (metrics.supplyChainAuditScore ?? 0) * 4 +
+          (metrics.childLaborRisk === "Low" ? 10 : metrics.childLaborRisk === "Medium" ? 5 : 0) +
+          (metrics.forcedLaborRisk === "Low" ? 10 : metrics.forcedLaborRisk === "Medium" ? 5 : 0));
+        const communityScore = ((metrics.localHiringPct ?? 0) * 0.5 + (metrics.communityEngagementScore ?? 0) * 5);
+        const hsScore = ((metrics.healthSafetyScore ?? 0) * 10);
+        const socialScore = Math.min(100, (laborScore * 0.25 + hrScore * 0.25 + communityScore * 0.25 + hsScore * 0.25));
+        const [existing] = await db.select().from(lcssaSocial)
+          .where(eq(lcssaSocial.ventureId, ventureId));
+        if (existing) {
+          await db.update(lcssaSocial)
+            .set({ ...metrics, socialScore, notes: notes ?? existing.notes })
+            .where(eq(lcssaSocial.ventureId, ventureId));
+        } else {
+          await db.insert(lcssaSocial).values({ ventureId, ...metrics, socialScore, notes });
+        }
+        const [updated] = await db.select().from(lcssaSocial)
+          .where(eq(lcssaSocial.ventureId, ventureId));
+        return updated;
+      }),
+
+    // ── Life Cycle Costing ─────────────────────────────────────────────────
+    getLcc: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { lcssaLifeCycleCost } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const [row] = await db.select().from(lcssaLifeCycleCost)
+          .where(eq(lcssaLifeCycleCost.ventureId, input.ventureId));
+        return row ?? null;
+      }),
+
+    upsertLcc: publicProcedure
+      .input(z.object({
+        ventureId: z.string(),
+        rawMaterialCostGbp: z.number().optional(),
+        manufacturingCostGbp: z.number().optional(),
+        labourCostGbp: z.number().optional(),
+        overheadCostGbp: z.number().optional(),
+        inboundLogisticsCostGbp: z.number().optional(),
+        outboundLogisticsCostGbp: z.number().optional(),
+        warehouseCostGbp: z.number().optional(),
+        plannedMaintenanceCostGbp: z.number().optional(),
+        unplannedMaintenanceCostGbp: z.number().optional(),
+        assetLifespanYears: z.number().optional(),
+        disposalCostGbp: z.number().optional(),
+        recyclingRevGbp: z.number().optional(),
+        remediationCostGbp: z.number().optional(),
+        currency: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { lcssaLifeCycleCost } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const { ventureId, notes, currency, ...costs } = input;
+        // Compute totals
+        const productionTotal = (costs.rawMaterialCostGbp ?? 0) + (costs.manufacturingCostGbp ?? 0) + (costs.labourCostGbp ?? 0) + (costs.overheadCostGbp ?? 0);
+        const logisticsTotal = (costs.inboundLogisticsCostGbp ?? 0) + (costs.outboundLogisticsCostGbp ?? 0) + (costs.warehouseCostGbp ?? 0);
+        const maintenanceTotal = (costs.plannedMaintenanceCostGbp ?? 0) + (costs.unplannedMaintenanceCostGbp ?? 0);
+        const eolTotal = (costs.disposalCostGbp ?? 0) - (costs.recyclingRevGbp ?? 0) + (costs.remediationCostGbp ?? 0);
+        const totalLccGbp = productionTotal + logisticsTotal + maintenanceTotal + eolTotal;
+        // LCC efficiency score: lower cost relative to lifespan = higher score
+        const lifespan = costs.assetLifespanYears ?? 1;
+        const annualCost = totalLccGbp / Math.max(1, lifespan);
+        const lccScore = Math.min(100, Math.max(0, 100 - (annualCost / 10000) * 10));
+        const [existing] = await db.select().from(lcssaLifeCycleCost)
+          .where(eq(lcssaLifeCycleCost.ventureId, ventureId));
+        if (existing) {
+          await db.update(lcssaLifeCycleCost)
+            .set({ ...costs, totalLccGbp, lccScore, currency: currency ?? existing.currency, notes: notes ?? existing.notes })
+            .where(eq(lcssaLifeCycleCost.ventureId, ventureId));
+        } else {
+          await db.insert(lcssaLifeCycleCost).values({ ventureId, ...costs, totalLccGbp, lccScore, currency, notes });
+        }
+        const [updated] = await db.select().from(lcssaLifeCycleCost)
+          .where(eq(lcssaLifeCycleCost.ventureId, ventureId));
+        return updated;
+      }),
+
+    // ── LCSA Oversight & Governance ────────────────────────────────────────
+    getOversight: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { lcssaOversight } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const [row] = await db.select().from(lcssaOversight)
+          .where(eq(lcssaOversight.ventureId, input.ventureId));
+        return row ?? null;
+      }),
+
+    upsertOversight: publicProcedure
+      .input(z.object({
+        ventureId: z.string(),
+        iso14001Certified: z.boolean().optional(),
+        iso26000Adopted: z.boolean().optional(),
+        griReportingLevel: z.enum(["None", "Core", "Comprehensive"]).optional(),
+        sdgAlignmentCount: z.number().optional(),
+        policyDocumentUrl: z.string().optional(),
+        complianceScore: z.number().optional(),
+        reportingFrequency: z.enum(["Annual", "Quarterly", "Monthly"]).optional(),
+        dataQualityScore: z.number().optional(),
+        thirdPartyVerified: z.boolean().optional(),
+        verifierName: z.string().optional(),
+        reportUrl: z.string().optional(),
+        boardOversight: z.boolean().optional(),
+        sustainabilityCommittee: z.boolean().optional(),
+        stakeholderEngagementScore: z.number().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { lcssaOversight } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const { ventureId, notes, ...fields } = input;
+        // Compute oversight score
+        const policyPoints = ((fields.iso14001Certified ? 20 : 0) + (fields.iso26000Adopted ? 15 : 0) +
+          (fields.griReportingLevel === "Comprehensive" ? 20 : fields.griReportingLevel === "Core" ? 10 : 0) +
+          Math.min(15, (fields.sdgAlignmentCount ?? 0) * 1.5));
+        const reportingPoints = ((fields.dataQualityScore ?? 0) * 3 + (fields.thirdPartyVerified ? 20 : 0) +
+          (fields.reportingFrequency === "Monthly" ? 10 : fields.reportingFrequency === "Quarterly" ? 7 : 5));
+        const govPoints = ((fields.boardOversight ? 15 : 0) + (fields.sustainabilityCommittee ? 15 : 0) +
+          (fields.stakeholderEngagementScore ?? 0) * 2);
+        const oversightScore = Math.min(100, policyPoints * 0.4 + reportingPoints * 0.35 + govPoints * 0.25);
+        const [existing] = await db.select().from(lcssaOversight)
+          .where(eq(lcssaOversight.ventureId, ventureId));
+        if (existing) {
+          await db.update(lcssaOversight)
+            .set({ ...fields, oversightScore, notes: notes ?? existing.notes })
+            .where(eq(lcssaOversight.ventureId, ventureId));
+        } else {
+          await db.insert(lcssaOversight).values({ ventureId, ...fields, oversightScore, notes });
+        }
+        const [updated] = await db.select().from(lcssaOversight)
+          .where(eq(lcssaOversight.ventureId, ventureId));
+        return updated;
+      }),
+
+    // ── Sustainable Decision Log ───────────────────────────────────────────
+    listDecisions: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { lcssaDecisionLog } = await import("../drizzle/schema");
+        const { eq, desc } = await import("drizzle-orm");
+        return db.select().from(lcssaDecisionLog)
+          .where(eq(lcssaDecisionLog.ventureId, input.ventureId))
+          .orderBy(desc(lcssaDecisionLog.createdAt));
+      }),
+
+    addDecision: publicProcedure
+      .input(z.object({
+        ventureId: z.string(),
+        decisionTitle: z.string().min(1),
+        decisionType: z.enum(["Environmental", "Social", "Economic", "Integrated"]),
+        lcaDimension: z.string().optional(),
+        rationale: z.string().optional(),
+        environmentalImpact: z.enum(["Positive", "Neutral", "Negative"]).optional(),
+        socialImpact: z.enum(["Positive", "Neutral", "Negative"]).optional(),
+        economicImpact: z.enum(["Positive", "Neutral", "Negative"]).optional(),
+        status: z.enum(["Proposed", "Approved", "Implemented", "Reviewed"]).optional(),
+        owner: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { lcssaDecisionLog } = await import("../drizzle/schema");
+        const [inserted] = await db.insert(lcssaDecisionLog).values({
+          ventureId: input.ventureId,
+          decisionTitle: input.decisionTitle,
+          decisionType: input.decisionType,
+          lcaDimension: input.lcaDimension,
+          rationale: input.rationale,
+          environmentalImpact: input.environmentalImpact ?? "Neutral",
+          socialImpact: input.socialImpact ?? "Neutral",
+          economicImpact: input.economicImpact ?? "Neutral",
+          status: input.status ?? "Proposed",
+          owner: input.owner,
+        });
+        return { success: true };
+      }),
+
+    updateDecisionStatus: publicProcedure
+      .input(z.object({
+        id: z.number().int(),
+        status: z.enum(["Proposed", "Approved", "Implemented", "Reviewed"]),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { lcssaDecisionLog } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        await db.update(lcssaDecisionLog)
+          .set({ status: input.status })
+          .where(eq(lcssaDecisionLog.id, input.id));
+        return { success: true };
+      }),
+
+    deleteDecision: publicProcedure
+      .input(z.object({ id: z.number().int() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { lcssaDecisionLog } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        await db.delete(lcssaDecisionLog).where(eq(lcssaDecisionLog.id, input.id));
+        return { success: true };
+      }),
+
+    // ── LCSSA Portfolio Summary ────────────────────────────────────────────
+    getLcssaSummary: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { lcssaEnvironmental, lcssaSocial, lcssaLifeCycleCost, lcssaOversight, lcssaDecisionLog } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const [env] = await db.select().from(lcssaEnvironmental).where(eq(lcssaEnvironmental.ventureId, input.ventureId));
+        const [soc] = await db.select().from(lcssaSocial).where(eq(lcssaSocial.ventureId, input.ventureId));
+        const [lcc] = await db.select().from(lcssaLifeCycleCost).where(eq(lcssaLifeCycleCost.ventureId, input.ventureId));
+        const [gov] = await db.select().from(lcssaOversight).where(eq(lcssaOversight.ventureId, input.ventureId));
+        const decisions = await db.select().from(lcssaDecisionLog).where(eq(lcssaDecisionLog.ventureId, input.ventureId));
+        const envScore = env?.environmentalScore ?? 0;
+        const socScore = soc?.socialScore ?? 0;
+        const lccScore = lcc?.lccScore ?? 0;
+        const govScore = gov?.oversightScore ?? 0;
+        // LCSSA Integrated Score: Planet 35% + People 30% + Profit 20% + Governance 15%
+        const lcssaScore = envScore * 0.35 + socScore * 0.30 + lccScore * 0.20 + govScore * 0.15;
+        return {
+          ventureId: input.ventureId,
+          environmentalScore: envScore,
+          socialScore: socScore,
+          lccScore,
+          oversightScore: govScore,
+          lcssaScore: Math.round(lcssaScore * 10) / 10,
+          decisionCount: decisions.length,
+          implementedDecisions: decisions.filter((d: typeof decisions[0]) => d.status === "Implemented").length,
+          env: env ?? null,
+          soc: soc ?? null,
+          lcc: lcc ?? null,
+          gov: gov ?? null,
+        };
+      }),
+  }),
 });
 export type AppRouter = typeof appRouter;

@@ -155,6 +155,13 @@
       "when": 1773859499879,
       "tag": "0021_lyrical_thunderbolt",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "5",
+      "when": 1773870719990,
+      "tag": "0022_jazzy_ricochet",
+      "breakpoints": true
     }
   ]
 }

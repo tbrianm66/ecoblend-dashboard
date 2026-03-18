@@ -18,6 +18,8 @@ import {
   Award, CheckCircle2, Clock, AlertCircle, RefreshCw, ChevronDown, ChevronUp,
   Globe, Zap, Droplets, TreePine, Factory, Truck, ShoppingCart, Trash2,
   TrendingUp, Shield, Heart, Star,
+  DollarSign, CheckSquare, HardHat, Handshake, Scale, PackageX, Wrench,
+  ClipboardCheck, Target, Activity, Plus, Wind,
 } from "lucide-react";
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
@@ -882,7 +884,543 @@ export default function ImpactGovernance() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* ── LCSSA Section ─────────────────────────────────────────────── */}
+        <div className="mt-8">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-px flex-1" style={{ background: "#e5e7eb" }} />
+            <div className="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold" style={{ background: "linear-gradient(135deg, #dcfce7, #dbeafe)", color: "#1a2332" }}>
+              <Globe size={12} /> Life Cycle Sustainability Assessment (LCSSA)
+            </div>
+            <div className="h-px flex-1" style={{ background: "#e5e7eb" }} />
+          </div>
+          <LcssaSection ventureId={selectedVenture} />
+        </div>
       </div>
+    </div>
+  );
+}
+
+// ── LCSSA Colour palette ──────────────────────────────────────────────────────
+const LC = {
+  env:  { bg: "#16a34a", light: "#dcfce7", text: "#15803d", border: "#86efac" },
+  soc:  { bg: "#2563eb", light: "#dbeafe", text: "#1d4ed8", border: "#93c5fd" },
+  lcc:  { bg: "#d97706", light: "#fef3c7", text: "#b45309", border: "#fcd34d" },
+  gov:  { bg: "#7c3aed", light: "#ede9fe", text: "#6d28d9", border: "#c4b5fd" },
+  dec:  { bg: "#0f766e", light: "#ccfbf1", text: "#0d9488", border: "#5eead4" },
+};
+
+function LcssaScoreGauge({ score, color, size = 80 }: { score: number; color: string; size?: number }) {
+  const r = (size / 2) - 8;
+  const circ = 2 * Math.PI * r;
+  const dash = (score / 100) * circ;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#f3f4f6" strokeWidth={8} />
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={8}
+        strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
+        transform={`rotate(-90 ${size/2} ${size/2})`} />
+      <text x={size/2} y={size/2 + 5} textAnchor="middle" fontSize={size < 60 ? 11 : 14}
+        fontWeight="700" fill={color}>{Math.round(score)}</text>
+    </svg>
+  );
+}
+
+function LcssaSlider({ label, value, onChange, min = 0, max = 100, step = 1, unit = "", color = "#16a34a" }: {
+  label: string; value: number; onChange: (v: number) => void;
+  min?: number; max?: number; step?: number; unit?: string; color?: string;
+}) {
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between items-center">
+        <span className="text-xs font-semibold text-gray-600">{label}</span>
+        <span className="text-xs font-bold" style={{ color }}>{value}{unit}</span>
+      </div>
+      <input type="range" min={min} max={max} step={step} value={value}
+        onChange={e => onChange(Number(e.target.value))}
+        className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
+        style={{ accentColor: color }} />
+    </div>
+  );
+}
+
+function LcssaToggle({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div className="flex items-center justify-between py-1">
+      <span className="text-xs font-semibold text-gray-600">{label}</span>
+      <button onClick={() => onChange(!value)}
+        className="w-10 h-5 rounded-full transition-colors flex items-center px-0.5"
+        style={{ background: value ? "#16a34a" : "#d1d5db" }}>
+        <div className="w-4 h-4 rounded-full bg-white shadow transition-transform" style={{ transform: value ? "translateX(20px)" : "translateX(0)" }} />
+      </button>
+    </div>
+  );
+}
+
+function LcssaNumField({ label, value, onChange, unit = "" }: { label: string; value: number; onChange: (v: number) => void; unit?: string }) {
+  return (
+    <div className="space-y-1">
+      <label className="text-xs font-semibold text-gray-600">{label}</label>
+      <div className="flex items-center gap-1">
+        <input type="number" value={value} min={0} step={0.1}
+          onChange={e => onChange(Number(e.target.value))}
+          className="w-full text-xs border rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1"
+          style={{ borderColor: "#e5e7eb" }} />
+        {unit && <span className="text-xs text-gray-400 flex-shrink-0">{unit}</span>}
+      </div>
+    </div>
+  );
+}
+
+// ── LCSSA Overview ────────────────────────────────────────────────────────────
+function LcssaOverview({ ventureId }: { ventureId: string }) {
+  const { data: summary, isLoading } = trpc.lcssa.getLcssaSummary.useQuery({ ventureId });
+  if (isLoading) return <div className="flex items-center justify-center py-12"><RefreshCw size={18} className="animate-spin text-gray-400" /></div>;
+  const envScore = summary?.environmentalScore ?? 0;
+  const socScore = summary?.socialScore ?? 0;
+  const lccScore = summary?.lccScore ?? 0;
+  const govScore = summary?.oversightScore ?? 0;
+  const lcssaScore = summary?.lcssaScore ?? 0;
+  return (
+    <div className="space-y-5">
+      {/* LCSSA Score Banner */}
+      <div className="rounded-2xl border p-5 text-white relative overflow-hidden"
+        style={{ background: "linear-gradient(135deg, #16a34a 0%, #2563eb 50%, #7c3aed 100%)" }}>
+        <div className="relative flex items-center justify-between">
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-widest opacity-80 mb-1">Integrated Sustainability Framework</div>
+            <h3 className="text-xl font-bold mb-1">LCSSA Score</h3>
+            <p className="text-xs opacity-80">Planet 35% + People 30% + Profit 20% + Governance 15%</p>
+          </div>
+          <div className="text-center">
+            <div className="text-5xl font-bold">{lcssaScore.toFixed(1)}</div>
+            <div className="text-xs opacity-80 mt-1">/ 100</div>
+          </div>
+        </div>
+      </div>
+      {/* 4 pillar cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: "Environmental LCA", sub: "Planet", score: envScore, color: LC.env.bg, icon: <Leaf size={16} /> },
+          { label: "Social LCA", sub: "People", score: socScore, color: LC.soc.bg, icon: <Users size={16} /> },
+          { label: "Life Cycle Costing", sub: "Profit", score: lccScore, color: LC.lcc.bg, icon: <DollarSign size={16} /> },
+          { label: "Oversight", sub: "Governance", score: govScore, color: LC.gov.bg, icon: <Shield size={16} /> },
+        ].map(p => (
+          <div key={p.label} className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <div className="text-xs font-bold" style={{ color: p.color }}>{p.label}</div>
+                <div className="text-xs text-gray-400 italic">{p.sub}</div>
+              </div>
+              <LcssaScoreGauge score={p.score} color={p.color} size={52} />
+            </div>
+            <Progress value={p.score} className="h-1.5" style={{ backgroundColor: `${p.color}20` }} />
+          </div>
+        ))}
+      </div>
+      {/* Decision summary */}
+      <div className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: LC.dec.border }}>
+        <div className="flex items-center gap-2 mb-2">
+          <CheckSquare size={14} style={{ color: LC.dec.bg }} />
+          <span className="text-sm font-bold" style={{ color: LC.dec.bg }}>Sustainable Decision Making</span>
+          <span className="ml-auto text-xs text-gray-400">{summary?.decisionCount ?? 0} decisions · {summary?.implementedDecisions ?? 0} implemented</span>
+        </div>
+        <div className="grid grid-cols-4 gap-3 text-center text-xs">
+          {[
+            { label: "Environmental LCA", weight: "35%", color: LC.env.bg },
+            { label: "Social LCA", weight: "30%", color: LC.soc.bg },
+            { label: "Life Cycle Costing", weight: "20%", color: LC.lcc.bg },
+            { label: "Governance", weight: "15%", color: LC.gov.bg },
+          ].map(p => (
+            <div key={p.label} className="rounded-lg p-2 bg-gray-50">
+              <div className="text-lg font-bold" style={{ color: p.color }}>{p.weight}</div>
+              <div className="text-gray-500 leading-tight">{p.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── LCSSA Environmental ───────────────────────────────────────────────────────
+function LcssaEnvironmental({ ventureId }: { ventureId: string }) {
+  const utils = trpc.useUtils();
+  const { data: existing } = trpc.lcssa.getEnvironmental.useQuery({ ventureId });
+  const upsert = trpc.lcssa.upsertEnvironmental.useMutation({
+    onSuccess: () => { utils.lcssa.getEnvironmental.invalidate({ ventureId }); utils.lcssa.getLcssaSummary.invalidate({ ventureId }); toast.success("Environmental LCA saved"); },
+    onError: e => toast.error(e.message),
+  });
+  const [form, setForm] = useState({ carbonFootprintKg: 0, carbonFootprintScope1: 0, carbonFootprintScope2: 0, carbonFootprintScope3: 0, carbonReductionTarget: 0, energyConsumptionKwh: 0, waterUsageLitres: 0, renewableEnergyPct: 0, materialEfficiencyPct: 0, wasteGeneratedKg: 0, wasteRecycledPct: 0, airPollutionIndex: 0, waterPollutionIndex: 0, biodiversityScore: 0, landUseHectares: 0, ecosystemServicesScore: 0, notes: "" });
+  const sanitise = (obj: Record<string, any>) => Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, v === null ? undefined : v]));
+  const values = existing ? { ...form, ...sanitise(existing as any) } : form;
+  const set = (k: string, v: number | string) => setForm(f => ({ ...f, [k]: v }));
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="text-sm font-bold" style={{ color: LC.env.bg }}>Environmental LCA — Planet</div>
+          <div className="text-xs text-gray-400">Carbon Footprint · Resource Use · Pollution & Waste · Ecosystem Impact</div>
+        </div>
+        <div className="flex items-center gap-2">
+          {existing && <LcssaScoreGauge score={existing.environmentalScore ?? 0} color={LC.env.bg} size={48} />}
+          <Button size="sm" onClick={() => upsert.mutate({ ventureId, ...values })} disabled={upsert.isPending} style={{ background: LC.env.bg, color: "white" }}>
+            {upsert.isPending ? <RefreshCw size={11} className="animate-spin" /> : "Save"}
+          </Button>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
+          <div className="text-xs font-bold mb-3 flex items-center gap-1" style={{ color: LC.env.bg }}><Wind size={12} /> Carbon Footprint</div>
+          <div className="space-y-3">
+            <LcssaSlider label="Total Carbon Footprint" value={values.carbonFootprintKg ?? 0} onChange={v => set("carbonFootprintKg", v)} max={100000} unit=" kg CO₂" color={LC.env.bg} />
+            <LcssaSlider label="Scope 1 (Direct)" value={values.carbonFootprintScope1 ?? 0} onChange={v => set("carbonFootprintScope1", v)} max={50000} unit=" kg" color={LC.env.bg} />
+            <LcssaSlider label="Scope 2 (Energy)" value={values.carbonFootprintScope2 ?? 0} onChange={v => set("carbonFootprintScope2", v)} max={50000} unit=" kg" color={LC.env.bg} />
+            <LcssaSlider label="Scope 3 (Value Chain)" value={values.carbonFootprintScope3 ?? 0} onChange={v => set("carbonFootprintScope3", v)} max={100000} unit=" kg" color={LC.env.bg} />
+            <LcssaSlider label="Reduction Target" value={values.carbonReductionTarget ?? 0} onChange={v => set("carbonReductionTarget", v)} max={100} unit="%" color={LC.env.bg} />
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
+          <div className="text-xs font-bold mb-3 flex items-center gap-1" style={{ color: "#0891b2" }}><Zap size={12} /> Resource Use</div>
+          <div className="space-y-3">
+            <LcssaSlider label="Energy Consumption" value={values.energyConsumptionKwh ?? 0} onChange={v => set("energyConsumptionKwh", v)} max={1000000} unit=" kWh" color="#0891b2" />
+            <LcssaSlider label="Water Usage" value={values.waterUsageLitres ?? 0} onChange={v => set("waterUsageLitres", v)} max={1000000} unit=" L" color="#0891b2" />
+            <LcssaSlider label="Renewable Energy" value={values.renewableEnergyPct ?? 0} onChange={v => set("renewableEnergyPct", v)} max={100} unit="%" color="#0891b2" />
+            <LcssaSlider label="Material Efficiency" value={values.materialEfficiencyPct ?? 0} onChange={v => set("materialEfficiencyPct", v)} max={100} unit="%" color="#0891b2" />
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
+          <div className="text-xs font-bold mb-3 flex items-center gap-1" style={{ color: "#dc2626" }}><AlertCircle size={12} /> Pollution & Waste</div>
+          <div className="space-y-3">
+            <LcssaSlider label="Waste Generated" value={values.wasteGeneratedKg ?? 0} onChange={v => set("wasteGeneratedKg", v)} max={100000} unit=" kg" color="#dc2626" />
+            <LcssaSlider label="Waste Recycled" value={values.wasteRecycledPct ?? 0} onChange={v => set("wasteRecycledPct", v)} max={100} unit="%" color="#dc2626" />
+            <LcssaSlider label="Air Pollution Index" value={values.airPollutionIndex ?? 0} onChange={v => set("airPollutionIndex", v)} max={10} unit="/10" color="#dc2626" />
+            <LcssaSlider label="Water Pollution Index" value={values.waterPollutionIndex ?? 0} onChange={v => set("waterPollutionIndex", v)} max={10} unit="/10" color="#dc2626" />
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
+          <div className="text-xs font-bold mb-3 flex items-center gap-1" style={{ color: "#16a34a" }}><TreePine size={12} /> Ecosystem Impact</div>
+          <div className="space-y-3">
+            <LcssaSlider label="Biodiversity Score" value={values.biodiversityScore ?? 0} onChange={v => set("biodiversityScore", v)} max={10} unit="/10" color="#16a34a" />
+            <LcssaSlider label="Land Use" value={values.landUseHectares ?? 0} onChange={v => set("landUseHectares", v)} max={1000} unit=" ha" color="#16a34a" />
+            <LcssaSlider label="Ecosystem Services Score" value={values.ecosystemServicesScore ?? 0} onChange={v => set("ecosystemServicesScore", v)} max={10} unit="/10" color="#16a34a" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── LCSSA Social ──────────────────────────────────────────────────────────────
+function LcssaSocial({ ventureId }: { ventureId: string }) {
+  const utils = trpc.useUtils();
+  const { data: existing } = trpc.lcssa.getSocial.useQuery({ ventureId });
+  const upsert = trpc.lcssa.upsertSocial.useMutation({
+    onSuccess: () => { utils.lcssa.getSocial.invalidate({ ventureId }); utils.lcssa.getLcssaSummary.invalidate({ ventureId }); toast.success("Social LCA saved"); },
+    onError: e => toast.error(e.message),
+  });
+  const [form, setForm] = useState({ livingWageCompliance: false, avgWorkingHoursPerWeek: 40, employeeTurnoverPct: 0, collectiveBargaining: false, humanRightsDueDiligence: false, supplyChainAuditScore: 0, childLaborRisk: "Low" as "Low" | "Medium" | "High", forcedLaborRisk: "Low" as "Low" | "Medium" | "High", localHiringPct: 0, communityInvestmentGbp: 0, communityEngagementScore: 0, ltifr: 0, nearMissReports: 0, safetyTrainingHours: 0, healthSafetyScore: 0, notes: "" });
+  const sanitise = (obj: Record<string, any>) => Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, v === null ? undefined : v]));
+  const values = existing ? { ...form, ...sanitise(existing as any) } : form;
+  const set = (k: string, v: any) => setForm(f => ({ ...f, [k]: v }));
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="text-sm font-bold" style={{ color: LC.soc.bg }}>Social LCA — People</div>
+          <div className="text-xs text-gray-400">Labor Conditions · Human Rights · Community Impact · Health & Safety</div>
+        </div>
+        <div className="flex items-center gap-2">
+          {existing && <LcssaScoreGauge score={existing.socialScore ?? 0} color={LC.soc.bg} size={48} />}
+          <Button size="sm" onClick={() => upsert.mutate({ ventureId, ...values })} disabled={upsert.isPending} style={{ background: LC.soc.bg, color: "white" }}>
+            {upsert.isPending ? <RefreshCw size={11} className="animate-spin" /> : "Save"}
+          </Button>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
+          <div className="text-xs font-bold mb-3 flex items-center gap-1" style={{ color: LC.soc.bg }}><Scale size={12} /> Labor Conditions</div>
+          <div className="space-y-2">
+            <LcssaToggle label="Living Wage Compliance" value={values.livingWageCompliance ?? false} onChange={v => set("livingWageCompliance", v)} />
+            <LcssaToggle label="Collective Bargaining" value={values.collectiveBargaining ?? false} onChange={v => set("collectiveBargaining", v)} />
+            <LcssaSlider label="Avg Working Hours/Week" value={values.avgWorkingHoursPerWeek ?? 40} onChange={v => set("avgWorkingHoursPerWeek", v)} min={20} max={80} unit=" h" color={LC.soc.bg} />
+            <LcssaSlider label="Employee Turnover" value={values.employeeTurnoverPct ?? 0} onChange={v => set("employeeTurnoverPct", v)} max={100} unit="%" color={LC.soc.bg} />
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
+          <div className="text-xs font-bold mb-3 flex items-center gap-1" style={{ color: "#7c3aed" }}><Handshake size={12} /> Human Rights</div>
+          <div className="space-y-2">
+            <LcssaToggle label="HR Due Diligence" value={values.humanRightsDueDiligence ?? false} onChange={v => set("humanRightsDueDiligence", v)} />
+            <LcssaSlider label="Supply Chain Audit Score" value={values.supplyChainAuditScore ?? 0} onChange={v => set("supplyChainAuditScore", v)} max={10} unit="/10" color="#7c3aed" />
+            <div className="space-y-1">
+              <div className="text-xs font-semibold text-gray-600">Child Labour Risk</div>
+              <div className="flex gap-2">{(["Low", "Medium", "High"] as const).map(r => <button key={r} onClick={() => set("childLaborRisk", r)} className="flex-1 text-xs py-1 rounded-lg font-semibold border transition-all" style={{ background: values.childLaborRisk === r ? "#7c3aed" : "white", color: values.childLaborRisk === r ? "white" : "#6b7280", borderColor: values.childLaborRisk === r ? "#7c3aed" : "#e5e7eb" }}>{r}</button>)}</div>
+            </div>
+            <div className="space-y-1">
+              <div className="text-xs font-semibold text-gray-600">Forced Labour Risk</div>
+              <div className="flex gap-2">{(["Low", "Medium", "High"] as const).map(r => <button key={r} onClick={() => set("forcedLaborRisk", r)} className="flex-1 text-xs py-1 rounded-lg font-semibold border transition-all" style={{ background: values.forcedLaborRisk === r ? "#7c3aed" : "white", color: values.forcedLaborRisk === r ? "white" : "#6b7280", borderColor: values.forcedLaborRisk === r ? "#7c3aed" : "#e5e7eb" }}>{r}</button>)}</div>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
+          <div className="text-xs font-bold mb-3 flex items-center gap-1" style={{ color: "#0891b2" }}><Building2 size={12} /> Community Impact</div>
+          <div className="space-y-2">
+            <LcssaSlider label="Local Hiring %" value={values.localHiringPct ?? 0} onChange={v => set("localHiringPct", v)} max={100} unit="%" color="#0891b2" />
+            <LcssaNumField label="Community Investment" value={values.communityInvestmentGbp ?? 0} onChange={v => set("communityInvestmentGbp", v)} unit="£" />
+            <LcssaSlider label="Community Engagement Score" value={values.communityEngagementScore ?? 0} onChange={v => set("communityEngagementScore", v)} max={10} unit="/10" color="#0891b2" />
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
+          <div className="text-xs font-bold mb-3 flex items-center gap-1" style={{ color: "#d97706" }}><HardHat size={12} /> Health & Safety</div>
+          <div className="space-y-2">
+            <LcssaNumField label="LTIFR" value={values.ltifr ?? 0} onChange={v => set("ltifr", v)} />
+            <LcssaNumField label="Near Miss Reports" value={values.nearMissReports ?? 0} onChange={v => set("nearMissReports", v)} />
+            <LcssaNumField label="Safety Training Hours" value={values.safetyTrainingHours ?? 0} onChange={v => set("safetyTrainingHours", v)} unit="hrs" />
+            <LcssaSlider label="H&S Score" value={values.healthSafetyScore ?? 0} onChange={v => set("healthSafetyScore", v)} max={10} unit="/10" color="#d97706" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── LCSSA Life Cycle Costing ──────────────────────────────────────────────────
+function LcssaLcc({ ventureId }: { ventureId: string }) {
+  const utils = trpc.useUtils();
+  const { data: existing } = trpc.lcssa.getLcc.useQuery({ ventureId });
+  const upsert = trpc.lcssa.upsertLcc.useMutation({
+    onSuccess: () => { utils.lcssa.getLcc.invalidate({ ventureId }); utils.lcssa.getLcssaSummary.invalidate({ ventureId }); toast.success("Life Cycle Costing saved"); },
+    onError: e => toast.error(e.message),
+  });
+  const [form, setForm] = useState({ rawMaterialCostGbp: 0, manufacturingCostGbp: 0, labourCostGbp: 0, overheadCostGbp: 0, inboundLogisticsCostGbp: 0, outboundLogisticsCostGbp: 0, warehouseCostGbp: 0, plannedMaintenanceCostGbp: 0, unplannedMaintenanceCostGbp: 0, assetLifespanYears: 5, disposalCostGbp: 0, recyclingRevGbp: 0, remediationCostGbp: 0, currency: "GBP", notes: "" });
+  const sanitise = (obj: Record<string, any>) => Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, v === null ? undefined : v]));
+  const values = existing ? { ...form, ...sanitise(existing as any) } : form;
+  const set = (k: string, v: any) => setForm(f => ({ ...f, [k]: v }));
+  const prodTotal = (values.rawMaterialCostGbp ?? 0) + (values.manufacturingCostGbp ?? 0) + (values.labourCostGbp ?? 0) + (values.overheadCostGbp ?? 0);
+  const logTotal = (values.inboundLogisticsCostGbp ?? 0) + (values.outboundLogisticsCostGbp ?? 0) + (values.warehouseCostGbp ?? 0);
+  const maintTotal = (values.plannedMaintenanceCostGbp ?? 0) + (values.unplannedMaintenanceCostGbp ?? 0);
+  const eolTotal = (values.disposalCostGbp ?? 0) - (values.recyclingRevGbp ?? 0) + (values.remediationCostGbp ?? 0);
+  const grand = prodTotal + logTotal + maintTotal + eolTotal;
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="text-sm font-bold" style={{ color: LC.lcc.bg }}>Life Cycle Costing — Profit</div>
+          <div className="text-xs text-gray-400">Production · Logistics · Maintenance · End-of-Life</div>
+        </div>
+        <div className="flex items-center gap-2">
+          {existing && <LcssaScoreGauge score={existing.lccScore ?? 0} color={LC.lcc.bg} size={48} />}
+          <Button size="sm" onClick={() => upsert.mutate({ ventureId, ...values })} disabled={upsert.isPending} style={{ background: LC.lcc.bg, color: "white" }}>
+            {upsert.isPending ? <RefreshCw size={11} className="animate-spin" /> : "Save"}
+          </Button>
+        </div>
+      </div>
+      {/* Cost bar */}
+      <div className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-bold text-gray-700">Total Life Cycle Cost</span>
+          <span className="text-lg font-bold" style={{ color: LC.lcc.bg }}>£{grand.toLocaleString()}</span>
+        </div>
+        <div className="flex h-3 rounded-full overflow-hidden gap-0.5">
+          {[{ v: prodTotal, c: "#d97706" }, { v: logTotal, c: "#0891b2" }, { v: maintTotal, c: "#7c3aed" }, { v: Math.max(0, eolTotal), c: "#dc2626" }].map((p, i) => (
+            <div key={i} className="h-full transition-all" style={{ width: `${grand > 0 ? (p.v / grand) * 100 : 25}%`, background: p.c }} />
+          ))}
+        </div>
+        <div className="flex gap-3 mt-2 flex-wrap">
+          {[{ l: "Production", v: prodTotal, c: "#d97706" }, { l: "Logistics", v: logTotal, c: "#0891b2" }, { l: "Maintenance", v: maintTotal, c: "#7c3aed" }, { l: "End-of-Life", v: eolTotal, c: "#dc2626" }].map(p => (
+            <div key={p.l} className="flex items-center gap-1 text-xs">
+              <div className="w-2 h-2 rounded-full" style={{ background: p.c }} />
+              <span className="text-gray-500">{p.l}</span>
+              <span className="font-semibold" style={{ color: p.c }}>£{p.v.toLocaleString()}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {[
+          { title: "Production Costs", color: "#d97706", icon: <Factory size={12} />, fields: [{ k: "rawMaterialCostGbp", l: "Raw Materials" }, { k: "manufacturingCostGbp", l: "Manufacturing" }, { k: "labourCostGbp", l: "Labour" }, { k: "overheadCostGbp", l: "Overhead" }] },
+          { title: "Logistics Costs", color: "#0891b2", icon: <Truck size={12} />, fields: [{ k: "inboundLogisticsCostGbp", l: "Inbound" }, { k: "outboundLogisticsCostGbp", l: "Outbound" }, { k: "warehouseCostGbp", l: "Warehousing" }] },
+          { title: "Maintenance", color: "#7c3aed", icon: <Wrench size={12} />, fields: [{ k: "plannedMaintenanceCostGbp", l: "Planned" }, { k: "unplannedMaintenanceCostGbp", l: "Unplanned" }, { k: "assetLifespanYears", l: "Asset Lifespan (yrs)" }] },
+          { title: "End-of-Life Costs", color: "#dc2626", icon: <PackageX size={12} />, fields: [{ k: "disposalCostGbp", l: "Disposal" }, { k: "recyclingRevGbp", l: "Recycling Revenue" }, { k: "remediationCostGbp", l: "Remediation" }] },
+        ].map(pillar => (
+          <div key={pillar.title} className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
+            <div className="text-xs font-bold mb-3 flex items-center gap-1" style={{ color: pillar.color }}>{pillar.icon} {pillar.title}</div>
+            <div className="space-y-2">{pillar.fields.map(f => <LcssaNumField key={f.k} label={f.l} value={(values as any)[f.k] ?? 0} onChange={v => set(f.k, v)} unit={f.k === "assetLifespanYears" ? "yrs" : "£"} />)}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── LCSSA Oversight ───────────────────────────────────────────────────────────
+function LcssaOversight({ ventureId }: { ventureId: string }) {
+  const utils = trpc.useUtils();
+  const { data: existing } = trpc.lcssa.getOversight.useQuery({ ventureId });
+  const upsert = trpc.lcssa.upsertOversight.useMutation({
+    onSuccess: () => { utils.lcssa.getOversight.invalidate({ ventureId }); utils.lcssa.getLcssaSummary.invalidate({ ventureId }); toast.success("Oversight & Governance saved"); },
+    onError: e => toast.error(e.message),
+  });
+  const [form, setForm] = useState({ iso14001Certified: false, iso26000Adopted: false, griReportingLevel: "None" as "None" | "Core" | "Comprehensive", sdgAlignmentCount: 0, policyDocumentUrl: "", complianceScore: 0, reportingFrequency: "Annual" as "Annual" | "Quarterly" | "Monthly", dataQualityScore: 0, thirdPartyVerified: false, verifierName: "", reportUrl: "", boardOversight: false, sustainabilityCommittee: false, stakeholderEngagementScore: 0, notes: "" });
+  const sanitise = (obj: Record<string, any>) => Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, v === null ? undefined : v]));
+  const values = existing ? { ...form, ...sanitise(existing as any) } : form;
+  const set = (k: string, v: any) => setForm(f => ({ ...f, [k]: v }));
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="text-sm font-bold" style={{ color: LC.gov.bg }}>LCSA Oversight & Governance</div>
+          <div className="text-xs text-gray-400">Policy & Standards · Data & Reporting · Board Governance</div>
+        </div>
+        <div className="flex items-center gap-2">
+          {existing && <LcssaScoreGauge score={existing.oversightScore ?? 0} color={LC.gov.bg} size={48} />}
+          <Button size="sm" onClick={() => upsert.mutate({ ventureId, ...values })} disabled={upsert.isPending} style={{ background: LC.gov.bg, color: "white" }}>
+            {upsert.isPending ? <RefreshCw size={11} className="animate-spin" /> : "Save"}
+          </Button>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
+          <div className="text-xs font-bold mb-3 flex items-center gap-1" style={{ color: LC.gov.bg }}><ClipboardCheck size={12} /> Policy & Standards</div>
+          <div className="space-y-2">
+            <LcssaToggle label="ISO 14001 Certified" value={values.iso14001Certified ?? false} onChange={v => set("iso14001Certified", v)} />
+            <LcssaToggle label="ISO 26000 Adopted" value={values.iso26000Adopted ?? false} onChange={v => set("iso26000Adopted", v)} />
+            <div className="space-y-1">
+              <div className="text-xs font-semibold text-gray-600">GRI Reporting Level</div>
+              <div className="flex gap-2">{(["None", "Core", "Comprehensive"] as const).map(r => <button key={r} onClick={() => set("griReportingLevel", r)} className="flex-1 text-xs py-1 rounded-lg font-semibold border transition-all" style={{ background: values.griReportingLevel === r ? LC.gov.bg : "white", color: values.griReportingLevel === r ? "white" : "#6b7280", borderColor: values.griReportingLevel === r ? LC.gov.bg : "#e5e7eb" }}>{r}</button>)}</div>
+            </div>
+            <LcssaSlider label="SDGs Addressed" value={values.sdgAlignmentCount ?? 0} onChange={v => set("sdgAlignmentCount", v)} max={17} unit=" SDGs" color={LC.gov.bg} />
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
+          <div className="text-xs font-bold mb-3 flex items-center gap-1" style={{ color: "#0891b2" }}><BarChart3 size={12} /> Data & Reporting</div>
+          <div className="space-y-2">
+            <div className="space-y-1">
+              <div className="text-xs font-semibold text-gray-600">Reporting Frequency</div>
+              <div className="flex gap-2">{(["Annual", "Quarterly", "Monthly"] as const).map(r => <button key={r} onClick={() => set("reportingFrequency", r)} className="flex-1 text-xs py-1 rounded-lg font-semibold border transition-all" style={{ background: values.reportingFrequency === r ? "#0891b2" : "white", color: values.reportingFrequency === r ? "white" : "#6b7280", borderColor: values.reportingFrequency === r ? "#0891b2" : "#e5e7eb" }}>{r}</button>)}</div>
+            </div>
+            <LcssaSlider label="Data Quality Score" value={values.dataQualityScore ?? 0} onChange={v => set("dataQualityScore", v)} max={10} unit="/10" color="#0891b2" />
+            <LcssaToggle label="Third-Party Verified" value={values.thirdPartyVerified ?? false} onChange={v => set("thirdPartyVerified", v)} />
+            <LcssaToggle label="Board Oversight" value={values.boardOversight ?? false} onChange={v => set("boardOversight", v)} />
+            <LcssaToggle label="Sustainability Committee" value={values.sustainabilityCommittee ?? false} onChange={v => set("sustainabilityCommittee", v)} />
+            <LcssaSlider label="Stakeholder Engagement" value={values.stakeholderEngagementScore ?? 0} onChange={v => set("stakeholderEngagementScore", v)} max={10} unit="/10" color={LC.gov.bg} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── LCSSA Decision Log ────────────────────────────────────────────────────────
+function LcssaDecisions({ ventureId }: { ventureId: string }) {
+  const utils = trpc.useUtils();
+  const { data: decisions = [], isLoading } = trpc.lcssa.listDecisions.useQuery({ ventureId });
+  const addDecision = trpc.lcssa.addDecision.useMutation({
+    onSuccess: () => { utils.lcssa.listDecisions.invalidate({ ventureId }); utils.lcssa.getLcssaSummary.invalidate({ ventureId }); setShowAdd(false); setNewForm(df); toast.success("Decision logged"); },
+    onError: e => toast.error(e.message),
+  });
+  const updateStatus = trpc.lcssa.updateDecisionStatus.useMutation({ onSuccess: () => utils.lcssa.listDecisions.invalidate({ ventureId }) });
+  const deleteDecision = trpc.lcssa.deleteDecision.useMutation({ onSuccess: () => utils.lcssa.listDecisions.invalidate({ ventureId }) });
+  const df = { decisionTitle: "", decisionType: "Integrated" as "Environmental" | "Social" | "Economic" | "Integrated", lcaDimension: "", rationale: "", environmentalImpact: "Neutral" as "Positive" | "Neutral" | "Negative", socialImpact: "Neutral" as "Positive" | "Neutral" | "Negative", economicImpact: "Neutral" as "Positive" | "Neutral" | "Negative", status: "Proposed" as "Proposed" | "Approved" | "Implemented" | "Reviewed", owner: "" };
+  const [showAdd, setShowAdd] = useState(false);
+  const [newForm, setNewForm] = useState(df);
+  const setF = (k: string, v: any) => setNewForm(f => ({ ...f, [k]: v }));
+  const statusFlow: Array<"Proposed" | "Approved" | "Implemented" | "Reviewed"> = ["Proposed", "Approved", "Implemented", "Reviewed"];
+  const impactColor = (i: string) => i === "Positive" ? "#16a34a" : i === "Negative" ? "#dc2626" : "#6b7280";
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="text-sm font-bold" style={{ color: LC.dec.bg }}>Sustainable Decision Making</div>
+          <div className="text-xs text-gray-400">Log decisions informed by the LCSSA integrated framework</div>
+        </div>
+        <Button size="sm" onClick={() => setShowAdd(true)} style={{ background: LC.dec.bg, color: "white" }} className="gap-1.5"><Plus size={11} /> Log Decision</Button>
+      </div>
+      {showAdd && (
+        <div className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: LC.dec.border }}>
+          <div className="text-xs font-bold mb-3" style={{ color: LC.dec.bg }}>New Sustainable Decision</div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            <div className="lg:col-span-2 space-y-1"><label className="text-xs font-semibold text-gray-600">Decision Title *</label><input type="text" value={newForm.decisionTitle} onChange={e => setF("decisionTitle", e.target.value)} className="w-full text-xs border rounded-lg px-3 py-2 focus:outline-none" style={{ borderColor: "#e5e7eb" }} placeholder="e.g. Switch to 100% renewable energy supplier" /></div>
+            <div className="space-y-1"><label className="text-xs font-semibold text-gray-600">Type</label><div className="flex gap-1.5 flex-wrap">{(["Environmental", "Social", "Economic", "Integrated"] as const).map(t => <button key={t} onClick={() => setF("decisionType", t)} className="text-xs px-2 py-1 rounded-lg font-semibold border transition-all" style={{ background: newForm.decisionType === t ? LC.dec.bg : "white", color: newForm.decisionType === t ? "white" : "#6b7280", borderColor: newForm.decisionType === t ? LC.dec.bg : "#e5e7eb" }}>{t}</button>)}</div></div>
+            <div className="space-y-1"><label className="text-xs font-semibold text-gray-600">LCA Dimension</label><input type="text" value={newForm.lcaDimension} onChange={e => setF("lcaDimension", e.target.value)} className="w-full text-xs border rounded-lg px-2 py-1.5 focus:outline-none" style={{ borderColor: "#e5e7eb" }} placeholder="Environmental LCA / Social LCA / LCC" /></div>
+            <div className="space-y-1"><label className="text-xs font-semibold text-gray-600">Environmental Impact</label><div className="flex gap-1.5">{(["Positive", "Neutral", "Negative"] as const).map(i => <button key={i} onClick={() => setF("environmentalImpact", i)} className="flex-1 text-xs py-1 rounded-lg font-semibold border transition-all" style={{ background: newForm.environmentalImpact === i ? LC.env.bg : "white", color: newForm.environmentalImpact === i ? "white" : "#6b7280", borderColor: newForm.environmentalImpact === i ? LC.env.bg : "#e5e7eb" }}>{i}</button>)}</div></div>
+            <div className="space-y-1"><label className="text-xs font-semibold text-gray-600">Social Impact</label><div className="flex gap-1.5">{(["Positive", "Neutral", "Negative"] as const).map(i => <button key={i} onClick={() => setF("socialImpact", i)} className="flex-1 text-xs py-1 rounded-lg font-semibold border transition-all" style={{ background: newForm.socialImpact === i ? LC.soc.bg : "white", color: newForm.socialImpact === i ? "white" : "#6b7280", borderColor: newForm.socialImpact === i ? LC.soc.bg : "#e5e7eb" }}>{i}</button>)}</div></div>
+            <div className="space-y-1"><label className="text-xs font-semibold text-gray-600">Economic Impact</label><div className="flex gap-1.5">{(["Positive", "Neutral", "Negative"] as const).map(i => <button key={i} onClick={() => setF("economicImpact", i)} className="flex-1 text-xs py-1 rounded-lg font-semibold border transition-all" style={{ background: newForm.economicImpact === i ? LC.lcc.bg : "white", color: newForm.economicImpact === i ? "white" : "#6b7280", borderColor: newForm.economicImpact === i ? LC.lcc.bg : "#e5e7eb" }}>{i}</button>)}</div></div>
+            <div className="space-y-1"><label className="text-xs font-semibold text-gray-600">Owner</label><input type="text" value={newForm.owner} onChange={e => setF("owner", e.target.value)} className="w-full text-xs border rounded-lg px-2 py-1.5 focus:outline-none" style={{ borderColor: "#e5e7eb" }} placeholder="Decision owner" /></div>
+            <div className="lg:col-span-2 space-y-1"><label className="text-xs font-semibold text-gray-600">Rationale</label><textarea value={newForm.rationale} onChange={e => setF("rationale", e.target.value)} rows={2} className="w-full text-xs border rounded-lg px-3 py-2 focus:outline-none resize-none" style={{ borderColor: "#e5e7eb" }} placeholder="Why is this decision being made?" /></div>
+          </div>
+          <div className="flex gap-2 mt-3">
+            <Button size="sm" onClick={() => addDecision.mutate({ ventureId, ...newForm })} disabled={!newForm.decisionTitle || addDecision.isPending} style={{ background: LC.dec.bg, color: "white" }}>{addDecision.isPending ? <RefreshCw size={11} className="animate-spin" /> : "Log"}</Button>
+            <Button size="sm" variant="outline" onClick={() => setShowAdd(false)}>Cancel</Button>
+          </div>
+        </div>
+      )}
+      {isLoading ? <div className="flex items-center justify-center py-8"><RefreshCw size={16} className="animate-spin text-gray-400" /></div> : decisions.length === 0 ? (
+        <div className="bg-white rounded-xl border p-10 text-center shadow-sm" style={{ borderColor: "#e5e7eb" }}>
+          <Target size={32} className="mx-auto text-gray-300 mb-2" />
+          <p className="text-sm font-semibold text-gray-500">No decisions logged yet</p>
+          <p className="text-xs text-gray-400 mt-1">Log your first LCSSA-informed decision</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {decisions.map((d: any) => (
+            <div key={d.id} className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <span className="text-sm font-bold text-gray-800">{d.decisionTitle}</span>
+                    <Badge variant="outline" className="text-xs" style={{ borderColor: LC.dec.border, color: LC.dec.bg }}>{d.decisionType}</Badge>
+                    <span className="px-2 py-0.5 rounded-full text-xs font-semibold" style={{ background: d.status === "Implemented" ? "#dcfce7" : d.status === "Approved" ? "#dbeafe" : d.status === "Reviewed" ? "#ede9fe" : "#f3f4f6", color: d.status === "Implemented" ? "#16a34a" : d.status === "Approved" ? "#1d4ed8" : d.status === "Reviewed" ? "#7c3aed" : "#6b7280" }}>{d.status}</span>
+                  </div>
+                  {d.rationale && <div className="text-xs text-gray-500 mb-2">{d.rationale}</div>}
+                  <div className="flex items-center gap-3 flex-wrap text-xs">
+                    <span style={{ color: impactColor(d.environmentalImpact ?? "Neutral") }}>Env: {d.environmentalImpact}</span>
+                    <span style={{ color: impactColor(d.socialImpact ?? "Neutral") }}>Social: {d.socialImpact}</span>
+                    <span style={{ color: impactColor(d.economicImpact ?? "Neutral") }}>Economic: {d.economicImpact}</span>
+                    {d.owner && <span className="text-gray-400">Owner: {d.owner}</span>}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  {d.status !== "Reviewed" && <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => updateStatus.mutate({ id: d.id, status: statusFlow[statusFlow.indexOf(d.status) + 1] })}><Activity size={10} /> Advance</Button>}
+                  <button onClick={() => { if (confirm("Delete this decision?")) deleteDecision.mutate({ id: d.id }); }} className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-red-50"><Trash2 size={12} className="text-red-400" /></button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── LCSSA Section (tabbed) ────────────────────────────────────────────────────
+function LcssaSection({ ventureId }: { ventureId: string }) {
+  const [tab, setTab] = useState("overview");
+  const lcssaTabs = [
+    { id: "overview",      label: "LCSSA Overview",      color: "#1a2332", icon: <Globe size={12} /> },
+    { id: "environmental", label: "Environmental LCA",   color: LC.env.bg, icon: <Leaf size={12} /> },
+    { id: "social",        label: "Social LCA",          color: LC.soc.bg, icon: <Users size={12} /> },
+    { id: "lcc",           label: "Life Cycle Costing",  color: LC.lcc.bg, icon: <DollarSign size={12} /> },
+    { id: "oversight",     label: "Oversight",           color: LC.gov.bg, icon: <Shield size={12} /> },
+    { id: "decisions",     label: "Decision Log",        color: LC.dec.bg, icon: <CheckSquare size={12} /> },
+  ];
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-1 overflow-x-auto pb-1">
+        {lcssaTabs.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border"
+            style={{ background: tab === t.id ? t.color : "white", color: tab === t.id ? "white" : "#6b7280", borderColor: tab === t.id ? t.color : "#e5e7eb" }}>
+            {t.icon} {t.label}
+          </button>
+        ))}
+      </div>
+      {tab === "overview"      && <LcssaOverview ventureId={ventureId} />}
+      {tab === "environmental" && <LcssaEnvironmental ventureId={ventureId} />}
+      {tab === "social"        && <LcssaSocial ventureId={ventureId} />}
+      {tab === "lcc"           && <LcssaLcc ventureId={ventureId} />}
+      {tab === "oversight"     && <LcssaOversight ventureId={ventureId} />}
+      {tab === "decisions"     && <LcssaDecisions ventureId={ventureId} />}
     </div>
   );
 }

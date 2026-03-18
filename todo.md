@@ -475,3 +475,16 @@
 - [x] exportPatentDraft backend procedure: assembles full Markdown draft
 - [x] Export Draft button in Patent Editor header (visible when sections > 0)
 - [x] 15 new vitest tests for all 3 upgrade features (516 total, all passing)
+
+## Sprint 39 — LCSSA Governance Upgrade
+- [x] Add 5 LCSSA DB tables (lcssaEnvironmental, lcssaSocial, lcssaLcc, lcssaOversight, lcssaDecisions)
+- [x] Build lcssa tRPC router (14 procedures: get/upsert for each pillar, addDecision, updateDecisionStatus, deleteDecision, listDecisions, getLcssaSummary)
+- [x] Add LCSSA section to ImpactGovernance.tsx (6 sub-tabs: Overview, Environmental LCA, Social LCA, LCC, Oversight, Decision Log)
+- [x] Environmental LCA: Carbon Footprint (Scope 1/2/3), Resource Use, Pollution & Waste, Ecosystem Impact
+- [x] Social LCA: Labor Conditions, Human Rights, Community Impact, Health & Safety
+- [x] Life Cycle Costing: Production, Logistics, Maintenance, End-of-Life with live cost bar
+- [x] LCSA Oversight: Policy & Standards (ISO 14001/26000, GRI, SDGs), Data & Reporting
+- [x] Sustainable Decision Making: decision log with type, LCA dimension, triple-impact assessment, status workflow
+- [x] LCSSA Overview: integrated score banner, 4-pillar KPI cards, formula guide
+- [x] Fix null vs undefined TypeScript errors in all 4 LCSSA upsert components
+- [x] Write 28 vitest tests for LCSSA scoring engine (lcssa.test.ts)

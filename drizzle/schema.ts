@@ -2310,3 +2310,155 @@ export const patentHypotheses = mysqlTable("patent_hypotheses", {
 });
 export type PatentHypothesis = typeof patentHypotheses.$inferSelect;
 export type InsertPatentHypothesis = typeof patentHypotheses.$inferInsert;
+
+// ── LCSSA: Environmental LCA (Planet) ────────────────────────────────────────
+export const lcssaEnvironmental = mysqlTable("lcssa_environmental", {
+  id:                  int("id").autoincrement().primaryKey(),
+  ventureId:           varchar("ventureId", { length: 64 }).notNull(),
+  // Carbon Footprint
+  carbonFootprintKg:   float("carbonFootprintKg").default(0),
+  carbonFootprintScope1: float("carbonFootprintScope1").default(0),
+  carbonFootprintScope2: float("carbonFootprintScope2").default(0),
+  carbonFootprintScope3: float("carbonFootprintScope3").default(0),
+  carbonReductionTarget: float("carbonReductionTarget").default(0), // % target
+  // Resource Use
+  energyConsumptionKwh:  float("energyConsumptionKwh").default(0),
+  waterUsageLitres:      float("waterUsageLitres").default(0),
+  renewableEnergyPct:    float("renewableEnergyPct").default(0),
+  materialEfficiencyPct: float("materialEfficiencyPct").default(0),
+  // Pollution & Waste
+  wasteGeneratedKg:      float("wasteGeneratedKg").default(0),
+  wasteRecycledPct:      float("wasteRecycledPct").default(0),
+  airPollutionIndex:     float("airPollutionIndex").default(0),
+  waterPollutionIndex:   float("waterPollutionIndex").default(0),
+  // Ecosystem Impact
+  biodiversityScore:     float("biodiversityScore").default(0), // 0–10
+  landUseHectares:       float("landUseHectares").default(0),
+  ecosystemServicesScore: float("ecosystemServicesScore").default(0), // 0–10
+  // Overall
+  environmentalScore:    float("environmentalScore").default(0), // 0–100
+  notes:                 text("notes"),
+  assessmentDate:        timestamp("assessmentDate").defaultNow(),
+  createdAt:             timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:             timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type LcssaEnvironmental = typeof lcssaEnvironmental.$inferSelect;
+export type InsertLcssaEnvironmental = typeof lcssaEnvironmental.$inferInsert;
+
+// ── LCSSA: Social LCA (People) ───────────────────────────────────────────────
+export const lcssaSocial = mysqlTable("lcssa_social", {
+  id:                  int("id").autoincrement().primaryKey(),
+  ventureId:           varchar("ventureId", { length: 64 }).notNull(),
+  // Labor Conditions
+  livingWageCompliance: boolean("livingWageCompliance").default(false),
+  avgWorkingHoursPerWeek: float("avgWorkingHoursPerWeek").default(0),
+  employeeTurnoverPct:  float("employeeTurnoverPct").default(0),
+  collectiveBargaining: boolean("collectiveBargaining").default(false),
+  // Human Rights
+  humanRightsDueDiligence: boolean("humanRightsDueDiligence").default(false),
+  supplyChainAuditScore: float("supplyChainAuditScore").default(0), // 0–10
+  childLaborRisk:       varchar("childLaborRisk", { length: 16 }).default("Low"), // Low/Medium/High
+  forcedLaborRisk:      varchar("forcedLaborRisk", { length: 16 }).default("Low"),
+  // Community Impact
+  localHiringPct:       float("localHiringPct").default(0),
+  communityInvestmentGbp: float("communityInvestmentGbp").default(0),
+  communityEngagementScore: float("communityEngagementScore").default(0), // 0–10
+  // Health & Safety
+  ltifr:                float("ltifr").default(0), // Lost Time Injury Frequency Rate
+  nearMissReports:      int("nearMissReports").default(0),
+  safetyTrainingHours:  float("safetyTrainingHours").default(0),
+  healthSafetyScore:    float("healthSafetyScore").default(0), // 0–10
+  // Overall
+  socialScore:          float("socialScore").default(0), // 0–100
+  notes:                text("notes"),
+  assessmentDate:       timestamp("assessmentDate").defaultNow(),
+  createdAt:            timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:            timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type LcssaSocial = typeof lcssaSocial.$inferSelect;
+export type InsertLcssaSocial = typeof lcssaSocial.$inferInsert;
+
+// ── LCSSA: Life Cycle Costing (Profit) ───────────────────────────────────────
+export const lcssaLifeCycleCost = mysqlTable("lcssa_life_cycle_cost", {
+  id:                  int("id").autoincrement().primaryKey(),
+  ventureId:           varchar("ventureId", { length: 64 }).notNull(),
+  // Production Costs
+  rawMaterialCostGbp:  float("rawMaterialCostGbp").default(0),
+  manufacturingCostGbp: float("manufacturingCostGbp").default(0),
+  labourCostGbp:       float("labourCostGbp").default(0),
+  overheadCostGbp:     float("overheadCostGbp").default(0),
+  // Logistics Costs
+  inboundLogisticsCostGbp:  float("inboundLogisticsCostGbp").default(0),
+  outboundLogisticsCostGbp: float("outboundLogisticsCostGbp").default(0),
+  warehouseCostGbp:    float("warehouseCostGbp").default(0),
+  // Maintenance
+  plannedMaintenanceCostGbp:   float("plannedMaintenanceCostGbp").default(0),
+  unplannedMaintenanceCostGbp: float("unplannedMaintenanceCostGbp").default(0),
+  assetLifespanYears:  float("assetLifespanYears").default(0),
+  // End-of-Life Costs
+  disposalCostGbp:     float("disposalCostGbp").default(0),
+  recyclingRevGbp:     float("recyclingRevGbp").default(0),
+  remediationCostGbp:  float("remediationCostGbp").default(0),
+  // Totals
+  totalLccGbp:         float("totalLccGbp").default(0),
+  lccScore:            float("lccScore").default(0), // 0–100 (efficiency score)
+  currency:            varchar("currency", { length: 8 }).default("GBP"),
+  notes:               text("notes"),
+  assessmentDate:      timestamp("assessmentDate").defaultNow(),
+  createdAt:           timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:           timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type LcssaLifeCycleCost = typeof lcssaLifeCycleCost.$inferSelect;
+export type InsertLcssaLifeCycleCost = typeof lcssaLifeCycleCost.$inferInsert;
+
+// ── LCSSA: Oversight & Governance (Policy & Standards + Data & Reporting) ────
+export const lcssaOversight = mysqlTable("lcssa_oversight", {
+  id:                  int("id").autoincrement().primaryKey(),
+  ventureId:           varchar("ventureId", { length: 64 }).notNull(),
+  // Policy & Standards
+  iso14001Certified:   boolean("iso14001Certified").default(false),
+  iso26000Adopted:     boolean("iso26000Adopted").default(false),
+  griReportingLevel:   varchar("griReportingLevel", { length: 32 }).default("None"), // None/Core/Comprehensive
+  sdgAlignmentCount:   int("sdgAlignmentCount").default(0), // number of SDGs addressed
+  policyDocumentUrl:   varchar("policyDocumentUrl", { length: 512 }),
+  complianceScore:     float("complianceScore").default(0), // 0–100
+  // Data & Reporting
+  reportingFrequency:  varchar("reportingFrequency", { length: 32 }).default("Annual"), // Annual/Quarterly/Monthly
+  lastReportDate:      timestamp("lastReportDate"),
+  nextReportDate:      timestamp("nextReportDate"),
+  dataQualityScore:    float("dataQualityScore").default(0), // 0–10
+  thirdPartyVerified:  boolean("thirdPartyVerified").default(false),
+  verifierName:        varchar("verifierName", { length: 128 }),
+  reportUrl:           varchar("reportUrl", { length: 512 }),
+  // Governance
+  boardOversight:      boolean("boardOversight").default(false),
+  sustainabilityCommittee: boolean("sustainabilityCommittee").default(false),
+  stakeholderEngagementScore: float("stakeholderEngagementScore").default(0), // 0–10
+  oversightScore:      float("oversightScore").default(0), // 0–100
+  notes:               text("notes"),
+  createdAt:           timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:           timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type LcssaOversight = typeof lcssaOversight.$inferSelect;
+export type InsertLcssaOversight = typeof lcssaOversight.$inferInsert;
+
+// ── LCSSA: Sustainable Decision Log ──────────────────────────────────────────
+export const lcssaDecisionLog = mysqlTable("lcssa_decision_log", {
+  id:                  int("id").autoincrement().primaryKey(),
+  ventureId:           varchar("ventureId", { length: 64 }).notNull(),
+  decisionTitle:       varchar("decisionTitle", { length: 256 }).notNull(),
+  decisionType:        mysqlEnum("decisionType", ["Environmental", "Social", "Economic", "Integrated"]).notNull().default("Integrated"),
+  lcaDimension:        varchar("lcaDimension", { length: 64 }), // Environmental LCA / Social LCA / LCC
+  rationale:           text("rationale"),
+  environmentalImpact: varchar("environmentalImpact", { length: 16 }).default("Neutral"), // Positive/Neutral/Negative
+  socialImpact:        varchar("socialImpact", { length: 16 }).default("Neutral"),
+  economicImpact:      varchar("economicImpact", { length: 16 }).default("Neutral"),
+  status:              mysqlEnum("status", ["Proposed", "Approved", "Implemented", "Reviewed"]).notNull().default("Proposed"),
+  decisionDate:        timestamp("decisionDate").defaultNow(),
+  reviewDate:          timestamp("reviewDate"),
+  owner:               varchar("owner", { length: 128 }),
+  createdAt:           timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:           timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type LcssaDecisionLog = typeof lcssaDecisionLog.$inferSelect;
+export type InsertLcssaDecisionLog = typeof lcssaDecisionLog.$inferInsert;
