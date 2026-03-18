@@ -402,3 +402,31 @@
 - [x] Show escalation history (escalated by, reason, date) on each risk item card (collapsible)
 - [x] Escalation count badge on risk items with prior escalations
 - [x] 449 tests passing, 0 TypeScript errors
+
+## Sprint 36 — Dynamic Equity Engine (People & ESOP Upgrade)
+
+- [ ] Add equity_allocations table
+- [ ] Add contribution_logs table
+- [ ] Add equity_milestones table
+- [ ] Add equity_rules table
+- [ ] Add venture_cap_table_snapshots table
+- [ ] Run pnpm db:push migration
+- [ ] Backend equity engine procedures
+- [ ] Rebuild PeopleEsop.tsx with 5-tab UI
+- [ ] Write vitest tests (15+)
+- [ ] Save checkpoint
+
+## Sprint 36 — Dynamic Equity Engine
+
+- [x] DB schema: equityAllocations, equityRules, contributionLogs, equityMilestones, ventureCapTableSnapshots
+- [x] Migration 0020 applied to database
+- [x] Backend: equity router with 12 procedures
+- [x] Core formula: Score = (0.4xVRL) + (0.3xContribution) + (0.2xCapital) + (0.1xPerformance)
+- [x] UI: PeopleEsop.tsx rebuilt with 5-tab Dynamic Equity Engine dashboard
+- [x] UI Tab 1 — Overview: KPI cards, equity donut, leaderboard, portfolio summary, formula guide
+- [x] UI Tab 2 — Equity Register: member cards with vesting bars, score gauges, quick-edit
+- [x] UI Tab 3 — Contributions: log table + dialog
+- [x] UI Tab 4 — Cap Table: current table + snapshot history
+- [x] UI Tab 5 — Legal Conversion: milestones + trigger conversion + legal info panel
+- [x] Vitest: 24 equity engine tests (473 total, 23 files, all passing)
+- [x] TypeScript: 0 errors

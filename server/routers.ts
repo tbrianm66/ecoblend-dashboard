@@ -3188,6 +3188,297 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       };
     }),
   }),
+
+  // ── Dynamic Equity Engine ────────────────────────────────────────────────────
+  // Formula: Score = (0.4×VRL) + (0.3×Contribution) + (0.2×Capital) + (0.1×Performance)
+  equity: router({
+
+    // ── Equity Rules (per-venture formula weights) ─────────────────────────────
+    getEquityRules: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { equityRules } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const rows = await db.select().from(equityRules).where(eq(equityRules.ventureId, input.ventureId));
+        if (rows.length > 0) return rows[0];
+        // Return defaults if no rule configured yet
+        return {
+          id: 0, ventureId: input.ventureId,
+          vrlWeight: 0.4, contributionWeight: 0.3, capitalWeight: 0.2, performanceWeight: 0.1,
+          totalEquityPool: 20.0, notes: null,
+          createdAt: new Date(), updatedAt: new Date(),
+        };
+      }),
+
+    upsertEquityRules: publicProcedure
+      .input(z.object({
+        ventureId:          z.string(),
+        vrlWeight:          z.number().min(0).max(1).optional(),
+        contributionWeight: z.number().min(0).max(1).optional(),
+        capitalWeight:      z.number().min(0).max(1).optional(),
+        performanceWeight:  z.number().min(0).max(1).optional(),
+        totalEquityPool:    z.number().min(0).max(100).optional(),
+        notes:              z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { equityRules } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const existing = await db.select().from(equityRules).where(eq(equityRules.ventureId, input.ventureId));
+        if (existing.length > 0) {
+          const { ventureId, ...rest } = input;
+          await db.update(equityRules).set(rest).where(eq(equityRules.ventureId, input.ventureId));
+          return { ventureId };
+        } else {
+          await db.insert(equityRules).values(input as any);
+          return { ventureId: input.ventureId };
+        }
+      }),
+
+    // ── Equity Allocations CRUD ────────────────────────────────────────────────
+    listAllocations: publicProcedure
+      .input(z.object({ ventureId: z.string().optional() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { equityAllocations } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        if (input.ventureId) {
+          return db.select().from(equityAllocations).where(eq(equityAllocations.ventureId, input.ventureId));
+        }
+        return db.select().from(equityAllocations).orderBy(equityAllocations.ventureId, equityAllocations.memberName);
+      }),
+
+    upsertAllocation: publicProcedure
+      .input(z.object({
+        id:                 z.number().int().optional(),
+        ventureId:          z.string(),
+        memberName:         z.string().min(1),
+        memberRole:         z.enum(["Founder","Co-Founder","Lead Engineer","VBS Mentor","Advisor","Operator","Investor"]).optional(),
+        equityPct:          z.number().min(0).max(100).optional(),
+        vestingMonths:      z.number().int().min(0).optional(),
+        cliffMonths:        z.number().int().min(0).optional(),
+        monthsIn:           z.number().int().min(0).optional(),
+        vestingStatus:      z.enum(["Not Started","Cliff","Vesting","Fully Vested"]).optional(),
+        vrlScore:           z.number().min(0).max(10).optional(),
+        contributionScore:  z.number().min(0).max(10).optional(),
+        capitalInput:       z.number().min(0).optional(),
+        performanceScore:   z.number().min(0).max(10).optional(),
+        stipendStatus:      z.enum(["Active","Completed","Pending","Paused"]).optional(),
+        stipendMonthly:     z.number().min(0).optional(),
+        stipendMonthsTotal: z.number().int().min(0).optional(),
+        stipendMonthsUsed:   z.number().int().min(0).optional(),
+        shareClass:          z.string().optional(),
+        legallyConverted:    z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { equityAllocations } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        if (input.id) {
+          const { id, ...rest } = input;
+          await db.update(equityAllocations).set(rest as any).where(eq(equityAllocations.id, id));
+          return { id };
+        } else {
+          const { id: _id, ...rest } = input;
+          const result = await db.insert(equityAllocations).values(rest as any);
+          return { id: (result as any)[0]?.insertId ?? 0 };
+        }
+      }),
+
+    deleteAllocation: publicProcedure
+      .input(z.object({ id: z.number().int() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { equityAllocations } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        await db.delete(equityAllocations).where(eq(equityAllocations.id, input.id));
+        return { success: true };
+      }),
+
+    // ── Compute Equity Score (core formula) ────────────────────────────────────────
+    // Formula: Score = (0.4×VRL) + (0.3×Contribution) + (0.2×Capital) + (0.1×Performance)
+    computeEquityScore: publicProcedure
+      .input(z.object({ allocationId: z.number().int() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { equityAllocations, equityRules } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const allocs = await db.select().from(equityAllocations).where(eq(equityAllocations.id, input.allocationId));
+        const alloc = allocs[0];
+        if (!alloc) throw new Error("Allocation not found");
+        const rulesRows = await db.select().from(equityRules).where(eq(equityRules.ventureId, alloc.ventureId));
+        const rules = rulesRows[0] ?? { vrlWeight: 0.4, contributionWeight: 0.3, capitalWeight: 0.2, performanceWeight: 0.1, totalEquityPool: 20 };
+        // Normalise capital input: £500k = score 10
+        const capitalScore = Math.min(10, ((alloc.capitalInput ?? 0) / 50));
+        const dynamicEquityScore = parseFloat((
+          (rules.vrlWeight * (alloc.vrlScore ?? 0)) +
+          (rules.contributionWeight * (alloc.contributionScore ?? 0)) +
+          (rules.capitalWeight * capitalScore) +
+          (rules.performanceWeight * (alloc.performanceScore ?? 0))
+        ).toFixed(2));
+        const dynamicEquityPct = parseFloat(((dynamicEquityScore / 10) * (rules.totalEquityPool ?? 20)).toFixed(2));
+        await db.update(equityAllocations)
+          .set({ dynamicEquityScore, dynamicEquityPct })
+          .where(eq(equityAllocations.id, input.allocationId));
+        return { allocationId: input.allocationId, dynamicEquityScore, dynamicEquityPct,
+          components: { vrl: alloc.vrlScore ?? 0, contribution: alloc.contributionScore ?? 0, capital: capitalScore, performance: alloc.performanceScore ?? 0 } };
+      }),
+
+    // ── Contribution Logs ───────────────────────────────────────────────────────────────────
+    listContributions: publicProcedure
+      .input(z.object({ ventureId: z.string().optional(), allocationId: z.number().int().optional() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { contributionLogs } = await import("../drizzle/schema");
+        const { eq, and, desc } = await import("drizzle-orm");
+        const conditions: any[] = [];
+        if (input.ventureId) conditions.push(eq(contributionLogs.ventureId, input.ventureId));
+        if (input.allocationId) conditions.push(eq(contributionLogs.allocationId, input.allocationId));
+        return db.select().from(contributionLogs)
+          .where(conditions.length > 0 ? and(...conditions) : undefined)
+          .orderBy(desc(contributionLogs.loggedAt));
+      }),
+
+    logContribution: publicProcedure
+      .input(z.object({
+        ventureId:        z.string(),
+        allocationId:     z.number().int(),
+        memberName:       z.string(),
+        contributionType: z.enum(["Task Completion","Milestone Achieved","Capital Injection","Commercial Traction","VRL Progression","IP Filing","Team Building","Other"]),
+        description:      z.string().optional(),
+        valueScore:       z.number().min(0).max(10),
+        capitalAmount:    z.number().min(0).optional(),
+        evidenceUrl:      z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { contributionLogs, equityAllocations } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const result = await db.insert(contributionLogs).values({ ...input, loggedAt: new Date() } as any);
+        const logId = (result as any)[0]?.insertId ?? 0;
+        const logs = await db.select().from(contributionLogs).where(eq(contributionLogs.allocationId, input.allocationId));
+        const avgScore = logs.length > 0
+          ? parseFloat((logs.reduce((s, l) => s + (l.valueScore ?? 0), 0) / logs.length).toFixed(2))
+          : 0;
+        const totalCapital = logs.filter(l => l.contributionType === "Capital Injection").reduce((s, l) => s + (l.capitalAmount ?? 0), 0);
+        await db.update(equityAllocations).set({ contributionScore: avgScore, capitalInput: totalCapital }).where(eq(equityAllocations.id, input.allocationId));
+        return { logId, newContributionScore: avgScore };
+      }),
+
+    // ── Contribution Leaderboard ──────────────────────────────────────────────────────────────
+    getLeaderboard: publicProcedure
+      .input(z.object({ ventureId: z.string().optional() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { equityAllocations } = await import("../drizzle/schema");
+        const { eq, desc } = await import("drizzle-orm");
+        const rows = input.ventureId
+          ? await db.select().from(equityAllocations).where(eq(equityAllocations.ventureId, input.ventureId))
+          : await db.select().from(equityAllocations);
+        return rows
+          .sort((a, b) => (b.dynamicEquityScore ?? 0) - (a.dynamicEquityScore ?? 0))
+          .map((r, i) => ({ rank: i + 1, ...r }));
+      }),
+
+    // ── Equity Milestones ───────────────────────────────────────────────────────────────────
+    listMilestones: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { equityMilestones } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        return db.select().from(equityMilestones).where(eq(equityMilestones.ventureId, input.ventureId));
+      }),
+
+    upsertMilestone: publicProcedure
+      .input(z.object({
+        id:                z.number().int().optional(),
+        ventureId:         z.string(),
+        milestoneName:     z.string().min(1),
+        milestoneType:     z.enum(["VRL Gate","Pre-Seed Funding","Seed Funding","Series A","Revenue Target","Custom"]),
+        triggerVrlLevel:   z.number().int().optional(),
+        triggerRevenueGbp: z.number().optional(),
+        description:       z.string().optional(),
+        status:            z.enum(["Pending","Active","Triggered","Completed"]).optional(),
+        legalStructure:    z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { equityMilestones } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        if (input.id) {
+          const { id, ...rest } = input;
+          await db.update(equityMilestones).set(rest as any).where(eq(equityMilestones.id, id));
+          return { id };
+        } else {
+          const { id: _id, ...rest } = input;
+          const result = await db.insert(equityMilestones).values(rest as any);
+          return { id: (result as any)[0]?.insertId ?? 0 };
+        }
+      }),
+
+    triggerLegalConversion: publicProcedure
+      .input(z.object({ milestoneId: z.number().int(), ventureId: z.string(), notes: z.string().optional() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { equityMilestones, equityAllocations, ventureCapTableSnapshots } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const { notifyOwner } = await import("./_core/notification");
+        await db.update(equityMilestones).set({ status: "Triggered", triggeredAt: new Date() }).where(eq(equityMilestones.id, input.milestoneId));
+        await db.update(equityAllocations).set({ legallyConverted: true, conversionDate: new Date() }).where(eq(equityAllocations.ventureId, input.ventureId));
+        const allocations = await db.select().from(equityAllocations).where(eq(equityAllocations.ventureId, input.ventureId));
+        const capTableJson = JSON.stringify(allocations.map(a => ({ member: a.memberName, role: a.memberRole, equityPct: a.equityPct, dynamicScore: a.dynamicEquityScore, dynamicPct: a.dynamicEquityPct })));
+        await db.insert(ventureCapTableSnapshots).values({ ventureId: input.ventureId, triggerEvent: input.notes ?? "Legal conversion triggered", capTableJson, totalEquityAllocated: allocations.reduce((s, a) => s + (a.equityPct ?? 0), 0), totalDynamicScore: allocations.reduce((s, a) => s + (a.dynamicEquityScore ?? 0), 0) } as any);
+        await notifyOwner({ title: `Legal Equity Conversion — ${input.ventureId}`, content: `Dynamic equity converted to legal equity for ${input.ventureId}. ${allocations.length} members converted.` });
+        return { success: true, membersConverted: allocations.length };
+      }),
+
+    // ── Cap Table Snapshots ───────────────────────────────────────────────────────────────────
+    listCapTableSnapshots: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { ventureCapTableSnapshots } = await import("../drizzle/schema");
+        const { eq, desc } = await import("drizzle-orm");
+        return db.select().from(ventureCapTableSnapshots).where(eq(ventureCapTableSnapshots.ventureId, input.ventureId)).orderBy(desc(ventureCapTableSnapshots.snapshotDate));
+      }),
+
+    takeCapTableSnapshot: publicProcedure
+      .input(z.object({ ventureId: z.string(), triggerEvent: z.string().optional(), notes: z.string().optional() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { equityAllocations, ventureCapTableSnapshots } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const allocations = await db.select().from(equityAllocations).where(eq(equityAllocations.ventureId, input.ventureId));
+        const capTableJson = JSON.stringify(allocations.map(a => ({ member: a.memberName, role: a.memberRole, equityPct: a.equityPct, dynamicScore: a.dynamicEquityScore, dynamicPct: a.dynamicEquityPct })));
+        const result = await db.insert(ventureCapTableSnapshots).values({ ventureId: input.ventureId, triggerEvent: input.triggerEvent ?? "Manual snapshot", capTableJson, totalEquityAllocated: allocations.reduce((s, a) => s + (a.equityPct ?? 0), 0), totalDynamicScore: allocations.reduce((s, a) => s + (a.dynamicEquityScore ?? 0), 0), notes: input.notes } as any);
+        return { id: (result as any)[0]?.insertId ?? 0 };
+      }),
+
+    // ── Portfolio equity summary ───────────────────────────────────────────────────────────────────
+    getPortfolioEquitySummary: publicProcedure.query(async () => {
+      const db = (await getDb())!;
+      const { equityAllocations } = await import("../drizzle/schema");
+      const allocs = await db.select().from(equityAllocations);
+      const byVenture = allocs.reduce((acc: Record<string, typeof allocs>, a) => {
+        if (!acc[a.ventureId]) acc[a.ventureId] = [];
+        acc[a.ventureId].push(a);
+        return acc;
+      }, {});
+      return Object.entries(byVenture).map(([ventureId, members]) => ({
+        ventureId,
+        memberCount: members.length,
+        totalEquityAllocated: members.reduce((s, m) => s + (m.equityPct ?? 0), 0),
+        avgDynamicScore: members.length > 0 ? parseFloat((members.reduce((s, m) => s + (m.dynamicEquityScore ?? 0), 0) / members.length).toFixed(2)) : 0,
+        activeStipends: members.filter(m => m.stipendStatus === "Active").length,
+        fullyVested: members.filter(m => m.vestingStatus === "Fully Vested").length,
+        legallyConverted: members.filter(m => m.legallyConverted).length,
+      }));
+    }),
+
+  }),
+
   // ── POI Module ─────────────────────────────────────────────────────────────
   poi: router({
     // Categories

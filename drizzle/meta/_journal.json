@@ -141,6 +141,13 @@
       "when": 1773781572320,
       "tag": "0019_colorful_reptil",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "5",
+      "when": 1773857715134,
+      "tag": "0020_jazzy_magus",
+      "breakpoints": true
     }
   ]
 }

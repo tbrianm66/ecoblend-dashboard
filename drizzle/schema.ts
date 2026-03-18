@@ -2077,3 +2077,135 @@ export const legalRiskEscalations = mysqlTable("legal_risk_escalations", {
 });
 export type LegalRiskEscalation = typeof legalRiskEscalations.$inferSelect;
 export type InsertLegalRiskEscalation = typeof legalRiskEscalations.$inferInsert;
+
+// ╔══════════════════════════════════════════════════════════════════════════════╗
+// ║  DYNAMIC EQUITY ENGINE — Sprint 36                                          ║
+// ║  Based on EcoBlend Dynamic Equity Model specification                       ║
+// ║  Formula: Score = (0.4×VRL) + (0.3×Contribution) + (0.2×Capital) + (0.1×Perf)║
+// ╚══════════════════════════════════════════════════════════════════════════════╝
+
+// ── Equity Rules (configurable weighting per venture) ────────────────────────
+// Stores the formula weights for each venture's equity engine.
+// Defaults match the specification: VRL 40%, Contribution 30%, Capital 20%, Performance 10%.
+export const equityRules = mysqlTable("equity_rules", {
+  id:                  int("id").autoincrement().primaryKey(),
+  ventureId:           varchar("ventureId", { length: 64 }).notNull().unique(),
+  vrlWeight:           float("vrlWeight").notNull().default(0.4),
+  contributionWeight:  float("contributionWeight").notNull().default(0.3),
+  capitalWeight:       float("capitalWeight").notNull().default(0.2),
+  performanceWeight:   float("performanceWeight").notNull().default(0.1),
+  totalEquityPool:     float("totalEquityPool").notNull().default(20.0), // % of venture equity in ESOP pool
+  notes:               text("notes"),
+  createdAt:           timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:           timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type EquityRule = typeof equityRules.$inferSelect;
+export type InsertEquityRule = typeof equityRules.$inferInsert;
+
+// ── Equity Allocations (per-member dynamic equity record) ────────────────────
+// Tracks each team member's current equity allocation and computed dynamic score.
+export const equityAllocations = mysqlTable("equity_allocations", {
+  id:                  int("id").autoincrement().primaryKey(),
+  ventureId:           varchar("ventureId", { length: 64 }).notNull(),
+  memberName:          varchar("memberName", { length: 128 }).notNull(),
+  memberRole:          mysqlEnum("memberRole", ["Founder","Co-Founder","Lead Engineer","VBS Mentor","Advisor","Operator","Investor"]).default("Founder"),
+  // Static equity allocation (legal)
+  equityPct:           float("equityPct").notNull().default(0),
+  // Vesting schedule
+  vestingMonths:       int("vestingMonths").default(48),
+  cliffMonths:         int("cliffMonths").default(12),
+  monthsIn:            int("monthsIn").default(0),
+  vestingStatus:       mysqlEnum("vestingStatus", ["Not Started","Cliff","Vesting","Fully Vested"]).default("Not Started"),
+  // Dynamic equity score components (0–10 scale each)
+  vrlScore:            float("vrlScore").default(0),          // VRL contribution score
+  contributionScore:   float("contributionScore").default(0), // Task/milestone effort score
+  capitalInput:        float("capitalInput").default(0),      // Capital contributed (£k)
+  performanceScore:    float("performanceScore").default(0),  // Revenue/traction KPIs
+  // Computed dynamic equity score (formula result)
+  dynamicEquityScore:  float("dynamicEquityScore").default(0), // 0–10
+  dynamicEquityPct:    float("dynamicEquityPct").default(0),   // % of pool earned
+  // Stipend
+  stipendStatus:       mysqlEnum("stipendStatus", ["Active","Completed","Pending","Paused"]).default("Pending"),
+  stipendMonthly:      float("stipendMonthly").default(0),
+  stipendMonthsTotal:  int("stipendMonthsTotal").default(6),
+  stipendMonthsUsed:   int("stipendMonthsUsed").default(0),
+  // Legal conversion status
+  legallyConverted:    boolean("legallyConverted").default(false),
+  conversionDate:      timestamp("conversionDate"),
+  shareClass:          varchar("shareClass", { length: 64 }),
+  createdAt:           timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:           timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type EquityAllocation = typeof equityAllocations.$inferSelect;
+export type InsertEquityAllocation = typeof equityAllocations.$inferInsert;
+
+// ── Contribution Logs (event-level contribution tracking) ────────────────────
+// Records every contribution event that feeds into the equity engine.
+export const contributionLogs = mysqlTable("contribution_logs", {
+  id:                  int("id").autoincrement().primaryKey(),
+  ventureId:           varchar("ventureId", { length: 64 }).notNull(),
+  allocationId:        int("allocationId").notNull(), // FK → equity_allocations.id
+  memberName:          varchar("memberName", { length: 128 }).notNull(),
+  contributionType:    mysqlEnum("contributionType", [
+    "Task Completion",    // BRL/TRL task completed
+    "Milestone Achieved", // Key venture milestone hit
+    "Capital Injection",  // Cash/asset contribution
+    "Commercial Traction",// Revenue, customer, or partnership win
+    "VRL Progression",    // VRL level advancement
+    "IP Filing",          // Patent, trademark, or design filing
+    "Team Building",      // Key hire or partnership formed
+    "Other",
+  ]).notNull(),
+  description:         text("description"),
+  valueScore:          float("valueScore").notNull().default(0), // 0–10 impact score
+  capitalAmount:       float("capitalAmount").default(0),        // £ if capital type
+  evidenceUrl:         varchar("evidenceUrl", { length: 512 }),
+  loggedAt:            timestamp("loggedAt").defaultNow().notNull(),
+  createdAt:           timestamp("createdAt").defaultNow().notNull(),
+});
+export type ContributionLog = typeof contributionLogs.$inferSelect;
+export type InsertContributionLog = typeof contributionLogs.$inferInsert;
+
+// ── Equity Milestones (legal conversion trigger points) ──────────────────────
+// Defines the milestones at which dynamic equity converts to legal equity.
+// Per spec: End of Validation (VRL 5), Pre-Seed Funding, Series A.
+export const equityMilestones = mysqlTable("equity_milestones", {
+  id:                  int("id").autoincrement().primaryKey(),
+  ventureId:           varchar("ventureId", { length: 64 }).notNull(),
+  milestoneName:       varchar("milestoneName", { length: 128 }).notNull(),
+  milestoneType:       mysqlEnum("milestoneType", [
+    "VRL Gate",          // VRL level threshold reached
+    "Pre-Seed Funding",  // First external funding round
+    "Seed Funding",      // Seed round
+    "Series A",          // Series A round
+    "Revenue Target",    // Commercial traction milestone
+    "Custom",
+  ]).notNull(),
+  triggerVrlLevel:     int("triggerVrlLevel"),          // VRL level that triggers conversion
+  triggerRevenueGbp:   float("triggerRevenueGbp"),      // Revenue threshold (£)
+  description:         text("description"),
+  status:              mysqlEnum("status", ["Pending","Active","Triggered","Completed"]).default("Pending"),
+  triggeredAt:         timestamp("triggeredAt"),
+  legalStructure:      text("legalStructure"),          // Share class, option pool, vesting notes
+  createdAt:           timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:           timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type EquityMilestone = typeof equityMilestones.$inferSelect;
+export type InsertEquityMilestone = typeof equityMilestones.$inferInsert;
+
+// ── Venture Cap Table Snapshots (point-in-time cap table) ────────────────────
+// Records the cap table state at each major milestone for evolution tracking.
+export const ventureCapTableSnapshots = mysqlTable("venture_cap_table_snapshots", {
+  id:                  int("id").autoincrement().primaryKey(),
+  ventureId:           varchar("ventureId", { length: 64 }).notNull(),
+  snapshotDate:        timestamp("snapshotDate").defaultNow().notNull(),
+  triggerEvent:        varchar("triggerEvent", { length: 128 }), // e.g. "VRL 3 reached", "Pre-Seed £150k"
+  // Aggregate cap table data (JSON-serialised array of {member, equityPct, dynamicScore})
+  capTableJson:        text("capTableJson").notNull(),           // JSON string
+  totalEquityAllocated: float("totalEquityAllocated").default(0), // sum of all equity %
+  totalDynamicScore:   float("totalDynamicScore").default(0),    // sum of dynamic scores
+  notes:               text("notes"),
+  createdAt:           timestamp("createdAt").defaultNow().notNull(),
+});
+export type VentureCapTableSnapshot = typeof ventureCapTableSnapshots.$inferSelect;
+export type InsertVentureCapTableSnapshot = typeof ventureCapTableSnapshots.$inferInsert;
