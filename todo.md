@@ -430,3 +430,38 @@
 - [x] UI Tab 5 — Legal Conversion: milestones + trigger conversion + legal info panel
 - [x] Vitest: 24 equity engine tests (473 total, 23 files, all passing)
 - [x] TypeScript: 0 errors
+
+## Sprint 37 — IP Intelligence Upgrade
+
+- [ ] DB schema: ipAssets (unified registry: Patent/Trademark/Copyright/DesignRight/TradeSec)
+- [ ] DB schema: ipLicenses table
+- [ ] DB schema: patentProjects (AI workspace)
+- [ ] DB schema: patentHypotheses
+- [ ] Migration applied
+- [ ] Backend: ip router — listAssets, upsertAsset, deleteAsset
+- [ ] Backend: ip router — listLicenses, upsertLicense, deleteLicense
+- [ ] Backend: ip router — listPatentProjects, createPatentProject, updatePatentProject
+- [ ] Backend: ip router — hypothesize (Patent Strategist LLM)
+- [ ] Backend: ip router — draftSection (Patent Attorney LLM, per-section)
+- [ ] Backend: ip router — getPortfolioSummary
+- [ ] UI: IpManagement.tsx rebuilt with 5 tabs
+- [ ] UI Tab 1 — Overview: KPIs, IP type breakdown, pipeline
+- [ ] UI Tab 2 — IP Registry: all 5 asset types, filterable, add/edit/delete
+- [ ] UI Tab 3 — Patent AI Workspace: Ingestion → Hypothesis Board → Patent Editor
+- [ ] UI Tab 4 — Licensing: license table with CRUD
+- [ ] UI Tab 5 — Governance: principles + legal disclaimer
+- [ ] Vitest: IP engine tests
+- [ ] All tests passing, 0 TypeScript errors
+
+## Sprint 37 — IP Intelligence Upgrade
+- [x] Add 4 new IP DB tables (ipAssets, ipLicenses, patentProjects, patentHypotheses)
+- [x] Run migration 0021
+- [x] Build ip tRPC router (listAssets, upsertAsset, deleteAsset, listLicenses, upsertLicense, deleteLicense, listPatentProjects, createPatentProject, updatePatentProject, deletePatentProject, listHypotheses, toggleHypothesis, hypothesize, draftSection, getPortfolioSummary)
+- [x] AI Patent Strategist (hypothesize procedure using LLM JSON schema)
+- [x] AI Patent Attorney (draftSection procedure, section-by-section)
+- [x] Rebuild IpManagement.tsx — 5 tabs: Overview, IP Registry, Patent AI Workspace, Licensing, Governance
+- [x] IP Registry covers all 5 types: Patent, Trademark, Copyright, DesignRight, TradeSecret
+- [x] Patent AI Workspace: 3-phase workflow (Ingestion → Hypothesis Board → Patent Editor)
+- [x] Governance tab: UK/EU legal framework reference for all 5 IP types
+- [x] Write ip.engine.test.ts (28 tests)
+- [x] All 501 tests passing

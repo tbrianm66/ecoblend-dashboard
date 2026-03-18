@@ -2209,3 +2209,104 @@ export const ventureCapTableSnapshots = mysqlTable("venture_cap_table_snapshots"
 });
 export type VentureCapTableSnapshot = typeof ventureCapTableSnapshots.$inferSelect;
 export type InsertVentureCapTableSnapshot = typeof ventureCapTableSnapshots.$inferInsert;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// IP INTELLIGENCE MODULE — Sprint 37
+// Unified IP asset registry covering Patents, Trademarks, Copyrights,
+// Design Rights, and Trade Secrets, plus an AI Patent Workspace.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── IP Assets (unified registry for all 5 IP types) ─────────────────────────
+export const ipAssets = mysqlTable("ip_assets", {
+  id:                  int("id").autoincrement().primaryKey(),
+  ventureId:           varchar("ventureId", { length: 64 }).notNull(),
+  ventureName:         varchar("ventureName", { length: 128 }),
+  ventureColor:        varchar("ventureColor", { length: 16 }).default("#22c55e"),
+  ipType:              varchar("ipType", { length: 32 }).notNull(),
+  title:               varchar("title", { length: 256 }).notNull(),
+  reference:           varchar("reference", { length: 64 }),
+  description:         text("description"),
+  status:              varchar("status", { length: 32 }).notNull().default("Draft"),
+  jurisdiction:        varchar("jurisdiction", { length: 64 }).default("UK"),
+  filedDate:           varchar("filedDate", { length: 16 }),
+  grantedDate:         varchar("grantedDate", { length: 16 }),
+  expiryDate:          varchar("expiryDate", { length: 16 }),
+  renewalDueDate:      varchar("renewalDueDate", { length: 16 }),
+  commercialPotential: varchar("commercialPotential", { length: 16 }).default("Medium"),
+  estimatedValue:      float("estimatedValue").default(0),
+  trl:                 int("trl").default(1),
+  claimsCount:         int("claimsCount").default(0),
+  priorArtSummary:     text("priorArtSummary"),
+  trademarkClass:      varchar("trademarkClass", { length: 64 }),
+  trademarkType:       varchar("trademarkType", { length: 32 }),
+  copyrightWork:       varchar("copyrightWork", { length: 64 }),
+  author:              varchar("author", { length: 128 }),
+  designType:          varchar("designType", { length: 32 }),
+  secretCategory:      varchar("secretCategory", { length: 64 }),
+  protectionMeasures:  text("protectionMeasures"),
+  ownedBy:             varchar("ownedBy", { length: 128 }).default("EcoRace Ltd"),
+  assignedTo:          varchar("assignedTo", { length: 128 }),
+  notes:               text("notes"),
+  createdAt:           timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:           timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type IpAsset = typeof ipAssets.$inferSelect;
+export type InsertIpAsset = typeof ipAssets.$inferInsert;
+
+// ── IP Licenses ──────────────────────────────────────────────────────────────
+export const ipLicenses = mysqlTable("ip_licenses", {
+  id:              int("id").autoincrement().primaryKey(),
+  ipAssetId:       int("ipAssetId").notNull(),
+  licensee:        varchar("licensee", { length: 128 }).notNull(),
+  country:         varchar("country", { length: 64 }),
+  region:          varchar("region", { length: 64 }),
+  licenseType:     varchar("licenseType", { length: 32 }).notNull().default("Non-Exclusive"),
+  status:          varchar("status", { length: 32 }).notNull().default("Negotiating"),
+  annualValue:     float("annualValue").default(0),
+  upfrontFee:      float("upfrontFee").default(0),
+  royaltyRate:     float("royaltyRate").default(0),
+  startDate:       varchar("startDate", { length: 16 }),
+  endDate:         varchar("endDate", { length: 16 }),
+  valuesAligned:   boolean("valuesAligned").default(true),
+  notes:           text("notes"),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type IpLicense = typeof ipLicenses.$inferSelect;
+export type InsertIpLicense = typeof ipLicenses.$inferInsert;
+
+// ── Patent AI Workspace Projects ─────────────────────────────────────────────
+export const patentProjects = mysqlTable("patent_projects", {
+  id:                  int("id").autoincrement().primaryKey(),
+  ipAssetId:           int("ipAssetId"),
+  ventureId:           varchar("ventureId", { length: 64 }).notNull(),
+  title:               varchar("title", { length: 256 }).notNull(),
+  phase:               varchar("phase", { length: 32 }).notNull().default("Ingestion"),
+  coreInventionNotes:  text("coreInventionNotes"),
+  priorArtNotes:       text("priorArtNotes"),
+  draftAbstract:       text("draftAbstract"),
+  draftBackground:     text("draftBackground"),
+  draftSummary:        text("draftSummary"),
+  draftDetailedDesc:   text("draftDetailedDesc"),
+  draftClaims:         text("draftClaims"),
+  jurisdiction:        varchar("jurisdiction", { length: 64 }).default("UK/EPO"),
+  createdAt:           timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:           timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type PatentProject = typeof patentProjects.$inferSelect;
+export type InsertPatentProject = typeof patentProjects.$inferInsert;
+
+// ── Patent Hypotheses (AI-generated alternative embodiments) ─────────────────
+export const patentHypotheses = mysqlTable("patent_hypotheses", {
+  id:            int("id").autoincrement().primaryKey(),
+  projectId:     int("projectId").notNull(),
+  title:         varchar("title", { length: 256 }).notNull(),
+  description:   text("description").notNull(),
+  rationale:     text("rationale"),
+  claimImpact:   text("claimImpact"),
+  included:      boolean("included").default(false),
+  sortOrder:     int("sortOrder").default(0),
+  createdAt:     timestamp("createdAt").defaultNow().notNull(),
+});
+export type PatentHypothesis = typeof patentHypotheses.$inferSelect;
+export type InsertPatentHypothesis = typeof patentHypotheses.$inferInsert;

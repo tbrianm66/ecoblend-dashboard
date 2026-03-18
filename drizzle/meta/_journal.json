@@ -148,6 +148,13 @@
       "when": 1773857715134,
       "tag": "0020_jazzy_magus",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "5",
+      "when": 1773859499879,
+      "tag": "0021_lyrical_thunderbolt",
+      "breakpoints": true
     }
   ]
 }

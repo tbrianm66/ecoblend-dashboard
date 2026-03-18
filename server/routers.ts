@@ -4591,6 +4591,423 @@ Be specific, actionable, and grounded in the Lean Startup methodology. Use the E
       return { columns };
     }),
   }),
-});
 
+  // ── IP Intelligence Module ────────────────────────────────────────────────
+  ip: router({
+
+    // ── IP Asset CRUD ──────────────────────────────────────────────────────
+    listAssets: publicProcedure
+      .input(z.object({
+        ventureId: z.string().optional(),
+        ipType: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { ipAssets } = await import("../drizzle/schema");
+        const rows = await db.select().from(ipAssets).orderBy(ipAssets.createdAt);
+        let filtered = rows;
+        if (input.ventureId) filtered = filtered.filter((r: typeof rows[0]) => r.ventureId === input.ventureId);
+        if (input.ipType) filtered = filtered.filter((r: typeof rows[0]) => r.ipType === input.ipType);
+        return filtered;
+      }),
+
+    upsertAsset: publicProcedure
+      .input(z.object({
+        id: z.number().optional(),
+        ventureId: z.string(),
+        ventureName: z.string().optional(),
+        ventureColor: z.string().optional(),
+        ipType: z.enum(["Patent", "Trademark", "Copyright", "DesignRight", "TradeSecret"]),
+        title: z.string(),
+        reference: z.string().optional(),
+        description: z.string().optional(),
+        status: z.string().optional(),
+        jurisdiction: z.string().optional(),
+        filedDate: z.string().optional(),
+        grantedDate: z.string().optional(),
+        expiryDate: z.string().optional(),
+        renewalDueDate: z.string().optional(),
+        commercialPotential: z.enum(["High", "Medium", "Low"]).optional(),
+        estimatedValue: z.number().optional(),
+        trl: z.number().int().min(1).max(9).optional(),
+        claimsCount: z.number().int().optional(),
+        priorArtSummary: z.string().optional(),
+        trademarkClass: z.string().optional(),
+        trademarkType: z.string().optional(),
+        copyrightWork: z.string().optional(),
+        author: z.string().optional(),
+        designType: z.string().optional(),
+        secretCategory: z.string().optional(),
+        protectionMeasures: z.string().optional(),
+        ownedBy: z.string().optional(),
+        assignedTo: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { ipAssets } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const { id, ...data } = input;
+        if (id) {
+          await db.update(ipAssets).set({ ...data, updatedAt: new Date() }).where(eq(ipAssets.id, id));
+          return { id };
+        } else {
+          const [result] = await db.insert(ipAssets).values(data);
+          return { id: (result as any).insertId };
+        }
+      }),
+
+    deleteAsset: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { ipAssets } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        await db.delete(ipAssets).where(eq(ipAssets.id, input.id));
+        return { ok: true };
+      }),
+
+    // ── IP License CRUD ────────────────────────────────────────────────────
+    listLicenses: publicProcedure
+      .input(z.object({ ipAssetId: z.number().optional() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { ipLicenses } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const rows = await db.select().from(ipLicenses).orderBy(ipLicenses.createdAt);
+        if (input.ipAssetId) return rows.filter((r: typeof rows[0]) => r.ipAssetId === input.ipAssetId);
+        return rows;
+      }),
+
+    upsertLicense: publicProcedure
+      .input(z.object({
+        id: z.number().optional(),
+        ipAssetId: z.number(),
+        licensee: z.string(),
+        country: z.string().optional(),
+        region: z.string().optional(),
+        licenseType: z.string().optional(),
+        status: z.string().optional(),
+        annualValue: z.number().optional(),
+        upfrontFee: z.number().optional(),
+        royaltyRate: z.number().optional(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+        valuesAligned: z.boolean().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { ipLicenses } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const { id, ...data } = input;
+        if (id) {
+          await db.update(ipLicenses).set({ ...data, updatedAt: new Date() }).where(eq(ipLicenses.id, id));
+          return { id };
+        } else {
+          const [result] = await db.insert(ipLicenses).values(data);
+          return { id: (result as any).insertId };
+        }
+      }),
+
+    deleteLicense: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { ipLicenses } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        await db.delete(ipLicenses).where(eq(ipLicenses.id, input.id));
+        return { ok: true };
+      }),
+
+    // ── Patent AI Workspace: Projects ──────────────────────────────────────
+    listPatentProjects: publicProcedure
+      .input(z.object({ ventureId: z.string().optional() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { patentProjects } = await import("../drizzle/schema");
+        const rows = await db.select().from(patentProjects).orderBy(patentProjects.updatedAt);
+        if (input.ventureId) return rows.filter((r: typeof rows[0]) => r.ventureId === input.ventureId);
+        return rows;
+      }),
+
+    createPatentProject: publicProcedure
+      .input(z.object({
+        ventureId: z.string(),
+        title: z.string(),
+        jurisdiction: z.string().optional(),
+        coreInventionNotes: z.string().optional(),
+        priorArtNotes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { patentProjects } = await import("../drizzle/schema");
+        const [result] = await db.insert(patentProjects).values({ ...input, phase: "Ingestion" });
+        return { id: (result as any).insertId };
+      }),
+
+    updatePatentProject: publicProcedure
+      .input(z.object({
+        id: z.number(),
+        phase: z.string().optional(),
+        coreInventionNotes: z.string().optional(),
+        priorArtNotes: z.string().optional(),
+        draftAbstract: z.string().optional(),
+        draftBackground: z.string().optional(),
+        draftSummary: z.string().optional(),
+        draftDetailedDesc: z.string().optional(),
+        draftClaims: z.string().optional(),
+        jurisdiction: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { patentProjects } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const { id, ...data } = input;
+        await db.update(patentProjects).set({ ...data, updatedAt: new Date() }).where(eq(patentProjects.id, id));
+        return { ok: true };
+      }),
+
+    deletePatentProject: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { patentProjects, patentHypotheses } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        await db.delete(patentHypotheses).where(eq(patentHypotheses.projectId, input.id));
+        await db.delete(patentProjects).where(eq(patentProjects.id, input.id));
+        return { ok: true };
+      }),
+
+    // ── Patent AI Workspace: Hypotheses ────────────────────────────────────
+    listHypotheses: publicProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { patentHypotheses } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        return db.select().from(patentHypotheses)
+          .where(eq(patentHypotheses.projectId, input.projectId))
+          .orderBy(patentHypotheses.sortOrder);
+      }),
+
+    toggleHypothesis: publicProcedure
+      .input(z.object({ id: z.number(), included: z.boolean() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { patentHypotheses } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        await db.update(patentHypotheses)
+          .set({ included: input.included })
+          .where(eq(patentHypotheses.id, input.id));
+        return { ok: true };
+      }),
+
+    // ── AI: Patent Strategist — generate hypotheses ─────────────────────────
+    hypothesize: publicProcedure
+      .input(z.object({
+        projectId: z.number(),
+        coreInventionNotes: z.string(),
+        priorArtNotes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { patentProjects, patentHypotheses } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+
+        const systemPrompt = `You are an elite Patent Strategist and IP Engineer. Your objective is to analyze a user's initial invention disclosure and identify novel, non-obvious "hypotheses" (alternative embodiments, broader applications, or workarounds) to maximize the commercial value and defensive strength of the resulting patent.
+
+Instructions:
+1. Analyze the provided [USER_RESEARCH] and any provided [PRIOR_ART].
+2. Identify the core "inventive step" (the specific technical solution to a technical problem).
+3. Generate 3 to 5 distinct "Inventive Hypotheses" that expand upon the core idea.
+4. For each hypothesis, consider:
+   - Material Substitution: Can different materials achieve the same result?
+   - Process Variation: Can the steps be reordered, combined, or omitted?
+   - Broadened Scope: How can we describe the specific components in broader functional terms?
+   - Alternative Use Cases: Can this technology be applied to a completely different industry?
+
+Output Format: Return the response strictly as a JSON object with a "hypotheses" array. Each object must contain: title, description, rationale, claim_impact.`;
+
+        const userContent = `[USER_RESEARCH]:\n${input.coreInventionNotes}\n\n[PRIOR_ART]:\n${input.priorArtNotes ?? "None provided"}`;
+
+        const response = await invokeLLM({
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userContent },
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "patent_hypotheses",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: {
+                  hypotheses: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        title: { type: "string" },
+                        description: { type: "string" },
+                        rationale: { type: "string" },
+                        claim_impact: { type: "string" },
+                      },
+                      required: ["title", "description", "rationale", "claim_impact"],
+                      additionalProperties: false,
+                    },
+                  },
+                },
+                required: ["hypotheses"],
+                additionalProperties: false,
+              },
+            },
+          },
+        });
+
+        const rawContent = response.choices[0]?.message?.content;
+        const content = typeof rawContent === "string" ? rawContent : "{}";
+        let parsed: { hypotheses: Array<{ title: string; description: string; rationale: string; claim_impact: string }> };
+        try {
+          parsed = JSON.parse(content);
+        } catch {
+          throw new Error("AI returned invalid JSON for hypotheses");
+        }
+
+        // Clear old hypotheses for this project
+        await db.delete(patentHypotheses).where(eq(patentHypotheses.projectId, input.projectId));
+
+        // Insert new hypotheses
+        const hypotheses = parsed.hypotheses ?? [];
+        if (hypotheses.length > 0) {
+          await db.insert(patentHypotheses).values(
+            hypotheses.map((h, i) => ({
+              projectId: input.projectId,
+              title: h.title,
+              description: h.description,
+              rationale: h.rationale,
+              claimImpact: h.claim_impact,
+              included: false,
+              sortOrder: i,
+            }))
+          );
+        }
+
+        // Advance project to Strategy phase
+        await db.update(patentProjects)
+          .set({
+            phase: "Strategy",
+            coreInventionNotes: input.coreInventionNotes,
+            priorArtNotes: input.priorArtNotes ?? null,
+            updatedAt: new Date(),
+          })
+          .where(eq(patentProjects.id, input.projectId));
+
+        return { count: hypotheses.length };
+      }),
+
+    // ── AI: Patent Attorney — draft one section at a time ──────────────────
+    draftSection: publicProcedure
+      .input(z.object({
+        projectId: z.number(),
+        section: z.enum(["Abstract", "Background", "Summary", "DetailedDescription", "Claims"]),
+        coreInventionNotes: z.string(),
+        approvedHypotheses: z.array(z.object({
+          title: z.string(),
+          description: z.string(),
+          rationale: z.string(),
+          claimImpact: z.string(),
+        })),
+        jurisdiction: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { patentProjects } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+
+        const sectionLabel = input.section === "DetailedDescription" ? "Detailed Description" : input.section;
+        const systemPrompt = `You are an expert Patent Attorney registered to practice in the UK and before the EPO/USPTO. Your task is to draft a highly precise, legally robust section of a patent specification.
+
+Context Provided:
+- [CORE_INVENTION]: The original technical notes provided by the inventor.
+- [APPROVED_HYPOTHESES]: The specific alternative embodiments the inventor wants included.
+- [SECTION_TO_DRAFT]: The specific section you are drafting right now.
+- [JURISDICTION]: ${input.jurisdiction ?? "UK/EPO"}
+
+Drafting Rules:
+1. Terminology: Maintain strict consistency in terminology throughout.
+2. Enablement: Ensure every element in the hypotheses is described in sufficient detail.
+3. Claims Drafting (if applicable): Use standard patent claim language ("comprising", "consisting of"). Start with the broadest independent claim, followed by progressively narrower dependent claims.
+4. Tone: Use formal, objective, and precise technical-legal language. Avoid marketing speak.
+
+Output: Output ONLY the drafted text for the requested section, formatted in clean Markdown. Do not include introductory conversational text.`;
+
+        const hypothesesText = input.approvedHypotheses
+          .map((h, i) => `Hypothesis ${i + 1}: ${h.title}\n${h.description}\nRationale: ${h.rationale}\nClaim Impact: ${h.claimImpact}`)
+          .join("\n\n");
+
+        const userContent = `[CORE_INVENTION]:\n${input.coreInventionNotes}\n\n[APPROVED_HYPOTHESES]:\n${hypothesesText}\n\n[SECTION_TO_DRAFT]: ${sectionLabel}`;
+
+        const response = await invokeLLM({
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userContent },
+          ],
+        });
+
+        const draftText = response.choices[0]?.message?.content ?? "";
+
+        // Persist the drafted section
+        const fieldMap: Record<string, string> = {
+          Abstract: "draftAbstract",
+          Background: "draftBackground",
+          Summary: "draftSummary",
+          DetailedDescription: "draftDetailedDesc",
+          Claims: "draftClaims",
+        };
+        const field = fieldMap[input.section];
+        await db.update(patentProjects)
+          .set({ [field]: draftText, phase: "Drafting", updatedAt: new Date() })
+          .where(eq(patentProjects.id, input.projectId));
+
+        return { section: input.section, content: draftText };
+      }),
+
+    // ── Portfolio Summary ──────────────────────────────────────────────────
+    getPortfolioSummary: publicProcedure
+      .query(async () => {
+        const db = (await getDb())!;
+        const { ipAssets, ipLicenses } = await import("../drizzle/schema");
+        const assets = await db.select().from(ipAssets);
+        const licenses = await db.select().from(ipLicenses);
+
+        const byType = ["Patent", "Trademark", "Copyright", "DesignRight", "TradeSecret"].map(t => ({
+          type: t,
+          count: assets.filter((a: typeof assets[0]) => a.ipType === t).length,
+        }));
+
+        const activeLicenses = licenses.filter((l: typeof licenses[0]) => l.status === "Active");
+        const annualLicenseRevenue = activeLicenses.reduce((s: number, l: typeof licenses[0]) => s + (l.annualValue ?? 0), 0);
+        const totalEstimatedValue = assets.reduce((s: number, a: typeof assets[0]) => s + (a.estimatedValue ?? 0), 0);
+
+        const grantedPatents = assets.filter((a: typeof assets[0]) => a.ipType === "Patent" && (a.status === "Granted" || a.status === "Licensed")).length;
+        const registeredTM = assets.filter((a: typeof assets[0]) => a.ipType === "Trademark" && a.status === "Registered").length;
+        const activeSecrets = assets.filter((a: typeof assets[0]) => a.ipType === "TradeSecret" && a.status === "Active").length;
+
+        return {
+          totalAssets: assets.length,
+          byType,
+          totalLicenses: licenses.length,
+          activeLicenses: activeLicenses.length,
+          annualLicenseRevenue,
+          totalEstimatedValue,
+          grantedPatents,
+          registeredTM,
+          activeSecrets,
+          regions: Array.from(new Set(licenses.map((l: typeof licenses[0]) => l.region).filter(Boolean))),
+        };
+      }),
+  }),
+});
 export type AppRouter = typeof appRouter;
