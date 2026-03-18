@@ -162,6 +162,13 @@
       "when": 1773870719990,
       "tag": "0022_jazzy_ricochet",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "5",
+      "when": 1773872082065,
+      "tag": "0023_bitter_spencer_smythe",
+      "breakpoints": true
     }
   ]
 }

@@ -488,3 +488,18 @@
 - [x] LCSSA Overview: integrated score banner, 4-pillar KPI cards, formula guide
 - [x] Fix null vs undefined TypeScript errors in all 4 LCSSA upsert components
 - [x] Write 28 vitest tests for LCSSA scoring engine (lcssa.test.ts)
+
+## Sprint 40 — LCSSA Enhancements
+- [x] Add lcssaSnapshot DB table (migration 0023)
+- [x] Add sdgHeatmap JSON field to lcssaOversight table
+- [x] Backend: takeSnapshot procedure (compute & store LCSSA snapshot)
+- [x] Backend: listSnapshots procedure (trend data)
+- [x] Backend: deleteSnapshot procedure
+- [x] Backend: updateSdgHeatmap procedure (17-goal toggle, auto-save)
+- [x] Backend: exportReport procedure (full Markdown LCSSA report)
+- [x] Frontend: LCSSA trend chart in Overview sub-tab (LineChart with 5 lines)
+- [x] Frontend: Snapshot button in score banner
+- [x] Frontend: Export Report button (downloads .md file)
+- [x] Frontend: 17-SDG heatmap grid in Oversight sub-tab (colour-coded, auto-save)
+- [x] Vitest: 22 new tests for SDG heatmap, snapshot scoring, report export
+- [x] All 563 tests passing, 0 TypeScript errors

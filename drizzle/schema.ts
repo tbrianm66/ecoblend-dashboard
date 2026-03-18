@@ -2420,6 +2420,7 @@ export const lcssaOversight = mysqlTable("lcssa_oversight", {
   iso26000Adopted:     boolean("iso26000Adopted").default(false),
   griReportingLevel:   varchar("griReportingLevel", { length: 32 }).default("None"), // None/Core/Comprehensive
   sdgAlignmentCount:   int("sdgAlignmentCount").default(0), // number of SDGs addressed
+  sdgHeatmap:          text("sdgHeatmap"), // JSON array of 17 booleans e.g. "[true,false,...]"
   policyDocumentUrl:   varchar("policyDocumentUrl", { length: 512 }),
   complianceScore:     float("complianceScore").default(0), // 0–100
   // Data & Reporting
@@ -2462,3 +2463,20 @@ export const lcssaDecisionLog = mysqlTable("lcssa_decision_log", {
 });
 export type LcssaDecisionLog = typeof lcssaDecisionLog.$inferSelect;
 export type InsertLcssaDecisionLog = typeof lcssaDecisionLog.$inferInsert;
+
+// ── LCSSA: Monthly Snapshot (for trend chart) ─────────────────────────────────
+export const lcssaSnapshot = mysqlTable("lcssa_snapshot", {
+  id:                  int("id").autoincrement().primaryKey(),
+  ventureId:           varchar("ventureId", { length: 64 }).notNull(),
+  snapshotDate:        timestamp("snapshotDate").defaultNow().notNull(),
+  environmentalScore:  float("environmentalScore").default(0),
+  socialScore:         float("socialScore").default(0),
+  lccScore:            float("lccScore").default(0),
+  oversightScore:      float("oversightScore").default(0),
+  lcssaScore:          float("lcssaScore").default(0),
+  label:               varchar("label", { length: 64 }), // e.g. "Mar 2026"
+  triggeredBy:         varchar("triggeredBy", { length: 64 }).default("manual"), // manual/auto
+  createdAt:           timestamp("createdAt").defaultNow().notNull(),
+});
+export type LcssaSnapshot = typeof lcssaSnapshot.$inferSelect;
+export type InsertLcssaSnapshot = typeof lcssaSnapshot.$inferInsert;

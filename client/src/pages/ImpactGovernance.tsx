@@ -19,10 +19,11 @@ import {
   Globe, Zap, Droplets, TreePine, Factory, Truck, ShoppingCart, Trash2,
   TrendingUp, Shield, Heart, Star,
   DollarSign, CheckSquare, HardHat, Handshake, Scale, PackageX, Wrench,
-  ClipboardCheck, Target, Activity, Plus, Wind,
+  ClipboardCheck, Target, Activity, Plus, Wind, FileDown, Camera,
 } from "lucide-react";
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Legend,
   ResponsiveContainer, Tooltip,
 } from "recharts";
 
@@ -975,12 +976,33 @@ function LcssaNumField({ label, value, onChange, unit = "" }: { label: string; v
 // ── LCSSA Overview ────────────────────────────────────────────────────────────
 function LcssaOverview({ ventureId }: { ventureId: string }) {
   const { data: summary, isLoading } = trpc.lcssa.getLcssaSummary.useQuery({ ventureId });
+  const { data: snapshots = [], refetch: refetchSnapshots } = trpc.lcssa.listSnapshots.useQuery({ ventureId });
+  const takeSnapshot = trpc.lcssa.takeSnapshot.useMutation({ onSuccess: () => { refetchSnapshots(); toast.success("Snapshot saved"); } });
+  const deleteSnapshot = trpc.lcssa.deleteSnapshot.useMutation({ onSuccess: () => refetchSnapshots() });
+  const exportReport = trpc.lcssa.exportReport.useMutation({
+    onSuccess: (data) => {
+      const blob = new Blob([data.markdown], { type: "text/markdown" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url;
+      a.download = `LCSSA-Report-${data.ventureName.replace(/\s+/g, "-")}-${data.reportDate.replace(/\s+/g, "-")}.md`;
+      a.click(); URL.revokeObjectURL(url);
+      toast.success("LCSSA Report downloaded");
+    },
+  });
   if (isLoading) return <div className="flex items-center justify-center py-12"><RefreshCw size={18} className="animate-spin text-gray-400" /></div>;
   const envScore = summary?.environmentalScore ?? 0;
   const socScore = summary?.socialScore ?? 0;
   const lccScore = summary?.lccScore ?? 0;
   const govScore = summary?.oversightScore ?? 0;
   const lcssaScore = summary?.lcssaScore ?? 0;
+  const trendData = snapshots.map(s => ({
+    name: s.label ?? "",
+    Environmental: s.environmentalScore ?? 0,
+    Social: s.socialScore ?? 0,
+    LCC: s.lccScore ?? 0,
+    Governance: s.oversightScore ?? 0,
+    LCSSA: s.lcssaScore ?? 0,
+  }));
   return (
     <div className="space-y-5">
       {/* LCSSA Score Banner */}
@@ -992,9 +1014,27 @@ function LcssaOverview({ ventureId }: { ventureId: string }) {
             <h3 className="text-xl font-bold mb-1">LCSSA Score</h3>
             <p className="text-xs opacity-80">Planet 35% + People 30% + Profit 20% + Governance 15%</p>
           </div>
-          <div className="text-center">
-            <div className="text-5xl font-bold">{lcssaScore.toFixed(1)}</div>
-            <div className="text-xs opacity-80 mt-1">/ 100</div>
+          <div className="flex items-center gap-3">
+            <div className="text-center">
+              <div className="text-5xl font-bold">{lcssaScore.toFixed(1)}</div>
+              <div className="text-xs opacity-80 mt-1">/ 100</div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <button
+                onClick={() => takeSnapshot.mutate({ ventureId })}
+                disabled={takeSnapshot.isPending}
+                className="flex items-center gap-1 text-xs bg-white/20 hover:bg-white/30 text-white px-2 py-1 rounded-lg transition-all"
+              >
+                <Camera size={11} /> {takeSnapshot.isPending ? "Saving…" : "Snapshot"}
+              </button>
+              <button
+                onClick={() => exportReport.mutate({ ventureId, ventureName: ventureId })}
+                disabled={exportReport.isPending}
+                className="flex items-center gap-1 text-xs bg-white/20 hover:bg-white/30 text-white px-2 py-1 rounded-lg transition-all"
+              >
+                <FileDown size={11} /> {exportReport.isPending ? "Generating…" : "Export Report"}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1017,6 +1057,48 @@ function LcssaOverview({ ventureId }: { ventureId: string }) {
             <Progress value={p.score} className="h-1.5" style={{ backgroundColor: `${p.color}20` }} />
           </div>
         ))}
+      </div>
+      {/* LCSSA Trend Chart */}
+      <div className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <TrendingUp size={14} style={{ color: "#2563eb" }} />
+            <span className="text-sm font-bold text-gray-800">LCSSA Score Trend</span>
+            <span className="text-xs text-gray-400">{snapshots.length} snapshots</span>
+          </div>
+        </div>
+        {trendData.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+            <Camera size={24} className="mb-2 opacity-40" />
+            <div className="text-xs text-center">No snapshots yet. Click <strong>Snapshot</strong> in the banner above to record the current LCSSA scores.</div>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={200}>
+            <LineChart data={trendData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+              <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+              <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} />
+              <Tooltip contentStyle={{ fontSize: 11 }} />
+              <Legend wrapperStyle={{ fontSize: 10 }} />
+              <Line type="monotone" dataKey="LCSSA" stroke="#7c3aed" strokeWidth={2.5} dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="Environmental" stroke={LC.env.bg} strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
+              <Line type="monotone" dataKey="Social" stroke={LC.soc.bg} strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
+              <Line type="monotone" dataKey="LCC" stroke={LC.lcc.bg} strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
+              <Line type="monotone" dataKey="Governance" stroke={LC.gov.bg} strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
+        {snapshots.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {snapshots.map(s => (
+              <div key={s.id} className="flex items-center gap-1 bg-gray-50 rounded-lg px-2 py-0.5 text-xs text-gray-500">
+                <span>{s.label}</span>
+                <span className="font-bold" style={{ color: "#7c3aed" }}>{s.lcssaScore?.toFixed(1)}</span>
+                <button onClick={() => deleteSnapshot.mutate({ id: s.id })} className="text-gray-300 hover:text-red-400 ml-0.5">×</button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
       {/* Decision summary */}
       <div className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: LC.dec.border }}>
@@ -1254,6 +1336,20 @@ function LcssaLcc({ ventureId }: { ventureId: string }) {
 }
 
 // ── LCSSA Oversight ───────────────────────────────────────────────────────────
+const SDG_NAMES = [
+  "No Poverty", "Zero Hunger", "Good Health", "Quality Education",
+  "Gender Equality", "Clean Water", "Affordable Energy", "Decent Work",
+  "Industry & Innovation", "Reduced Inequalities", "Sustainable Cities",
+  "Responsible Consumption", "Climate Action", "Life Below Water",
+  "Life on Land", "Peace & Justice", "Partnerships",
+];
+const SDG_COLORS = [
+  "#e5243b", "#dda63a", "#4c9f38", "#c5192d", "#ff3a21",
+  "#26bde2", "#fcc30b", "#a21942", "#fd6925", "#dd1367",
+  "#fd9d24", "#bf8b2e", "#3f7e44", "#0a97d9", "#56c02b",
+  "#00689d", "#19486a",
+];
+
 function LcssaOversight({ ventureId }: { ventureId: string }) {
   const utils = trpc.useUtils();
   const { data: existing } = trpc.lcssa.getOversight.useQuery({ ventureId });
@@ -1262,9 +1358,22 @@ function LcssaOversight({ ventureId }: { ventureId: string }) {
     onError: e => toast.error(e.message),
   });
   const [form, setForm] = useState({ iso14001Certified: false, iso26000Adopted: false, griReportingLevel: "None" as "None" | "Core" | "Comprehensive", sdgAlignmentCount: 0, policyDocumentUrl: "", complianceScore: 0, reportingFrequency: "Annual" as "Annual" | "Quarterly" | "Monthly", dataQualityScore: 0, thirdPartyVerified: false, verifierName: "", reportUrl: "", boardOversight: false, sustainabilityCommittee: false, stakeholderEngagementScore: 0, notes: "" });
+  const [sdgGrid, setSdgGrid] = useState<boolean[]>(Array(17).fill(false));
+  const updateSdgHeatmap = trpc.lcssa.updateSdgHeatmap.useMutation({
+    onSuccess: (data) => { toast.success(`SDG alignment updated: ${data.sdgAlignmentCount}/17 goals`); },
+  });
   const sanitise = (obj: Record<string, any>) => Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, v === null ? undefined : v]));
   const values = existing ? { ...form, ...sanitise(existing as any) } : form;
   const set = (k: string, v: any) => setForm(f => ({ ...f, [k]: v }));
+  // Initialise SDG grid from existing data
+  const existingHeatmap = (existing as any)?.sdgHeatmap;
+  const parsedGrid = existingHeatmap ? (() => { try { return JSON.parse(existingHeatmap) as boolean[]; } catch { return Array(17).fill(false); } })() : Array(17).fill(false);
+  const activeSdgGrid = sdgGrid.some(Boolean) ? sdgGrid : parsedGrid;
+  const toggleSdg = (i: number) => {
+    const next = activeSdgGrid.map((v, idx) => idx === i ? !v : v);
+    setSdgGrid(next);
+    updateSdgHeatmap.mutate({ ventureId, sdgHeatmap: next });
+  };
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -1289,7 +1398,29 @@ function LcssaOversight({ ventureId }: { ventureId: string }) {
               <div className="text-xs font-semibold text-gray-600">GRI Reporting Level</div>
               <div className="flex gap-2">{(["None", "Core", "Comprehensive"] as const).map(r => <button key={r} onClick={() => set("griReportingLevel", r)} className="flex-1 text-xs py-1 rounded-lg font-semibold border transition-all" style={{ background: values.griReportingLevel === r ? LC.gov.bg : "white", color: values.griReportingLevel === r ? "white" : "#6b7280", borderColor: values.griReportingLevel === r ? LC.gov.bg : "#e5e7eb" }}>{r}</button>)}</div>
             </div>
-            <LcssaSlider label="SDGs Addressed" value={values.sdgAlignmentCount ?? 0} onChange={v => set("sdgAlignmentCount", v)} max={17} unit=" SDGs" color={LC.gov.bg} />
+            {/* 17-SDG Heatmap Grid */}
+            <div>
+              <div className="text-xs font-semibold text-gray-600 mb-2">SDG Alignment ({activeSdgGrid.filter(Boolean).length}/17 goals)</div>
+              <div className="grid grid-cols-6 gap-1">
+                {SDG_NAMES.map((name, i) => (
+                  <button
+                    key={i}
+                    onClick={() => toggleSdg(i)}
+                    title={`SDG ${i + 1}: ${name}`}
+                    className="relative rounded-md p-1 text-center transition-all hover:scale-105"
+                    style={{
+                      background: activeSdgGrid[i] ? SDG_COLORS[i] : "#f3f4f6",
+                      border: `2px solid ${activeSdgGrid[i] ? SDG_COLORS[i] : "#e5e7eb"}`,
+                      opacity: activeSdgGrid[i] ? 1 : 0.5,
+                    }}
+                  >
+                    <div className="text-xs font-bold" style={{ color: activeSdgGrid[i] ? "white" : "#9ca3af" }}>{i + 1}</div>
+                    <div className="text-[8px] leading-tight" style={{ color: activeSdgGrid[i] ? "rgba(255,255,255,0.85)" : "#9ca3af" }}>{name.split(" ").slice(0, 2).join(" ")}</div>
+                  </button>
+                ))}
+              </div>
+              <div className="text-xs text-gray-400 mt-1">Click to toggle · Changes auto-save</div>
+            </div>
           </div>
         </div>
         <div className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>

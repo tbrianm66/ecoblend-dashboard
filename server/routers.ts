@@ -5487,6 +5487,231 @@ Output: Output ONLY the drafted text for the requested section, formatted in cle
           gov: gov ?? null,
         };
       }),
+
+    // ── LCSSA Snapshot (for trend chart) ────────────────────────────────────────
+    takeSnapshot: publicProcedure
+      .input(z.object({ ventureId: z.string(), label: z.string().optional() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { lcssaEnvironmental, lcssaSocial, lcssaLifeCycleCost, lcssaOversight, lcssaSnapshot } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const [env] = await db.select().from(lcssaEnvironmental).where(eq(lcssaEnvironmental.ventureId, input.ventureId));
+        const [soc] = await db.select().from(lcssaSocial).where(eq(lcssaSocial.ventureId, input.ventureId));
+        const [lcc] = await db.select().from(lcssaLifeCycleCost).where(eq(lcssaLifeCycleCost.ventureId, input.ventureId));
+        const [gov] = await db.select().from(lcssaOversight).where(eq(lcssaOversight.ventureId, input.ventureId));
+        const envScore = env?.environmentalScore ?? 0;
+        const socScore = soc?.socialScore ?? 0;
+        const lccScore = lcc?.lccScore ?? 0;
+        const govScore = gov?.oversightScore ?? 0;
+        const lcssaScore = Math.round((envScore * 0.35 + socScore * 0.30 + lccScore * 0.20 + govScore * 0.15) * 10) / 10;
+        const now = new Date();
+        const label = input.label ?? `${now.toLocaleString("default", { month: "short" })} ${now.getFullYear()}`;
+        const [inserted] = await db.insert(lcssaSnapshot).values({
+          ventureId: input.ventureId,
+          environmentalScore: envScore,
+          socialScore: socScore,
+          lccScore,
+          oversightScore: govScore,
+          lcssaScore,
+          label,
+          triggeredBy: "manual",
+        });
+        return { success: true, lcssaScore, label };
+      }),
+
+    listSnapshots: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { lcssaSnapshot } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        return db.select().from(lcssaSnapshot)
+          .where(eq(lcssaSnapshot.ventureId, input.ventureId))
+          .orderBy(lcssaSnapshot.snapshotDate);
+      }),
+
+    deleteSnapshot: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { lcssaSnapshot } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        await db.delete(lcssaSnapshot).where(eq(lcssaSnapshot.id, input.id));
+        return { success: true };
+      }),
+
+    // ── SDG Heatmap ──────────────────────────────────────────────────────────────
+    updateSdgHeatmap: publicProcedure
+      .input(z.object({ ventureId: z.string(), sdgHeatmap: z.array(z.boolean()).length(17) }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { lcssaOversight } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const heatmapJson = JSON.stringify(input.sdgHeatmap);
+        const count = input.sdgHeatmap.filter(Boolean).length;
+        const [existing] = await db.select({ id: lcssaOversight.id }).from(lcssaOversight).where(eq(lcssaOversight.ventureId, input.ventureId));
+        if (existing) {
+          await db.update(lcssaOversight)
+            .set({ sdgHeatmap: heatmapJson, sdgAlignmentCount: count, updatedAt: new Date() })
+            .where(eq(lcssaOversight.ventureId, input.ventureId));
+        } else {
+          await db.insert(lcssaOversight).values({ ventureId: input.ventureId, sdgHeatmap: heatmapJson, sdgAlignmentCount: count });
+        }
+        return { success: true, sdgAlignmentCount: count };
+      }),
+
+    // ── LCSSA PDF Report ─────────────────────────────────────────────────────────
+    exportReport: publicProcedure
+      .input(z.object({ ventureId: z.string(), ventureName: z.string().optional() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { lcssaEnvironmental, lcssaSocial, lcssaLifeCycleCost, lcssaOversight, lcssaDecisionLog, lcssaSnapshot } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const [env] = await db.select().from(lcssaEnvironmental).where(eq(lcssaEnvironmental.ventureId, input.ventureId));
+        const [soc] = await db.select().from(lcssaSocial).where(eq(lcssaSocial.ventureId, input.ventureId));
+        const [lcc] = await db.select().from(lcssaLifeCycleCost).where(eq(lcssaLifeCycleCost.ventureId, input.ventureId));
+        const [gov] = await db.select().from(lcssaOversight).where(eq(lcssaOversight.ventureId, input.ventureId));
+        const decisions = await db.select().from(lcssaDecisionLog).where(eq(lcssaDecisionLog.ventureId, input.ventureId));
+        const snapshots = await db.select().from(lcssaSnapshot).where(eq(lcssaSnapshot.ventureId, input.ventureId)).orderBy(lcssaSnapshot.snapshotDate);
+        const envScore = env?.environmentalScore ?? 0;
+        const socScore = soc?.socialScore ?? 0;
+        const lccScore = lcc?.lccScore ?? 0;
+        const govScore = gov?.oversightScore ?? 0;
+        const lcssaScore = Math.round((envScore * 0.35 + socScore * 0.30 + lccScore * 0.20 + govScore * 0.15) * 10) / 10;
+        const now = new Date();
+        const reportDate = now.toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" });
+        const ventureName = input.ventureName ?? input.ventureId;
+
+        const sdgHeatmapArr: boolean[] = gov?.sdgHeatmap ? JSON.parse(gov.sdgHeatmap) : Array(17).fill(false);
+        const sdgNames = ["No Poverty","Zero Hunger","Good Health","Quality Education","Gender Equality","Clean Water","Affordable Energy","Decent Work","Industry & Innovation","Reduced Inequalities","Sustainable Cities","Responsible Consumption","Climate Action","Life Below Water","Life on Land","Peace & Justice","Partnerships"];
+        const activeSdgs = sdgNames.filter((_, i) => sdgHeatmapArr[i]);
+
+        const md = `# LCSSA Report — ${ventureName}
+**Date:** ${reportDate}  
+**Integrated LCSSA Score:** ${lcssaScore}/100
+
+---
+
+## Executive Summary
+This Life Cycle Sustainability Assessment (LCSSA) report integrates Environmental LCA (Planet), Social LCA (People), and Life Cycle Costing (Profit) under the Integrated Sustainability Framework for ${ventureName}. The integrated score of **${lcssaScore}/100** reflects performance across all four pillars weighted as: Environmental 35%, Social 30%, LCC 20%, Governance 15%.
+
+---
+
+## 1. Environmental LCA — Planet (Score: ${envScore}/100)
+
+| Indicator | Value |
+|-----------|-------|
+| Carbon Footprint (Total) | ${env?.carbonFootprintKg ?? 0} kg CO₂e |
+| Scope 1 Emissions | ${env?.carbonFootprintScope1 ?? 0} kg |
+| Scope 2 Emissions | ${env?.carbonFootprintScope2 ?? 0} kg |
+| Scope 3 Emissions | ${env?.carbonFootprintScope3 ?? 0} kg |
+| Carbon Reduction Target | ${env?.carbonReductionTarget ?? 0}% |
+| Energy Consumption | ${env?.energyConsumptionKwh ?? 0} kWh |
+| Renewable Energy | ${env?.renewableEnergyPct ?? 0}% |
+| Water Usage | ${env?.waterUsageLitres ?? 0} L |
+| Material Efficiency | ${env?.materialEfficiencyPct ?? 0}% |
+| Waste Generated | ${env?.wasteGeneratedKg ?? 0} kg |
+| Waste Recycled | ${env?.wasteRecycledPct ?? 0}% |
+| Biodiversity Score | ${env?.biodiversityScore ?? 0}/10 |
+| Ecosystem Services Score | ${env?.ecosystemServicesScore ?? 0}/10 |
+
+${env?.notes ? `**Notes:** ${env.notes}` : ""}
+
+---
+
+## 2. Social LCA — People (Score: ${socScore}/100)
+
+| Indicator | Value |
+|-----------|-------|
+| Living Wage Compliance | ${soc?.livingWageCompliance ? "Yes" : "No"} |
+| Avg Working Hours/Week | ${soc?.avgWorkingHoursPerWeek ?? 0} hrs |
+| Employee Turnover | ${soc?.employeeTurnoverPct ?? 0}% |
+| Collective Bargaining | ${soc?.collectiveBargaining ? "Yes" : "No"} |
+| Human Rights Due Diligence | ${soc?.humanRightsDueDiligence ? "Yes" : "No"} |
+| Supply Chain Audit Score | ${soc?.supplyChainAuditScore ?? 0}/10 |
+| Child Labour Risk | ${soc?.childLaborRisk ?? "N/A"} |
+| Forced Labour Risk | ${soc?.forcedLaborRisk ?? "N/A"} |
+| Local Hiring | ${soc?.localHiringPct ?? 0}% |
+| Community Investment | £${soc?.communityInvestmentGbp ?? 0} |
+| Community Engagement Score | ${soc?.communityEngagementScore ?? 0}/10 |
+| LTIFR | ${soc?.ltifr ?? 0} |
+| Health & Safety Score | ${soc?.healthSafetyScore ?? 0}/10 |
+
+${soc?.notes ? `**Notes:** ${soc.notes}` : ""}
+
+---
+
+## 3. Life Cycle Costing — Profit (Score: ${lccScore}/100)
+
+| Cost Category | Value (GBP) |
+|---------------|-------------|
+| Raw Materials | £${lcc?.rawMaterialCostGbp ?? 0} |
+| Manufacturing | £${lcc?.manufacturingCostGbp ?? 0} |
+| Labour | £${lcc?.labourCostGbp ?? 0} |
+| Overhead | £${lcc?.overheadCostGbp ?? 0} |
+| Inbound Logistics | £${lcc?.inboundLogisticsCostGbp ?? 0} |
+| Outbound Logistics | £${lcc?.outboundLogisticsCostGbp ?? 0} |
+| Warehousing | £${lcc?.warehouseCostGbp ?? 0} |
+| Planned Maintenance | £${lcc?.plannedMaintenanceCostGbp ?? 0} |
+| Unplanned Maintenance | £${lcc?.unplannedMaintenanceCostGbp ?? 0} |
+| Disposal | £${lcc?.disposalCostGbp ?? 0} |
+| Recycling Revenue | £${lcc?.recyclingRevGbp ?? 0} |
+| Remediation | £${lcc?.remediationCostGbp ?? 0} |
+| Asset Lifespan | ${lcc?.assetLifespanYears ?? 0} years |
+
+${lcc?.notes ? `**Notes:** ${lcc.notes}` : ""}
+
+---
+
+## 4. LCSA Oversight & Governance (Score: ${govScore}/100)
+
+| Indicator | Value |
+|-----------|-------|
+| ISO 14001 Certified | ${gov?.iso14001Certified ? "Yes" : "No"} |
+| ISO 26000 Adopted | ${gov?.iso26000Adopted ? "Yes" : "No"} |
+| GRI Reporting Level | ${gov?.griReportingLevel ?? "None"} |
+| SDGs Addressed | ${gov?.sdgAlignmentCount ?? 0}/17 |
+| Active SDGs | ${activeSdgs.length > 0 ? activeSdgs.join(", ") : "None selected"} |
+| Compliance Score | ${gov?.complianceScore ?? 0}/100 |
+| Reporting Frequency | ${gov?.reportingFrequency ?? "Annual"} |
+| Data Quality Score | ${gov?.dataQualityScore ?? 0}/10 |
+| Third-Party Verified | ${gov?.thirdPartyVerified ? "Yes" : "No"} |
+| Board Oversight | ${gov?.boardOversight ? "Yes" : "No"} |
+| Sustainability Committee | ${gov?.sustainabilityCommittee ? "Yes" : "No"} |
+| Stakeholder Engagement | ${gov?.stakeholderEngagementScore ?? 0}/10 |
+
+${gov?.notes ? `**Notes:** ${gov.notes}` : ""}
+
+---
+
+## 5. Sustainable Decision Log (${decisions.length} decisions)
+
+| Decision | Type | Env Impact | Social Impact | Economic Impact | Status |
+|----------|------|-----------|---------------|-----------------|--------|
+${decisions.map(d => `| ${d.decisionTitle} | ${d.decisionType} | ${d.environmentalImpact} | ${d.socialImpact} | ${d.economicImpact} | ${d.status} |`).join("\n")}
+
+---
+
+## 6. LCSSA Score Trend
+
+| Period | Env | Social | LCC | Governance | LCSSA |
+|--------|-----|--------|-----|-----------|-------|
+${snapshots.map(s => `| ${s.label ?? "—"} | ${s.environmentalScore?.toFixed(1)} | ${s.socialScore?.toFixed(1)} | ${s.lccScore?.toFixed(1)} | ${s.oversightScore?.toFixed(1)} | **${s.lcssaScore?.toFixed(1)}** |`).join("\n")}
+
+---
+
+## 7. Formula Reference
+
+> **LCSSA Score = (Environmental × 0.35) + (Social × 0.30) + (LCC × 0.20) + (Governance × 0.15)**
+
+This weighting reflects the primacy of planetary boundaries (35%), followed by social licence to operate (30%), economic viability (20%), and governance maturity (15%), consistent with the ISO 14040/14044 and UNEP SETAC methodological frameworks.
+
+---
+
+*Report generated by EcoBlend VBS Analytics Dashboard · ${reportDate}*
+`;
+        return { markdown: md, ventureName, lcssaScore, reportDate };
+      }),
   }),
 });
 export type AppRouter = typeof appRouter;
