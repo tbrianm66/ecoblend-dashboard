@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import {
   Shield, FileText, Globe, Zap, Lightbulb, BookOpen, Lock, Palette,
   Plus, Trash2, ChevronDown, ChevronUp, CheckCircle2, Circle,
-  Loader2, Wand2, FileCode2, RotateCcw, AlertTriangle, Eye,
+  Loader2, Wand2, FileCode2, RotateCcw, AlertTriangle, Eye, Bell, BellRing,
 } from "lucide-react";
 import { Streamdown } from "streamdown";
 
@@ -303,24 +303,82 @@ function AssetModal({
 }
 
 // ── Overview Tab ─────────────────────────────────────────────────────────────
-
 function OverviewTab() {
+  const utils = trpc.useUtils();
   const { data: summary, isLoading } = trpc.ip.getPortfolioSummary.useQuery();
-
+  const { data: renewalAlerts = [] } = trpc.ip.getRenewalAlerts.useQuery();
+  const notifyMutation = trpc.ip.notifyRenewalAlerts.useMutation({
+    onSuccess: (res) => {
+      if (res.notified) toast.success(`Owner notified of ${res.count} renewal alert${res.count > 1 ? "s" : ""}`);
+      else toast.info("No renewal alerts within 90 days");
+    },
+    onError: (e) => toast.error(e.message),
+  });
   if (isLoading) return <div className="flex items-center justify-center py-16"><Loader2 className="animate-spin text-gray-400" /></div>;
   if (!summary) return null;
-
-  const potentialColor = { High: "#22c55e", Medium: "#f59e0b", Low: "#9ca3af" };
-
+  const urgencyColor = { Critical: "#dc2626", High: "#f59e0b", Medium: "#0891b2" } as Record<string, string>;
   return (
     <div className="space-y-6">
       {/* KPI Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <KpiCard label="Total IP Assets" value={summary.totalAssets} sub="across all types" color="#22c55e" icon={Shield} />
         <KpiCard label="Granted Patents" value={summary.grantedPatents} sub="granted or licensed" color="#1d4ed8" icon={FileText} />
         <KpiCard label="Annual License Revenue" value={`£${((summary.annualLicenseRevenue ?? 0) / 1000).toFixed(0)}k`} sub={`${summary.activeLicenses} active licences`} color="#7c3aed" icon={Zap} />
         <KpiCard label="Est. Portfolio Value" value={`£${((summary.totalEstimatedValue ?? 0) / 1000).toFixed(0)}k`} sub="combined IP value" color="#f59e0b" icon={Globe} />
+        <div
+          className="rounded-xl border p-4 shadow-sm flex flex-col justify-between cursor-pointer hover:shadow-md transition-all"
+          style={{ borderColor: renewalAlerts.length > 0 ? "#fca5a5" : "#e5e7eb", background: renewalAlerts.length > 0 ? "#fef2f2" : "white" }}
+          onClick={() => notifyMutation.mutate()}
+          title="Click to notify owner"
+        >
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: renewalAlerts.length > 0 ? "#dc2626" : "#9ca3af" }}>Renewals Due</span>
+            {renewalAlerts.length > 0 ? <BellRing size={14} style={{ color: "#dc2626" }} /> : <Bell size={14} style={{ color: "#9ca3af" }} />}
+          </div>
+          <div className="text-3xl font-bold font-mono" style={{ color: renewalAlerts.length > 0 ? "#dc2626" : "#22c55e" }}>
+            {notifyMutation.isPending ? <Loader2 size={24} className="animate-spin" /> : renewalAlerts.length}
+          </div>
+          <div className="text-xs mt-0.5" style={{ color: renewalAlerts.length > 0 ? "#dc2626" : "#9ca3af" }}>
+            {renewalAlerts.length > 0 ? "within 90 days · click to notify" : "no alerts"}
+          </div>
+        </div>
       </div>
+      {/* Renewal Alerts Panel */}
+      {renewalAlerts.length > 0 && (
+        <div className="bg-red-50 rounded-xl border border-red-200 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <BellRing size={16} style={{ color: "#dc2626" }} />
+              <span className="text-sm font-bold text-red-700">Renewal Alerts — {renewalAlerts.length} asset{renewalAlerts.length > 1 ? "s" : ""} due within 90 days</span>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs gap-1.5 border-red-300 text-red-700 hover:bg-red-100"
+              onClick={() => notifyMutation.mutate()}
+              disabled={notifyMutation.isPending}
+            >
+              <Bell size={12} />
+              {notifyMutation.isPending ? "Sending…" : "Notify Owner"}
+            </Button>
+          </div>
+          <div className="space-y-2">
+            {renewalAlerts.map((alert) => (
+              <div key={alert.id} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-red-100">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold px-1.5 py-0.5 rounded" style={{ background: `${urgencyColor[alert.urgency]}15`, color: urgencyColor[alert.urgency] }}>{alert.urgency}</span>
+                  <span className="text-sm font-semibold text-gray-800">{alert.title}</span>
+                  <span className="text-xs text-gray-400">{alert.ipType} · {alert.reference || "no ref"}</span>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs font-bold" style={{ color: urgencyColor[alert.urgency] }}>{alert.daysLeft} days left</div>
+                  <div className="text-xs text-gray-400">Due {alert.dueDate}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* IP Type Breakdown */}
       <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
@@ -713,7 +771,27 @@ function PatentProjectWorkspace({ project }: { project: any }) {
   };
 
   const phase = project.phase as string;
-
+  const sectionsComplete = Object.values(sectionDraftMap).filter(Boolean).length;
+  const handleExportPdf = async () => {
+    try {
+      const res = await fetch(`/api/trpc/ip.exportPatentDraft?input=${encodeURIComponent(JSON.stringify({ projectId: project.id }))}`, {
+        credentials: "include",
+      });
+      const json = await res.json();
+      const md = json.result?.data?.json?.markdown || json.result?.data?.markdown || "";
+      if (!md) { toast.error("No draft content to export"); return; }
+      const blob = new Blob([md], { type: "text/markdown" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${project.title.replace(/\s+/g, "_")}_patent_draft.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Patent draft downloaded as Markdown");
+    } catch (e) {
+      toast.error("Export failed");
+    }
+  };
   return (
     <div className="space-y-4">
       {/* Phase indicator */}
@@ -840,7 +918,21 @@ function PatentProjectWorkspace({ project }: { project: any }) {
             <div className="flex items-center gap-2">
               <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "#22c55e", color: "white" }}>3</div>
               <span className="text-sm font-bold text-gray-800">Patent Editor</span>
+              {sectionsComplete > 0 && (
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: "#22c55e15", color: "#22c55e" }}>{sectionsComplete}/5 sections</span>
+              )}
             </div>
+            <div className="flex items-center gap-2">
+              {sectionsComplete > 0 && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5 text-xs h-7 border-blue-200 text-blue-700 hover:bg-blue-50"
+                  onClick={handleExportPdf}
+                >
+                  <FileCode2 size={11} /> Export Draft
+                </Button>
+              )}
             <div className="flex gap-1">
               {PATENT_SECTIONS.map(s => (
                 <button
@@ -855,6 +947,7 @@ function PatentProjectWorkspace({ project }: { project: any }) {
                   {sectionDraftMap[s] ? "✓ " : ""}{s === "DetailedDescription" ? "Detailed" : s}
                 </button>
               ))}
+            </div>
             </div>
           </div>
           <div className="grid grid-cols-2 divide-x" style={{ borderColor: "#e5e7eb" }}>

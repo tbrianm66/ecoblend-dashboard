@@ -465,3 +465,13 @@
 - [x] Governance tab: UK/EU legal framework reference for all 5 IP types
 - [x] Write ip.engine.test.ts (28 tests)
 - [x] All 501 tests passing
+
+## Sprint 38 — IP Module Upgrades
+- [x] Renewal alert system: 90-day expiry KPI card + alert panel in Overview tab
+- [x] notifyRenewalAlerts procedure: owner notification with urgency tiers (Critical/High/Medium)
+- [x] getRenewalAlerts backend procedure: filters assets due within 90 days
+- [x] IP–Venture linking: listAssetsByVenture procedure with licenseCount join
+- [x] VentureIpAssets component in VentureDetail.tsx: shows IP assets per venture
+- [x] exportPatentDraft backend procedure: assembles full Markdown draft
+- [x] Export Draft button in Patent Editor header (visible when sections > 0)
+- [x] 15 new vitest tests for all 3 upgrade features (516 total, all passing)

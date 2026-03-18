@@ -4974,6 +4974,143 @@ Output: Output ONLY the drafted text for the requested section, formatted in cle
         return { section: input.section, content: draftText };
       }),
 
+    // ── Renewal Alerts (90-day window) ────────────────────────────────────
+    getRenewalAlerts: publicProcedure
+      .query(async () => {
+        const db = (await getDb())!;
+        const { ipAssets } = await import("../drizzle/schema");
+        const rows = await db.select().from(ipAssets);
+        const now = Date.now();
+        const ninetyDaysMs = 90 * 24 * 60 * 60 * 1000;
+        const alerts = rows
+          .filter((a: typeof rows[0]) => {
+            const due = a.renewalDueDate || a.expiryDate;
+            if (!due) return false;
+            const dueMs = new Date(due).getTime();
+            return dueMs > now && dueMs - now <= ninetyDaysMs;
+          })
+          .map((a: typeof rows[0]) => {
+            const due = (a.renewalDueDate || a.expiryDate)!;
+            const dueMs = new Date(due).getTime();
+            const daysLeft = Math.ceil((dueMs - now) / (24 * 60 * 60 * 1000));
+            return {
+              id: a.id,
+              title: a.title,
+              ipType: a.ipType,
+              reference: a.reference,
+              ventureId: a.ventureId,
+              ventureName: a.ventureName,
+              dueDate: due,
+              daysLeft,
+              urgency: daysLeft <= 30 ? "Critical" : daysLeft <= 60 ? "High" : "Medium",
+            };
+          })
+          .sort((a: { daysLeft: number }, b: { daysLeft: number }) => a.daysLeft - b.daysLeft);
+        return alerts;
+      }),
+
+    // ── Notify owner of renewal alerts ────────────────────────────────────
+    notifyRenewalAlerts: publicProcedure
+      .mutation(async () => {
+        const db = (await getDb())!;
+        const { ipAssets } = await import("../drizzle/schema");
+        const rows = await db.select().from(ipAssets);
+        const now = Date.now();
+        const ninetyDaysMs = 90 * 24 * 60 * 60 * 1000;
+        const alerts = rows.filter((a: typeof rows[0]) => {
+          const due = a.renewalDueDate || a.expiryDate;
+          if (!due) return false;
+          const dueMs = new Date(due).getTime();
+          return dueMs > now && dueMs - now <= ninetyDaysMs;
+        });
+        if (alerts.length === 0) return { notified: false, count: 0 };
+        const lines = alerts.map((a: typeof rows[0]) => {
+          const due = (a.renewalDueDate || a.expiryDate)!;
+          const daysLeft = Math.ceil((new Date(due).getTime() - now) / (24 * 60 * 60 * 1000));
+          return `\u2022 ${a.ipType}: **${a.title}** (${a.reference || "no ref"}) \u2014 due ${due} (${daysLeft} days)`;
+        }).join("\n");
+        await notifyOwner({
+          title: `\u26a0\ufe0f IP Renewal Alert \u2014 ${alerts.length} asset${alerts.length > 1 ? "s" : ""} due within 90 days`,
+          content: `The following IP assets require renewal action:\n\n${lines}\n\nPlease review in the IP Management module.`,
+        });
+        return { notified: true, count: alerts.length };
+      }),
+
+    // ── List assets for a specific venture (venture detail page) ────────────
+    listAssetsByVenture: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { ipAssets, ipLicenses } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const assets = await db.select().from(ipAssets)
+          .where(eq(ipAssets.ventureId, input.ventureId))
+          .orderBy(ipAssets.createdAt);
+        const allLicenses = await db.select().from(ipLicenses);
+        return assets.map((a: typeof assets[0]) => ({
+          ...a,
+          licenseCount: allLicenses.filter((l: typeof allLicenses[0]) => l.ipAssetId === a.id).length,
+        }));
+      }),
+
+    // ── Export patent draft as markdown (for PDF generation) ──────────────
+    exportPatentDraft: publicProcedure
+      .input(z.object({ projectId: z.number().int() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { patentProjects, patentHypotheses } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const [project] = await db.select().from(patentProjects)
+          .where(eq(patentProjects.id, input.projectId));
+        if (!project) throw new Error("Patent project not found");
+        const hypotheses = await db.select().from(patentHypotheses)
+          .where(eq(patentHypotheses.projectId, input.projectId));
+        const includedHypotheses = hypotheses.filter((h: typeof hypotheses[0]) => h.included);
+        const md = [
+          `# Patent Application Draft`,
+          `**Title:** ${project.title}`,
+          `**Jurisdiction:** ${project.jurisdiction || "UK/EPO"}`,
+          `**Generated:** ${new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" })}`,
+          ``,
+          `---`,
+          ``,
+          `## Abstract`,
+          project.draftAbstract || "*Not yet drafted*",
+          ``,
+          `## 1. Background of the Invention`,
+          project.draftBackground || "*Not yet drafted*",
+          ``,
+          `## 2. Summary of the Invention`,
+          project.draftSummary || "*Not yet drafted*",
+          ``,
+          `## 3. Detailed Description of Preferred Embodiments`,
+          project.draftDetailedDesc || "*Not yet drafted*",
+          ...(includedHypotheses.length > 0 ? [
+            ``,
+            `### Alternative Embodiments`,
+            ...includedHypotheses.map((h: typeof hypotheses[0], i: number) =>
+              `**Embodiment ${i + 1}: ${h.title}**\n\n${h.description}\n\n*Rationale:* ${h.rationale || ""}\n\n*Claim impact:* ${h.claimImpact || ""}`
+            ),
+          ] : []),
+          ``,
+          `## 4. Claims`,
+          project.draftClaims || "*Not yet drafted*",
+          ``,
+          `---`,
+          `*This draft was generated by the EcoBlend IP Intelligence Engine. It requires review by a qualified patent attorney before filing.*`,
+        ].join("\n");
+        return {
+          projectId: project.id,
+          title: project.title,
+          jurisdiction: project.jurisdiction,
+          markdown: md,
+          sectionsComplete: [
+            project.draftAbstract, project.draftBackground, project.draftSummary,
+            project.draftDetailedDesc, project.draftClaims,
+          ].filter(Boolean).length,
+        };
+      }),
+
     // ── Portfolio Summary ──────────────────────────────────────────────────
     getPortfolioSummary: publicProcedure
       .query(async () => {

@@ -9,7 +9,7 @@ import { ventures, VRL_STAGES, TRL_LEVELS } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, CheckCircle2, Circle, AlertTriangle, TrendingUp, FlaskConical, LayoutGrid, Briefcase, GitBranch, Plus, Trash2, RefreshCw } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Circle, AlertTriangle, TrendingUp, FlaskConical, LayoutGrid, Briefcase, GitBranch, Plus, Trash2, RefreshCw, Shield, FileText, Zap, BookOpen, Lock, Palette, ExternalLink, Loader2 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
@@ -255,6 +255,9 @@ export default function VentureDetail() {
         {/* Canvas Evidence Summary */}
         <CanvasEvidenceSummary ventureId={venture.id} ventureColor={venture.color} />
 
+        {/* IP Assets for this Venture */}
+        <VentureIpAssets ventureId={venture.id} ventureColor={venture.color} />
+
         {/* Pivot or Persevere — Lean Startup Decision Log */}
         <PivotDecisionLog ventureId={venture.id} ventureColor={venture.color} currentVrlScore={vrlComputedScore?.vrlScore} />
       </div>
@@ -262,7 +265,86 @@ export default function VentureDetail() {
   );
 }
 
-// ── Canvas Evidence Summary ──────────────────────────────────────────────────
+// ── Venture IP Assets ────────────────────────────────────────────────────────────────
+const IP_TYPE_ICONS: Record<string, React.ElementType> = {
+  Patent: Shield, Trademark: Zap, Copyright: BookOpen, DesignRight: Palette, TradeSecret: Lock,
+};
+const IP_TYPE_COLORS: Record<string, string> = {
+  Patent: "#1d4ed8", Trademark: "#7c3aed", Copyright: "#0891b2", DesignRight: "#d97706", TradeSecret: "#dc2626",
+};
+const IP_STATUS_COLORS: Record<string, string> = {
+  Granted: "#22c55e", Licensed: "#7c3aed", Filed: "#0891b2", Draft: "#9ca3af",
+  Registered: "#22c55e", Application: "#0891b2", Active: "#22c55e", Expired: "#dc2626",
+};
+
+function VentureIpAssets({ ventureId, ventureColor }: { ventureId: string; ventureColor: string }) {
+  const { data: assets = [], isLoading } = trpc.ip.listAssetsByVenture.useQuery({ ventureId });
+  return (
+    <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb", borderTop: `3px solid ${ventureColor}` }}>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Shield size={18} style={{ color: ventureColor }} />
+          <h3 className="font-bold text-gray-900">IP Assets</h3>
+          {assets.length > 0 && (
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: `${ventureColor}15`, color: ventureColor }}>{assets.length}</span>
+          )}
+        </div>
+        <a
+          href="/ip"
+          className="flex items-center gap-1 text-xs hover:underline"
+          style={{ color: ventureColor }}
+        >
+          Manage in IP Module <ExternalLink size={11} />
+        </a>
+      </div>
+      {isLoading && (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 size={20} className="animate-spin text-gray-400" />
+        </div>
+      )}
+      {!isLoading && assets.length === 0 && (
+        <div className="text-center py-8">
+          <Shield size={32} className="mx-auto mb-2 text-gray-200" />
+          <p className="text-sm text-gray-400">No IP assets registered for this venture yet.</p>
+          <a href="/ip" className="text-xs mt-1 inline-block hover:underline" style={{ color: ventureColor }}>Register an asset →</a>
+        </div>
+      )}
+      {!isLoading && assets.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {assets.map((asset: any) => {
+            const Icon = IP_TYPE_ICONS[asset.ipType] || FileText;
+            const typeColor = IP_TYPE_COLORS[asset.ipType] || "#6b7280";
+            const statusColor = IP_STATUS_COLORS[asset.status] || "#9ca3af";
+            return (
+              <div key={asset.id} className="flex items-start gap-3 p-3 rounded-lg border" style={{ borderColor: "#f3f4f6", background: "#fafafa" }}>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${typeColor}12` }}>
+                  <Icon size={15} style={{ color: typeColor }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-sm font-semibold text-gray-800 truncate">{asset.title}</span>
+                    <span className="text-xs font-bold px-1.5 py-0.5 rounded flex-shrink-0" style={{ background: `${statusColor}15`, color: statusColor }}>{asset.status}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-gray-400">
+                    <span style={{ color: typeColor }}>{asset.ipType}</span>
+                    {asset.reference && <span>· {asset.reference}</span>}
+                    {asset.jurisdiction && <span>· {asset.jurisdiction}</span>}
+                    {asset.licenseCount > 0 && <span className="text-purple-500">· {asset.licenseCount} licence{asset.licenseCount > 1 ? "s" : ""}</span>}
+                  </div>
+                  {asset.renewalDueDate && (
+                    <div className="text-xs text-orange-500 mt-0.5">Renewal due: {asset.renewalDueDate}</div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Canvas Evidence Summary ────────────────────────────────────────────────────────
 type BmcBlock = "Value Propositions" | "Customer Segments" | "Channels" | "Customer Relationships" | "Revenue Streams" | "Key Resources" | "Key Activities" | "Key Partners" | "Cost Structure";
 type MmcBlock = "Mission" | "Beneficiaries" | "Value Created" | "Key Partners (Mission)" | "Key Activities (Mission)" | "Key Resources (Mission)" | "Channels (Mission)" | "Cost Structure (Mission)" | "Funding Streams";
 type HypothesisStatus = "Validated" | "Invalidated" | "Partial" | "Pending";
