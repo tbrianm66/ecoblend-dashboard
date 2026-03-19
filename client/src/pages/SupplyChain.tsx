@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, Tooltip, Cell, PieChart, Pie, Legend,
+  CartesianGrid, ReferenceLine,
 } from "recharts";
 
 // ── Colour palette ─────────────────────────────────────────────────────────────
@@ -675,6 +676,120 @@ function ManufacturingTab({ ventureId }: { ventureId: string }) {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* BOM Cost Breakdown Stacked Bar Chart */}
+      {mfg && (mfg.unitCostGbp || mfg.toolingCostGbp) && (
+        <div className="bg-white rounded-2xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
+          <div className="flex items-start justify-between mb-5">
+            <div>
+              <h3 className="text-sm font-bold text-gray-800" style={{ fontFamily: "'Prompt', sans-serif" }}>BOM Cost Breakdown — Volume Curve</h3>
+              <p className="text-xs text-gray-400 mt-0.5">Stacked unit cost across production volumes: Material · Labour · Tooling Amortisation · Overhead</p>
+            </div>
+            <div className="flex items-center gap-4 text-xs">
+              {[
+                { label: "Material", color: C.green },
+                { label: "Labour", color: C.blue },
+                { label: "Tooling Amort.", color: C.amber },
+                { label: "Overhead", color: C.purple },
+              ].map(({ label, color }) => (
+                <span key={label} className="flex items-center gap-1">
+                  <span className="w-3 h-3 rounded-sm inline-block" style={{ background: color }} />
+                  <span className="text-gray-500">{label}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+          {(() => {
+            const unitCost = mfg.unitCostGbp ?? 0;
+            const toolingCost = mfg.toolingCostGbp ?? 0;
+            const moq = mfg.moq ?? 100;
+            // Derive cost stack from unit cost:
+            // Material = BOM sum if available, else 60% of unit cost
+            let materialCostPerUnit = unitCost * 0.60;
+            if (mfg.bomJson) {
+              try {
+                const items = JSON.parse(mfg.bomJson);
+                const bomTotal = items.reduce((s: number, item: any) => s + (item.qty ?? 1) * (item.unitCost ?? 0), 0);
+                if (bomTotal > 0) materialCostPerUnit = bomTotal;
+              } catch { /* use default */ }
+            }
+            const labourPerUnit = unitCost * 0.25;
+            const overheadPerUnit = unitCost * 0.15;
+            const volumes = [moq, moq * 2, moq * 5, moq * 10, moq * 20];
+            const chartData = volumes.map(vol => ({
+              volume: vol >= 1000 ? `${(vol / 1000).toFixed(vol >= 10000 ? 0 : 1)}k` : String(vol),
+              material: parseFloat(materialCostPerUnit.toFixed(2)),
+              labour: parseFloat(labourPerUnit.toFixed(2)),
+              tooling: parseFloat((toolingCost / vol).toFixed(2)),
+              overhead: parseFloat(overheadPerUnit.toFixed(2)),
+              total: parseFloat((materialCostPerUnit + labourPerUnit + (toolingCost / vol) + overheadPerUnit).toFixed(2)),
+            }));
+            const targetCost = mfg.targetUnitCostGbp;
+            const maxVal = Math.max(...chartData.map(d => d.total)) * 1.15;
+            return (
+              <div className="space-y-4">
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart data={chartData} barSize={40} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                    <XAxis dataKey="volume" tick={{ fontSize: 11 }} label={{ value: "Production Volume (units)", position: "insideBottom", offset: -2, fontSize: 11, fill: "#9ca3af" }} />
+                    <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `£${v}`} domain={[0, maxVal]} />
+                    <Tooltip
+                      formatter={(value: number, name: string) => [`£${value.toFixed(2)}`, name.charAt(0).toUpperCase() + name.slice(1)]}
+                      labelFormatter={label => `Volume: ${label} units`}
+                      contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e5e7eb" }}
+                    />
+                    {targetCost && (
+                      <ReferenceLine y={targetCost} stroke={C.red} strokeDasharray="4 4" label={{ value: `Target £${targetCost.toFixed(2)}`, position: "insideTopRight", fontSize: 10, fill: C.red }} />
+                    )}
+                    <Bar dataKey="material" stackId="cost" fill={C.green} name="Material" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="labour" stackId="cost" fill={C.blue} name="Labour" />
+                    <Bar dataKey="tooling" stackId="cost" fill={C.amber} name="Tooling Amort." />
+                    <Bar dataKey="overhead" stackId="cost" fill={C.purple} name="Overhead" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+                {/* Summary table below chart */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b" style={{ borderColor: "#e5e7eb" }}>
+                        {["Volume", "Material", "Labour", "Tooling Amort.", "Overhead", "Total Unit Cost", "vs Target"].map(h => (
+                          <th key={h} className="text-left py-2 px-3 font-semibold text-gray-500">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {chartData.map((row, i) => {
+                        const diff = targetCost ? row.total - targetCost : null;
+                        return (
+                          <tr key={i} className="border-b hover:bg-gray-50" style={{ borderColor: "#f3f4f6" }}>
+                            <td className="py-2 px-3 font-semibold text-gray-700">{row.volume}</td>
+                            <td className="py-2 px-3 text-gray-600">£{row.material.toFixed(2)}</td>
+                            <td className="py-2 px-3 text-gray-600">£{row.labour.toFixed(2)}</td>
+                            <td className="py-2 px-3 text-gray-600">£{row.tooling.toFixed(2)}</td>
+                            <td className="py-2 px-3 text-gray-600">£{row.overhead.toFixed(2)}</td>
+                            <td className="py-2 px-3 font-bold" style={{ color: C.navy }}>£{row.total.toFixed(2)}</td>
+                            <td className="py-2 px-3">
+                              {diff !== null ? (
+                                <span className="font-semibold" style={{ color: diff <= 0 ? C.green : C.red }}>
+                                  {diff <= 0 ? "✓" : "▲"} £{Math.abs(diff).toFixed(2)}
+                                </span>
+                              ) : <span className="text-gray-300">—</span>}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-xs text-gray-400">
+                  Material derived from BOM line items (or 60% of unit cost if no BOM). Labour = 25% · Overhead = 15% of unit cost. Tooling amortised across volume.
+                  {targetCost && <span style={{ color: C.red }}> Red dashed line = target unit cost £{targetCost.toFixed(2)}.</span>}
+                </p>
+              </div>
+            );
+          })()}
         </div>
       )}
 

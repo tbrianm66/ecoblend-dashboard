@@ -530,3 +530,12 @@
 - [x] Sidebar entry added: Analytics → Supply Chain (Truck icon)
 - [x] Vitest tests: supply.chain.test.ts (28 tests)
 - [x] All 616 tests passing, 0 TypeScript errors
+
+## Sprint 42b — BOM Cost Breakdown Chart
+- [x] Added CartesianGrid and ReferenceLine to recharts imports in SupplyChain.tsx
+- [x] BOM Cost Breakdown stacked bar chart added to Manufacturing Intelligence tab
+- [x] 5 volume scenarios: MOQ, 2x, 5x, 10x, 20x
+- [x] 4 cost stacks: Material (BOM-derived or 60%), Labour (25%), Tooling Amortisation (toolingCost/vol), Overhead (15%)
+- [x] Red dashed ReferenceLine for target unit cost
+- [x] Summary table below chart with vs-target delta column
+- [x] 616 tests passing, 0 TypeScript errors
