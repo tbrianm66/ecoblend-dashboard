@@ -2,6 +2,7 @@
 // Covers: partners, research projects, talent roles, venture workflows,
 //         industry engagements, governance docs, data sources, roadmap milestones
 
+import { dispatchTrigger } from "./workflowEngine";
 import { z } from "zod";
 import { router, publicProcedure } from "./_core/trpc";
 import { getDb } from "./db";
@@ -96,10 +97,18 @@ export const uniResearchRouter = router({
       const { id, ...data } = input;
       if (id) {
         await db.update(uniResearchProjects).set({ ...data, updatedAt: new Date() }).where(eqOp(uniResearchProjects.id, id));
+        // Fire workflow trigger if research is completed or published
+        if (data.status === 'completed' || data.status === 'published') {
+          dispatchTrigger('research_completed', id).catch(console.error);
+        }
         return { id };
       }
       const [result] = await db.insert(uniResearchProjects).values(data);
-      return { id: result.insertId };
+      const newId = result.insertId as number;
+      if (data.status === 'completed' || data.status === 'published') {
+        dispatchTrigger('research_completed', newId).catch(console.error);
+      }
+      return { id: newId };
     }),
 
   delete: publicProcedure

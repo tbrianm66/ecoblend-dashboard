@@ -90,6 +90,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: "dual-risk",   label: "Dual Risk Engine",     icon: "Zap",             href: "/dual-risk" },
       { id: "supply-chain", label: "Supply Chain",          icon: "Truck",           href: "/supply-chain" },
       { id: "china-manufacturing", label: "China Mfg Playbook", icon: "Factory",       href: "/china-manufacturing" },
+      { id: "workflow-engine",      label: "Workflow Engine",    icon: "Zap",             href: "/workflow-engine" },
     ],
   },
   {

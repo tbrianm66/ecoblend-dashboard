@@ -596,3 +596,19 @@
 - [x] Sidebar entry added under Research section (BookMarked icon)
 - [x] Vitest tests: universityPlaybook.test.ts (32 tests covering dual risk model, stage progression, partner types, talent roles, governance docs, data strategy, roadmap, industry engagements, summary aggregation)
 - [x] 717 tests passing, 0 TypeScript errors
+
+## Sprint 47 — Cross-Module Workflow Engine (COMPLETE)
+- [x] DB table: workflowTriggerLog (migration 0029 applied)
+- [x] server/workflowEngine.ts: dispatchTrigger(), three handlers (triggerResearchCompleted, triggerAuditFailed, triggerSupplierApproved)
+- [x] tRPC router: workflowEngine sub-router (listTriggerLog, getTriggerLog, rerunTrigger, getTriggerStats, fireTrigger)
+- [x] Trigger 1: research project status → completed/published → creates Experiment Log entry with TRL impact as evidence
+- [x] Trigger 2: factory audit item marked fail → creates CAPA task in Venture Project Management (Operations workstream)
+- [x] Trigger 3: supplier onboarding status → approved → pre-populates Approved Supplier List entry with capability scores
+- [x] Wire Trigger 1 into universityPlaybook.router upsertResearch mutation
+- [x] Wire Trigger 2 into mfgPlaybookExtended.router upsertAudit mutation
+- [x] Wire Trigger 3 into mfgPlaybookExtended.router upsertOnboarding mutation
+- [x] WorkflowEngine.tsx: KPI cards, trigger type summary cards, trigger log table with filters/pagination, manual fire dialog, log detail dialog with re-run button
+- [x] Route /workflow-engine registered in App.tsx
+- [x] Sidebar entry added under Analytics section (Zap icon)
+- [x] Vitest tests: workflowEngine.test.ts (30 tests covering trigger type validation, audit score calculation, capability score aggregation, trigger conditions, idempotency, cross-module target mapping)
+- [x] 747 tests passing, 0 TypeScript errors

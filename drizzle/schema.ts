@@ -3197,3 +3197,25 @@ export const uniRoadmapMilestones = mysqlTable("uniRoadmapMilestones", {
 });
 export type UniRoadmapMilestone = typeof uniRoadmapMilestones.$inferSelect;
 export type InsertUniRoadmapMilestone = typeof uniRoadmapMilestones.$inferInsert;
+
+// ── Workflow Engine ────────────────────────────────────────────────────────────
+// Immutable log of every cross-module trigger fired by the workflow engine.
+// triggerType: research_completed | audit_failed | supplier_approved
+// status: pending | success | failed | skipped
+export const workflowTriggerLog = mysqlTable("workflowTriggerLog", {
+  id:               int("id").primaryKey().autoincrement(),
+  triggerType:      varchar("triggerType", { length: 64 }).notNull(),
+  sourceModule:     varchar("sourceModule", { length: 64 }).notNull(),
+  sourceRecordId:   int("sourceRecordId").notNull(),
+  targetModule:     varchar("targetModule", { length: 64 }),
+  targetRecordId:   int("targetRecordId"),
+  ventureId:        varchar("ventureId", { length: 64 }),
+  status:           varchar("status", { length: 16 }).notNull().default("pending"),
+  payload:          text("payload"),
+  result:           text("result"),
+  error:            text("error"),
+  retriedFrom:      int("retriedFrom"),
+  createdAt:        timestamp("createdAt").defaultNow().notNull(),
+});
+export type WorkflowTriggerLog = typeof workflowTriggerLog.$inferSelect;
+export type InsertWorkflowTriggerLog = typeof workflowTriggerLog.$inferInsert;

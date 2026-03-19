@@ -44,6 +44,7 @@ import SpinoffOS from "./pages/SpinoffOS";
 import CoFounderMatrix from "./pages/CoFounderMatrix";
 import ChinaManufacturingPlaybook from "./pages/ChinaManufacturingPlaybook";
 import UniversityPlaybook from "./pages/UniversityPlaybook";
+import WorkflowEngine from "./pages/WorkflowEngine";
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
@@ -85,6 +86,7 @@ function Router() {
       <Route path="/spinoff" component={SpinoffOS} />
       <Route path="/co-founder-matrix" component={CoFounderMatrix} />
       <Route path="/china-manufacturing" component={ChinaManufacturingPlaybook} />
+      <Route path="/workflow-engine" component={WorkflowEngine} />
       <Route path="/university-playbook" component={UniversityPlaybook} />
       <Route component={Home} />
     </Switch>

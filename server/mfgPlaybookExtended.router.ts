@@ -3,6 +3,7 @@
 // This file exports a sub-router to be merged into the mfgPlaybook router.
 
 import { z } from "zod";
+import { dispatchTrigger } from "./workflowEngine";
 import { router, publicProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import { eq as eqOp } from "drizzle-orm";
@@ -61,13 +62,16 @@ export const mfgOnboardingRouter = router({
       const payload = { ...data, overallScore: parseFloat(overallScore.toFixed(2)) };
       if (id) {
         const db = (await getDb())!;
-      await db.update(mfgSupplierOnboarding).set({ ...payload, updatedAt: new Date() })
+        await db.update(mfgSupplierOnboarding).set({ ...payload, updatedAt: new Date() })
           .where(eqOp(mfgSupplierOnboarding.id, id));
+        if (data.status === "approved") dispatchTrigger("supplier_approved", id).catch(console.error);
         return { id };
       }
       const db = (await getDb())!;
       const result = await db.insert(mfgSupplierOnboarding).values(payload as any);
-      return { id: (result as any).insertId };
+      const newSupplierId = (result as any).insertId as number;
+      if (data.status === "approved") dispatchTrigger("supplier_approved", newSupplierId).catch(console.error);
+      return { id: newSupplierId };
     }),
 
   delete: publicProcedure
@@ -123,15 +127,22 @@ export const mfgAuditRouter = router({
       const rawScore = checkItems.reduce((acc, v) => acc + (v === "pass" ? 2 : v === "partial" ? 1 : 0), 0);
       const auditScore = Math.round((rawScore / 12) * 100);
       const payload = { ...data, auditScore };
+      const hasFailedItems = [
+        data.facilityCondition, data.equipmentCapability, data.workforceSkills,
+        data.qcProcesses, data.healthAndSafety, data.environmentalCompliance,
+      ].some((v) => v === "fail");
       if (id) {
         const db = (await getDb())!;
-      await db.update(mfgFactoryAudits).set({ ...payload, updatedAt: new Date() })
+        await db.update(mfgFactoryAudits).set({ ...payload, updatedAt: new Date() })
           .where(eqOp(mfgFactoryAudits.id, id));
+        if (hasFailedItems) dispatchTrigger("audit_failed", id).catch(console.error);
         return { id };
       }
       const db = (await getDb())!;
       const result = await db.insert(mfgFactoryAudits).values(payload as any);
-      return { id: (result as any).insertId };
+      const newAuditId = (result as any).insertId as number;
+      if (hasFailedItems) dispatchTrigger("audit_failed", newAuditId).catch(console.error);
+      return { id: newAuditId };
     }),
 
   delete: publicProcedure

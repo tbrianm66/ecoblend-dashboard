@@ -1,3 +1,4 @@
+import { workflowEngineRouter } from "./workflowEngine.router";
 import { mfgOnboardingRouter, mfgAuditRouter, mfgRfqRouter, mfgAslRouter, mfgContractRouter } from "./mfgPlaybookExtended.router";
 import { uniPartnersRouter, uniResearchRouter, uniTalentRouter, uniWorkflowRouter, uniIndustryRouter, uniGovernanceRouter, uniDataRouter, uniRoadmapRouter, uniSummaryRouter } from "./universityPlaybook.router";
 import { COOKIE_NAME } from "@shared/const";
@@ -6696,5 +6697,6 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
   uniData: uniDataRouter,
   uniRoadmap: uniRoadmapRouter,
   uniSummary: uniSummaryRouter,
+  workflowEngine: workflowEngineRouter,
 });
 export type AppRouter = typeof appRouter;
