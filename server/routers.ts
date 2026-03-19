@@ -5713,5 +5713,257 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
         return { markdown: md, ventureName, lcssaScore, reportDate };
       }),
   }),
+  // ── Dual Risk Venture Creation System ────────────────────────────────────────
+  dualRisk: router({
+    // ── Business Risk: get/upsert ─────────────────────────────────────────────
+    getBusinessRisk: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { businessRiskInputs } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const [row] = await db.select().from(businessRiskInputs).where(eq(businessRiskInputs.ventureId, input.ventureId));
+        return row ?? null;
+      }),
+
+    upsertBusinessRisk: publicProcedure
+      .input(z.object({
+        ventureId: z.string(),
+        sourceType: z.enum(["research_paper", "market_report", "ip_document", "academic_model", "manual"]).optional(),
+        inputCategory: z.enum(["University", "Founder", "Joint"]).optional(),
+        marketRiskScore: z.number().min(0).max(100).optional(),
+        marketSizeScore: z.number().min(0).max(100).optional(),
+        competitorIntensity: z.number().min(0).max(100).optional(),
+        demandValidation: z.number().min(0).max(100).optional(),
+        esgRiskScore: z.number().min(0).max(100).optional(),
+        carbonFootprintRisk: z.number().min(0).max(100).optional(),
+        socialLicenceRisk: z.number().min(0).max(100).optional(),
+        supplyChainEsgRisk: z.number().min(0).max(100).optional(),
+        regulatoryRiskScore: z.number().min(0).max(100).optional(),
+        complianceComplexity: z.number().min(0).max(100).optional(),
+        certificationBarrier: z.number().min(0).max(100).optional(),
+        jurisdictionRisk: z.number().min(0).max(100).optional(),
+        commercialViabilityScore: z.number().min(0).max(100).optional(),
+        revenueModelClarity: z.number().min(0).max(100).optional(),
+        unitEconomicsScore: z.number().min(0).max(100).optional(),
+        partnershipReadiness: z.number().min(0).max(100).optional(),
+        strategicRiskScore: z.number().min(0).max(100).optional(),
+        ipProtectionStrength: z.number().min(0).max(100).optional(),
+        teamCapabilityRisk: z.number().min(0).max(100).optional(),
+        executionTrack: z.enum(["BEBUS", "ECORACE", "Both"]).optional(),
+        notes: z.string().optional(),
+        lastUpdatedBy: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { businessRiskInputs } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const { ventureId, ...fields } = input;
+        // Compute business risk index: weighted average of risk sub-scores
+        // Market(30%) + ESG(25%) + Regulatory(20%) + Strategic(15%) + inverted Commercial(10%)
+        const mkt = fields.marketRiskScore ?? 50;
+        const esg = fields.esgRiskScore ?? 50;
+        const reg = fields.regulatoryRiskScore ?? 50;
+        const str = fields.strategicRiskScore ?? 50;
+        const com = 100 - (fields.commercialViabilityScore ?? 50); // invert: low viability = high risk
+        const businessRiskIndex = Math.round((mkt * 0.30 + esg * 0.25 + reg * 0.20 + str * 0.15 + com * 0.10) * 10) / 10;
+        const [existing] = await db.select().from(businessRiskInputs).where(eq(businessRiskInputs.ventureId, ventureId));
+        if (existing) {
+          await db.update(businessRiskInputs).set({ ...fields, businessRiskIndex }).where(eq(businessRiskInputs.ventureId, ventureId));
+        } else {
+          await db.insert(businessRiskInputs).values({ ventureId, ...fields, businessRiskIndex });
+        }
+        const [updated] = await db.select().from(businessRiskInputs).where(eq(businessRiskInputs.ventureId, ventureId));
+        return updated;
+      }),
+
+    // ── Product Risk: get/upsert ──────────────────────────────────────────────
+    getProductRisk: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { productRiskInputs } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const [row] = await db.select().from(productRiskInputs).where(eq(productRiskInputs.ventureId, input.ventureId));
+        return row ?? null;
+      }),
+
+    upsertProductRisk: publicProcedure
+      .input(z.object({
+        ventureId: z.string(),
+        sourceType: z.enum(["problem_statement", "industry_pain_point", "product_idea", "performance_gap", "manual"]).optional(),
+        inputCategory: z.enum(["University", "Founder", "Joint"]).optional(),
+        technicalFeasibilityScore: z.number().min(0).max(100).optional(),
+        prototypeMaturity: z.number().min(0).max(100).optional(),
+        technologyReadiness: z.number().min(0).max(100).optional(),
+        performanceRiskScore: z.number().min(0).max(100).optional(),
+        benchmarkGap: z.number().min(0).max(100).optional(),
+        qualityRisk: z.number().min(0).max(100).optional(),
+        reliabilityRisk: z.number().min(0).max(100).optional(),
+        scalabilityRiskScore: z.number().min(0).max(100).optional(),
+        manufacturingRisk: z.number().min(0).max(100).optional(),
+        supplyChainRisk: z.number().min(0).max(100).optional(),
+        unitCostScalability: z.number().min(0).max(100).optional(),
+        engineeringComplexity: z.number().min(0).max(100).optional(),
+        integrationRisk: z.number().min(0).max(100).optional(),
+        dependencyRisk: z.number().min(0).max(100).optional(),
+        rdMaturityScore: z.number().min(0).max(100).optional(),
+        labValidationScore: z.number().min(0).max(100).optional(),
+        pilotTestScore: z.number().min(0).max(100).optional(),
+        executionTrack: z.enum(["BEBUS", "ECORACE", "Both"]).optional(),
+        notes: z.string().optional(),
+        lastUpdatedBy: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { productRiskInputs } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const { ventureId, ...fields } = input;
+        // Compute product risk index: weighted average
+        // Performance(25%) + Scalability(25%) + Engineering(20%) + inverted Feasibility(15%) + inverted RD(15%)
+        const perf = fields.performanceRiskScore ?? 50;
+        const scal = fields.scalabilityRiskScore ?? 50;
+        const eng = fields.engineeringComplexity ?? 50;
+        const feas = 100 - (fields.technicalFeasibilityScore ?? 50); // invert
+        const rd = 100 - (fields.rdMaturityScore ?? 50); // invert
+        const productRiskIndex = Math.round((perf * 0.25 + scal * 0.25 + eng * 0.20 + feas * 0.15 + rd * 0.15) * 10) / 10;
+        const [existing] = await db.select().from(productRiskInputs).where(eq(productRiskInputs.ventureId, ventureId));
+        if (existing) {
+          await db.update(productRiskInputs).set({ ...fields, productRiskIndex }).where(eq(productRiskInputs.ventureId, ventureId));
+        } else {
+          await db.insert(productRiskInputs).values({ ventureId, ...fields, productRiskIndex });
+        }
+        const [updated] = await db.select().from(productRiskInputs).where(eq(productRiskInputs.ventureId, ventureId));
+        return updated;
+      }),
+
+    // ── VRL Engine: compute dual-risk-adjusted VRL score ─────────────────────
+    computeVrl: publicProcedure
+      .input(z.object({
+        ventureId: z.string(),
+        trlScore: z.number().min(0).max(9),
+        brlScore: z.number().min(0).max(9),
+        esgScore: z.number().min(0).max(100).optional(),
+        confidenceScore: z.number().min(0.2).max(1.0).optional(),
+        alphaWeight: z.number().min(0).max(1).optional(), // TRL weight, default 0.45
+        betaWeight: z.number().min(0).max(1).optional(),  // BRL weight, default 0.55
+        decidedBy: z.string().optional(),
+        decisionRationale: z.string().optional(),
+        executionTrack: z.enum(["BEBUS", "ECORACE", "Both", "None"]).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { businessRiskInputs, productRiskInputs, dualRiskDecisions } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        // Fetch current risk indices
+        const [bizRisk] = await db.select().from(businessRiskInputs).where(eq(businessRiskInputs.ventureId, input.ventureId));
+        const [prodRisk] = await db.select().from(productRiskInputs).where(eq(productRiskInputs.ventureId, input.ventureId));
+        const businessRiskIndex = (bizRisk?.businessRiskIndex ?? 50) / 100; // normalise to 0–1
+        const productRiskIndex = (prodRisk?.productRiskIndex ?? 50) / 100;
+        const esgScore = (input.esgScore ?? 50) / 100;
+        const alpha = input.alphaWeight ?? 0.45;
+        const beta = input.betaWeight ?? 0.55;
+        const confidence = input.confidenceScore ?? 0.5;
+        // VRL Formula: VRL = (α×TRL + β×BRL) × (1 − BRI×0.5) × (1 − PRI×0.5) × Confidence
+        // ESG bonus: +0.5 VRL levels for high ESG (>0.7)
+        const rawVrl = (alpha * input.trlScore + beta * input.brlScore)
+          * (1 - businessRiskIndex * 0.5)
+          * (1 - productRiskIndex * 0.5)
+          * confidence;
+        const esgBonus = esgScore > 0.7 ? 0.3 : 0;
+        const vrlScore = Math.min(9, Math.max(0, rawVrl + esgBonus));
+        const vrlLevel = Math.max(1, Math.min(9, Math.round(vrlScore)));
+        // Decision logic
+        let decision: "Build" | "Validate" | "Partner" | "Reject";
+        if (vrlScore >= 6 && businessRiskIndex < 0.4 && productRiskIndex < 0.4) {
+          decision = "Build";
+        } else if (vrlScore >= 4 && businessRiskIndex < 0.6 && productRiskIndex < 0.6) {
+          decision = "Validate";
+        } else if (vrlScore >= 3 && (businessRiskIndex >= 0.6 || productRiskIndex >= 0.6)) {
+          decision = "Partner";
+        } else {
+          decision = "Reject";
+        }
+        // Log the decision
+        await db.insert(dualRiskDecisions).values({
+          ventureId: input.ventureId,
+          businessRiskIndex: businessRiskIndex * 100,
+          productRiskIndex: productRiskIndex * 100,
+          trlScore: input.trlScore,
+          brlScore: input.brlScore,
+          esgScore: input.esgScore ?? 50,
+          vrlScore: Math.round(vrlScore * 100) / 100,
+          vrlLevel,
+          confidenceScore: confidence,
+          decision,
+          decisionRationale: input.decisionRationale ?? `Auto-computed: VRL ${vrlScore.toFixed(2)}, BRI ${(businessRiskIndex * 100).toFixed(1)}%, PRI ${(productRiskIndex * 100).toFixed(1)}%`,
+          executionTrack: input.executionTrack ?? (decision === "Build" ? "Both" : decision === "Validate" ? "ECORACE" : "None"),
+          decidedBy: input.decidedBy,
+          sourceType: "Joint",
+        });
+        return { vrlScore: Math.round(vrlScore * 100) / 100, vrlLevel, decision, businessRiskIndex: businessRiskIndex * 100, productRiskIndex: productRiskIndex * 100, esgBonus };
+      }),
+
+    // ── Decision Log: list/update feedback ───────────────────────────────────
+    listDecisions: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { dualRiskDecisions } = await import("../drizzle/schema");
+        const { eq, desc } = await import("drizzle-orm");
+        return db.select().from(dualRiskDecisions).where(eq(dualRiskDecisions.ventureId, input.ventureId)).orderBy(desc(dualRiskDecisions.createdAt));
+      }),
+
+    updateFeedback: publicProcedure
+      .input(z.object({
+        id: z.number(),
+        marketFeedback: z.string().optional(),
+        feedbackScore: z.number().min(0).max(100).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { dualRiskDecisions } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const { id, ...fields } = input;
+        await db.update(dualRiskDecisions).set(fields).where(eq(dualRiskDecisions.id, id));
+        return { success: true };
+      }),
+
+    deleteDecision: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { dualRiskDecisions } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        await db.delete(dualRiskDecisions).where(eq(dualRiskDecisions.id, input.id));
+        return { success: true };
+      }),
+
+    // ── Summary: combined dual risk overview ─────────────────────────────────
+    getDualRiskSummary: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { businessRiskInputs, productRiskInputs, dualRiskDecisions } = await import("../drizzle/schema");
+        const { eq, desc } = await import("drizzle-orm");
+        const [biz] = await db.select().from(businessRiskInputs).where(eq(businessRiskInputs.ventureId, input.ventureId));
+        const [prod] = await db.select().from(productRiskInputs).where(eq(productRiskInputs.ventureId, input.ventureId));
+        const decisions = await db.select().from(dualRiskDecisions).where(eq(dualRiskDecisions.ventureId, input.ventureId)).orderBy(desc(dualRiskDecisions.createdAt));
+        const latest = decisions[0] ?? null;
+        return {
+          businessRiskIndex: biz?.businessRiskIndex ?? null,
+          productRiskIndex: prod?.productRiskIndex ?? null,
+          latestVrlScore: latest?.vrlScore ?? null,
+          latestVrlLevel: latest?.vrlLevel ?? null,
+          latestDecision: latest?.decision ?? null,
+          latestExecutionTrack: latest?.executionTrack ?? null,
+          decisionCount: decisions.length,
+          buildCount: decisions.filter(d => d.decision === "Build").length,
+          validateCount: decisions.filter(d => d.decision === "Validate").length,
+          partnerCount: decisions.filter(d => d.decision === "Partner").length,
+          rejectCount: decisions.filter(d => d.decision === "Reject").length,
+        };
+      }),
+  }),
 });
 export type AppRouter = typeof appRouter;

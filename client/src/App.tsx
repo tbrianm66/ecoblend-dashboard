@@ -12,6 +12,7 @@ import TrlAnalytics from "./pages/TrlAnalytics";
 import InvestmentReadiness from "./pages/InvestmentReadiness";
 import PlaceholderPage from "./pages/PlaceholderPage";
 import RiskManagement from "./pages/RiskManagement";
+import DualRiskEngine from "./pages/DualRiskEngine";
 import FounderOnboarding from "./pages/FounderOnboarding";
 import BCorpIso from "./pages/BCorpIso";
 import FoundationImpact from "./pages/FoundationImpact";
@@ -50,6 +51,7 @@ function Router() {
       <Route path="/trl" component={TrlAnalytics} />
       <Route path="/investment" component={InvestmentReadiness} />
       <Route path="/risk" component={RiskManagement} />
+      <Route path="/dual-risk" component={DualRiskEngine} />
       <Route path="/onboarding" component={FounderOnboarding} />
       <Route path="/brand" component={BrandReadiness} />
       <Route path="/ip" component={IpManagement} />

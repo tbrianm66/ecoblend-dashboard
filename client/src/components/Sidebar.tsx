@@ -86,6 +86,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: "financial",   label: "Financial Analytics",  icon: "BarChart2",       href: "/financial" },
       { id: "market",      label: "Market Intelligence",  icon: "PieChart",        href: "/market-intelligence" },
       { id: "risk",        label: "Risk Management",      icon: "ShieldAlert",     href: "/risk" },
+      { id: "dual-risk",   label: "Dual Risk Engine",     icon: "Zap",             href: "/dual-risk" },
     ],
   },
   {

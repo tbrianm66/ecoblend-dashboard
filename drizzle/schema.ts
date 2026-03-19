@@ -2480,3 +2480,123 @@ export const lcssaSnapshot = mysqlTable("lcssa_snapshot", {
 });
 export type LcssaSnapshot = typeof lcssaSnapshot.$inferSelect;
 export type InsertLcssaSnapshot = typeof lcssaSnapshot.$inferInsert;
+
+// ╔══════════════════════════════════════════════════════════════════════════════╗
+// ║  DUAL RISK VENTURE CREATION SYSTEM                                           ║
+// ║  Brief: Dual Risk Venture Creation System – Prompt Brief (Manus AI)          ║
+// ║  Separates Business Risk (University) and Product Risk (Founder)             ║
+// ║  Recombines into VRL Engine with Decision Outputs                            ║
+// ╚══════════════════════════════════════════════════════════════════════════════╝
+
+// ── Business Risk Inputs (University Ownership) ───────────────────────────────
+export const businessRiskInputs = mysqlTable("business_risk_inputs", {
+  id:                    int("id").autoincrement().primaryKey(),
+  ventureId:             varchar("ventureId", { length: 64 }).notNull().unique(),
+  // Input source
+  sourceType:            mysqlEnum("sourceType", ["research_paper", "market_report", "ip_document", "academic_model", "manual"]).notNull().default("manual"),
+  inputCategory:         mysqlEnum("inputCategory", ["University", "Founder", "Joint"]).notNull().default("University"),
+  // Market Risk (0–100)
+  marketRiskScore:       float("marketRiskScore").default(50),
+  marketSizeScore:       float("marketSizeScore").default(50),       // TAM/SAM/SOM confidence
+  competitorIntensity:   float("competitorIntensity").default(50),   // competitive landscape
+  demandValidation:      float("demandValidation").default(50),      // customer validation strength
+  // ESG Risk (0–100)
+  esgRiskScore:          float("esgRiskScore").default(50),
+  carbonFootprintRisk:   float("carbonFootprintRisk").default(50),
+  socialLicenceRisk:     float("socialLicenceRisk").default(50),
+  supplyChainEsgRisk:    float("supplyChainEsgRisk").default(50),
+  // Regulatory Risk (0–100)
+  regulatoryRiskScore:   float("regulatoryRiskScore").default(50),
+  complianceComplexity:  float("complianceComplexity").default(50),
+  certificationBarrier:  float("certificationBarrier").default(50),
+  jurisdictionRisk:      float("jurisdictionRisk").default(50),
+  // Commercial Viability (0–100, higher = more viable)
+  commercialViabilityScore: float("commercialViabilityScore").default(50),
+  revenueModelClarity:   float("revenueModelClarity").default(50),
+  unitEconomicsScore:    float("unitEconomicsScore").default(50),
+  partnershipReadiness:  float("partnershipReadiness").default(50),
+  // Strategic Risk (0–100)
+  strategicRiskScore:    float("strategicRiskScore").default(50),
+  ipProtectionStrength:  float("ipProtectionStrength").default(50),
+  teamCapabilityRisk:    float("teamCapabilityRisk").default(50),
+  executionTrack:        mysqlEnum("executionTrack", ["BEBUS", "ECORACE", "Both"]).default("BEBUS"),
+  // Computed aggregate
+  businessRiskIndex:     float("businessRiskIndex").default(50),     // 0–100, lower = less risk
+  notes:                 text("notes"),
+  lastUpdatedBy:         varchar("lastUpdatedBy", { length: 128 }),
+  createdAt:             timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:             timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type BusinessRiskInput = typeof businessRiskInputs.$inferSelect;
+export type InsertBusinessRiskInput = typeof businessRiskInputs.$inferInsert;
+
+// ── Product Risk Inputs (Founder Ownership) ───────────────────────────────────
+export const productRiskInputs = mysqlTable("product_risk_inputs", {
+  id:                    int("id").autoincrement().primaryKey(),
+  ventureId:             varchar("ventureId", { length: 64 }).notNull().unique(),
+  // Input source
+  sourceType:            mysqlEnum("sourceType", ["problem_statement", "industry_pain_point", "product_idea", "performance_gap", "manual"]).notNull().default("manual"),
+  inputCategory:         mysqlEnum("inputCategory", ["University", "Founder", "Joint"]).notNull().default("Founder"),
+  // Technical Feasibility (0–100, higher = more feasible)
+  technicalFeasibilityScore: float("technicalFeasibilityScore").default(50),
+  prototypeMaturity:     float("prototypeMaturity").default(50),     // how advanced the prototype is
+  technologyReadiness:   float("technologyReadiness").default(50),   // linked to TRL
+  // Performance Risk (0–100)
+  performanceRiskScore:  float("performanceRiskScore").default(50),
+  benchmarkGap:          float("benchmarkGap").default(50),          // gap vs POI benchmark
+  qualityRisk:           float("qualityRisk").default(50),
+  reliabilityRisk:       float("reliabilityRisk").default(50),
+  // Scalability Risk (0–100)
+  scalabilityRiskScore:  float("scalabilityRiskScore").default(50),
+  manufacturingRisk:     float("manufacturingRisk").default(50),
+  supplyChainRisk:       float("supplyChainRisk").default(50),
+  unitCostScalability:   float("unitCostScalability").default(50),
+  // Engineering Complexity (0–100, higher = more complex)
+  engineeringComplexity: float("engineeringComplexity").default(50),
+  integrationRisk:       float("integrationRisk").default(50),
+  dependencyRisk:        float("dependencyRisk").default(50),
+  // R&D Maturity (0–100, higher = more mature)
+  rdMaturityScore:       float("rdMaturityScore").default(50),
+  labValidationScore:    float("labValidationScore").default(50),    // EcoRace lab results
+  pilotTestScore:        float("pilotTestScore").default(50),
+  executionTrack:        mysqlEnum("executionTrack", ["BEBUS", "ECORACE", "Both"]).default("ECORACE"),
+  // Computed aggregate
+  productRiskIndex:      float("productRiskIndex").default(50),      // 0–100, lower = less risk
+  notes:                 text("notes"),
+  lastUpdatedBy:         varchar("lastUpdatedBy", { length: 128 }),
+  createdAt:             timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:             timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ProductRiskInput = typeof productRiskInputs.$inferSelect;
+export type InsertProductRiskInput = typeof productRiskInputs.$inferInsert;
+
+// ── Dual Risk Decisions (VRL Engine Output) ───────────────────────────────────
+export const dualRiskDecisions = mysqlTable("dual_risk_decisions", {
+  id:                    int("id").autoincrement().primaryKey(),
+  ventureId:             varchar("ventureId", { length: 64 }).notNull(),
+  // Inputs at time of decision
+  businessRiskIndex:     float("businessRiskIndex").notNull(),
+  productRiskIndex:      float("productRiskIndex").notNull(),
+  trlScore:              float("trlScore").notNull(),
+  brlScore:              float("brlScore").notNull(),
+  esgScore:              float("esgScore").default(50),
+  // VRL Engine outputs
+  vrlScore:              float("vrlScore").notNull(),                 // 0–9 scale
+  vrlLevel:              int("vrlLevel").notNull(),                   // 1–9
+  confidenceScore:       float("confidenceScore").default(0.5),      // 0.2–1.0
+  // Decision output
+  decision:              mysqlEnum("decision", ["Build", "Validate", "Partner", "Reject"]).notNull(),
+  decisionRationale:     text("decisionRationale"),
+  // Execution routing
+  executionTrack:        mysqlEnum("executionTrack", ["BEBUS", "ECORACE", "Both", "None"]).default("None"),
+  // Feedback loop
+  marketFeedback:        text("marketFeedback"),
+  feedbackScore:         float("feedbackScore"),                      // 0–100 market response
+  // Metadata
+  decidedBy:             varchar("decidedBy", { length: 128 }),
+  sourceType:            mysqlEnum("sourceType", ["University", "Founder", "Joint"]).default("Joint"),
+  createdAt:             timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:             timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type DualRiskDecision = typeof dualRiskDecisions.$inferSelect;
+export type InsertDualRiskDecision = typeof dualRiskDecisions.$inferInsert;

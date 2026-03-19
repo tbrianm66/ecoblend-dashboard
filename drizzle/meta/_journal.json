@@ -169,6 +169,13 @@
       "when": 1773872082065,
       "tag": "0023_bitter_spencer_smythe",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "5",
+      "when": 1773912494019,
+      "tag": "0024_ancient_yellow_claw",
+      "breakpoints": true
     }
   ]
 }

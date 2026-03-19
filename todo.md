@@ -503,3 +503,12 @@
 - [x] Frontend: 17-SDG heatmap grid in Oversight sub-tab (colour-coded, auto-save)
 - [x] Vitest: 22 new tests for SDG heatmap, snapshot scoring, report export
 - [x] All 563 tests passing, 0 TypeScript errors
+
+## Sprint 41 — Dual Risk Venture Creation System
+- [x] DB tables: businessRiskInputs, productRiskInputs, dualRiskDecisions (migration 0024)
+- [x] dualRisk tRPC router: getBusinessRisk, upsertBusinessRisk, getProductRisk, upsertProductRisk, computeVrl, listDecisions, updateFeedback, deleteDecision, getDualRiskSummary
+- [x] DualRiskEngine.tsx: 5-tab UI (Overview, Business Risk, Product Risk, VRL Engine, Decision Log)
+- [x] Route /dual-risk registered in App.tsx
+- [x] Sidebar entry added to Analytics section
+- [x] Vitest tests: 25 tests covering VRL formula, BRI/PRI computation, decision thresholds, ESG bonus, execution routing, feedback loop
+- [x] 588 tests passing, 0 TypeScript errors
