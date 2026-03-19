@@ -13,7 +13,7 @@ import {
   Award, Heart, ChevronRight, Rocket, MessageSquare, BookOpen,
   Bell, X, AlertTriangle, FileText, Newspaper, Briefcase,
   Lightbulb, TestTube2, UserCircle2, FolderOpen, Globe,
-  Building2, ChevronDown, GraduationCap, Search, PieChart, Leaf, Database, UserCheck, Package, ClipboardList, Zap, Shuffle, GitBranch, Users2, Truck, Factory, BookMarked
+  Building2, ChevronDown, GraduationCap, Search, PieChart, Leaf, Database, UserCheck, Package, ClipboardList, Zap, Shuffle, GitBranch, Users2, Truck, Factory, BookMarked, HandCoins
 } from "lucide-react";
 import { useVentures } from "@/contexts/VentureContext";
 
@@ -23,7 +23,7 @@ const iconMap: Record<string, React.ComponentType<{ size?: number; className?: s
   DollarSign, Layers, Lock, Users, Megaphone, BarChart2,
   Award, Heart, Rocket, MessageSquare, BookOpen, FileText,
   Newspaper, Briefcase, Lightbulb, TestTube2, UserCircle2,
-  FolderOpen, Globe, Building2, GraduationCap, Search, PieChart, Leaf, Database, UserCheck, Package, ClipboardList, Zap, Shuffle, GitBranch, Users2, Truck, Factory, BookMarked,
+  FolderOpen, Globe, Building2, GraduationCap, Search, PieChart, Leaf, Database, UserCheck, Package, ClipboardList, Zap, Shuffle, GitBranch, Users2, Truck, Factory, BookMarked, HandCoins,
 };
 
 interface NavItem {
@@ -92,6 +92,8 @@ const NAV_GROUPS: NavGroup[] = [
       { id: "china-manufacturing", label: "China Mfg Playbook", icon: "Factory",       href: "/china-manufacturing" },
       { id: "workflow-engine",      label: "Workflow Engine",    icon: "Zap",             href: "/workflow-engine" },
       { id: "data-management",      label: "Data Management",   icon: "Database",          href: "/data-management" },
+      { id: "commercial-crm",        label: "Commercial CRM",     icon: "Briefcase",          href: "/commercial-crm" },
+      { id: "investor-crm",          label: "Investor CRM",       icon: "HandCoins",          href: "/investor-crm" },
     ],
   },
   {

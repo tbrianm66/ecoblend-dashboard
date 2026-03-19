@@ -189,6 +189,8 @@ import {
   getFullOpportunityDetail,
 } from "./poiDb";
 import { dmAssetsRouter, dmQualityRouter, dmPipelinesRouter, dmRagRouter, dmFineTuningRouter, dmFeedbackRouter, dmSummaryRouter } from "./dataManagement.router";
+import { commercialCrmRouter } from "./commercialCrm.router";
+import { investorCrmRouter } from "./investorCrm.router";
 
 export const appRouter = router({
   system: systemRouter,
@@ -6699,6 +6701,8 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
   uniRoadmap: uniRoadmapRouter,
   uniSummary: uniSummaryRouter,
   workflowEngine: workflowEngineRouter,
+  commercialCrm: commercialCrmRouter,
+  investorCrm: investorCrmRouter,
 
   dmAssets: dmAssetsRouter,
   dmQuality: dmQualityRouter,

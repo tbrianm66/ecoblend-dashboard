@@ -628,3 +628,26 @@
 - [x] Sidebar entry added under Analytics section (Database icon)
 - [x] Vitest tests: dataManagement.test.ts (42 tests covering asset types, quality scoring, pipeline statuses, RAG config validation, fine-tuning job states, feedback rating validation, context engineering, data source integration, pipeline run history, embedding models, summary stats)
 - [x] 789 tests passing, 0 TypeScript errors
+
+## Sprint 49 — Commercial CRM + Investor CRM (COMPLETE)
+- [x] DB tables: crmContacts, crmLeads, crmDeals, crmActivities, crmPipelines, crmPipelineStages (migration 0031 applied)
+- [x] DB tables: invContacts, invFundingRounds, invTermSheets, invCapTable, invDueDiligence, invUpdates (migration 0031 applied)
+- [x] tRPC router: commercialCrm sub-routers (contacts, leads, deals, activities, pipelines, pipelineStages, summary)
+- [x] tRPC router: investorCrm sub-routers (contacts, rounds, termSheets, capTable, dueDiligence, updates, summary)
+- [x] CommercialCRM.tsx: 6-tab page (Overview, Contacts, Leads, Deal Pipeline, Activities, Pipeline Config)
+- [x] InvestorCRM.tsx: 6-tab page (Overview, Investors, Funding Rounds, Term Sheets, Cap Table, Due Diligence)
+- [x] Commercial Overview: weighted pipeline funnel, win rate, avg deal size, activity KPIs, lead source breakdown
+- [x] Contacts tab: B2B contact CRUD (name, company, role, email, phone, venture linkage, tags, last contact date)
+- [x] Leads tab: lead register (source, stage, score, assigned to, next action, estimated value, notes)
+- [x] Deal Pipeline: stage-grouped deal board (Discovery → Proposal → Negotiation → Contract → Closed Won/Lost) with probability %
+- [x] Activities tab: call/email/meeting/demo/follow_up log with outcome, duration, follow-up date
+- [x] Investor Overview: total raised vs target, investor pipeline funnel, funding summary, cap table equity split
+- [x] Investors tab: investor contact CRUD (name, fund, type, cheque size, portfolio focus, relationship status, last contact)
+- [x] Funding Rounds tab: round CRUD (name, type, target, raised, valuation, status, lead investor, close date)
+- [x] Term Sheets tab: term sheet tracker (investor, round, pre-money val, equity %, key terms, expiry, status)
+- [x] Cap Table tab: shareholder register (name, type, shares, ownership %, investment amount, round, vesting schedule)
+- [x] Due Diligence tab: DD checklist (legal, financial, technical, commercial, team) with document links and status
+- [x] Route /commercial-crm and /investor-crm registered in App.tsx
+- [x] Sidebar entries added under Analytics section (Briefcase + HandCoins icons)
+- [x] Vitest tests: crm.test.ts (44 tests covering lead scoring, deal probability, weighted pipeline, activity/contact validation, deal value formatting, conversion rate, funding progress, valuation/equity, dilution, round/status validation, cap table, term sheet expiry, investor pipeline scoring)
+- [x] 831 tests passing, 0 TypeScript errors

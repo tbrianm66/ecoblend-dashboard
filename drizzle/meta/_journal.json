@@ -218,6 +218,13 @@
       "when": 1773961396850,
       "tag": "0030_far_tigra",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "5",
+      "when": 1773962445199,
+      "tag": "0031_dapper_patch",
+      "breakpoints": true
     }
   ]
 }
