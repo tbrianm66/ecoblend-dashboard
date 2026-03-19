@@ -23,7 +23,7 @@ import {
   Factory, FlaskConical, Globe, ShieldAlert, Leaf, LayoutDashboard,
   Plus, Trash2, Edit2, ChevronRight, Package, Truck, Wrench,
   BarChart2, CheckCircle, AlertTriangle, Clock, TrendingUp,
-  MapPin, Users, DollarSign, Activity, Layers, Zap,
+  MapPin, Users, DollarSign, Activity, Layers, Zap, Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -498,6 +498,14 @@ function ManufacturingTab({ ventureId }: { ventureId: string }) {
   const [form, setForm] = useState<any>({});
   const [readinessResult, setReadinessResult] = useState<any>(null);
 
+  // BOM row editor state — each row: { name, material, qty, unit, unitCost, supplier }
+  const [bomRows, setBomRows] = useState<Array<{ name: string; material: string; qty: number; unit: string; unitCost: number; supplier: string }>>([]);
+
+  const addBomRow = () => setBomRows(r => [...r, { name: "", material: "", qty: 1, unit: "unit", unitCost: 0, supplier: "" }]);
+  const removeBomRow = (i: number) => setBomRows(r => r.filter((_, idx) => idx !== i));
+  const updateBomRow = (i: number, field: string, value: string | number) =>
+    setBomRows(r => r.map((row, idx) => idx === i ? { ...row, [field]: value } : row));
+
   const effectiveProductId = selectedProductId ?? (products[0]?.id ?? null);
   const { data: mfg } = trpc.supplyChain.getManufacturing.useQuery(
     { productId: effectiveProductId! },
@@ -513,7 +521,15 @@ function ManufacturingTab({ ventureId }: { ventureId: string }) {
   });
 
   const openDialog = () => {
-    setForm(mfg ? { ...mfg } : { ventureId, productId: effectiveProductId });
+    const base = mfg ? { ...mfg } : { ventureId, productId: effectiveProductId };
+    setForm(base);
+    // Parse existing BOM JSON into rows
+    const existingBomJson = (base as any).bomJson;
+    if (existingBomJson) {
+      try { setBomRows(JSON.parse(existingBomJson)); } catch { setBomRows([]); }
+    } else {
+      setBomRows([]);
+    }
     setShowDialog(true);
   };
 
@@ -646,7 +662,30 @@ function ManufacturingTab({ ventureId }: { ventureId: string }) {
       {/* BOM Preview */}
       {mfg?.bomJson && (
         <div className="bg-white rounded-2xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
-          <h3 className="text-sm font-bold text-gray-800 mb-3" style={{ fontFamily: "'Prompt', sans-serif" }}>Bill of Materials — v{mfg.bomVersion}</h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-bold text-gray-800" style={{ fontFamily: "'Prompt', sans-serif" }}>Bill of Materials — v{mfg.bomVersion}</h3>
+            <Button size="sm" variant="outline" onClick={() => {
+              if (!mfg.bomJson) return;
+              try {
+                const items = JSON.parse(mfg.bomJson);
+                const header = "Name,Material,Qty,Unit,Unit Cost (£),Total (£),Supplier";
+                const rows = items.map((item: any) =>
+                  `"${item.name}","${item.material}",${item.qty},"${item.unit}",${item.unitCost?.toFixed(2)},${(item.qty * item.unitCost)?.toFixed(2)},"${item.supplier}"`
+                );
+                const csv = [header, ...rows].join("\n");
+                const blob = new Blob([csv], { type: "text/csv" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `BOM-${mfg.bomVersion ?? "v1"}-${new Date().toISOString().slice(0, 10)}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+                toast.success("BOM exported as CSV");
+              } catch { toast.error("Failed to export BOM"); }
+            }} style={{ borderColor: C.green, color: C.green }}>
+              <Download size={13} className="mr-1" /> Export CSV
+            </Button>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
@@ -726,8 +765,34 @@ function ManufacturingTab({ ventureId }: { ventureId: string }) {
               overhead: parseFloat(overheadPerUnit.toFixed(2)),
               total: parseFloat((materialCostPerUnit + labourPerUnit + (toolingCost / vol) + overheadPerUnit).toFixed(2)),
             }));
-            const targetCost = mfg.targetUnitCostGbp;
+                const targetCost = mfg.targetUnitCostGbp;
+            // Break-even: first volume where total <= targetCost
+            const breakEvenEntry = targetCost
+              ? chartData.find(d => d.total <= targetCost)
+              : null;
             const maxVal = Math.max(...chartData.map(d => d.total)) * 1.15;
+
+            // CSV export handler
+            const exportCsv = () => {
+              if (!mfg.bomJson) return;
+              try {
+                const items = JSON.parse(mfg.bomJson);
+                const header = "Name,Material,Qty,Unit,Unit Cost (£),Total (£),Supplier";
+                const rows = items.map((item: any) =>
+                  `"${item.name}","${item.material}",${item.qty},"${item.unit}",${item.unitCost?.toFixed(2)},${(item.qty * item.unitCost)?.toFixed(2)},"${item.supplier}"`
+                );
+                const csv = [header, ...rows].join("\n");
+                const blob = new Blob([csv], { type: "text/csv" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `BOM-${selectedProduct?.name ?? "product"}-${new Date().toISOString().slice(0, 10)}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+                toast.success("BOM exported as CSV");
+              } catch { toast.error("Failed to export BOM"); }
+            };
+
             return (
               <div className="space-y-4">
                 <ResponsiveContainer width="100%" height={280}>
@@ -742,6 +807,10 @@ function ManufacturingTab({ ventureId }: { ventureId: string }) {
                     />
                     {targetCost && (
                       <ReferenceLine y={targetCost} stroke={C.red} strokeDasharray="4 4" label={{ value: `Target £${targetCost.toFixed(2)}`, position: "insideTopRight", fontSize: 10, fill: C.red }} />
+                    )}
+                    {breakEvenEntry && (
+                      <ReferenceLine x={breakEvenEntry.volume} stroke={C.green} strokeDasharray="4 4"
+                        label={{ value: `Break-even @ ${breakEvenEntry.volume}`, position: "insideTopLeft", fontSize: 10, fill: C.green }} />
                     )}
                     <Bar dataKey="material" stackId="cost" fill={C.green} name="Material" radius={[0, 0, 0, 0]} />
                     <Bar dataKey="labour" stackId="cost" fill={C.blue} name="Labour" />
@@ -836,15 +905,54 @@ function ManufacturingTab({ ventureId }: { ventureId: string }) {
                 <Input type="number" min={0} max={100} value={form.manufacturingReadinessScore || 0} onChange={e => setForm((f: any) => ({ ...f, manufacturingReadinessScore: parseInt(e.target.value) }))} />
               </div>
             </div>
-            <div><Label>BOM (JSON array)</Label>
-              <Textarea value={form.bomJson || ""} onChange={e => setForm((f: any) => ({ ...f, bomJson: e.target.value }))} rows={4}
-                placeholder='[{"name":"Carbon Fibre Sheet","material":"CF","qty":2,"unit":"m²","unitCost":45,"supplier":"Toray"}]' />
+            {/* Structured BOM Row Editor */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label>Bill of Materials</Label>
+                <Button type="button" size="sm" variant="outline" onClick={addBomRow} style={{ borderColor: C.green, color: C.green }}>
+                  <Plus size={12} className="mr-1" /> Add Row
+                </Button>
+              </div>
+              {bomRows.length === 0 ? (
+                <div className="text-xs text-gray-400 py-3 text-center border rounded-lg" style={{ borderColor: "#e5e7eb" }}>
+                  No BOM items yet — click "Add Row" to start building your bill of materials
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {/* Header */}
+                  <div className="grid gap-1 text-xs font-semibold text-gray-400 px-1" style={{ gridTemplateColumns: "2fr 1.5fr 0.7fr 0.8fr 1fr 1.5fr auto" }}>
+                    <span>Name</span><span>Material</span><span>Qty</span><span>Unit</span><span>Cost (£)</span><span>Supplier</span><span></span>
+                  </div>
+                  {bomRows.map((row, i) => (
+                    <div key={i} className="grid gap-1 items-center" style={{ gridTemplateColumns: "2fr 1.5fr 0.7fr 0.8fr 1fr 1.5fr auto" }}>
+                      <Input className="h-7 text-xs" value={row.name} onChange={e => updateBomRow(i, "name", e.target.value)} placeholder="e.g. CF Sheet" />
+                      <Input className="h-7 text-xs" value={row.material} onChange={e => updateBomRow(i, "material", e.target.value)} placeholder="e.g. CF" />
+                      <Input className="h-7 text-xs" type="number" min={0} value={row.qty} onChange={e => updateBomRow(i, "qty", parseFloat(e.target.value) || 0)} />
+                      <Input className="h-7 text-xs" value={row.unit} onChange={e => updateBomRow(i, "unit", e.target.value)} placeholder="m²" />
+                      <Input className="h-7 text-xs" type="number" min={0} step={0.01} value={row.unitCost} onChange={e => updateBomRow(i, "unitCost", parseFloat(e.target.value) || 0)} />
+                      <Input className="h-7 text-xs" value={row.supplier} onChange={e => updateBomRow(i, "supplier", e.target.value)} placeholder="Supplier" />
+                      <button type="button" onClick={() => removeBomRow(i)} className="w-6 h-6 flex items-center justify-center rounded hover:bg-red-50 flex-shrink-0">
+                        <Trash2 size={12} style={{ color: C.red }} />
+                      </button>
+                    </div>
+                  ))}
+                  {/* BOM total */}
+                  <div className="flex justify-end pt-1 border-t text-xs font-semibold" style={{ borderColor: "#e5e7eb" }}>
+                    <span className="text-gray-500 mr-2">BOM Total:</span>
+                    <span style={{ color: C.navy }}>£{bomRows.reduce((s, r) => s + r.qty * r.unitCost, 0).toFixed(2)}</span>
+                  </div>
+                </div>
+              )}
             </div>
             <div><Label>Readiness Notes</Label><Textarea value={form.readinessNotes || ""} onChange={e => setForm((f: any) => ({ ...f, readinessNotes: e.target.value }))} rows={2} /></div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDialog(false)}>Cancel</Button>
-            <Button onClick={() => upsertMfg.mutate(form)} style={{ background: C.amber }}>Save</Button>
+            <Button onClick={() => {
+              // Serialise bomRows back to JSON before saving
+              const bomJson = bomRows.length > 0 ? JSON.stringify(bomRows) : (form.bomJson || null);
+              upsertMfg.mutate({ ...form, bomJson });
+            }} style={{ background: C.amber }}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

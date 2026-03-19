@@ -539,3 +539,15 @@
 - [x] Red dashed ReferenceLine for target unit cost
 - [x] Summary table below chart with vs-target delta column
 - [x] 616 tests passing, 0 TypeScript errors
+
+## Sprint 43 — Manufacturing Intelligence Enhancements
+- [ ] Replace BOM JSON textarea with structured row editor (add/remove rows with fields: name, material, qty, unit, unit cost, supplier)
+- [ ] Add break-even volume vertical ReferenceLine to BOM cost breakdown chart
+- [ ] Add Export BOM as CSV button above BOM table
+
+## Sprint 43 — Manufacturing Intelligence Enhancements (COMPLETE)
+- [x] Replaced BOM JSON textarea with structured row editor (add/remove rows: name, material, qty, unit, unit cost, supplier)
+- [x] BOM total line shown below row editor
+- [x] Break-even volume vertical ReferenceLine added to BOM cost breakdown chart
+- [x] Export BOM as CSV button added to BOM table header
+- [x] 616 tests passing, 0 TypeScript errors
