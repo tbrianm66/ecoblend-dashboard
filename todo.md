@@ -551,3 +551,18 @@
 - [x] Break-even volume vertical ReferenceLine added to BOM cost breakdown chart
 - [x] Export BOM as CSV button added to BOM table header
 - [x] 616 tests passing, 0 TypeScript errors
+
+## Sprint 44 — China Manufacturing Playbook (COMPLETE)
+- [x] DB tables: mfgPlaybookProjects, mfgSupplierTiers, mfgQcReports, mfgLogisticsShipments (migration 0026)
+- [x] mfgPlaybook tRPC router: 20 procedures (project CRUD + advancePhase, supplier CRUD, QC report CRUD, shipment CRUD, getPlaybookSummary)
+- [x] ChinaManufacturingPlaybook.tsx: 6-tab UI (Overview Pipeline, UK Prototype, China Feasibility, Pilot & Scale, IP Protection, QC & Logistics)
+- [x] Overview: 4 KPI cards, phase pipeline with project counts, project list with phase dots + Advance button, IP/NNN summary
+- [x] UK Prototype tab: project create/edit/delete dialog, TRL progress bar, 6-item checklist (RFQ, DFM, tooling, ISO 9001/14001, CE)
+- [x] China Feasibility tab: project selector, supplier ecosystem by tier (4 tiers), supplier add/edit/delete with NNN/contract/tooling fields
+- [x] Pilot & Scale tab: project selector, 4 KPI tiles, cost & revenue stacked bar chart by production volume
+- [x] IP Protection tab: 6-metric IP status cards, supplier IP status matrix table
+- [x] QC & Logistics tab: QC report CRUD (pre-production/in-line/AQL), shipment CRUD (sea/air/rail/road), pass rate and cost KPIs
+- [x] Route /china-manufacturing registered in App.tsx
+- [x] Sidebar entry added: Analytics → China Mfg Playbook (Factory icon)
+- [x] Vitest tests: mfgPlaybook.test.ts (34 tests covering phase progression, cost modelling, supplier IP risk, QC pass rate, logistics cost, active shipments, phase breakdown, TRL progression)
+- [x] 650 tests passing, 0 TypeScript errors

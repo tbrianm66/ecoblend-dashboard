@@ -6337,5 +6337,347 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
         };
       }),
   }),
+  mfgPlaybook: router({
+    // ── Projects ──────────────────────────────────────────────────────────────
+    listProjects: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { mfgPlaybookProjects } = await import("../drizzle/schema");
+        return db.select().from(mfgPlaybookProjects)
+          .where(eqOp(mfgPlaybookProjects.ventureId, input.ventureId))
+          .orderBy(mfgPlaybookProjects.createdAt);
+      }),
+
+    getProject: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { mfgPlaybookProjects } = await import("../drizzle/schema");
+        const rows = await db.select().from(mfgPlaybookProjects)
+          .where(eqOp(mfgPlaybookProjects.id, input.id));
+        return rows[0] ?? null;
+      }),
+
+    upsertProject: publicProcedure
+      .input(z.object({
+        id: z.number().optional(),
+        ventureId: z.string(),
+        productName: z.string(),
+        description: z.string().optional(),
+        phase: z.enum(["uk_prototype", "china_feasibility", "pilot_production", "scale_manufacturing"]).optional(),
+        ukPrototypeDone: z.number().optional(),
+        chinaFeasibilityDone: z.number().optional(),
+        pilotProductionDone: z.number().optional(),
+        scaleManufacturingDone: z.number().optional(),
+        trlLevel: z.number().optional(),
+        prototypeStatus: z.enum(["not_started", "in_progress", "validated", "failed"]).optional(),
+        validationNotes: z.string().optional(),
+        rfqSent: z.number().optional(),
+        dfmComplete: z.number().optional(),
+        toolingOwnershipAgreement: z.number().optional(),
+        pilotVolume: z.number().optional(),
+        scaleVolume: z.number().optional(),
+        targetUnitCostGbp: z.number().optional(),
+        materialCostGbp: z.number().optional(),
+        labourCostGbp: z.number().optional(),
+        overheadCostGbp: z.number().optional(),
+        logisticsCostGbp: z.number().optional(),
+        marginPercent: z.number().optional(),
+        iso9001: z.number().optional(),
+        iso14001: z.number().optional(),
+        ceCertified: z.number().optional(),
+        ukcaCertified: z.number().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { mfgPlaybookProjects } = await import("../drizzle/schema");
+        const { id, ...data } = input;
+        if (id) {
+          await db.update(mfgPlaybookProjects).set({ ...data, updatedAt: new Date() })
+            .where(eqOp(mfgPlaybookProjects.id, id));
+          return { id };
+        }
+        const result = await db.insert(mfgPlaybookProjects).values(data as any);
+        return { id: (result as any).insertId as number };
+      }),
+
+    deleteProject: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { mfgPlaybookProjects } = await import("../drizzle/schema");
+        await db.delete(mfgPlaybookProjects).where(eqOp(mfgPlaybookProjects.id, input.id));
+        return { success: true };
+      }),
+
+    advancePhase: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { mfgPlaybookProjects } = await import("../drizzle/schema");
+        const phases = ["uk_prototype", "china_feasibility", "pilot_production", "scale_manufacturing"] as const;
+        const rows = await db.select().from(mfgPlaybookProjects)
+          .where(eqOp(mfgPlaybookProjects.id, input.id));
+        const project = rows[0];
+        if (!project) throw new Error("Project not found");
+        const currentIdx = phases.indexOf(project.phase as any);
+        const nextPhase = phases[Math.min(currentIdx + 1, phases.length - 1)];
+        // Mark current phase done
+        const doneField = [
+          "ukPrototypeDone", "chinaFeasibilityDone", "pilotProductionDone", "scaleManufacturingDone"
+        ][currentIdx] as keyof typeof project;
+        await db.update(mfgPlaybookProjects)
+          .set({ phase: nextPhase, [doneField]: 1, updatedAt: new Date() })
+          .where(eqOp(mfgPlaybookProjects.id, input.id));
+        return { phase: nextPhase };
+      }),
+
+    // ── Supplier Tiers ────────────────────────────────────────────────────────
+    listSuppliers: publicProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { mfgSupplierTiers } = await import("../drizzle/schema");
+        return db.select().from(mfgSupplierTiers)
+          .where(eqOp(mfgSupplierTiers.projectId, input.projectId))
+          .orderBy(mfgSupplierTiers.tier);
+      }),
+
+    upsertSupplier: publicProcedure
+      .input(z.object({
+        id: z.number().optional(),
+        projectId: z.number(),
+        ventureId: z.string(),
+        supplierName: z.string(),
+        tier: z.enum(["tier1_oem", "tier2_components", "tier3_raw_materials", "tier4_tooling"]),
+        country: z.string().optional(),
+        city: z.string().optional(),
+        contactName: z.string().optional(),
+        contactEmail: z.string().optional(),
+        nnnAgreement: z.enum(["none", "sent", "signed"]).optional(),
+        manufacturingContract: z.enum(["none", "draft", "signed"]).optional(),
+        toolingOwnership: z.enum(["none", "partial", "full"]).optional(),
+        blackBoxComponents: z.number().optional(),
+        riskScore: z.number().min(0).max(100).optional(),
+        auditScore: z.number().min(0).max(100).optional(),
+        qualityScore: z.number().min(0).max(100).optional(),
+        isDualSource: z.number().optional(),
+        primarySupplierId: z.number().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { mfgSupplierTiers } = await import("../drizzle/schema");
+        const { id, ...data } = input;
+        if (id) {
+          await db.update(mfgSupplierTiers).set({ ...data, updatedAt: new Date() })
+            .where(eqOp(mfgSupplierTiers.id, id));
+          return { id };
+        }
+        const result = await db.insert(mfgSupplierTiers).values(data as any);
+        return { id: (result as any).insertId as number };
+      }),
+
+    deleteSupplier: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { mfgSupplierTiers } = await import("../drizzle/schema");
+        await db.delete(mfgSupplierTiers).where(eqOp(mfgSupplierTiers.id, input.id));
+        return { success: true };
+      }),
+
+    // ── QC Reports ────────────────────────────────────────────────────────────
+    listQcReports: publicProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { mfgQcReports } = await import("../drizzle/schema");
+        return db.select().from(mfgQcReports)
+          .where(eqOp(mfgQcReports.projectId, input.projectId))
+          .orderBy(mfgQcReports.createdAt);
+      }),
+
+    upsertQcReport: publicProcedure
+      .input(z.object({
+        id: z.number().optional(),
+        projectId: z.number(),
+        ventureId: z.string(),
+        reportType: z.enum(["pre_production", "in_line", "pre_shipment_aql"]),
+        inspectionDate: z.date().optional(),
+        inspector: z.string().optional(),
+        supplierId: z.number().optional(),
+        sampleSize: z.number().optional(),
+        defectsFound: z.number().optional(),
+        aqlLevel: z.string().optional(),
+        result: z.enum(["pass", "fail", "conditional_pass", "pending"]).optional(),
+        iso9001Pass: z.number().optional(),
+        iso14001Pass: z.number().optional(),
+        cePass: z.number().optional(),
+        ukcastPass: z.number().optional(),
+        findings: z.string().optional(),
+        correctiveActions: z.string().optional(),
+        attachmentUrl: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { mfgQcReports } = await import("../drizzle/schema");
+        const { id, ...data } = input;
+        if (id) {
+          await db.update(mfgQcReports).set({ ...data, updatedAt: new Date() })
+            .where(eqOp(mfgQcReports.id, id));
+          return { id };
+        }
+        const result = await db.insert(mfgQcReports).values(data as any);
+        return { id: (result as any).insertId as number };
+      }),
+
+    deleteQcReport: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { mfgQcReports } = await import("../drizzle/schema");
+        await db.delete(mfgQcReports).where(eqOp(mfgQcReports.id, input.id));
+        return { success: true };
+      }),
+
+    // ── Logistics Shipments ───────────────────────────────────────────────────
+    listShipments: publicProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { mfgLogisticsShipments } = await import("../drizzle/schema");
+        return db.select().from(mfgLogisticsShipments)
+          .where(eqOp(mfgLogisticsShipments.projectId, input.projectId))
+          .orderBy(mfgLogisticsShipments.createdAt);
+      }),
+
+    upsertShipment: publicProcedure
+      .input(z.object({
+        id: z.number().optional(),
+        projectId: z.number(),
+        ventureId: z.string(),
+        shipmentRef: z.string().optional(),
+        freightType: z.enum(["sea", "air", "rail", "road"]),
+        originPort: z.enum(["shenzhen", "shanghai", "ningbo", "qingdao", "guangzhou", "tianjin", "other"]).optional(),
+        destinationPort: z.string().optional(),
+        volume: z.number().optional(),
+        weightKg: z.number().optional(),
+        freightCostGbp: z.number().optional(),
+        dutiesGbp: z.number().optional(),
+        insuranceGbp: z.number().optional(),
+        leadTimeDays: z.number().optional(),
+        departureDate: z.date().optional(),
+        arrivalDate: z.date().optional(),
+        status: z.enum(["planned", "booked", "in_transit", "customs", "delivered", "delayed"]).optional(),
+        trackingRef: z.string().optional(),
+        forwarder: z.string().optional(),
+        incoterms: z.enum(["EXW", "FOB", "CIF", "DDP", "DAP"]).optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { mfgLogisticsShipments } = await import("../drizzle/schema");
+        const { id, ...data } = input;
+        if (id) {
+          await db.update(mfgLogisticsShipments).set({ ...data, updatedAt: new Date() })
+            .where(eqOp(mfgLogisticsShipments.id, id));
+          return { id };
+        }
+        const result = await db.insert(mfgLogisticsShipments).values(data as any);
+        return { id: (result as any).insertId as number };
+      }),
+
+    deleteShipment: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { mfgLogisticsShipments } = await import("../drizzle/schema");
+        await db.delete(mfgLogisticsShipments).where(eqOp(mfgLogisticsShipments.id, input.id));
+        return { success: true };
+      }),
+
+    // ── Dynamic Cost Model ────────────────────────────────────────────────────
+    computeCostModel: publicProcedure
+      .input(z.object({
+        materialCostGbp: z.number(),
+        labourCostGbp: z.number(),
+        overheadCostGbp: z.number(),
+        logisticsCostGbp: z.number(),
+        marginPercent: z.number(),
+        volumes: z.array(z.number()),
+      }))
+      .query(({ input }) => {
+        const totalCost = input.materialCostGbp + input.labourCostGbp + input.overheadCostGbp + input.logisticsCostGbp;
+        const sellingPrice = totalCost * (1 + input.marginPercent / 100);
+        const breakdown = input.volumes.map(vol => ({
+          volume: vol,
+          materialTotal: input.materialCostGbp * vol,
+          labourTotal: input.labourCostGbp * vol,
+          overheadTotal: input.overheadCostGbp * vol,
+          logisticsTotal: input.logisticsCostGbp * vol,
+          totalCost: totalCost * vol,
+          sellingPricePerUnit: sellingPrice,
+          revenue: sellingPrice * vol,
+          grossProfit: (sellingPrice - totalCost) * vol,
+          grossMarginPct: ((sellingPrice - totalCost) / sellingPrice) * 100,
+        }));
+        return { totalCost, sellingPrice, breakdown };
+      }),
+
+    // ── Playbook Summary ──────────────────────────────────────────────────────
+    getPlaybookSummary: publicProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { mfgPlaybookProjects, mfgSupplierTiers, mfgQcReports, mfgLogisticsShipments } = await import("../drizzle/schema");
+        const projects = await db.select().from(mfgPlaybookProjects)
+          .where(eqOp(mfgPlaybookProjects.ventureId, input.ventureId));
+        const projectIds = projects.map(p => p.id);
+        if (projectIds.length === 0) return { projects: 0, suppliers: 0, qcReports: 0, shipments: 0, activeShipments: 0, phaseBreakdown: {} };
+        const { inArray } = await import("drizzle-orm");
+        const [suppliers, qcReports, shipments] = await Promise.all([
+          db.select().from(mfgSupplierTiers).where(inArray(mfgSupplierTiers.projectId, projectIds)),
+          db.select().from(mfgQcReports).where(inArray(mfgQcReports.projectId, projectIds)),
+          db.select().from(mfgLogisticsShipments).where(inArray(mfgLogisticsShipments.projectId, projectIds)),
+        ]);
+        const phaseBreakdown = projects.reduce((acc, p) => {
+          acc[p.phase] = (acc[p.phase] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+        const activeShipments = shipments.filter(s => ["booked", "in_transit", "customs"].includes(s.status || "")).length;
+        const nnnSigned = suppliers.filter(s => s.nnnAgreement === "signed").length;
+        const qcPassRate = qcReports.length > 0
+          ? (qcReports.filter(r => r.result === "pass").length / qcReports.length) * 100
+          : 0;
+        return {
+          projects: projects.length,
+          suppliers: suppliers.length,
+          qcReports: qcReports.length,
+          shipments: shipments.length,
+          activeShipments,
+          nnnSigned,
+          qcPassRate: Math.round(qcPassRate),
+          phaseBreakdown,
+        };
+      }),
+  }),
 });
 export type AppRouter = typeof appRouter;

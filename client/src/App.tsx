@@ -42,6 +42,7 @@ import CommandCentre from "./pages/CommandCentre";
 import FounderMatching from "./pages/FounderMatching";
 import SpinoffOS from "./pages/SpinoffOS";
 import CoFounderMatrix from "./pages/CoFounderMatrix";
+import ChinaManufacturingPlaybook from "./pages/ChinaManufacturingPlaybook";
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
@@ -82,6 +83,7 @@ function Router() {
       <Route path="/matching" component={FounderMatching} />
       <Route path="/spinoff" component={SpinoffOS} />
       <Route path="/co-founder-matrix" component={CoFounderMatrix} />
+      <Route path="/china-manufacturing" component={ChinaManufacturingPlaybook} />
       <Route component={Home} />
     </Switch>
   );

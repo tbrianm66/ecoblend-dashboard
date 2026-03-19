@@ -7,6 +7,7 @@ import {
   mysqlTable,
   text,
   timestamp,
+  tinyint,
   varchar,
 } from "drizzle-orm/mysql-core";
 
@@ -2763,3 +2764,124 @@ export const scProductionOrders = mysqlTable("sc_production_orders", {
 });
 export type ScProductionOrder = typeof scProductionOrders.$inferSelect;
 export type InsertScProductionOrder = typeof scProductionOrders.$inferInsert;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CHINESE MANUFACTURING PLAYBOOK TABLES
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Master playbook project — one per venture/product combination
+export const mfgPlaybookProjects = mysqlTable("mfgPlaybookProjects", {
+  id:              int("id").primaryKey().autoincrement(),
+  ventureId:       varchar("ventureId", { length: 64 }).notNull(),
+  productName:     varchar("productName", { length: 256 }).notNull(),
+  description:     text("description"),
+  phase:           mysqlEnum("phase", ["uk_prototype", "china_feasibility", "pilot_production", "scale_manufacturing"]).default("uk_prototype").notNull(),
+  ukPrototypeDone:      tinyint("ukPrototypeDone").default(0),
+  chinaFeasibilityDone: tinyint("chinaFeasibilityDone").default(0),
+  pilotProductionDone:  tinyint("pilotProductionDone").default(0),
+  scaleManufacturingDone: tinyint("scaleManufacturingDone").default(0),
+  trlLevel:        int("trlLevel").default(1),
+  prototypeStatus: mysqlEnum("prototypeStatus", ["not_started", "in_progress", "validated", "failed"]).default("not_started"),
+  validationNotes: text("validationNotes"),
+  rfqSent:         tinyint("rfqSent").default(0),
+  dfmComplete:     tinyint("dfmComplete").default(0),
+  toolingOwnershipAgreement: tinyint("toolingOwnershipAgreement").default(0),
+  pilotVolume:     int("pilotVolume").default(0),
+  scaleVolume:     int("scaleVolume").default(0),
+  targetUnitCostGbp: float("targetUnitCostGbp"),
+  materialCostGbp: float("materialCostGbp"),
+  labourCostGbp:   float("labourCostGbp"),
+  overheadCostGbp: float("overheadCostGbp"),
+  logisticsCostGbp: float("logisticsCostGbp"),
+  marginPercent:   float("marginPercent").default(30),
+  iso9001:         tinyint("iso9001").default(0),
+  iso14001:        tinyint("iso14001").default(0),
+  ceCertified:     tinyint("ceCertified").default(0),
+  ukcaCertified:   tinyint("ukcaCertified").default(0),
+  notes:           text("notes"),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type MfgPlaybookProject = typeof mfgPlaybookProjects.$inferSelect;
+export type InsertMfgPlaybookProject = typeof mfgPlaybookProjects.$inferInsert;
+
+// 4-tier supplier ecosystem
+export const mfgSupplierTiers = mysqlTable("mfgSupplierTiers", {
+  id:              int("id").primaryKey().autoincrement(),
+  projectId:       int("projectId").notNull(),
+  ventureId:       varchar("ventureId", { length: 64 }).notNull(),
+  supplierName:    varchar("supplierName", { length: 256 }).notNull(),
+  tier:            mysqlEnum("tier", ["tier1_oem", "tier2_components", "tier3_raw_materials", "tier4_tooling"]).notNull(),
+  country:         varchar("country", { length: 64 }).default("China"),
+  city:            varchar("city", { length: 128 }),
+  contactName:     varchar("contactName", { length: 128 }),
+  contactEmail:    varchar("contactEmail", { length: 256 }),
+  nnnAgreement:    mysqlEnum("nnnAgreement", ["none", "sent", "signed"]).default("none"),
+  manufacturingContract: mysqlEnum("manufacturingContract", ["none", "draft", "signed"]).default("none"),
+  toolingOwnership: mysqlEnum("toolingOwnership", ["none", "partial", "full"]).default("none"),
+  blackBoxComponents: tinyint("blackBoxComponents").default(0),
+  riskScore:       int("riskScore").default(50),
+  auditScore:      int("auditScore").default(0),
+  qualityScore:    int("qualityScore").default(0),
+  isDualSource:    tinyint("isDualSource").default(0),
+  primarySupplierId: int("primarySupplierId"),
+  notes:           text("notes"),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type MfgSupplierTier = typeof mfgSupplierTiers.$inferSelect;
+export type InsertMfgSupplierTier = typeof mfgSupplierTiers.$inferInsert;
+
+// QC reports — pre-production, in-line, pre-shipment AQL
+export const mfgQcReports = mysqlTable("mfgQcReports", {
+  id:              int("id").primaryKey().autoincrement(),
+  projectId:       int("projectId").notNull(),
+  ventureId:       varchar("ventureId", { length: 64 }).notNull(),
+  reportType:      mysqlEnum("reportType", ["pre_production", "in_line", "pre_shipment_aql"]).notNull(),
+  inspectionDate:  timestamp("inspectionDate"),
+  inspector:       varchar("inspector", { length: 128 }),
+  supplierId:      int("supplierId"),
+  sampleSize:      int("sampleSize"),
+  defectsFound:    int("defectsFound").default(0),
+  aqlLevel:        varchar("aqlLevel", { length: 16 }).default("2.5"),
+  result:          mysqlEnum("result", ["pass", "fail", "conditional_pass", "pending"]).default("pending"),
+  iso9001Pass:     tinyint("iso9001Pass").default(0),
+  iso14001Pass:    tinyint("iso14001Pass").default(0),
+  cePass:          tinyint("cePass").default(0),
+  ukcastPass:      tinyint("ukcastPass").default(0),
+  findings:        text("findings"),
+  correctiveActions: text("correctiveActions"),
+  attachmentUrl:   varchar("attachmentUrl", { length: 512 }),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type MfgQcReport = typeof mfgQcReports.$inferSelect;
+export type InsertMfgQcReport = typeof mfgQcReports.$inferInsert;
+
+// Logistics shipments
+export const mfgLogisticsShipments = mysqlTable("mfgLogisticsShipments", {
+  id:              int("id").primaryKey().autoincrement(),
+  projectId:       int("projectId").notNull(),
+  ventureId:       varchar("ventureId", { length: 64 }).notNull(),
+  shipmentRef:     varchar("shipmentRef", { length: 128 }),
+  freightType:     mysqlEnum("freightType", ["sea", "air", "rail", "road"]).default("sea").notNull(),
+  originPort:      mysqlEnum("originPort", ["shenzhen", "shanghai", "ningbo", "qingdao", "guangzhou", "tianjin", "other"]).default("shenzhen"),
+  destinationPort: varchar("destinationPort", { length: 128 }).default("Felixstowe, UK"),
+  volume:          int("volume"),
+  weightKg:        float("weightKg"),
+  freightCostGbp:  float("freightCostGbp"),
+  dutiesGbp:       float("dutiesGbp"),
+  insuranceGbp:    float("insuranceGbp"),
+  leadTimeDays:    int("leadTimeDays"),
+  departureDate:   timestamp("departureDate"),
+  arrivalDate:     timestamp("arrivalDate"),
+  status:          mysqlEnum("status", ["planned", "booked", "in_transit", "customs", "delivered", "delayed"]).default("planned"),
+  trackingRef:     varchar("trackingRef", { length: 128 }),
+  forwarder:       varchar("forwarder", { length: 128 }),
+  incoterms:       mysqlEnum("incoterms", ["EXW", "FOB", "CIF", "DDP", "DAP"]).default("FOB"),
+  notes:           text("notes"),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type MfgLogisticsShipment = typeof mfgLogisticsShipments.$inferSelect;
+export type InsertMfgLogisticsShipment = typeof mfgLogisticsShipments.$inferInsert;
