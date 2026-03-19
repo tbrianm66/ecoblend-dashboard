@@ -1,4 +1,5 @@
 import { mfgOnboardingRouter, mfgAuditRouter, mfgRfqRouter, mfgAslRouter, mfgContractRouter } from "./mfgPlaybookExtended.router";
+import { uniPartnersRouter, uniResearchRouter, uniTalentRouter, uniWorkflowRouter, uniIndustryRouter, uniGovernanceRouter, uniDataRouter, uniRoadmapRouter, uniSummaryRouter } from "./universityPlaybook.router";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -6686,5 +6687,14 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
   mfgRfq: mfgRfqRouter,
   mfgAsl: mfgAslRouter,
   mfgContracts: mfgContractRouter,
+  uniPartners: uniPartnersRouter,
+  uniResearch: uniResearchRouter,
+  uniTalent: uniTalentRouter,
+  uniWorkflow: uniWorkflowRouter,
+  uniIndustry: uniIndustryRouter,
+  uniGovernance: uniGovernanceRouter,
+  uniData: uniDataRouter,
+  uniRoadmap: uniRoadmapRouter,
+  uniSummary: uniSummaryRouter,
 });
 export type AppRouter = typeof appRouter;

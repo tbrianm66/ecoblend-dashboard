@@ -579,3 +579,20 @@
 - [x] Contract Templates: NNN Agreement, Manufacturing Agreement, Tooling Ownership, Quality Agreement, Logistics & Supply — each with clause checklist and AI-generated draft text
 - [x] Vitest tests for new procedures (35 new tests)
 - [x] 685 tests passing, 0 TypeScript errors
+
+## Sprint 46 — University Playbook (COMPLETE)
+- [x] DB tables: uniPartners, uniResearchProjects, uniTalentRoles, uniVentureWorkflows, uniIndustryEngagements, uniGovernanceDocs, uniDataSources, uniRoadmapMilestones (migration 0028)
+- [x] tRPC router: universityPlaybook procedures (CRUD for all 8 tables + summary stats) — 9 sub-routers
+- [x] UniversityPlaybook.tsx: 8-tab page (Overview, Research, Talent, Venture Workflow, Industry, Governance, Data Strategy, Roadmap)
+- [x] Overview: dual risk model (Business Risk = University, Product Risk = Founders), strategic objectives, KPI tiles (partners, research, talent, engagements)
+- [x] Research tab: academic/technical/applied research projects CRUD with TRL impact, budget, methodology, key findings
+- [x] Talent tab: student/academic/industry_expert/venture_lead roles with skills, availability, stipend, and assignment to ventures
+- [x] Venture Workflow tab: 5-stage pipeline (Problem → Discovery → Hypothesis → Validation → Commercialisation) with stage gate tracking and validation result
+- [x] Industry Engagement tab: sponsored_research/consulting/venture_partnership/internship_pipeline/joint_ip with value tracking
+- [x] Governance tab: student agreements, IP agreements, NDAs, ethics approvals, data protection, collaboration agreements — each with status and document URL
+- [x] Data Strategy tab: hybrid data sources (interview/survey/secondary_research/ai_analysis/focus_group/observation) with sample size and key insights
+- [x] Roadmap tab: 3-phase implementation timeline (setup/pilot/scale) with priority levels and milestone completion tracking
+- [x] Route /university-playbook registered in App.tsx
+- [x] Sidebar entry added under Research section (BookMarked icon)
+- [x] Vitest tests: universityPlaybook.test.ts (32 tests covering dual risk model, stage progression, partner types, talent roles, governance docs, data strategy, roadmap, industry engagements, summary aggregation)
+- [x] 717 tests passing, 0 TypeScript errors
