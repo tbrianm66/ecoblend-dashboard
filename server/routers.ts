@@ -188,6 +188,7 @@ import {
   insertOpportunityReview,
   getFullOpportunityDetail,
 } from "./poiDb";
+import { dmAssetsRouter, dmQualityRouter, dmPipelinesRouter, dmRagRouter, dmFineTuningRouter, dmFeedbackRouter, dmSummaryRouter } from "./dataManagement.router";
 
 export const appRouter = router({
   system: systemRouter,
@@ -6698,5 +6699,13 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
   uniRoadmap: uniRoadmapRouter,
   uniSummary: uniSummaryRouter,
   workflowEngine: workflowEngineRouter,
+
+  dmAssets: dmAssetsRouter,
+  dmQuality: dmQualityRouter,
+  dmPipelines: dmPipelinesRouter,
+  dmRag: dmRagRouter,
+  dmFineTuning: dmFineTuningRouter,
+  dmFeedback: dmFeedbackRouter,
+  dmSummary: dmSummaryRouter,
 });
 export type AppRouter = typeof appRouter;

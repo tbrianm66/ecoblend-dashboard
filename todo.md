@@ -612,3 +612,19 @@
 - [x] Sidebar entry added under Analytics section (Zap icon)
 - [x] Vitest tests: workflowEngine.test.ts (30 tests covering trigger type validation, audit score calculation, capability score aggregation, trigger conditions, idempotency, cross-module target mapping)
 - [x] 747 tests passing, 0 TypeScript errors
+
+## Sprint 48 — Data Management Module (COMPLETE)
+- [x] DB tables: dmDataAssets, dmQualityScores, dmAiPipelines, dmPipelineRuns, dmRagPipelines, dmRagDocuments, dmFineTuningJobs, dmFineTuningDatasets, dmFeedbackEntries (migration 0030 applied)
+- [x] tRPC router: dataManagement sub-routers (assets, quality, pipelines, pipelineRuns, rag, ragDocuments, fineTuning, fineTuningDatasets, feedback, contextEngineering, summary)
+- [x] DataManagement.tsx: 7-tab page (Overview, Data Assets, Quality Scoring, AI Pipelines, RAG Pipelines, Fine-Tuning, Feedback Loops)
+- [x] Overview: data quality score gauge, pipeline health KPIs, asset count by type/source, recent activity feed
+- [x] Data Assets tab: ingest/register data assets (name, type, source, format, size, venture linkage, tags, description, S3 url, quality score)
+- [x] Quality Scoring tab: per-asset quality dimensions (completeness, accuracy, freshness, consistency, uniqueness) with auto-computed overall score and issue flags
+- [x] AI Pipelines tab: pipeline CRUD (name, type, model, prompt template, input/output schema, status), pipeline run history with latency/token/cost tracking
+- [x] RAG Pipelines tab: RAG config (document store, embedding model, chunk size, overlap, retrieval strategy, top-k), document upload/register, context engineering notes
+- [x] Fine-Tuning tab: dataset management (upload, label, split), fine-tuning job tracking (base model, epochs, loss, status), model registry with version notes
+- [x] Feedback Loops tab: user feedback on AI outputs (thumbs up/down, rating, correction text, pipeline linkage), improvement action tracking
+- [x] Route /data-management registered in App.tsx
+- [x] Sidebar entry added under Analytics section (Database icon)
+- [x] Vitest tests: dataManagement.test.ts (42 tests covering asset types, quality scoring, pipeline statuses, RAG config validation, fine-tuning job states, feedback rating validation, context engineering, data source integration, pipeline run history, embedding models, summary stats)
+- [x] 789 tests passing, 0 TypeScript errors
