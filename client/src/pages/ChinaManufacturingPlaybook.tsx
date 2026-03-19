@@ -24,7 +24,15 @@ import {
   Factory, Shield, Truck, CheckCircle2, Circle, ArrowRight,
   Plus, Pencil, Trash2, ChevronRight, Package, Globe,
   AlertTriangle, ClipboardCheck, Ship, FileText, Lock,
+  Users, ClipboardList, Star, Award,
 } from "lucide-react";
+import {
+  SupplierOnboardingTab,
+  FactoryAuditTab,
+  RfqManagerTab,
+  ApprovedSupplierListTab,
+  ContractTemplatesTab,
+} from "./ChinaMfgExtendedTabs";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type Phase = "uk_prototype" | "china_feasibility" | "pilot_production" | "scale_manufacturing";
@@ -1179,6 +1187,11 @@ export default function ChinaManufacturingPlaybook() {
               { id: "pilot_scale", label: "Pilot & Scale", icon: BarChart },
               { id: "ip_protection", label: "IP Protection", icon: Shield },
               { id: "qc_logistics", label: "QC & Logistics", icon: Truck },
+              { id: "supplier_onboarding", label: "Onboarding", icon: Users },
+              { id: "factory_audit", label: "Factory Audit", icon: ClipboardList },
+              { id: "rfq_manager", label: "RFQ Manager", icon: FileText },
+              { id: "asl", label: "Approved Suppliers", icon: Award },
+              { id: "contracts", label: "Contracts", icon: Lock },
             ].map(({ id, label, icon: Icon }) => (
               <TabsTrigger key={id} value={id} className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
                 <Icon size={13} />
@@ -1204,6 +1217,21 @@ export default function ChinaManufacturingPlaybook() {
           </TabsContent>
           <TabsContent value="qc_logistics">
             <QcLogisticsTab ventureId={ventureId} />
+          </TabsContent>
+          <TabsContent value="supplier_onboarding">
+            <SupplierOnboardingTab ventureId={ventureId} />
+          </TabsContent>
+          <TabsContent value="factory_audit">
+            <FactoryAuditTab ventureId={ventureId} />
+          </TabsContent>
+          <TabsContent value="rfq_manager">
+            <RfqManagerTab ventureId={ventureId} />
+          </TabsContent>
+          <TabsContent value="asl">
+            <ApprovedSupplierListTab ventureId={ventureId} />
+          </TabsContent>
+          <TabsContent value="contracts">
+            <ContractTemplatesTab ventureId={ventureId} />
           </TabsContent>
         </Tabs>
       </div>

@@ -1,3 +1,4 @@
+import { mfgOnboardingRouter, mfgAuditRouter, mfgRfqRouter, mfgAslRouter, mfgContractRouter } from "./mfgPlaybookExtended.router";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -6679,5 +6680,11 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
         };
       }),
   }),
+
+  mfgOnboarding: mfgOnboardingRouter,
+  mfgAudit: mfgAuditRouter,
+  mfgRfq: mfgRfqRouter,
+  mfgAsl: mfgAslRouter,
+  mfgContracts: mfgContractRouter,
 });
 export type AppRouter = typeof appRouter;

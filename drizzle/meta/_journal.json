@@ -190,6 +190,13 @@
       "when": 1773943912525,
       "tag": "0026_safe_william_stryker",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "5",
+      "when": 1773945115522,
+      "tag": "0027_skinny_wendell_vaughn",
+      "breakpoints": true
     }
   ]
 }

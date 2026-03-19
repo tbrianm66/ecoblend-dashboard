@@ -566,3 +566,16 @@
 - [x] Sidebar entry added: Analytics → China Mfg Playbook (Factory icon)
 - [x] Vitest tests: mfgPlaybook.test.ts (34 tests covering phase progression, cost modelling, supplier IP risk, QC pass rate, logistics cost, active shipments, phase breakdown, TRL progression)
 - [x] 650 tests passing, 0 TypeScript errors
+
+## Sprint 45 — China Manufacturing Playbook Extended (COMPLETE)
+- [x] DB tables: mfgSupplierOnboarding, mfgFactoryAudits, mfgRfqTemplates, mfgApprovedSuppliers, mfgContractTemplates (migration 0027)
+- [x] mfgPlaybook router: procedures for supplier onboarding CRUD, factory audit CRUD, RFQ CRUD, ASL CRUD, contract template generation
+- [x] ChinaManufacturingPlaybook.tsx: add 5 new tabs — Supplier Onboarding, Factory Audit, RFQ Manager, Approved Supplier List, Contract Templates
+- [x] Supplier Onboarding: registration form (company, location, contacts, capabilities, certifications, capacity, clients, financials, references)
+- [x] Supplier Capability Assessment: 6-criteria scoring (technical, quality, lead times, cost, communication, compliance)
+- [x] Factory Audit Checklist: 6-item checklist (facility, equipment, workforce, QC, H&S, environmental) with pass/fail/partial per item
+- [x] RFQ Template: product specs, drawings link, materials, volumes, lead times, pricing breakdown
+- [x] Approved Supplier List (ASL): supplier ID, tier, capabilities, risk rating, performance score, status
+- [x] Contract Templates: NNN Agreement, Manufacturing Agreement, Tooling Ownership, Quality Agreement, Logistics & Supply — each with clause checklist and AI-generated draft text
+- [x] Vitest tests for new procedures (35 new tests)
+- [x] 685 tests passing, 0 TypeScript errors
