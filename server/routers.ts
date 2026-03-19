@@ -1,7 +1,7 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { storagePut } from "./storage";
 import { invokeLLM } from "./_core/llm";
@@ -5962,6 +5962,378 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
           validateCount: decisions.filter(d => d.decision === "Validate").length,
           partnerCount: decisions.filter(d => d.decision === "Partner").length,
           rejectCount: decisions.filter(d => d.decision === "Reject").length,
+        };
+      }),
+  }),
+  supplyChain: router({
+    // ── Products ──────────────────────────────────────────────────────────────
+    listProducts: protectedProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { scProducts } = await import("../drizzle/schema");
+        return db.select().from(scProducts).where(eqOp(scProducts.ventureId, input.ventureId));
+      }),
+
+    upsertProduct: protectedProcedure
+      .input(z.object({
+        id: z.number().optional(),
+        ventureId: z.string(),
+        name: z.string(),
+        description: z.string().optional(),
+        materialType: z.enum(["carbon_fibre","glass_fibre","hybrid_composite","aluminium","steel","polymer","bio_composite","ceramic","other"]).optional(),
+        manufacturingProcess: z.enum(["composite_layup","resin_transfer_moulding","injection_moulding","cnc_machining","3d_printing","casting","forging","assembly","other"]).optional(),
+        prototypeStatus: z.enum(["concept","design","prototype_v1","prototype_v2","validated","production_ready"]).optional(),
+        trlLevel: z.number().min(1).max(9).optional(),
+        productionGeography: z.enum(["UK","China","Both","Other"]).optional(),
+        targetMarket: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { scProducts } = await import("../drizzle/schema");
+        const { id, ...data } = input;
+        if (id) {
+          await db.update(scProducts).set(data).where(eqOp(scProducts.id, id));
+          return { id };
+        }
+        const [result] = await db.insert(scProducts).values(data);
+        return { id: result.insertId };
+      }),
+
+    deleteProduct: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { scProducts } = await import("../drizzle/schema");
+        await db.delete(scProducts).where(eqOp(scProducts.id, input.id));
+        return { success: true };
+      }),
+
+    // ── Prototypes ────────────────────────────────────────────────────────────
+    listPrototypes: protectedProcedure
+      .input(z.object({ ventureId: z.string(), productId: z.number().optional() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp, and } = await import("drizzle-orm");
+        const { scPrototypes } = await import("../drizzle/schema");
+        if (input.productId) {
+          return db.select().from(scPrototypes).where(
+            and(eqOp(scPrototypes.ventureId, input.ventureId), eqOp(scPrototypes.productId, input.productId))
+          );
+        }
+        return db.select().from(scPrototypes).where(eqOp(scPrototypes.ventureId, input.ventureId));
+      }),
+
+    upsertPrototype: protectedProcedure
+      .input(z.object({
+        id: z.number().optional(),
+        productId: z.number(),
+        ventureId: z.string(),
+        version: z.string().optional(),
+        cadStatus: z.enum(["not_started","in_progress","complete","validated"]).optional(),
+        caeStatus: z.enum(["not_started","in_progress","complete","validated"]).optional(),
+        cadFileUrl: z.string().optional(),
+        labTestStatus: z.enum(["not_started","in_progress","passed","failed"]).optional(),
+        testResults: z.string().optional(),
+        structuralIntegrity: z.number().optional(),
+        weightGrams: z.number().optional(),
+        dimensionsMm: z.string().optional(),
+        trlAtStart: z.number().min(1).max(9).optional(),
+        trlAtEnd: z.number().min(1).max(9).optional(),
+        lcaScore: z.number().optional(),
+        carbonFootprintKg: z.number().optional(),
+        manufacturingNotes: z.string().optional(),
+        prototypeImageUrl: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { scPrototypes } = await import("../drizzle/schema");
+        const { id, ...data } = input;
+        if (id) {
+          await db.update(scPrototypes).set(data).where(eqOp(scPrototypes.id, id));
+          return { id };
+        }
+        const [result] = await db.insert(scPrototypes).values(data);
+        return { id: result.insertId };
+      }),
+
+    deletePrototype: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { scPrototypes } = await import("../drizzle/schema");
+        await db.delete(scPrototypes).where(eqOp(scPrototypes.id, input.id));
+        return { success: true };
+      }),
+
+    // ── Manufacturing ─────────────────────────────────────────────────────────
+    getManufacturing: protectedProcedure
+      .input(z.object({ productId: z.number() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { scManufacturing } = await import("../drizzle/schema");
+        const rows = await db.select().from(scManufacturing).where(eqOp(scManufacturing.productId, input.productId));
+        return rows[0] ?? null;
+      }),
+
+    upsertManufacturing: protectedProcedure
+      .input(z.object({
+        id: z.number().optional(),
+        productId: z.number(),
+        ventureId: z.string(),
+        bomJson: z.string().optional(),
+        bomVersion: z.string().optional(),
+        unitCostGbp: z.number().optional(),
+        toolingCostGbp: z.number().optional(),
+        moq: z.number().optional(),
+        targetUnitCostGbp: z.number().optional(),
+        primaryProcess: z.enum(["composite_layup","resin_transfer_moulding","injection_moulding","cnc_machining","3d_printing","casting","forging","assembly","other"]).optional(),
+        processComplexityIndex: z.number().min(0).max(100).optional(),
+        productionCapacityPerMonth: z.number().optional(),
+        leadTimeDays: z.number().optional(),
+        manufacturingReadinessScore: z.number().min(0).max(100).optional(),
+        readinessNotes: z.string().optional(),
+        toolingStatus: z.enum(["not_started","in_design","ordered","received","validated"]).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { scManufacturing } = await import("../drizzle/schema");
+        const { id, ...data } = input;
+        if (id) {
+          await db.update(scManufacturing).set(data).where(eqOp(scManufacturing.id, id));
+          return { id };
+        }
+        const [result] = await db.insert(scManufacturing).values(data);
+        return { id: result.insertId };
+      }),
+
+    // ── Suppliers ─────────────────────────────────────────────────────────────
+    listSuppliers: protectedProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { scSuppliers } = await import("../drizzle/schema");
+        return db.select().from(scSuppliers).where(eqOp(scSuppliers.ventureId, input.ventureId));
+      }),
+
+    upsertSupplier: protectedProcedure
+      .input(z.object({
+        id: z.number().optional(),
+        ventureId: z.string(),
+        name: z.string(),
+        supplierType: z.enum(["raw_material","component","sub_assembly","contract_manufacturer","tooling","logistics","testing_lab","other"]).optional(),
+        geography: z.enum(["UK","China","EU","USA","India","Other"]).optional(),
+        city: z.string().optional(),
+        contactName: z.string().optional(),
+        contactEmail: z.string().optional(),
+        riskScore: z.number().min(0).max(100).optional(),
+        qualityScore: z.number().min(0).max(100).optional(),
+        leadTimeDays: z.number().optional(),
+        unitCostIndex: z.number().optional(),
+        esgComplianceStatus: z.enum(["unknown","non_compliant","partial","compliant","certified"]).optional(),
+        ethicalSourcingScore: z.number().min(0).max(100).optional(),
+        geopoliticalRiskFlag: z.boolean().optional(),
+        geopoliticalNotes: z.string().optional(),
+        contractStatus: z.enum(["prospect","negotiating","active","paused","terminated"]).optional(),
+        certifications: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { scSuppliers } = await import("../drizzle/schema");
+        const { id, ...data } = input;
+        if (id) {
+          await db.update(scSuppliers).set(data).where(eqOp(scSuppliers.id, id));
+          return { id };
+        }
+        const [result] = await db.insert(scSuppliers).values(data);
+        return { id: result.insertId };
+      }),
+
+    deleteSupplier: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { scSuppliers } = await import("../drizzle/schema");
+        await db.delete(scSuppliers).where(eqOp(scSuppliers.id, input.id));
+        return { success: true };
+      }),
+
+    // ── Production Orders ─────────────────────────────────────────────────────
+    listOrders: protectedProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { scProductionOrders } = await import("../drizzle/schema");
+        return db.select().from(scProductionOrders).where(eqOp(scProductionOrders.ventureId, input.ventureId));
+      }),
+
+    upsertOrder: protectedProcedure
+      .input(z.object({
+        id: z.number().optional(),
+        ventureId: z.string(),
+        productId: z.number(),
+        supplierId: z.number().optional(),
+        orderRef: z.string().optional(),
+        orderType: z.enum(["pilot","scale","repeat"]).optional(),
+        geography: z.enum(["UK","China","EU","USA","Other"]).optional(),
+        quantityOrdered: z.number(),
+        unitCostGbp: z.number().optional(),
+        totalCostGbp: z.number().optional(),
+        leadTimeDays: z.number().optional(),
+        qaStatus: z.enum(["pending","in_inspection","passed","failed","rework"]).optional(),
+        defectRate: z.number().optional(),
+        qualityNotes: z.string().optional(),
+        shippingMethod: z.enum(["air","sea","road","rail","courier"]).optional(),
+        trackingRef: z.string().optional(),
+        status: z.enum(["draft","confirmed","in_production","shipped","delivered","cancelled"]).optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { scProductionOrders } = await import("../drizzle/schema");
+        const { id, ...data } = input;
+        if (id) {
+          await db.update(scProductionOrders).set(data).where(eqOp(scProductionOrders.id, id));
+          return { id };
+        }
+        const [result] = await db.insert(scProductionOrders).values(data);
+        return { id: result.insertId };
+      }),
+
+    deleteOrder: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { scProductionOrders } = await import("../drizzle/schema");
+        await db.delete(scProductionOrders).where(eqOp(scProductionOrders.id, input.id));
+        return { success: true };
+      }),
+
+    // ── Control Tower Summary ─────────────────────────────────────────────────
+    getControlTowerSummary: protectedProcedure
+      .input(z.object({ ventureId: z.string() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { scProducts, scPrototypes, scManufacturing, scSuppliers, scProductionOrders } = await import("../drizzle/schema");
+
+        const [products, prototypes, suppliers, orders] = await Promise.all([
+          db.select().from(scProducts).where(eqOp(scProducts.ventureId, input.ventureId)),
+          db.select().from(scPrototypes).where(eqOp(scPrototypes.ventureId, input.ventureId)),
+          db.select().from(scSuppliers).where(eqOp(scSuppliers.ventureId, input.ventureId)),
+          db.select().from(scProductionOrders).where(eqOp(scProductionOrders.ventureId, input.ventureId)),
+        ]);
+
+        const manufacturingRows = products.length > 0
+          ? await db.select().from(scManufacturing).where(eqOp(scManufacturing.ventureId, input.ventureId))
+          : [];
+
+        const avgManufacturingReadiness = manufacturingRows.length > 0
+          ? manufacturingRows.reduce((s, r) => s + (r.manufacturingReadinessScore ?? 0), 0) / manufacturingRows.length
+          : 0;
+
+        const activeSuppliers = suppliers.filter(s => s.contractStatus === "active").length;
+        const highRiskSuppliers = suppliers.filter(s => (s.riskScore ?? 0) > 70).length;
+        const geopoliticalFlags = suppliers.filter(s => s.geopoliticalRiskFlag).length;
+
+        const activeOrders = orders.filter(o => ["confirmed","in_production","shipped"].includes(o.status ?? "")).length;
+        const totalUnitsOrdered = orders.reduce((s, o) => s + (o.quantityOrdered ?? 0), 0);
+        const totalProductionCostGbp = orders.reduce((s, o) => s + (o.totalCostGbp ?? 0), 0);
+
+        const avgEsgScore = suppliers.length > 0
+          ? suppliers.reduce((s, sup) => s + (sup.ethicalSourcingScore ?? 50), 0) / suppliers.length
+          : 0;
+
+        const avgDefectRate = orders.filter(o => o.defectRate != null).length > 0
+          ? orders.reduce((s, o) => s + (o.defectRate ?? 0), 0) / orders.filter(o => o.defectRate != null).length
+          : 0;
+
+        // Digital thread stage distribution
+        const stageMap: Record<string, number> = {
+          concept: 0, design: 0, prototype_v1: 0, prototype_v2: 0,
+          validated: 0, production_ready: 0,
+        };
+        products.forEach(p => { stageMap[p.prototypeStatus ?? "concept"]++; });
+
+        return {
+          totalProducts: products.length,
+          totalPrototypes: prototypes.length,
+          totalSuppliers: suppliers.length,
+          activeSuppliers,
+          highRiskSuppliers,
+          geopoliticalFlags,
+          avgManufacturingReadiness: Math.round(avgManufacturingReadiness),
+          activeOrders,
+          totalUnitsOrdered,
+          totalProductionCostGbp,
+          avgEsgScore: Math.round(avgEsgScore),
+          avgDefectRate: parseFloat(avgDefectRate.toFixed(2)),
+          stageDistribution: stageMap,
+          ukProducts: products.filter(p => p.productionGeography === "UK" || p.productionGeography === "Both").length,
+          chinaProducts: products.filter(p => p.productionGeography === "China" || p.productionGeography === "Both").length,
+        };
+      }),
+
+    // ── Manufacturing Readiness Score Calculator ──────────────────────────────
+    computeManufacturingReadiness: protectedProcedure
+      .input(z.object({
+        trlLevel: z.number().min(1).max(9),
+        cadStatus: z.enum(["not_started","in_progress","complete","validated"]),
+        labTestStatus: z.enum(["not_started","in_progress","passed","failed"]),
+        toolingStatus: z.enum(["not_started","in_design","ordered","received","validated"]),
+        supplierCount: z.number().min(0),
+        bomComplete: z.boolean(),
+        esgCompliant: z.boolean(),
+      }))
+      .mutation(async ({ input }) => {
+        // TRL contribution (40%)
+        const trlScore = (input.trlLevel / 9) * 40;
+
+        // CAD/CAE contribution (20%)
+        const cadMap: Record<string, number> = { not_started: 0, in_progress: 10, complete: 16, validated: 20 };
+        const cadScore = cadMap[input.cadStatus] ?? 0;
+
+        // Lab test contribution (20%)
+        const labMap: Record<string, number> = { not_started: 0, in_progress: 10, passed: 20, failed: 5 };
+        const labScore = labMap[input.labTestStatus] ?? 0;
+
+        // Tooling contribution (10%)
+        const toolMap: Record<string, number> = { not_started: 0, in_design: 3, ordered: 6, received: 8, validated: 10 };
+        const toolScore = toolMap[input.toolingStatus] ?? 0;
+
+        // Supplier + BOM + ESG (10%)
+        const supScore = Math.min(4, input.supplierCount * 1.5);
+        const bomScore = input.bomComplete ? 3 : 0;
+        const esgScore = input.esgCompliant ? 3 : 0;
+        const operationalScore = Math.min(10, supScore + bomScore + esgScore);
+
+        const total = Math.round(trlScore + cadScore + labScore + toolScore + operationalScore);
+
+        let readinessLevel: string;
+        if (total >= 80) readinessLevel = "Production Ready";
+        else if (total >= 60) readinessLevel = "Pilot Ready";
+        else if (total >= 40) readinessLevel = "Validation Stage";
+        else if (total >= 20) readinessLevel = "Prototype Stage";
+        else readinessLevel = "Concept Stage";
+
+        return {
+          score: total,
+          readinessLevel,
+          breakdown: { trlScore, cadScore, labScore, toolScore, operationalScore },
         };
       }),
   }),

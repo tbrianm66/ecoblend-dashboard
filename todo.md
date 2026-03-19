@@ -512,3 +512,21 @@
 - [x] Sidebar entry added to Analytics section
 - [x] Vitest tests: 25 tests covering VRL formula, BRI/PRI computation, decision thresholds, ESG bonus, execution routing, feedback loop
 - [x] 588 tests passing, 0 TypeScript errors
+
+## Sprint 42 — Supply Chain & Manufacturing Intelligence Module
+- [ ] DB tables: scProducts, scPrototypes, scManufacturing, scSuppliers, scProductionOrders (migration 0025)
+- [ ] supplyChain tRPC router: full CRUD + manufacturing readiness score + ESG integration procedures
+- [ ] SupplyChain.tsx: 6-tab UI (Overview/Control Tower, R&D Prototyping, Manufacturing Intelligence, Global Production, Supply Chain Risk, ESG Integration)
+- [ ] Route /supply-chain registered in App.tsx
+- [ ] Sidebar entry added to Operations section
+- [ ] Vitest tests for supply chain engine
+- [ ] All tests passing, 0 TypeScript errors
+
+## Sprint 42 — Supply Chain & Manufacturing Intelligence
+- [x] 5 new DB tables: scProducts, scPrototypes, scManufacturing, scSuppliers, scProductionOrders (migration 0025)
+- [x] supplyChain tRPC router: 17 procedures (CRUD + manufacturing readiness score + ESG integration)
+- [x] SupplyChain.tsx: 6-tab UI (Overview/Control Tower, R&D Prototyping, Manufacturing Intelligence, Global Production, Supply Chain Risk, ESG Integration)
+- [x] Route registered: /supply-chain
+- [x] Sidebar entry added: Analytics → Supply Chain (Truck icon)
+- [x] Vitest tests: supply.chain.test.ts (28 tests)
+- [x] All 616 tests passing, 0 TypeScript errors

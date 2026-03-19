@@ -13,6 +13,7 @@ import InvestmentReadiness from "./pages/InvestmentReadiness";
 import PlaceholderPage from "./pages/PlaceholderPage";
 import RiskManagement from "./pages/RiskManagement";
 import DualRiskEngine from "./pages/DualRiskEngine";
+import SupplyChain from "./pages/SupplyChain";
 import FounderOnboarding from "./pages/FounderOnboarding";
 import BCorpIso from "./pages/BCorpIso";
 import FoundationImpact from "./pages/FoundationImpact";
@@ -52,6 +53,7 @@ function Router() {
       <Route path="/investment" component={InvestmentReadiness} />
       <Route path="/risk" component={RiskManagement} />
       <Route path="/dual-risk" component={DualRiskEngine} />
+      <Route path="/supply-chain" component={SupplyChain} />
       <Route path="/onboarding" component={FounderOnboarding} />
       <Route path="/brand" component={BrandReadiness} />
       <Route path="/ip" component={IpManagement} />

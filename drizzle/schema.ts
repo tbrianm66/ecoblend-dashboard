@@ -2600,3 +2600,166 @@ export const dualRiskDecisions = mysqlTable("dual_risk_decisions", {
 });
 export type DualRiskDecision = typeof dualRiskDecisions.$inferSelect;
 export type InsertDualRiskDecision = typeof dualRiskDecisions.$inferInsert;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SUPPLY CHAIN & MANUFACTURING INTELLIGENCE MODULE (Sprint 42)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── SC Products ───────────────────────────────────────────────────────────────
+export const scProducts = mysqlTable("sc_products", {
+  id:                   int("id").autoincrement().primaryKey(),
+  ventureId:            varchar("ventureId", { length: 64 }).notNull(),
+  name:                 varchar("name", { length: 256 }).notNull(),
+  description:          text("description"),
+  materialType:         mysqlEnum("materialType", [
+    "carbon_fibre", "glass_fibre", "hybrid_composite", "aluminium", "steel",
+    "polymer", "bio_composite", "ceramic", "other"
+  ]).default("carbon_fibre"),
+  manufacturingProcess: mysqlEnum("manufacturingProcess", [
+    "composite_layup", "resin_transfer_moulding", "injection_moulding",
+    "cnc_machining", "3d_printing", "casting", "forging", "assembly", "other"
+  ]).default("composite_layup"),
+  prototypeStatus:      mysqlEnum("prototypeStatus", [
+    "concept", "design", "prototype_v1", "prototype_v2", "validated", "production_ready"
+  ]).default("concept"),
+  trlLevel:             int("trlLevel").default(1),                   // 1–9
+  productionGeography:  mysqlEnum("productionGeography", ["UK", "China", "Both", "Other"]).default("UK"),
+  targetMarket:         varchar("targetMarket", { length: 256 }),
+  createdAt:            timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:            timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ScProduct = typeof scProducts.$inferSelect;
+export type InsertScProduct = typeof scProducts.$inferInsert;
+
+// ── SC Prototypes (UK R&D Layer) ──────────────────────────────────────────────
+export const scPrototypes = mysqlTable("sc_prototypes", {
+  id:                   int("id").autoincrement().primaryKey(),
+  productId:            int("productId").notNull(),
+  ventureId:            varchar("ventureId", { length: 64 }).notNull(),
+  version:              varchar("version", { length: 32 }).default("v1"),
+  // CAD/CAE status
+  cadStatus:            mysqlEnum("cadStatus", ["not_started", "in_progress", "complete", "validated"]).default("not_started"),
+  caeStatus:            mysqlEnum("caeStatus", ["not_started", "in_progress", "complete", "validated"]).default("not_started"),
+  cadFileUrl:           varchar("cadFileUrl", { length: 512 }),
+  // Lab validation
+  labTestStatus:        mysqlEnum("labTestStatus", ["not_started", "in_progress", "passed", "failed"]).default("not_started"),
+  testResults:          text("testResults"),                          // JSON blob of test metrics
+  structuralIntegrity:  float("structuralIntegrity"),                 // 0–100 score
+  weightGrams:          float("weightGrams"),
+  dimensionsMm:         varchar("dimensionsMm", { length: 128 }),     // "L×W×H"
+  // TRL progression
+  trlAtStart:           int("trlAtStart").default(1),
+  trlAtEnd:             int("trlAtEnd").default(1),
+  // Early LCA
+  lcaScore:             float("lcaScore"),                            // 0–100 (lower = better impact)
+  carbonFootprintKg:    float("carbonFootprintKg"),                   // kg CO2e per unit prototype
+  // Manufacturing requirements output
+  manufacturingNotes:   text("manufacturingNotes"),
+  prototypeImageUrl:    varchar("prototypeImageUrl", { length: 512 }),
+  completedAt:          timestamp("completedAt"),
+  createdAt:            timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:            timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ScPrototype = typeof scPrototypes.$inferSelect;
+export type InsertScPrototype = typeof scPrototypes.$inferInsert;
+
+// ── SC Manufacturing (Manufacturing Intelligence Layer) ───────────────────────
+export const scManufacturing = mysqlTable("sc_manufacturing", {
+  id:                      int("id").autoincrement().primaryKey(),
+  productId:               int("productId").notNull(),
+  ventureId:               varchar("ventureId", { length: 64 }).notNull(),
+  // BOM
+  bomJson:                 text("bomJson"),                           // JSON array of BOM line items
+  bomVersion:              varchar("bomVersion", { length: 32 }).default("1.0"),
+  // Cost modelling
+  unitCostGbp:             float("unitCostGbp"),                      // £ per unit
+  toolingCostGbp:          float("toolingCostGbp"),
+  moq:                     int("moq").default(1),                     // minimum order quantity
+  targetUnitCostGbp:       float("targetUnitCostGbp"),
+  // Process selection
+  primaryProcess:          mysqlEnum("primaryProcess", [
+    "composite_layup", "resin_transfer_moulding", "injection_moulding",
+    "cnc_machining", "3d_printing", "casting", "forging", "assembly", "other"
+  ]).default("composite_layup"),
+  processComplexityIndex:  int("processComplexityIndex").default(50), // 0–100
+  // Production capacity
+  productionCapacityPerMonth: int("productionCapacityPerMonth"),
+  leadTimeDays:            int("leadTimeDays"),
+  // Manufacturing readiness
+  manufacturingReadinessScore: int("manufacturingReadinessScore").default(0), // 0–100
+  readinessNotes:          text("readinessNotes"),
+  // Tooling
+  toolingStatus:           mysqlEnum("toolingStatus", ["not_started", "in_design", "ordered", "received", "validated"]).default("not_started"),
+  createdAt:               timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:               timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ScManufacturing = typeof scManufacturing.$inferSelect;
+export type InsertScManufacturing = typeof scManufacturing.$inferInsert;
+
+// ── SC Suppliers ──────────────────────────────────────────────────────────────
+export const scSuppliers = mysqlTable("sc_suppliers", {
+  id:                   int("id").autoincrement().primaryKey(),
+  ventureId:            varchar("ventureId", { length: 64 }).notNull(),
+  name:                 varchar("name", { length: 256 }).notNull(),
+  supplierType:         mysqlEnum("supplierType", [
+    "raw_material", "component", "sub_assembly", "contract_manufacturer",
+    "tooling", "logistics", "testing_lab", "other"
+  ]).default("contract_manufacturer"),
+  geography:            mysqlEnum("geography", ["UK", "China", "EU", "USA", "India", "Other"]).default("China"),
+  city:                 varchar("city", { length: 128 }),
+  contactName:          varchar("contactName", { length: 128 }),
+  contactEmail:         varchar("contactEmail", { length: 256 }),
+  // Scoring
+  riskScore:            int("riskScore").default(50),                 // 0–100 (lower = less risk)
+  qualityScore:         int("qualityScore").default(50),              // 0–100
+  leadTimeDays:         int("leadTimeDays"),
+  unitCostIndex:        float("unitCostIndex"),                       // relative cost index
+  // ESG
+  esgComplianceStatus:  mysqlEnum("esgComplianceStatus", ["unknown", "non_compliant", "partial", "compliant", "certified"]).default("unknown"),
+  ethicalSourcingScore: int("ethicalSourcingScore").default(50),      // 0–100
+  // Geopolitical risk
+  geopoliticalRiskFlag: boolean("geopoliticalRiskFlag").default(false),
+  geopoliticalNotes:    text("geopoliticalNotes"),
+  // Relationship
+  contractStatus:       mysqlEnum("contractStatus", ["prospect", "negotiating", "active", "paused", "terminated"]).default("prospect"),
+  certifications:       text("certifications"),                       // JSON array
+  notes:                text("notes"),
+  createdAt:            timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:            timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ScSupplier = typeof scSuppliers.$inferSelect;
+export type InsertScSupplier = typeof scSuppliers.$inferInsert;
+
+// ── SC Production Orders (Global Production Layer) ───────────────────────────
+export const scProductionOrders = mysqlTable("sc_production_orders", {
+  id:                   int("id").autoincrement().primaryKey(),
+  ventureId:            varchar("ventureId", { length: 64 }).notNull(),
+  productId:            int("productId").notNull(),
+  supplierId:           int("supplierId"),
+  orderRef:             varchar("orderRef", { length: 64 }),
+  orderType:            mysqlEnum("orderType", ["pilot", "scale", "repeat"]).default("pilot"),
+  geography:            mysqlEnum("geography", ["UK", "China", "EU", "USA", "Other"]).default("China"),
+  // Volumes & economics
+  quantityOrdered:      int("quantityOrdered").notNull(),
+  unitCostGbp:          float("unitCostGbp"),
+  totalCostGbp:         float("totalCostGbp"),
+  // Schedule
+  orderDate:            timestamp("orderDate").defaultNow(),
+  expectedDeliveryDate: timestamp("expectedDeliveryDate"),
+  actualDeliveryDate:   timestamp("actualDeliveryDate"),
+  leadTimeDays:         int("leadTimeDays"),
+  // QA/QC
+  qaStatus:             mysqlEnum("qaStatus", ["pending", "in_inspection", "passed", "failed", "rework"]).default("pending"),
+  defectRate:           float("defectRate").default(0),               // % defect rate
+  qualityNotes:         text("qualityNotes"),
+  // Logistics
+  shippingMethod:       mysqlEnum("shippingMethod", ["air", "sea", "road", "rail", "courier"]).default("sea"),
+  trackingRef:          varchar("trackingRef", { length: 128 }),
+  // Status
+  status:               mysqlEnum("status", ["draft", "confirmed", "in_production", "shipped", "delivered", "cancelled"]).default("draft"),
+  notes:                text("notes"),
+  createdAt:            timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:            timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ScProductionOrder = typeof scProductionOrders.$inferSelect;
+export type InsertScProductionOrder = typeof scProductionOrders.$inferInsert;

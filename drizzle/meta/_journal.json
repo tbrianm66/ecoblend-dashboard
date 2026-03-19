@@ -176,6 +176,13 @@
       "when": 1773912494019,
       "tag": "0024_ancient_yellow_claw",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "5",
+      "when": 1773915008794,
+      "tag": "0025_mysterious_harry_osborn",
+      "breakpoints": true
     }
   ]
 }
