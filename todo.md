@@ -784,3 +784,14 @@
 - [x] TypeScript check: 0 errors
 - [x] Write vitest tests for approval report module (38 tests: schema validation, status transitions, summary calcs, AI context, offering linkage)
 - [x] Full test suite: 1097 tests passing across 44 test files
+
+## Sprint 63 — Spin-Out Blueprint Module
+
+- [x] Design Blueprint data model: spinoutBlueprints, blueprintLibraryLinks tables
+- [x] Add schema tables and run migration (0040 — spinoutBlueprints + blueprintLibraryLinks)
+- [x] Build spinoutBlueprint tRPC router (create, get, list, update, delete, computeReadiness, addLibraryLink, updateLinkStatus, removeLibraryLink, listLibraryLinks, getLibraryOptions, generateBlueprint, launchToSpinoffOS)
+- [x] Build SpinOutBlueprint UI page (/spinout-blueprint) with offering selector, 6-domain readiness radar, library linkage panels, AI blueprint viewer, launch flow
+- [x] Upgrade SpinoffOS wizard: accept configId URL param, pre-populate from Blueprint launch
+- [x] Add "Spin-Out Blueprint" to sidebar navigation (Intelligence group)
+- [x] Write 41 vitest tests (domain weights, readiness scoring, gate logic, library links, journey stages, pre-population)
+- [x] Full test suite: 1138 tests passing across 45 test files

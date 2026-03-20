@@ -4397,3 +4397,73 @@ export const offeringResearchLinks = mysqlTable("offeringResearchLinks", {
 });
 export type OfferingResearchLink = typeof offeringResearchLinks.$inferSelect;
 export type InsertOfferingResearchLink = typeof offeringResearchLinks.$inferInsert;
+
+// ── Spin-Out Blueprints (Sprint 63) ───────────────────────────────────────────
+// A Blueprint is created for a specific Offering (POI) and aggregates readiness
+// signals from all Venture OS libraries. It gates the path to Execution Platform.
+export const spinoutBlueprints = mysqlTable("spinoutBlueprints", {
+  id:               int("id").primaryKey().autoincrement(),
+  offeringId:       varchar("offeringId", { length: 64 }).notNull(),
+  portfolioId:      varchar("portfolioId", { length: 64 }).notNull(),
+  ventureId:        varchar("ventureId", { length: 64 }).notNull(),
+  title:            varchar("title", { length: 255 }).notNull(),
+  talentScore:      int("talentScore").default(0),
+  supplyChainScore: int("supplyChainScore").default(0),
+  financeScore:     int("financeScore").default(0),
+  marketScore:      int("marketScore").default(0),
+  technologyScore:  int("technologyScore").default(0),
+  governanceScore:  int("governanceScore").default(0),
+  overallScore:     int("overallScore").default(0),
+  gateStatus:       mysqlEnum("blueprintGateStatus", [
+    "not_ready",
+    "approaching",
+    "ready_to_review",
+    "approved",
+    "launched",
+  ]).default("not_ready"),
+  spinoffConfigId:  int("spinoffConfigId"),
+  blueprintMarkdown:    text("blueprintMarkdown"),
+  executionRoadmap:     text("executionRoadmap"),
+  gapAnalysis:          text("gapAnalysis"),
+  reviewedBy:       varchar("reviewedBy", { length: 128 }),
+  reviewedAt:       timestamp("reviewedAt"),
+  reviewNotes:      text("reviewNotes"),
+  createdBy:        varchar("createdBy", { length: 128 }),
+  createdAt:        timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:        timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type SpinoutBlueprint = typeof spinoutBlueprints.$inferSelect;
+export type InsertSpinoutBlueprint = typeof spinoutBlueprints.$inferInsert;
+
+// ── Blueprint Library Links (Sprint 63) ──────────────────────────────────────
+// Explicit links from a Blueprint to individual records in each Venture OS library.
+export const blueprintLibraryLinks = mysqlTable("blueprintLibraryLinks", {
+  id:             int("id").primaryKey().autoincrement(),
+  blueprintId:    int("blueprintId").notNull(),
+  domain:         mysqlEnum("blueprintLinkDomain", [
+    "talent",
+    "supply_chain",
+    "university",
+    "research",
+    "finance",
+    "market",
+    "ip",
+    "legal",
+    "crm",
+    "specialist",
+  ]).notNull(),
+  linkedRecordId: varchar("linkedRecordId", { length: 64 }).notNull(),
+  linkedRecordLabel: varchar("linkedRecordLabel", { length: 255 }),
+  readinessWeight: int("readinessWeight").default(10),
+  linkStatus:     mysqlEnum("blueprintLinkStatus", [
+    "proposed",
+    "confirmed",
+    "contracted",
+    "unavailable",
+  ]).default("proposed"),
+  notes:          text("notes"),
+  createdAt:      timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:      timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type BlueprintLibraryLink = typeof blueprintLibraryLinks.$inferSelect;
+export type InsertBlueprintLibraryLink = typeof blueprintLibraryLinks.$inferInsert;

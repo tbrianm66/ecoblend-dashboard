@@ -4,6 +4,7 @@ import { governanceRouter } from "./governance.router";
 import { mfgOnboardingRouter, mfgAuditRouter, mfgRfqRouter, mfgAslRouter, mfgContractRouter } from "./mfgPlaybookExtended.router";
 import { uniPartnersRouter, uniResearchRouter, uniTalentRouter, uniWorkflowRouter, uniIndustryRouter, uniGovernanceRouter, uniDataRouter, uniRoadmapRouter, uniSummaryRouter } from "./universityPlaybook.router";
 import { uniApprovalReportRouter } from "./uniApprovalReport.router";
+import { spinoutBlueprintRouter } from "./spinoutBlueprint.router";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";

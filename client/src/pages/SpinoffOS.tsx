@@ -254,9 +254,12 @@ export default function SpinoffOS() {
   const [charity, setCharity] = useState("");
   const [vbsSupport, setVbsSupport] = useState<"Full Incubation" | "Accelerator" | "Advisory Only">("Full Incubation");
 
+  // If launched from Spin-Out Blueprint, navigate directly to detail view
+  const preConfigId = params.get("configId") ? Number(params.get("configId")) : null;
+
   // Active config / plan
-  const [activeConfigId, setActiveConfigId] = useState<number | null>(null);
-  const [viewMode, setViewMode] = useState<"wizard" | "list" | "detail">("list");
+  const [activeConfigId, setActiveConfigId] = useState<number | null>(preConfigId);
+  const [viewMode, setViewMode] = useState<"wizard" | "list" | "detail">(preConfigId ? "detail" : "list");
   const [showHistory, setShowHistory] = useState(false);
 
   // Queries

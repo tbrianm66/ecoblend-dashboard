@@ -51,6 +51,7 @@ import InvestorCRM from "./pages/InvestorCRM";
 import FinancialModelBuilder from "./pages/FinancialModelBuilder";
 import PortfolioManager from "./pages/PortfolioManager";
 import OfferingDetail from "./pages/OfferingDetail";
+import SpinOutBlueprint from "./pages/SpinOutBlueprint";
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
@@ -100,6 +101,7 @@ function Router() {
       <Route path="/financial-model-builder" component={FinancialModelBuilder} />
       <Route path="/portfolio-manager" component={PortfolioManager} />
       <Route path="/offering/:id" component={OfferingDetail} />
+      <Route path="/spinout-blueprint" component={SpinOutBlueprint} />
       <Route component={Home} />
     </Switch>
   );
