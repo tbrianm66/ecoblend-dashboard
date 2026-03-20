@@ -4070,3 +4070,64 @@ export const mediaCoverage = mysqlTable("mediaCoverage", {
 });
 export type MediaCoverage = typeof mediaCoverage.$inferSelect;
 export type InsertMediaCoverage = typeof mediaCoverage.$inferInsert;
+
+// ── Sprint 57: Specialist Services ───────────────────────────────────────────
+export const specialists = mysqlTable("specialists", {
+  id:            int("id").primaryKey().autoincrement(),
+  name:          varchar("name", { length: 255 }).notNull(),
+  role:          varchar("role", { length: 255 }).notNull(),
+  category:      varchar("category", { length: 128 }).notNull(),
+  rate:          varchar("rate", { length: 64 }).notNull().default("TBD"),
+  availability:  varchar("availability", { length: 32 }).notNull().default("Available"),
+  rating:        decimal("rating", { precision: 3, scale: 1 }).default("5.0"),
+  completedJobs: int("completedJobs").default(0),
+  bio:           text("bio"),
+  skills:        text("skills"),        // JSON array of strings
+  portfolioUrl:  varchar("portfolioUrl", { length: 512 }),
+  linkedinUrl:   varchar("linkedinUrl", { length: 512 }),
+  isVerified:    boolean("isVerified").default(false),
+  createdAt:     timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:     timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type Specialist = typeof specialists.$inferSelect;
+export type InsertSpecialist = typeof specialists.$inferInsert;
+
+export const specialistCommissions = mysqlTable("specialistCommissions", {
+  id:            int("id").primaryKey().autoincrement(),
+  ventureId:     varchar("ventureId", { length: 64 }).notNull(),
+  specialistId:  int("specialistId").notNull(),
+  serviceTaskId: int("serviceTaskId"),
+  title:         varchar("title", { length: 255 }).notNull(),
+  brief:         text("brief"),
+  status:        varchar("status", { length: 32 }).notNull().default("Open"),
+  budget:        decimal("budget", { precision: 10, scale: 2 }),
+  agreedFee:     decimal("agreedFee", { precision: 10, scale: 2 }),
+  platformFee:   decimal("platformFee", { precision: 10, scale: 2 }),
+  startDate:     timestamp("startDate"),
+  dueDate:       timestamp("dueDate"),
+  completedAt:   timestamp("completedAt"),
+  notes:         text("notes"),
+  createdAt:     timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:     timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type SpecialistCommission = typeof specialistCommissions.$inferSelect;
+export type InsertSpecialistCommission = typeof specialistCommissions.$inferInsert;
+
+export const specialistServiceTasks = mysqlTable("specialistServiceTasks", {
+  id:           int("id").primaryKey().autoincrement(),
+  ventureId:    varchar("ventureId", { length: 64 }).notNull(),
+  title:        varchar("title", { length: 255 }).notNull(),
+  description:  text("description"),
+  category:     varchar("category", { length: 128 }).notNull(),
+  priority:     varchar("priority", { length: 32 }).notNull().default("Medium"),
+  status:       varchar("status", { length: 32 }).notNull().default("Open"),
+  brlStage:     int("brlStage").default(1),
+  estimatedHrs: decimal("estimatedHrs", { precision: 6, scale: 1 }),
+  assignedTo:   int("assignedTo"),    // FK to specialists.id
+  dueDate:      timestamp("dueDate"),
+  completedAt:  timestamp("completedAt"),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:    timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type SpecialistServiceTask = typeof specialistServiceTasks.$inferSelect;
+export type InsertSpecialistServiceTask = typeof specialistServiceTasks.$inferInsert;

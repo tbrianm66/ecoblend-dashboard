@@ -4,10 +4,11 @@
 // Revenue model: platform referral fee per commissioned engagement.
 // ============================================================
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useVentures } from "@/contexts/VentureContext";
+import { trpc } from "@/lib/trpc";
 import {
   Briefcase, Star, Clock, CheckCircle2, ChevronRight,
   Plus, X, Check, Send, Users, Layers, Lock, Scale,
@@ -182,14 +183,8 @@ const STATUS_COLOURS: Record<CommissionStatus, { bg: string; text: string }> = {
   Cancelled:    { bg: "#fef2f2", text: "#ef4444" },
 };
 
+// Storage key kept for backward compat but no longer used for primary persistence
 const STORAGE_KEY = "ecoblend-commissions-v1";
-
-function loadCommissions(): Commission[] {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]"); } catch { return []; }
-}
-function saveCommissions(c: Commission[]) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(c)); } catch {}
-}
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -295,61 +290,110 @@ export default function SpecialistServices() {
   const { ventures: allVentures } = useVentures();
   const ventures = allVentures.filter(v => !v.isInternalLab);
 
-  const [commissions, setCommissions] = useState<Commission[]>(loadCommissions);
   const [activeTab, setActiveTab] = useState<"tasks" | "directory" | "commissions">("tasks");
   const [filterCategory, setFilterCategory] = useState<ServiceCategory | "all">("all");
   const [filterBrand, setFilterBrand] = useState<string>("all");
   const [commissioning, setCommissioning] = useState<{ task: ServiceTask; specialist: Specialist } | null>(null);
 
-  const categories = Array.from(new Set(SPECIALISTS.map(s => s.category))) as ServiceCategory[];
+  // ── DB-backed data ──────────────────────────────────────────────────────────
+  const utils = trpc.useUtils();
+  const { data: dbSpecialists = [] } = trpc.specialistServices.specialists.list.useQuery(undefined, { staleTime: 30_000 });
+  const { data: dbCommissions = [] } = trpc.specialistServices.commissions.list.useQuery(undefined, { staleTime: 10_000 });
+  const { data: dbTasks = [] } = trpc.specialistServices.serviceTasks.list.useQuery(undefined, { staleTime: 30_000 });
+
+  const createCommissionMutation = trpc.specialistServices.commissions.create.useMutation({
+    onSuccess: () => utils.specialistServices.commissions.list.invalidate(),
+  });
+  const updateStatusMutation = trpc.specialistServices.commissions.updateStatus.useMutation({
+    onSuccess: () => utils.specialistServices.commissions.list.invalidate(),
+  });
+  const deleteCommissionMutation = trpc.specialistServices.commissions.delete.useMutation({
+    onSuccess: () => utils.specialistServices.commissions.list.invalidate(),
+  });
+
+  // Merge static specialists with DB specialists (DB takes precedence)
+  const allSpecialists: Specialist[] = dbSpecialists.length > 0
+    ? dbSpecialists.map(s => ({
+        id: String(s.id),
+        name: s.name,
+        role: s.role,
+        category: s.category as ServiceCategory,
+        rate: s.rate,
+        availability: (s.availability ?? "Available") as Specialist["availability"],
+        rating: parseFloat(String(s.rating ?? 5)),
+        completedJobs: s.completedJobs ?? 0,
+        platformFee: 12,
+        bio: s.bio ?? "",
+        tags: s.skills ? JSON.parse(s.skills) : [],
+      }))
+    : SPECIALISTS;
+
+  // Map DB commissions to local Commission type
+  const dbCommissionsMapped: Commission[] = dbCommissions.map(c => ({
+    id: String(c.id),
+    taskId: String(c.serviceTaskId ?? ""),
+    specialistId: String(c.specialistId),
+    brandId: c.ventureId,
+    status: (c.status ?? "Open") as CommissionStatus,
+    brief: c.brief ?? "",
+    agreedRate: c.agreedFee ? `£${c.agreedFee}` : "TBD",
+    createdAt: c.createdAt ? new Date(c.createdAt).toISOString().split("T")[0] : "",
+    updatedAt: c.updatedAt ? new Date(c.updatedAt).toISOString().split("T")[0] : "",
+  }));
+
+  // Use DB commissions if available, otherwise fall back to localStorage
+  const commissions = dbCommissions.length > 0 ? dbCommissionsMapped : [];
+
+  const categories = Array.from(new Set(allSpecialists.map(s => s.category))) as ServiceCategory[];
 
   const filteredTasks = SERVICE_TASKS.filter(t =>
     (filterCategory === "all" || t.category === filterCategory) &&
     (filterBrand === "all" || t.brandId === filterBrand)
   );
 
-  const filteredSpecialists = SPECIALISTS.filter(s =>
+  const filteredSpecialists = allSpecialists.filter(s =>
     filterCategory === "all" || s.category === filterCategory
   );
 
-  function submitCommission(brief: string) {
+  async function submitCommission(brief: string) {
     if (!commissioning) return;
     const { task, specialist } = commissioning;
-    const c: Commission = {
-      id: `c${Date.now()}`,
-      taskId: task.id,
-      specialistId: specialist.id,
-      brandId: task.brandId,
-      status: "Commissioned",
-      brief,
-      agreedRate: specialist.rate,
-      createdAt: new Date().toISOString().split("T")[0],
-      updatedAt: new Date().toISOString().split("T")[0],
-    };
-    const updated = [...commissions, c];
-    setCommissions(updated);
-    saveCommissions(updated);
-    setCommissioning(null);
-    toast.success(`Commission sent to ${specialist.name}!`);
-    setActiveTab("commissions");
+    try {
+      await createCommissionMutation.mutateAsync({
+        ventureId: task.brandId,
+        specialistId: parseInt(specialist.id) || 0,
+        title: task.title,
+        brief,
+        notes: `Task: ${task.playbookRef}`,
+      });
+      setCommissioning(null);
+      toast.success(`Commission sent to ${specialist.name}!`);
+      setActiveTab("commissions");
+    } catch {
+      toast.error("Failed to create commission");
+    }
   }
 
-  function advanceStatus(id: string, current: CommissionStatus) {
+  async function advanceStatus(id: string, current: CommissionStatus) {
     const cycle: CommissionStatus[] = ["Commissioned", "In Review", "Complete"];
     const idx = cycle.indexOf(current);
     if (idx === -1 || idx === cycle.length - 1) return;
     const next = cycle[idx + 1];
-    const updated = commissions.map(c => c.id === id ? { ...c, status: next, updatedAt: new Date().toISOString().split("T")[0] } : c);
-    setCommissions(updated);
-    saveCommissions(updated);
-    toast.success(`Status → ${next}`);
+    try {
+      await updateStatusMutation.mutateAsync({ id: parseInt(id), status: next });
+      toast.success(`Status → ${next}`);
+    } catch {
+      toast.error("Failed to update status");
+    }
   }
 
-  function cancelCommission(id: string) {
-    const updated = commissions.map(c => c.id === id ? { ...c, status: "Cancelled" as CommissionStatus } : c);
-    setCommissions(updated);
-    saveCommissions(updated);
-    toast.success("Commission cancelled");
+  async function cancelCommission(id: string) {
+    try {
+      await updateStatusMutation.mutateAsync({ id: parseInt(id), status: "Cancelled" });
+      toast.success("Commission cancelled");
+    } catch {
+      toast.error("Failed to cancel commission");
+    }
   }
 
   const totalCommissioned = commissions.filter(c => c.status !== "Cancelled").length;

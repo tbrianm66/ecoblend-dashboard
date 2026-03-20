@@ -195,6 +195,7 @@ import { commercialCrmRouter } from "./commercialCrm.router";
 import { finPlRouter, finRunwayRouter, finWaterfallRouter, finReportsRouter, finUnitEconRouter, finSummaryRouter } from "./financialModel.router";
 import { investorCrmRouter } from "./investorCrm.router";
 import { marketingBrandRouter } from "./marketingBrand.router";
+import { specialistServicesRouter } from "./specialistServices.router";
 
 export const appRouter = router({
   system: systemRouter,
@@ -6731,5 +6732,6 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
   finUnitEcon: finUnitEconRouter,
   finSummary: finSummaryRouter,
   marketingBrand: marketingBrandRouter,
+  specialistServices: specialistServicesRouter,
 });
 export type AppRouter = typeof appRouter;
