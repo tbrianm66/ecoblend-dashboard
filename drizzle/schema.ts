@@ -3946,3 +3946,127 @@ export const finUnitEconomics = mysqlTable("finUnitEconomics", {
 });
 export type FinUnitEconomics = typeof finUnitEconomics.$inferSelect;
 export type InsertFinUnitEconomics = typeof finUnitEconomics.$inferInsert;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SPRINT 56 — Marketing Strategy, Brand Readiness & PR/Newsletter
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── Marketing Campaigns ───────────────────────────────────────────────────────
+export const marketingCampaigns = mysqlTable("marketingCampaigns", {
+  id:              int("id").primaryKey().autoincrement(),
+  ventureId:       varchar("ventureId", { length: 64 }).notNull(),
+  name:            varchar("name", { length: 255 }).notNull(),
+  channel:         varchar("channel", { length: 64 }).notNull(),
+  status:          varchar("status", { length: 32 }).notNull().default("Planned"),
+  budget:          int("budget").default(0),
+  spent:           int("spent").default(0),
+  leads:           int("leads").default(0),
+  conversions:     int("conversions").default(0),
+  startDate:       varchar("startDate", { length: 32 }),
+  endDate:         varchar("endDate", { length: 32 }),
+  objective:       text("objective"),
+  notes:           text("notes"),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type MarketingCampaign = typeof marketingCampaigns.$inferSelect;
+export type InsertMarketingCampaign = typeof marketingCampaigns.$inferInsert;
+
+// ── Marketing Channel Scores ──────────────────────────────────────────────────
+export const marketingChannelScores = mysqlTable("marketingChannelScores", {
+  id:              int("id").primaryKey().autoincrement(),
+  ventureId:       varchar("ventureId", { length: 64 }).notNull(),
+  channel:         varchar("channel", { length: 64 }).notNull(),
+  score:           int("score").default(0),
+  period:          varchar("period", { length: 32 }),
+  notes:           text("notes"),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type MarketingChannelScore = typeof marketingChannelScores.$inferSelect;
+export type InsertMarketingChannelScore = typeof marketingChannelScores.$inferInsert;
+
+// ── Brand Readiness Scores ────────────────────────────────────────────────────
+export const brandReadinessScores = mysqlTable("brandReadinessScores", {
+  id:              int("id").primaryKey().autoincrement(),
+  ventureId:       varchar("ventureId", { length: 64 }).notNull(),
+  dimension:       varchar("dimension", { length: 64 }).notNull(),
+  score:           int("score").default(0),
+  notes:           text("notes"),
+  assessedAt:      timestamp("assessedAt").defaultNow(),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type BrandReadinessScore = typeof brandReadinessScores.$inferSelect;
+export type InsertBrandReadinessScore = typeof brandReadinessScores.$inferInsert;
+
+// ── Brand Checklist Items ─────────────────────────────────────────────────────
+export const brandChecklistItems = mysqlTable("brandChecklistItems", {
+  id:              int("id").primaryKey().autoincrement(),
+  ventureId:       varchar("ventureId", { length: 64 }).notNull(),
+  category:        varchar("category", { length: 64 }).notNull(),
+  item:            varchar("item", { length: 255 }).notNull(),
+  completed:       tinyint("completed").default(0),
+  completedAt:     timestamp("completedAt"),
+  notes:           text("notes"),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type BrandChecklistItem = typeof brandChecklistItems.$inferSelect;
+export type InsertBrandChecklistItem = typeof brandChecklistItems.$inferInsert;
+
+// ── Press Releases ────────────────────────────────────────────────────────────
+export const pressReleases = mysqlTable("pressReleases", {
+  id:              int("id").primaryKey().autoincrement(),
+  ventureId:       varchar("ventureId", { length: 64 }).notNull(),
+  title:           varchar("title", { length: 255 }).notNull(),
+  summary:         text("summary"),
+  status:          varchar("status", { length: 32 }).notNull().default("Draft"),
+  publishedAt:     timestamp("publishedAt"),
+  mediaOutlets:    text("mediaOutlets"),
+  coverageLinks:   text("coverageLinks"),
+  reach:           int("reach").default(0),
+  notes:           text("notes"),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type PressRelease = typeof pressReleases.$inferSelect;
+export type InsertPressRelease = typeof pressReleases.$inferInsert;
+
+// ── Newsletter Campaigns ──────────────────────────────────────────────────────
+export const newsletterCampaigns = mysqlTable("newsletterCampaigns", {
+  id:              int("id").primaryKey().autoincrement(),
+  ventureId:       varchar("ventureId", { length: 64 }).notNull(),
+  subject:         varchar("subject", { length: 255 }).notNull(),
+  previewText:     varchar("previewText", { length: 255 }),
+  status:          varchar("status", { length: 32 }).notNull().default("Draft"),
+  scheduledAt:     timestamp("scheduledAt"),
+  sentAt:          timestamp("sentAt"),
+  recipients:      int("recipients").default(0),
+  openRate:        int("openRate").default(0),
+  clickRate:       int("clickRate").default(0),
+  unsubscribes:    int("unsubscribes").default(0),
+  contentUrl:      varchar("contentUrl", { length: 512 }),
+  notes:           text("notes"),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type NewsletterCampaign = typeof newsletterCampaigns.$inferSelect;
+export type InsertNewsletterCampaign = typeof newsletterCampaigns.$inferInsert;
+
+// ── Media Coverage ────────────────────────────────────────────────────────────
+export const mediaCoverage = mysqlTable("mediaCoverage", {
+  id:              int("id").primaryKey().autoincrement(),
+  ventureId:       varchar("ventureId", { length: 64 }).notNull(),
+  outlet:          varchar("outlet", { length: 255 }).notNull(),
+  headline:        varchar("headline", { length: 512 }).notNull(),
+  url:             varchar("url", { length: 512 }),
+  sentiment:       varchar("sentiment", { length: 32 }).default("neutral"),
+  reach:           int("reach").default(0),
+  publishedAt:     timestamp("publishedAt"),
+  notes:           text("notes"),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type MediaCoverage = typeof mediaCoverage.$inferSelect;
+export type InsertMediaCoverage = typeof mediaCoverage.$inferInsert;

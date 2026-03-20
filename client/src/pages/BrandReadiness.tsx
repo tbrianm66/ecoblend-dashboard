@@ -1,12 +1,10 @@
 // ============================================================
 // ECOBLEND — Brand Readiness Module
-// Multi-dimension brand maturity scoring across identity,
-// messaging, digital presence, and OEM/consumer readiness.
-// Aligned to the VRL stage of each venture.
+// DB-backed: trpc.marketingBrand.brandReadiness.*
 // ============================================================
 
-import { useState } from "react";
-import { useLocation } from "wouter";
+import { useState, useMemo } from "react";
+import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer,
@@ -133,18 +131,55 @@ export default function BrandReadiness() {
   const [editingScore, setEditingScore] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<number>(0);
 
+  const utils = trpc.useUtils();
+
+  // DB-backed score upsert (persists on save)
+  const upsertScore = trpc.marketingBrand.brandReadiness.upsertScore.useMutation({
+    onSuccess: () => utils.marketingBrand.brandReadiness.getScores.invalidate({ ventureId: selected }),
+    onError: (e) => toast.error(e.message),
+  });
+
+  // DB-backed checklist toggle (persists immediately)
+  const toggleItem = trpc.marketingBrand.brandReadiness.toggleChecklistItem.useMutation({
+    onError: (e) => toast.error(e.message),
+  });
+
+  // Load DB scores for selected venture (merge with local state for display)
+  const { data: dbScores = [] } = trpc.marketingBrand.brandReadiness.getScores.useQuery({ ventureId: selected });
+  const { data: dbChecklist = [] } = trpc.marketingBrand.brandReadiness.getChecklist.useQuery({ ventureId: selected });
+
   const brand = brands.find(b => b.id === selected)!;
-  const overall = weightedScore(brand.scores, brand.model);
+
+  // Merge DB scores into local state for display (DB takes precedence when available)
+  const mergedScores = useMemo(() => {
+    const merged = { ...brand.scores };
+    for (const s of dbScores) {
+      const dim = DIMENSIONS.find(d => d.label === s.dimension);
+      if (dim) merged[dim.key] = s.score ?? merged[dim.key];
+    }
+    return merged;
+  }, [brand.scores, dbScores]);
+
+  // Merge DB checklist into local state for display
+  const mergedChecklist = useMemo(() => {
+    if (dbChecklist.length === 0) return brand.checklist;
+    return brand.checklist.map((item, i) => {
+      const dbItem = dbChecklist.find(d => d.item === item.label);
+      return dbItem ? { ...item, completed: dbItem.completed === 1 } : item;
+    });
+  }, [brand.checklist, dbChecklist]);
+
+  const overall = weightedScore(mergedScores, brand.model);
 
   const radarData = DIMENSIONS.map(d => ({
     subject: d.label,
-    score: brand.scores[d.key] ?? 0,
+    score: mergedScores[d.key] ?? 0,
     fullMark: 100,
   }));
 
   const allBrandsBar = brands.map(b => ({
     name: b.name,
-    Score: weightedScore(b.scores, b.model),
+    Score: weightedScore(b.id === selected ? mergedScores : b.scores, b.model),
     color: b.color,
   }));
 
@@ -154,6 +189,20 @@ export default function BrandReadiness() {
       const checklist = b.checklist.map((item, i) => i === index ? { ...item, completed: !item.completed } : item);
       return { ...b, checklist };
     }));
+    // Persist to DB: find or create the checklist item
+    const item = brand.checklist[index];
+    const dbItem = dbChecklist.find(d => d.item === item.label);
+    if (dbItem) {
+      toggleItem.mutate({ id: dbItem.id, completed: !item.completed });
+    } else {
+      // Create new DB item then toggle it
+      utils.client.marketingBrand.brandReadiness.upsertChecklistItem.mutate({
+        ventureId: brandId,
+        category: "General",
+        item: item.label,
+        completed: !item.completed,
+      }).then(() => utils.marketingBrand.brandReadiness.getChecklist.invalidate({ ventureId: brandId })).catch(() => {});
+    }
     toast.success("Brand readiness checklist updated");
   };
 
@@ -168,6 +217,12 @@ export default function BrandReadiness() {
       if (b.id !== brandId) return b;
       return { ...b, scores: { ...b.scores, [key]: clamped } };
     }));
+    // Persist to DB
+    const dim = DIMENSIONS.find(d => d.key === key);
+    if (dim) {
+      const existing = dbScores.find(s => s.dimension === dim.label);
+      upsertScore.mutate({ id: existing?.id, ventureId: brandId, dimension: dim.label, score: clamped });
+    }
     setEditingScore(null);
     toast.success("Brand score updated");
   };

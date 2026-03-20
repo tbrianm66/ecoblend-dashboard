@@ -1,4 +1,5 @@
 import { workflowEngineRouter } from "./workflowEngine.router";
+import { dispatchTrigger } from "./workflowEngine";
 import { governanceRouter } from "./governance.router";
 import { mfgOnboardingRouter, mfgAuditRouter, mfgRfqRouter, mfgAslRouter, mfgContractRouter } from "./mfgPlaybookExtended.router";
 import { uniPartnersRouter, uniResearchRouter, uniTalentRouter, uniWorkflowRouter, uniIndustryRouter, uniGovernanceRouter, uniDataRouter, uniRoadmapRouter, uniSummaryRouter } from "./universityPlaybook.router";
@@ -193,6 +194,7 @@ import { dmAssetsRouter, dmQualityRouter, dmPipelinesRouter, dmRagRouter, dmFine
 import { commercialCrmRouter } from "./commercialCrm.router";
 import { finPlRouter, finRunwayRouter, finWaterfallRouter, finReportsRouter, finUnitEconRouter, finSummaryRouter } from "./financialModel.router";
 import { investorCrmRouter } from "./investorCrm.router";
+import { marketingBrandRouter } from "./marketingBrand.router";
 
 export const appRouter = router({
   system: systemRouter,
@@ -3895,7 +3897,15 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       completionEvidence: z.string().optional(),
       milestoneType: z.enum(["Gate Review", "Deliverable", "Decision Point", "External Event", "Funding Milestone", "Launch"]).optional(),
     }))
-    .mutation(({ input }) => { const { id, ...rest } = input; return updatePmMilestone(id, rest); }),
+    .mutation(async ({ input }) => {
+      const { id, ...rest } = input;
+      const result = await updatePmMilestone(id, rest);
+      // Fire milestone_overdue trigger when status is set to Overdue
+      if (input.status === "Overdue") {
+        dispatchTrigger("milestone_overdue", id).catch(() => {});
+      }
+      return result;
+    }),
   deleteMilestone: publicProcedure
     .input(z.object({ id: z.number() }))
     .mutation(({ input }) => deletePmMilestone(input.id)),
@@ -6720,5 +6730,6 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
   finReports: finReportsRouter,
   finUnitEcon: finUnitEconRouter,
   finSummary: finSummaryRouter,
+  marketingBrand: marketingBrandRouter,
 });
 export type AppRouter = typeof appRouter;

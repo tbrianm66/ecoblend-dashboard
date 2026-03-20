@@ -1,694 +1,489 @@
 // ============================================================
 // ECORACE STUDIO — Brand PR & Newsletter Module
-// Tracks press releases, newsletter campaigns, media coverage,
-// and PR status per portfolio brand.
+// DB-backed: trpc.marketingBrand.pressReleases + newsletter + mediaCoverage
 // ============================================================
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { trpc } from "@/lib/trpc";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useVentures } from "@/contexts/VentureContext";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
-  Newspaper, Send, Eye, ExternalLink, Plus, Trash2,
-  Mail, Radio, TrendingUp, Calendar, Edit3, X, Check
+  Newspaper, ExternalLink, Plus, Trash2,
+  Mail, Radio, TrendingUp, Loader2, Pencil, Eye
 } from "lucide-react";
 import { toast } from "sonner";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-type PRStatus = "Draft" | "Scheduled" | "Published" | "Archived";
-type NewsletterStatus = "Draft" | "Scheduled" | "Sent";
-type MediaType = "Article" | "Interview" | "Podcast" | "Video" | "Social" | "Press Mention";
-
-interface PressRelease {
-  id: string;
-  brandId: string;
-  title: string;
-  summary: string;
-  status: PRStatus;
-  date: string;
-  outlet?: string;
-  url?: string;
-}
-
-interface NewsletterCampaign {
-  id: string;
-  brandId: string;
-  subject: string;
-  preview: string;
-  status: NewsletterStatus;
-  scheduledDate: string;
-  openRate?: number;
-  clickRate?: number;
-  recipients?: number;
-}
-
-interface MediaCoverage {
-  id: string;
-  brandId: string;
-  headline: string;
-  outlet: string;
-  type: MediaType;
-  date: string;
-  url?: string;
-  sentiment: "Positive" | "Neutral" | "Negative";
-}
-
-// ── Default Data ──────────────────────────────────────────────────────────────
-
-const STORAGE_KEY = "ecoblend-pr-v1";
-
-function loadData<T>(key: string, defaults: T[]): T[] {
-  try {
-    const stored = localStorage.getItem(key);
-    return stored ? JSON.parse(stored) : defaults;
-  } catch { return defaults; }
-}
-
-function saveData<T>(key: string, data: T[]) {
-  try { localStorage.setItem(key, JSON.stringify(data)); } catch {}
-}
-
-const defaultPressReleases: PressRelease[] = [
-  {
-    id: "pr1", brandId: "ecoblend",
-    title: "EcoComp Launches Advanced Bio-Composite Formulation for OEM Partners",
-    summary: "EcoComp announces its first commercial-grade bio-composite material range, targeting Tier 1 OEM manufacturers in transport and sports sectors.",
-    status: "Draft", date: "2026-04-15", outlet: "Composites World",
-  },
-  {
-    id: "pr2", brandId: "real",
-    title: "REAL Applies F1 Safety Science to Consumer Sports Protection",
-    summary: "REAL reveals its founding vision: bringing Formula 1-grade energy-absorption technology to everyday athletes through sustainable composite materials.",
-    status: "Draft", date: "2026-05-01",
-  },
-  {
-    id: "pr3", brandId: "tone",
-    title: "TONE Redefines Sustainable Creative Tools for the Entertainment Industry",
-    summary: "TONE introduces its eco-creative brand proposition, targeting musicians, filmmakers, and designers who demand both performance and environmental responsibility.",
-    status: "Draft", date: "2026-05-15",
-  },
-  {
-    id: "pr4", brandId: "pipe",
-    title: "PIPE Enters the Eco-Water Sport Market with Sustainable Performance Gear",
-    summary: "PIPE announces its founding brand vision: ocean-inspired, performance-driven, and sustainably engineered water sport equipment for the next generation of athletes.",
-    status: "Draft", date: "2026-06-01",
-  },
+const VENTURES = [
+  { id: "ecoblend", name: "EcoRace", color: "#22c55e" },
+  { id: "bebus", name: "BEBUS", color: "#1d4ed8" },
+  { id: "tone", name: "TONE", color: "#7c3aed" },
+  { id: "real", name: "REAL", color: "#f59e0b" },
 ];
 
-const defaultNewsletters: NewsletterCampaign[] = [
-  {
-    id: "nl1", brandId: "ecoblend",
-    subject: "EcoComp Materials Bulletin — Q1 2026",
-    preview: "Our first formulation portfolio is ready. Here's what we've been building in the lab...",
-    status: "Draft", scheduledDate: "2026-04-01",
-  },
-  {
-    id: "nl2", brandId: "tone",
-    subject: "TONE Launch — The Eco-Creative Revolution Starts Here",
-    preview: "We're building something new for the creative industry. Here's our story...",
-    status: "Draft", scheduledDate: "2026-05-20",
-  },
-];
-
-const defaultMediaCoverage: MediaCoverage[] = [
-  {
-    id: "mc1", brandId: "ecoblend",
-    headline: "EcoRace Studio Enters Materials Science with EcoRace Lab",
-    outlet: "GreenBiz", type: "Article", date: "2026-03-01",
-    sentiment: "Positive",
-  },
-  {
-    id: "mc2", brandId: "real",
-    headline: "Can F1 Technology Make Sports Protection More Sustainable?",
-    outlet: "Sports Tech World", type: "Article", date: "2026-03-10",
-    sentiment: "Positive",
-  },
-];
-
-// ── Colour helpers ────────────────────────────────────────────────────────────
-
-const STATUS_COLOURS: Record<string, { bg: string; text: string; border: string }> = {
-  Draft:     { bg: "#f9fafb", text: "#9ca3af", border: "#e5e7eb" },
-  Scheduled: { bg: "#fffbeb", text: "#d97706", border: "#fde68a" },
-  Published: { bg: "#f0fdf4", text: "#51AF37", border: "#bbf7d0" },
-  Archived:  { bg: "#f9fafb", text: "#6b7280", border: "#e5e7eb" },
-  Sent:      { bg: "#eff6ff", text: "#3A97D3", border: "#bfdbfe" },
+const PR_STATUS_COLORS: Record<string, string> = {
+  Draft: "#9ca3af",
+  Scheduled: "#1d4ed8",
+  Published: "#22c55e",
+  Archived: "#6b7280",
 };
 
-const SENTIMENT_COLOURS: Record<string, string> = {
-  Positive: "#51AF37",
-  Neutral:  "#9ca3af",
-  Negative: "#ef4444",
+const NL_STATUS_COLORS: Record<string, string> = {
+  Draft: "#9ca3af",
+  Scheduled: "#1d4ed8",
+  Sent: "#22c55e",
 };
 
-const MEDIA_TYPE_ICONS: Record<MediaType, React.ComponentType<{ size?: number; className?: string }>> = {
-  Article:       Newspaper,
-  Interview:     Radio,
-  Podcast:       Radio,
-  Video:         Eye,
-  Social:        TrendingUp,
-  "Press Mention": Newspaper,
+const SENTIMENT_COLORS: Record<string, string> = {
+  positive: "#22c55e",
+  neutral: "#6b7280",
+  negative: "#ef4444",
 };
 
-// ── Sub-components ────────────────────────────────────────────────────────────
-
-function SectionHeader({ icon: Icon, title, subtitle, count, onAdd }: {
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-  title: string;
-  subtitle: string;
-  count: number;
-  onAdd: () => void;
-}) {
-  return (
-    <div className="flex items-center justify-between mb-5">
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#51AF3715", color: "#51AF37" }}>
-          <Icon size={18} />
-        </div>
-        <div>
-          <h2 className="text-base font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>{title}</h2>
-          <p className="text-xs text-gray-400">{subtitle} · {count} item{count !== 1 ? "s" : ""}</p>
-        </div>
-      </div>
-      <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={onAdd}
-        style={{ borderColor: "#51AF37", color: "#51AF37" }}>
-        <Plus size={13} /> Add
-      </Button>
-    </div>
-  );
-}
-
-function BrandPill({ brandId, ventures }: { brandId: string; ventures: { id: string; name: string; color: string }[] }) {
-  const v = ventures.find(v => v.id === brandId);
-  if (!v) return null;
-  return (
-    <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: `${v.color}15`, color: v.color, border: `1px solid ${v.color}30` }}>
-      {v.name}
-    </span>
-  );
-}
-
-// ── Add Modal ─────────────────────────────────────────────────────────────────
-
-function AddModal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.4)" }}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6">
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="text-base font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>{title}</h3>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100">
-            <X size={16} style={{ color: "#6b7280" }} />
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
-}
-
-// ── Main Page ─────────────────────────────────────────────────────────────────
+const EMPTY_PR = { ventureId: "ecoblend", title: "", summary: "", status: "Draft" as const, mediaOutlets: "", coverageLinks: "", reach: 0, notes: "" };
+const EMPTY_NL = { ventureId: "ecoblend", subject: "", previewText: "", status: "Draft" as const, recipients: 0, openRate: 0, clickRate: 0, unsubscribes: 0, contentUrl: "", notes: "" };
+const EMPTY_MEDIA = { ventureId: "ecoblend", outlet: "", headline: "", url: "", sentiment: "neutral" as const, reach: 0, notes: "" };
 
 export default function BrandPR() {
-  const { ventures: allVentures } = useVentures();
-  const ventures = allVentures.filter(v => !v.isInternalLab);
+  const [tab, setTab] = useState("press");
+  const [prOpen, setPrOpen] = useState(false);
+  const [nlOpen, setNlOpen] = useState(false);
+  const [mediaOpen, setMediaOpen] = useState(false);
+  const [editingPr, setEditingPr] = useState<number | null>(null);
+  const [editingNl, setEditingNl] = useState<number | null>(null);
+  const [editingMedia, setEditingMedia] = useState<number | null>(null);
+  const [prForm, setPrForm] = useState(EMPTY_PR);
+  const [nlForm, setNlForm] = useState(EMPTY_NL);
+  const [mediaForm, setMediaForm] = useState(EMPTY_MEDIA);
 
-  const [pressReleases, setPressReleases] = useState<PressRelease[]>(() =>
-    loadData(STORAGE_KEY + "-pr", defaultPressReleases));
-  const [newsletters, setNewsletters] = useState<NewsletterCampaign[]>(() =>
-    loadData(STORAGE_KEY + "-nl", defaultNewsletters));
-  const [mediaCoverage, setMediaCoverage] = useState<MediaCoverage[]>(() =>
-    loadData(STORAGE_KEY + "-mc", defaultMediaCoverage));
+  const utils = trpc.useUtils();
 
-  const [filterBrand, setFilterBrand] = useState<string>("all");
-  const [addingPR, setAddingPR] = useState(false);
-  const [addingNL, setAddingNL] = useState(false);
-  const [addingMC, setAddingMC] = useState(false);
+  // ── Queries ──────────────────────────────────────────────────────────────────
+  const { data: pressReleases = [], isLoading: prLoading } = trpc.marketingBrand.pressReleases.list.useQuery({});
+  const { data: newsletters = [], isLoading: nlLoading } = trpc.marketingBrand.newsletter.list.useQuery({});
+  const { data: media = [], isLoading: mediaLoading } = trpc.marketingBrand.mediaCoverage.list.useQuery({});
+  const { data: nlSummary } = trpc.marketingBrand.newsletter.getSummary.useQuery({});
+  const { data: mediaSummary } = trpc.marketingBrand.mediaCoverage.getSummary.useQuery({});
 
-  // Form state
-  const [prForm, setPrForm] = useState({ brandId: ventures[0]?.id || "", title: "", summary: "", date: "", outlet: "", url: "" });
-  const [nlForm, setNlForm] = useState({ brandId: ventures[0]?.id || "", subject: "", preview: "", scheduledDate: "" });
-  const [mcForm, setMcForm] = useState({ brandId: ventures[0]?.id || "", headline: "", outlet: "", type: "Article" as MediaType, date: "", url: "", sentiment: "Positive" as MediaCoverage["sentiment"] });
+  // ── Mutations ────────────────────────────────────────────────────────────────
+  const upsertPr = trpc.marketingBrand.pressReleases.upsert.useMutation({
+    onSuccess: () => { utils.marketingBrand.pressReleases.list.invalidate(); toast.success("Press release saved"); setPrOpen(false); },
+    onError: (e) => toast.error(e.message),
+  });
+  const deletePr = trpc.marketingBrand.pressReleases.delete.useMutation({
+    onSuccess: () => { utils.marketingBrand.pressReleases.list.invalidate(); toast.success("Deleted"); },
+  });
 
-  const filteredPR = filterBrand === "all" ? pressReleases : pressReleases.filter(p => p.brandId === filterBrand);
-  const filteredNL = filterBrand === "all" ? newsletters : newsletters.filter(n => n.brandId === filterBrand);
-  const filteredMC = filterBrand === "all" ? mediaCoverage : mediaCoverage.filter(m => m.brandId === filterBrand);
+  const upsertNl = trpc.marketingBrand.newsletter.upsert.useMutation({
+    onSuccess: () => { utils.marketingBrand.newsletter.list.invalidate(); utils.marketingBrand.newsletter.getSummary.invalidate(); toast.success("Newsletter saved"); setNlOpen(false); },
+    onError: (e) => toast.error(e.message),
+  });
+  const deleteNl = trpc.marketingBrand.newsletter.delete.useMutation({
+    onSuccess: () => { utils.marketingBrand.newsletter.list.invalidate(); toast.success("Deleted"); },
+  });
 
-  function savePR() {
-    if (!prForm.title || !prForm.date) { toast.error("Title and date are required"); return; }
-    const updated = [...pressReleases, { ...prForm, id: `pr${Date.now()}`, status: "Draft" as PRStatus }];
-    setPressReleases(updated);
-    saveData(STORAGE_KEY + "-pr", updated);
-    setAddingPR(false);
-    toast.success("Press release added");
-  }
+  const upsertMedia = trpc.marketingBrand.mediaCoverage.upsert.useMutation({
+    onSuccess: () => { utils.marketingBrand.mediaCoverage.list.invalidate(); utils.marketingBrand.mediaCoverage.getSummary.invalidate(); toast.success("Coverage saved"); setMediaOpen(false); },
+    onError: (e) => toast.error(e.message),
+  });
+  const deleteMedia = trpc.marketingBrand.mediaCoverage.delete.useMutation({
+    onSuccess: () => { utils.marketingBrand.mediaCoverage.list.invalidate(); toast.success("Deleted"); },
+  });
 
-  function saveNL() {
-    if (!nlForm.subject || !nlForm.scheduledDate) { toast.error("Subject and date are required"); return; }
-    const updated = [...newsletters, { ...nlForm, id: `nl${Date.now()}`, status: "Draft" as NewsletterStatus }];
-    setNewsletters(updated);
-    saveData(STORAGE_KEY + "-nl", updated);
-    setAddingNL(false);
-    toast.success("Newsletter campaign added");
-  }
+  // ── Derived ──────────────────────────────────────────────────────────────────
+  const publishedPR = useMemo(() => pressReleases.filter(p => p.status === "Published").length, [pressReleases]);
+  const totalReach = useMemo(() => media.reduce((a, m) => a + (m.reach ?? 0), 0), [media]);
 
-  function saveMC() {
-    if (!mcForm.headline || !mcForm.outlet || !mcForm.date) { toast.error("Headline, outlet, and date are required"); return; }
-    const updated = [...mediaCoverage, { ...mcForm, id: `mc${Date.now()}` }];
-    setMediaCoverage(updated);
-    saveData(STORAGE_KEY + "-mc", updated);
-    setAddingMC(false);
-    toast.success("Media coverage added");
-  }
-
-  function deletePR(id: string) {
-    const updated = pressReleases.filter(p => p.id !== id);
-    setPressReleases(updated);
-    saveData(STORAGE_KEY + "-pr", updated);
-    toast.success("Press release removed");
-  }
-
-  function deleteNL(id: string) {
-    const updated = newsletters.filter(n => n.id !== id);
-    setNewsletters(updated);
-    saveData(STORAGE_KEY + "-nl", updated);
-    toast.success("Newsletter removed");
-  }
-
-  function deleteMC(id: string) {
-    const updated = mediaCoverage.filter(m => m.id !== id);
-    setMediaCoverage(updated);
-    saveData(STORAGE_KEY + "-mc", updated);
-    toast.success("Coverage removed");
-  }
-
-  function cycleStatus(id: string, current: PRStatus) {
-    const cycle: PRStatus[] = ["Draft", "Scheduled", "Published", "Archived"];
-    const next = cycle[(cycle.indexOf(current) + 1) % cycle.length];
-    const updated = pressReleases.map(p => p.id === id ? { ...p, status: next } : p);
-    setPressReleases(updated);
-    saveData(STORAGE_KEY + "-pr", updated);
-    toast.success(`Status → ${next}`);
-  }
-
-  function cycleNLStatus(id: string, current: NewsletterStatus) {
-    const cycle: NewsletterStatus[] = ["Draft", "Scheduled", "Sent"];
-    const next = cycle[(cycle.indexOf(current) + 1) % cycle.length];
-    const updated = newsletters.map(n => n.id === id ? { ...n, status: next } : n);
-    setNewsletters(updated);
-    saveData(STORAGE_KEY + "-nl", updated);
-    toast.success(`Status → ${next}`);
-  }
-
-  // ── KPI summary ──────────────────────────────────────────────────────────
-  const publishedPR = pressReleases.filter(p => p.status === "Published").length;
-  const sentNL = newsletters.filter(n => n.status === "Sent").length;
-  const positiveCoverage = mediaCoverage.filter(m => m.sentiment === "Positive").length;
+  const openEditPr = (p: typeof pressReleases[0]) => {
+    setEditingPr(p.id);
+    setPrForm({ ventureId: p.ventureId, title: p.title, summary: p.summary ?? "", status: p.status as any, mediaOutlets: p.mediaOutlets ?? "", coverageLinks: p.coverageLinks ?? "", reach: p.reach ?? 0, notes: p.notes ?? "" });
+    setPrOpen(true);
+  };
+  const openEditNl = (n: typeof newsletters[0]) => {
+    setEditingNl(n.id);
+    setNlForm({ ventureId: n.ventureId, subject: n.subject, previewText: n.previewText ?? "", status: n.status as any, recipients: n.recipients ?? 0, openRate: n.openRate ?? 0, clickRate: n.clickRate ?? 0, unsubscribes: n.unsubscribes ?? 0, contentUrl: n.contentUrl ?? "", notes: n.notes ?? "" });
+    setNlOpen(true);
+  };
+  const openEditMedia = (m: typeof media[0]) => {
+    setEditingMedia(m.id);
+    setMediaForm({ ventureId: m.ventureId, outlet: m.outlet, headline: m.headline, url: m.url ?? "", sentiment: (m.sentiment ?? "neutral") as any, reach: m.reach ?? 0, notes: m.notes ?? "" });
+    setMediaOpen(true);
+  };
 
   return (
     <div className="flex-1 overflow-y-auto bg-gray-50">
       {/* Header */}
       <div className="vos-page-header">
         <div className="flex items-center gap-2 mb-1">
-          <Newspaper size={16} style={{ color: "#51AF37" }} />
-          <span className="vos-badge vos-badge-success" style={{ fontSize: "0.65rem" }}>Brand PR</span>
+          <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#1d4ed815", color: "#1d4ed8" }}>
+            Brand
+          </span>
+          <span className="text-xs text-gray-400">·</span>
+          <span className="text-xs text-gray-400 font-mono">PR & Newsletter Management</span>
         </div>
-        <h1 className="vos-page-title mb-1">Brand PR & Newsletter Hub</h1>
-        <p className="text-sm text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>
-          Manage press releases, newsletter campaigns, and media coverage tracking across all EcoRace Studio portfolio brands.
+        <h1 className="text-2xl font-bold text-gray-900 mb-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+          Brand PR & Newsletter
+        </h1>
+        <p className="text-sm text-gray-500 max-w-xl">
+          Manage press releases, newsletter campaigns, and media coverage across all EcoBlend ventures.
         </p>
-
-        {/* KPI row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-          {[
-            { label: "Press Releases", value: pressReleases.length, sub: `${publishedPR} published`, color: "#51AF37" },
-            { label: "Newsletters", value: newsletters.length, sub: `${sentNL} sent`, color: "#3A97D3" },
-            { label: "Media Coverage", value: mediaCoverage.length, sub: `${positiveCoverage} positive`, color: "#8b5cf6" },
-            { label: "Brands Active", value: ventures.filter(v => v.status === "Active").length, sub: "in portfolio", color: "#F49C13" },
-          ].map(k => (
-            <div key={k.label} className="vos-metric">
-              <span className="vos-metric-label">{k.label}</span>
-              <span className="vos-metric-value" style={{ color: k.color }}>{k.value}</span>
-              <span className="vos-metric-sub">{k.sub}</span>
-            </div>
-          ))}
-        </div>
       </div>
 
-      <div className="p-8">
-        {/* Brand filter */}
-        <div className="flex items-center gap-2 mb-8 flex-wrap">
-          <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest mr-1">Filter:</span>
-          <button
-            onClick={() => setFilterBrand("all")}
-            className="text-xs font-semibold px-3 py-1.5 rounded-full transition-all"
-            style={{
-              background: filterBrand === "all" ? "#1a2332" : "#f3f4f6",
-              color: filterBrand === "all" ? "white" : "#6b7280",
-            }}
-          >
-            All Brands
-          </button>
-          {ventures.map(v => (
-            <button
-              key={v.id}
-              onClick={() => setFilterBrand(v.id)}
-              className="text-xs font-semibold px-3 py-1.5 rounded-full transition-all"
-              style={{
-                background: filterBrand === v.id ? v.color : `${v.color}15`,
-                color: filterBrand === v.id ? "white" : v.color,
-                border: `1px solid ${v.color}30`,
-              }}
-            >
-              {v.name}
-            </button>
+      <div className="p-8 space-y-6">
+        {/* KPIs */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { label: "Press Releases", value: pressReleases.length.toString(), sub: `${publishedPR} published`, color: "#1d4ed8", icon: Newspaper },
+            { label: "Newsletters Sent", value: (nlSummary?.sent ?? 0).toString(), sub: `${nlSummary?.total ?? 0} total`, color: "#22c55e", icon: Mail },
+            { label: "Avg Open Rate", value: `${nlSummary?.avgOpenRate ?? 0}%`, sub: `${nlSummary?.avgClickRate ?? 0}% click rate`, color: "#7c3aed", icon: Eye },
+            { label: "Media Reach", value: totalReach >= 1000 ? `${(totalReach / 1000).toFixed(0)}k` : totalReach.toString(), sub: `${mediaSummary?.positive ?? 0} positive / ${mediaSummary?.negative ?? 0} negative`, color: "#f59e0b", icon: Radio },
+          ].map(kpi => (
+            <div key={kpi.label} className="bg-white rounded-xl border p-5 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `${kpi.color}15` }}>
+                  <kpi.icon size={14} style={{ color: kpi.color }} />
+                </div>
+                <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">{kpi.label}</span>
+              </div>
+              <div className="text-3xl font-bold font-mono" style={{ color: kpi.color }}>{kpi.value}</div>
+              <div className="text-xs text-gray-400 mt-0.5">{kpi.sub}</div>
+            </div>
           ))}
         </div>
 
-        {/* ── Section 1: Press Releases ── */}
-        <div className="mb-10">
-          <SectionHeader
-            icon={Newspaper}
-            title="Press Releases"
-            subtitle="Official announcements and brand communications"
-            count={filteredPR.length}
-            onAdd={() => setAddingPR(true)}
-          />
-          {filteredPR.length === 0 ? (
-            <div className="text-center py-10 text-gray-400 text-sm border border-dashed rounded-xl" style={{ borderColor: "#e5e7eb" }}>
-              No press releases yet. Click Add to create one.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {filteredPR.map(pr => {
-                const sc = STATUS_COLOURS[pr.status];
-                return (
-                  <div key={pr.id} className="bg-white rounded-xl border p-5 shadow-sm group" style={{ borderColor: "#e5e7eb" }}>
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <BrandPill brandId={pr.brandId} ventures={ventures} />
-                        <button
-                          onClick={() => cycleStatus(pr.id, pr.status)}
-                          className="text-xs font-semibold px-2 py-0.5 rounded-full cursor-pointer transition-all hover:opacity-80"
-                          style={{ background: sc.bg, color: sc.text, border: `1px solid ${sc.border}` }}
-                          title="Click to advance status"
-                        >
-                          {pr.status}
-                        </button>
+        {/* Tabs */}
+        <Tabs value={tab} onValueChange={setTab}>
+          <div className="flex items-center justify-between mb-4">
+            <TabsList>
+              <TabsTrigger value="press" className="gap-1.5"><Newspaper size={13} /> Press Releases</TabsTrigger>
+              <TabsTrigger value="newsletter" className="gap-1.5"><Mail size={13} /> Newsletters</TabsTrigger>
+              <TabsTrigger value="media" className="gap-1.5"><Radio size={13} /> Media Coverage</TabsTrigger>
+            </TabsList>
+            {tab === "press" && (
+              <Button size="sm" onClick={() => { setEditingPr(null); setPrForm(EMPTY_PR); setPrOpen(true); }} className="gap-1.5 text-xs" style={{ background: "#1d4ed8", color: "white" }}>
+                <Plus size={13} /> New Press Release
+              </Button>
+            )}
+            {tab === "newsletter" && (
+              <Button size="sm" onClick={() => { setEditingNl(null); setNlForm(EMPTY_NL); setNlOpen(true); }} className="gap-1.5 text-xs" style={{ background: "#22c55e", color: "white" }}>
+                <Plus size={13} /> New Newsletter
+              </Button>
+            )}
+            {tab === "media" && (
+              <Button size="sm" onClick={() => { setEditingMedia(null); setMediaForm(EMPTY_MEDIA); setMediaOpen(true); }} className="gap-1.5 text-xs" style={{ background: "#f59e0b", color: "white" }}>
+                <Plus size={13} /> Add Coverage
+              </Button>
+            )}
+          </div>
+
+          {/* Press Releases Tab */}
+          <TabsContent value="press">
+            {prLoading ? (
+              <div className="flex items-center justify-center py-12"><Loader2 className="animate-spin text-gray-400" size={24} /></div>
+            ) : pressReleases.length === 0 ? (
+              <div className="bg-white rounded-xl border p-12 text-center" style={{ borderColor: "#e5e7eb" }}>
+                <Newspaper size={32} className="mx-auto mb-3 text-gray-300" />
+                <p className="text-sm text-gray-400">No press releases yet. Click "New Press Release" to add one.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {pressReleases.map(p => {
+                  const v = VENTURES.find(v => v.id === p.ventureId);
+                  return (
+                    <div key={p.id} className="bg-white rounded-xl border p-5 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-semibold" style={{ color: v?.color ?? "#6b7280" }}>{v?.name ?? p.ventureId}</span>
+                            <Badge variant="outline" className="text-xs" style={{ borderColor: PR_STATUS_COLORS[p.status] ?? "#9ca3af", color: PR_STATUS_COLORS[p.status] ?? "#9ca3af", background: `${PR_STATUS_COLORS[p.status] ?? "#9ca3af"}15` }}>
+                              {p.status}
+                            </Badge>
+                          </div>
+                          <h3 className="font-semibold text-gray-900 text-sm mb-1">{p.title}</h3>
+                          {p.summary && <p className="text-xs text-gray-500 line-clamp-2">{p.summary}</p>}
+                          {p.mediaOutlets && <p className="text-xs text-gray-400 mt-1">Outlets: {p.mediaOutlets}</p>}
+                          {(p.reach ?? 0) > 0 && <p className="text-xs text-gray-400">Reach: {(p.reach ?? 0).toLocaleString()}</p>}
+                        </div>
+                        <div className="flex gap-1 flex-shrink-0">
+                          {p.coverageLinks && (
+                            <a href={p.coverageLinks} target="_blank" rel="noopener noreferrer" className="w-7 h-7 rounded flex items-center justify-center hover:bg-gray-100">
+                              <ExternalLink size={13} className="text-gray-400" />
+                            </a>
+                          )}
+                          <button onClick={() => openEditPr(p)} className="w-7 h-7 rounded flex items-center justify-center hover:bg-gray-100">
+                            <Pencil size={13} className="text-gray-400" />
+                          </button>
+                          <button onClick={() => deletePr.mutate({ id: p.id })} className="w-7 h-7 rounded flex items-center justify-center hover:bg-red-50">
+                            <Trash2 size={13} className="text-red-400" />
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {pr.url && (
-                          <a href={pr.url} target="_blank" rel="noopener noreferrer"
-                            className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-gray-100">
-                            <ExternalLink size={13} style={{ color: "#6b7280" }} />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Newsletter Tab */}
+          <TabsContent value="newsletter">
+            {nlLoading ? (
+              <div className="flex items-center justify-center py-12"><Loader2 className="animate-spin text-gray-400" size={24} /></div>
+            ) : newsletters.length === 0 ? (
+              <div className="bg-white rounded-xl border p-12 text-center" style={{ borderColor: "#e5e7eb" }}>
+                <Mail size={32} className="mx-auto mb-3 text-gray-300" />
+                <p className="text-sm text-gray-400">No newsletters yet. Click "New Newsletter" to add one.</p>
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl border shadow-sm overflow-hidden" style={{ borderColor: "#e5e7eb" }}>
+                <table className="w-full">
+                  <thead>
+                    <tr style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
+                      {["Subject", "Venture", "Status", "Recipients", "Open Rate", "Click Rate", ""].map(h => (
+                        <th key={h} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-widest text-gray-400">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {newsletters.map((n, i) => {
+                      const v = VENTURES.find(v => v.id === n.ventureId);
+                      return (
+                        <tr key={n.id} style={{ borderBottom: i < newsletters.length - 1 ? "1px solid #f3f4f6" : "none" }}>
+                          <td className="px-4 py-3 text-sm font-semibold text-gray-800">{n.subject}</td>
+                          <td className="px-4 py-3"><span className="text-xs font-semibold" style={{ color: v?.color ?? "#6b7280" }}>{v?.name ?? n.ventureId}</span></td>
+                          <td className="px-4 py-3">
+                            <Badge variant="outline" className="text-xs" style={{ borderColor: NL_STATUS_COLORS[n.status] ?? "#9ca3af", color: NL_STATUS_COLORS[n.status] ?? "#9ca3af", background: `${NL_STATUS_COLORS[n.status] ?? "#9ca3af"}15` }}>
+                              {n.status}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-3 text-sm font-mono text-gray-700">{(n.recipients ?? 0).toLocaleString()}</td>
+                          <td className="px-4 py-3 text-sm font-mono" style={{ color: "#22c55e" }}>{n.openRate ?? 0}%</td>
+                          <td className="px-4 py-3 text-sm font-mono" style={{ color: "#1d4ed8" }}>{n.clickRate ?? 0}%</td>
+                          <td className="px-4 py-3">
+                            <div className="flex gap-1">
+                              <button onClick={() => openEditNl(n)} className="w-6 h-6 rounded flex items-center justify-center hover:bg-gray-100">
+                                <Pencil size={12} className="text-gray-400" />
+                              </button>
+                              <button onClick={() => deleteNl.mutate({ id: n.id })} className="w-6 h-6 rounded flex items-center justify-center hover:bg-red-50">
+                                <Trash2 size={12} className="text-red-400" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Media Coverage Tab */}
+          <TabsContent value="media">
+            {mediaLoading ? (
+              <div className="flex items-center justify-center py-12"><Loader2 className="animate-spin text-gray-400" size={24} /></div>
+            ) : media.length === 0 ? (
+              <div className="bg-white rounded-xl border p-12 text-center" style={{ borderColor: "#e5e7eb" }}>
+                <Radio size={32} className="mx-auto mb-3 text-gray-300" />
+                <p className="text-sm text-gray-400">No media coverage yet. Click "Add Coverage" to add one.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {media.map(m => {
+                  const v = VENTURES.find(v => v.id === m.ventureId);
+                  return (
+                    <div key={m.id} className="bg-white rounded-xl border p-4 shadow-sm flex items-start justify-between gap-4" style={{ borderColor: "#e5e7eb" }}>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-bold text-gray-500">{m.outlet}</span>
+                          <span className="text-xs font-semibold" style={{ color: v?.color ?? "#6b7280" }}>{v?.name ?? m.ventureId}</span>
+                          <Badge variant="outline" className="text-xs" style={{ borderColor: SENTIMENT_COLORS[m.sentiment ?? "neutral"], color: SENTIMENT_COLORS[m.sentiment ?? "neutral"], background: `${SENTIMENT_COLORS[m.sentiment ?? "neutral"]}15` }}>
+                            {m.sentiment ?? "neutral"}
+                          </Badge>
+                        </div>
+                        <p className="text-sm font-semibold text-gray-800">{m.headline}</p>
+                        {(m.reach ?? 0) > 0 && <p className="text-xs text-gray-400 mt-1 flex items-center gap-1"><TrendingUp size={11} /> {(m.reach ?? 0).toLocaleString()} reach</p>}
+                      </div>
+                      <div className="flex gap-1 flex-shrink-0">
+                        {m.url && (
+                          <a href={m.url} target="_blank" rel="noopener noreferrer" className="w-7 h-7 rounded flex items-center justify-center hover:bg-gray-100">
+                            <ExternalLink size={13} className="text-gray-400" />
                           </a>
                         )}
-                        <button onClick={() => deletePR(pr.id)}
-                          className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-red-50">
-                          <Trash2 size={13} style={{ color: "#ef4444" }} />
+                        <button onClick={() => openEditMedia(m)} className="w-7 h-7 rounded flex items-center justify-center hover:bg-gray-100">
+                          <Pencil size={13} className="text-gray-400" />
+                        </button>
+                        <button onClick={() => deleteMedia.mutate({ id: m.id })} className="w-7 h-7 rounded flex items-center justify-center hover:bg-red-50">
+                          <Trash2 size={13} className="text-red-400" />
                         </button>
                       </div>
                     </div>
-                    <h3 className="text-sm font-bold text-gray-900 mb-1.5 leading-snug" style={{ fontFamily: "'Prompt', sans-serif" }}>
-                      {pr.title}
-                    </h3>
-                    <p className="text-xs text-gray-500 leading-relaxed mb-3">{pr.summary}</p>
-                    <div className="flex items-center gap-3 text-xs text-gray-400">
-                      <span className="flex items-center gap-1"><Calendar size={11} /> {pr.date}</span>
-                      {pr.outlet && <span className="flex items-center gap-1"><Newspaper size={11} /> {pr.outlet}</span>}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* ── Section 2: Newsletter Campaigns ── */}
-        <div className="mb-10">
-          <SectionHeader
-            icon={Mail}
-            title="Newsletter Campaigns"
-            subtitle="Email marketing and subscriber communications"
-            count={filteredNL.length}
-            onAdd={() => setAddingNL(true)}
-          />
-          {filteredNL.length === 0 ? (
-            <div className="text-center py-10 text-gray-400 text-sm border border-dashed rounded-xl" style={{ borderColor: "#e5e7eb" }}>
-              No newsletter campaigns yet. Click Add to create one.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {filteredNL.map(nl => {
-                const sc = STATUS_COLOURS[nl.status];
-                return (
-                  <div key={nl.id} className="bg-white rounded-xl border p-5 shadow-sm group" style={{ borderColor: "#e5e7eb" }}>
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <BrandPill brandId={nl.brandId} ventures={ventures} />
-                        <button
-                          onClick={() => cycleNLStatus(nl.id, nl.status)}
-                          className="text-xs font-semibold px-2 py-0.5 rounded-full cursor-pointer hover:opacity-80"
-                          style={{ background: sc.bg, color: sc.text, border: `1px solid ${sc.border}` }}
-                          title="Click to advance status"
-                        >
-                          {nl.status}
-                        </button>
-                      </div>
-                      <button onClick={() => deleteNL(nl.id)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Trash2 size={13} style={{ color: "#ef4444" }} />
-                      </button>
-                    </div>
-                    <h3 className="text-sm font-bold text-gray-900 mb-1" style={{ fontFamily: "'Prompt', sans-serif" }}>
-                      {nl.subject}
-                    </h3>
-                    <p className="text-xs text-gray-400 italic mb-3">"{nl.preview}"</p>
-                    <div className="flex items-center gap-4 text-xs text-gray-400">
-                      <span className="flex items-center gap-1"><Calendar size={11} /> {nl.scheduledDate}</span>
-                      {nl.recipients && <span className="flex items-center gap-1"><Send size={11} /> {nl.recipients.toLocaleString()} recipients</span>}
-                      {nl.openRate !== undefined && (
-                        <span className="flex items-center gap-1 font-semibold" style={{ color: "#51AF37" }}>
-                          <Eye size={11} /> {nl.openRate}% open
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* ── Section 3: Media Coverage ── */}
-        <div className="mb-10">
-          <SectionHeader
-            icon={Radio}
-            title="Media Coverage"
-            subtitle="Articles, interviews, podcasts, and press mentions"
-            count={filteredMC.length}
-            onAdd={() => setAddingMC(true)}
-          />
-          {filteredMC.length === 0 ? (
-            <div className="text-center py-10 text-gray-400 text-sm border border-dashed rounded-xl" style={{ borderColor: "#e5e7eb" }}>
-              No media coverage recorded yet. Click Add to log coverage.
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {filteredMC.map(mc => {
-                const TypeIcon = MEDIA_TYPE_ICONS[mc.type];
-                const sentColor = SENTIMENT_COLOURS[mc.sentiment];
-                return (
-                  <div key={mc.id} className="bg-white rounded-xl border p-4 shadow-sm group flex items-start gap-4" style={{ borderColor: "#e5e7eb" }}>
-                    <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "#f3f4f6", color: "#6b7280" }}>
-                      <TypeIcon size={16} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <BrandPill brandId={mc.brandId} ventures={ventures} />
-                        <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: `${sentColor}15`, color: sentColor }}>
-                          {mc.sentiment}
-                        </span>
-                        <span className="text-xs text-gray-400 px-2 py-0.5 rounded-full" style={{ background: "#f3f4f6" }}>{mc.type}</span>
-                      </div>
-                      <h3 className="text-sm font-semibold text-gray-900 mb-0.5 leading-snug">{mc.headline}</h3>
-                      <div className="flex items-center gap-3 text-xs text-gray-400">
-                        <span className="font-semibold" style={{ color: "#374151" }}>{mc.outlet}</span>
-                        <span className="flex items-center gap-1"><Calendar size={11} /> {mc.date}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                      {mc.url && (
-                        <a href={mc.url} target="_blank" rel="noopener noreferrer"
-                          className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-gray-100">
-                          <ExternalLink size={13} style={{ color: "#6b7280" }} />
-                        </a>
-                      )}
-                      <button onClick={() => deleteMC(mc.id)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-red-50">
-                        <Trash2 size={13} style={{ color: "#ef4444" }} />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
 
-      {/* ── Add Press Release Modal ── */}
-      {addingPR && (
-        <AddModal title="Add Press Release" onClose={() => setAddingPR(false)}>
-          <div className="flex flex-col gap-3">
+      {/* Press Release Dialog */}
+      <Dialog open={prOpen} onOpenChange={setPrOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>{editingPr ? "Edit Press Release" : "New Press Release"}</DialogTitle></DialogHeader>
+          <div className="space-y-3 py-2">
             <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Brand</label>
-              <select className="w-full border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }}
-                value={prForm.brandId} onChange={e => setPrForm(f => ({ ...f, brandId: e.target.value }))}>
-                {ventures.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Title *</label>
-              <input className="w-full border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }}
-                placeholder="Press release headline..." value={prForm.title}
-                onChange={e => setPrForm(f => ({ ...f, title: e.target.value }))} />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Summary</label>
-              <textarea className="w-full border rounded-lg px-3 py-2 text-sm resize-none" rows={3} style={{ borderColor: "#e5e7eb" }}
-                placeholder="Brief summary of the announcement..." value={prForm.summary}
-                onChange={e => setPrForm(f => ({ ...f, summary: e.target.value }))} />
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Title *</label>
+              <Input value={prForm.title} onChange={e => setPrForm(f => ({ ...f, title: e.target.value }))} placeholder="Press release title..." />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Date *</label>
-                <input type="date" className="w-full border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }}
-                  value={prForm.date} onChange={e => setPrForm(f => ({ ...f, date: e.target.value }))} />
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Venture</label>
+                <Select value={prForm.ventureId} onValueChange={v => setPrForm(f => ({ ...f, ventureId: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{VENTURES.map(v => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}</SelectContent>
+                </Select>
               </div>
               <div>
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Target Outlet</label>
-                <input className="w-full border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }}
-                  placeholder="e.g. GreenBiz" value={prForm.outlet}
-                  onChange={e => setPrForm(f => ({ ...f, outlet: e.target.value }))} />
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Status</label>
+                <Select value={prForm.status} onValueChange={v => setPrForm(f => ({ ...f, status: v as any }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{["Draft", "Scheduled", "Published", "Archived"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                </Select>
               </div>
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">URL (optional)</label>
-              <input className="w-full border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }}
-                placeholder="https://..." value={prForm.url}
-                onChange={e => setPrForm(f => ({ ...f, url: e.target.value }))} />
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Summary</label>
+              <Textarea value={prForm.summary} onChange={e => setPrForm(f => ({ ...f, summary: e.target.value }))} rows={3} placeholder="Brief summary..." />
             </div>
-            <div className="flex gap-2 pt-2">
-              <Button size="sm" className="flex-1 gap-1.5" onClick={savePR} style={{ background: "#51AF37", color: "white" }}>
-                <Check size={14} /> Save Press Release
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => setAddingPR(false)}>Cancel</Button>
+            <div>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Media Outlets</label>
+              <Input value={prForm.mediaOutlets} onChange={e => setPrForm(f => ({ ...f, mediaOutlets: e.target.value }))} placeholder="e.g. BBC, Guardian, TechCrunch" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Coverage URL</label>
+                <Input value={prForm.coverageLinks} onChange={e => setPrForm(f => ({ ...f, coverageLinks: e.target.value }))} placeholder="https://..." />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Reach</label>
+                <Input type="number" value={prForm.reach} onChange={e => setPrForm(f => ({ ...f, reach: Number(e.target.value) }))} />
+              </div>
             </div>
           </div>
-        </AddModal>
-      )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPrOpen(false)}>Cancel</Button>
+            <Button onClick={() => { if (!prForm.title.trim()) return toast.error("Title required"); upsertPr.mutate({ id: editingPr ?? undefined, ...prForm }); }} disabled={upsertPr.isPending} style={{ background: "#1d4ed8", color: "white" }}>
+              {upsertPr.isPending ? <Loader2 className="animate-spin" size={14} /> : editingPr ? "Save" : "Create"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      {/* ── Add Newsletter Modal ── */}
-      {addingNL && (
-        <AddModal title="Add Newsletter Campaign" onClose={() => setAddingNL(false)}>
-          <div className="flex flex-col gap-3">
+      {/* Newsletter Dialog */}
+      <Dialog open={nlOpen} onOpenChange={setNlOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>{editingNl ? "Edit Newsletter" : "New Newsletter"}</DialogTitle></DialogHeader>
+          <div className="space-y-3 py-2">
             <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Brand</label>
-              <select className="w-full border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }}
-                value={nlForm.brandId} onChange={e => setNlForm(f => ({ ...f, brandId: e.target.value }))}>
-                {ventures.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
-              </select>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Subject *</label>
+              <Input value={nlForm.subject} onChange={e => setNlForm(f => ({ ...f, subject: e.target.value }))} placeholder="Newsletter subject line..." />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Venture</label>
+                <Select value={nlForm.ventureId} onValueChange={v => setNlForm(f => ({ ...f, ventureId: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{VENTURES.map(v => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Status</label>
+                <Select value={nlForm.status} onValueChange={v => setNlForm(f => ({ ...f, status: v as any }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{["Draft", "Scheduled", "Sent"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Recipients</label>
+                <Input type="number" value={nlForm.recipients} onChange={e => setNlForm(f => ({ ...f, recipients: Number(e.target.value) }))} />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Open Rate %</label>
+                <Input type="number" value={nlForm.openRate} onChange={e => setNlForm(f => ({ ...f, openRate: Number(e.target.value) }))} />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Click Rate %</label>
+                <Input type="number" value={nlForm.clickRate} onChange={e => setNlForm(f => ({ ...f, clickRate: Number(e.target.value) }))} />
+              </div>
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Subject Line *</label>
-              <input className="w-full border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }}
-                placeholder="Email subject..." value={nlForm.subject}
-                onChange={e => setNlForm(f => ({ ...f, subject: e.target.value }))} />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Preview Text</label>
-              <input className="w-full border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }}
-                placeholder="Short preview shown in inbox..." value={nlForm.preview}
-                onChange={e => setNlForm(f => ({ ...f, preview: e.target.value }))} />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Scheduled Date *</label>
-              <input type="date" className="w-full border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }}
-                value={nlForm.scheduledDate} onChange={e => setNlForm(f => ({ ...f, scheduledDate: e.target.value }))} />
-            </div>
-            <div className="flex gap-2 pt-2">
-              <Button size="sm" className="flex-1 gap-1.5" onClick={saveNL} style={{ background: "#3A97D3", color: "white" }}>
-                <Check size={14} /> Save Campaign
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => setAddingNL(false)}>Cancel</Button>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Preview Text</label>
+              <Input value={nlForm.previewText} onChange={e => setNlForm(f => ({ ...f, previewText: e.target.value }))} placeholder="Short preview text..." />
             </div>
           </div>
-        </AddModal>
-      )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNlOpen(false)}>Cancel</Button>
+            <Button onClick={() => { if (!nlForm.subject.trim()) return toast.error("Subject required"); upsertNl.mutate({ id: editingNl ?? undefined, ...nlForm }); }} disabled={upsertNl.isPending} style={{ background: "#22c55e", color: "white" }}>
+              {upsertNl.isPending ? <Loader2 className="animate-spin" size={14} /> : editingNl ? "Save" : "Create"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      {/* ── Add Media Coverage Modal ── */}
-      {addingMC && (
-        <AddModal title="Add Media Coverage" onClose={() => setAddingMC(false)}>
-          <div className="flex flex-col gap-3">
+      {/* Media Coverage Dialog */}
+      <Dialog open={mediaOpen} onOpenChange={setMediaOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>{editingMedia ? "Edit Coverage" : "Add Media Coverage"}</DialogTitle></DialogHeader>
+          <div className="space-y-3 py-2">
             <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Brand</label>
-              <select className="w-full border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }}
-                value={mcForm.brandId} onChange={e => setMcForm(f => ({ ...f, brandId: e.target.value }))}>
-                {ventures.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Headline *</label>
-              <input className="w-full border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }}
-                placeholder="Article or coverage headline..." value={mcForm.headline}
-                onChange={e => setMcForm(f => ({ ...f, headline: e.target.value }))} />
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Headline *</label>
+              <Input value={mediaForm.headline} onChange={e => setMediaForm(f => ({ ...f, headline: e.target.value }))} placeholder="Article headline..." />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Outlet *</label>
-                <input className="w-full border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }}
-                  placeholder="e.g. GreenBiz" value={mcForm.outlet}
-                  onChange={e => setMcForm(f => ({ ...f, outlet: e.target.value }))} />
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Outlet *</label>
+                <Input value={mediaForm.outlet} onChange={e => setMediaForm(f => ({ ...f, outlet: e.target.value }))} placeholder="e.g. BBC, Guardian" />
               </div>
               <div>
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Type</label>
-                <select className="w-full border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }}
-                  value={mcForm.type} onChange={e => setMcForm(f => ({ ...f, type: e.target.value as MediaType }))}>
-                  {["Article", "Interview", "Podcast", "Video", "Social", "Press Mention"].map(t =>
-                    <option key={t} value={t}>{t}</option>)}
-                </select>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Venture</label>
+                <Select value={mediaForm.ventureId} onValueChange={v => setMediaForm(f => ({ ...f, ventureId: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{VENTURES.map(v => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}</SelectContent>
+                </Select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Date *</label>
-                <input type="date" className="w-full border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }}
-                  value={mcForm.date} onChange={e => setMcForm(f => ({ ...f, date: e.target.value }))} />
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Sentiment</label>
+                <Select value={mediaForm.sentiment} onValueChange={v => setMediaForm(f => ({ ...f, sentiment: v as any }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{["positive", "neutral", "negative"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                </Select>
               </div>
               <div>
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Sentiment</label>
-                <select className="w-full border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }}
-                  value={mcForm.sentiment} onChange={e => setMcForm(f => ({ ...f, sentiment: e.target.value as MediaCoverage["sentiment"] }))}>
-                  {["Positive", "Neutral", "Negative"].map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Reach</label>
+                <Input type="number" value={mediaForm.reach} onChange={e => setMediaForm(f => ({ ...f, reach: Number(e.target.value) }))} />
               </div>
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">URL (optional)</label>
-              <input className="w-full border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "#e5e7eb" }}
-                placeholder="https://..." value={mcForm.url}
-                onChange={e => setMcForm(f => ({ ...f, url: e.target.value }))} />
-            </div>
-            <div className="flex gap-2 pt-2">
-              <Button size="sm" className="flex-1 gap-1.5" onClick={saveMC} style={{ background: "#8b5cf6", color: "white" }}>
-                <Check size={14} /> Save Coverage
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => setAddingMC(false)}>Cancel</Button>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">URL</label>
+              <Input value={mediaForm.url} onChange={e => setMediaForm(f => ({ ...f, url: e.target.value }))} placeholder="https://..." />
             </div>
           </div>
-        </AddModal>
-      )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMediaOpen(false)}>Cancel</Button>
+            <Button onClick={() => { if (!mediaForm.headline.trim() || !mediaForm.outlet.trim()) return toast.error("Headline and outlet required"); upsertMedia.mutate({ id: editingMedia ?? undefined, ...mediaForm }); }} disabled={upsertMedia.isPending} style={{ background: "#f59e0b", color: "white" }}>
+              {upsertMedia.isPending ? <Loader2 className="animate-spin" size={14} /> : editingMedia ? "Save" : "Add Coverage"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
