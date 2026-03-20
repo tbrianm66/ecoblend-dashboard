@@ -4,6 +4,7 @@
  * Aggregates data from: Ventures, POI, Project Management, Financial, ESG modules.
  */
 import { useMemo, useState, useEffect } from "react";
+import LiveEventFeed from "@/components/LiveEventFeed";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -971,6 +972,15 @@ export default function CommandCentre() {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* ── Row 7: Live Event Stream ── */}
+        <div className="mt-2">
+          <LiveEventFeed
+            title="Live Operational Event Stream"
+            height="320px"
+            maxEvents={40}
+          />
         </div>
 
       </div>

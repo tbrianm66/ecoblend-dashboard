@@ -15,6 +15,7 @@
 
 import { getDb } from "./db";
 import { eq, and } from "drizzle-orm";
+import { emitWorkflowTrigger } from "./sse";
 import {
   workflowTriggerLog,
   experiments,
@@ -779,22 +780,32 @@ export async function dispatchTrigger(
   sourceRecordId: number,
   opts?: { retriedFrom?: number }
 ): Promise<TriggerResult> {
+  let result: TriggerResult;
   switch (triggerType) {
     case "research_completed":
-      return triggerResearchCompleted(sourceRecordId, opts);
+      result = await triggerResearchCompleted(sourceRecordId, opts); break;
     case "audit_failed":
-      return triggerAuditFailed(sourceRecordId, opts);
+      result = await triggerAuditFailed(sourceRecordId, opts); break;
     case "supplier_approved":
-      return triggerSupplierApproved(sourceRecordId, opts);
+      result = await triggerSupplierApproved(sourceRecordId, opts); break;
     case "deal_closed_won":
-      return triggerDealClosedWon(sourceRecordId, opts);
+      result = await triggerDealClosedWon(sourceRecordId, opts); break;
     case "funding_round_closed":
-      return triggerFundingRoundClosed(sourceRecordId, opts);
+      result = await triggerFundingRoundClosed(sourceRecordId, opts); break;
     case "milestone_overdue":
-      return triggerMilestoneOverdue(sourceRecordId, opts);
+      result = await triggerMilestoneOverdue(sourceRecordId, opts); break;
     case "data_quality_degraded":
-      return triggerDataQualityDegraded(sourceRecordId, opts);
+      result = await triggerDataQualityDegraded(sourceRecordId, opts); break;
     default:
       return { success: false, logId: 0, message: `Unknown trigger type: ${triggerType}` };
   }
+  // Broadcast real-time SSE event to all connected clients
+  try {
+    emitWorkflowTrigger({
+      triggerType,
+      description: result.message || `Trigger ${triggerType} fired (record #${sourceRecordId})`,
+      severity: result.success ? "info" : "warning",
+    });
+  } catch { /* SSE emit is non-critical — never block the trigger */ }
+  return result;
 }

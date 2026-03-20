@@ -689,3 +689,33 @@
 - [ ] Route /financial-model registered in App.tsx
 - [ ] Sidebar entry under Investment section
 - [ ] Vitest tests for financial model procedures
+
+## Sprint 53 — Real-Time Infrastructure (SSE)
+- [x] SSE server module (server/sse.ts): broadcastSSEEvent, emitWorkflowTrigger, emitMilestoneUpdate, emitRiskAlert, emitDataQualityAlert, getSSEStats, handleSSEConnection
+- [x] Register /api/events SSE endpoint in Express server
+- [x] Integrate emitWorkflowTrigger into dispatchTrigger (all 7 trigger types broadcast SSE events)
+- [x] useLiveEvents React hook (client/src/hooks/useLiveEvents.ts): EventSource connection, auto-reconnect, filter support
+- [x] LiveEventFeed component (client/src/components/LiveEventFeed.tsx): scrollable live event panel with type icons, severity colours, timestamps
+- [x] Command Centre: Live Operational Event Stream panel (Row 7)
+- [x] Workflow Engine: Live Workflow Event Stream panel (filtered to workflow_trigger events)
+- [x] Vitest tests: 21 SSE tests (881 total passing, 0 TypeScript errors)
+
+## Sprint 54 — Governance & RBAC (Admin Panel)
+- [ ] DB tables: auditLog (id, userId, userEmail, action, entityType, entityId, entityName, oldValue, newValue, ipAddress, createdAt)
+- [ ] DB tables: venturePermissions (id, userId, ventureId, role: owner|editor|viewer, grantedBy, createdAt)
+- [ ] Add logAudit() helper to server/auditLog.ts
+- [ ] Wire logAudit() into key mutation handlers (venture upsert, founder add, deal upsert, round upsert, task upsert)
+- [ ] tRPC router: admin sub-router (listUsers, updateUserRole, listAuditLog, getAuditStats, listVenturePermissions, grantVenturePermission, revokeVenturePermission)
+- [ ] AdminPanel.tsx: 3-tab page (Users & Roles, Venture Permissions, Audit Log)
+- [ ] Route /admin registered in App.tsx (admin-only guard)
+- [ ] Sidebar entry under Settings section
+- [ ] Vitest tests for admin procedures and audit log
+
+## Sprint 55 — Workflow Engine Expansion (Triggers 4-7)
+- [ ] Add 4 new trigger handlers: triggerDealClosedWon, triggerFundingRoundClosed, triggerMilestoneOverdue, triggerDataQualityDegraded
+- [ ] Wire triggerDealClosedWon into commercialCrm.router upsertDeal mutation (status → closed_won)
+- [ ] Wire triggerFundingRoundClosed into investorCrm.router upsertRound mutation (status → closed)
+- [ ] Wire triggerMilestoneOverdue into pm router milestone check (overdue detection on list query)
+- [ ] Wire triggerDataQualityDegraded into dataManagement.router upsertQualityScore mutation (score < 60)
+- [ ] Update WorkflowEngine.tsx to show all 7 trigger types in the summary cards
+- [ ] Vitest tests for 4 new trigger handlers

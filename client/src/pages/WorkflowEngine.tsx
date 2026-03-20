@@ -34,6 +34,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import LiveEventFeed from "@/components/LiveEventFeed";
 import {
   Zap,
   CheckCircle2,
@@ -633,6 +634,16 @@ export default function WorkflowEngine() {
             )}
           </CardContent>
         </Card>
+      </div>
+
+      {/* ── Live Event Feed ── */}
+      <div className="mt-6">
+        <LiveEventFeed
+          title="Live Workflow Event Stream"
+          filter={["workflow_trigger"]}
+          height="280px"
+          maxEvents={30}
+        />
       </div>
 
       {/* Dialogs */}
