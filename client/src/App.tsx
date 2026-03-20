@@ -49,6 +49,8 @@ import DataManagement from "./pages/DataManagement";
 import CommercialCRM from "./pages/CommercialCRM";
 import InvestorCRM from "./pages/InvestorCRM";
 import FinancialModelBuilder from "./pages/FinancialModelBuilder";
+import PortfolioManager from "./pages/PortfolioManager";
+import OfferingDetail from "./pages/OfferingDetail";
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
@@ -96,6 +98,8 @@ function Router() {
       <Route path="/commercial-crm" component={CommercialCRM} />
       <Route path="/investor-crm" component={InvestorCRM} />
       <Route path="/financial-model-builder" component={FinancialModelBuilder} />
+      <Route path="/portfolio-manager" component={PortfolioManager} />
+      <Route path="/offering/:id" component={OfferingDetail} />
       <Route component={Home} />
     </Switch>
   );

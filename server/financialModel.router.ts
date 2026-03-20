@@ -332,6 +332,8 @@ export const finReportsRouter = router({
   generate: publicProcedure
     .input(z.object({
       ventureId: z.string().optional(),
+      offeringId: z.string().optional(),
+      offeringName: z.string().optional(),
       ventureName: z.string(),
       period: z.string(),
       reportType: z.enum(["monthly","quarterly","annual","ad_hoc"]),
@@ -381,7 +383,7 @@ Return a JSON object with keys: highlights, challenges, nextSteps (each as a str
       if (!db) throw new Error("DB unavailable");
       const [result] = await db.insert(finInvestorReports).values({
         ventureId: input.ventureId,
-        title: `${input.ventureName} — ${input.reportType.charAt(0).toUpperCase() + input.reportType.slice(1)} Update (${input.period})`,
+        title: `${input.ventureName}${input.offeringName ? ` / ${input.offeringName}` : ""} — ${input.reportType.charAt(0).toUpperCase() + input.reportType.slice(1)} Update (${input.period})`,
         period: input.period,
         reportType: input.reportType,
         status: "draft",

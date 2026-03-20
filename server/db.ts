@@ -157,10 +157,13 @@ export async function updateVenture(id: string, data: Partial<InsertVenture>) {
 }
 
 // ── Milestones ────────────────────────────────────────────────────────────────
-export async function getMilestonesForVenture(ventureId: string) {
+export async function getMilestonesForVenture(ventureId: string, offeringId?: string) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(milestones).where(eq(milestones.ventureId, ventureId)).orderBy(milestones.sortOrder);
+  const condition = offeringId
+    ? and(eq(milestones.ventureId, ventureId), eq(milestones.offeringId, offeringId))
+    : eq(milestones.ventureId, ventureId);
+  return db.select().from(milestones).where(condition).orderBy(milestones.sortOrder);
 }
 
 export async function insertMilestone(data: InsertMilestone) {
@@ -182,10 +185,13 @@ export async function deleteMilestone(id: number) {
 }
 
 // ── Risks ─────────────────────────────────────────────────────────────────────
-export async function getRisksForVenture(ventureId: string) {
+export async function getRisksForVenture(ventureId: string, offeringId?: string) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(risks).where(eq(risks.ventureId, ventureId));
+  const condition = offeringId
+    ? and(eq(risks.ventureId, ventureId), eq(risks.offeringId, offeringId))
+    : eq(risks.ventureId, ventureId);
+  return db.select().from(risks).where(condition);
 }
 
 export async function insertRisk(data: InsertRisk) {
@@ -277,10 +283,13 @@ export async function updateOpportunity(id: number, data: Partial<InsertOpportun
 }
 
 // ── Experiments ───────────────────────────────────────────────────────────────
-export async function getExperimentsForVenture(ventureId: string) {
+export async function getExperimentsForVenture(ventureId: string, offeringId?: string) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(experiments).where(eq(experiments.ventureId, ventureId)).orderBy(desc(experiments.createdAt));
+  const condition = offeringId
+    ? and(eq(experiments.ventureId, ventureId), eq(experiments.offeringId, offeringId))
+    : eq(experiments.ventureId, ventureId);
+  return db.select().from(experiments).where(condition).orderBy(desc(experiments.createdAt));
 }
 
 export async function insertExperiment(data: InsertExperiment) {

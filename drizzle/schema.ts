@@ -92,10 +92,10 @@ export const milestones = mysqlTable("milestones", {
   completed: boolean("completed").default(false),
   targetDate: varchar("targetDate", { length: 32 }),
   completedAt: timestamp("completedAt"),
-  sortOrder: int("sortOrder").default(0),
+   sortOrder: int("sortOrder").default(0),
+  offeringId: varchar("offeringId", { length: 36 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
-
 export type Milestone = typeof milestones.$inferSelect;
 export type InsertMilestone = typeof milestones.$inferInsert;
 
@@ -105,11 +105,11 @@ export const risks = mysqlTable("risks", {
   ventureId: varchar("ventureId", { length: 64 }).notNull(),
   domain: varchar("domain", { length: 64 }).notNull(),
   level: mysqlEnum("level", ["Low", "Medium", "High"]).default("Medium"),
-  mitigation: text("mitigation"),
+   mitigation: text("mitigation"),
+  offeringId: varchar("offeringId", { length: 36 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
-
 export type Risk = typeof risks.$inferSelect;
 export type InsertRisk = typeof risks.$inferInsert;
 
@@ -180,12 +180,12 @@ export const experiments = mysqlTable("experiments", {
   result: text("result"),
   outcome: mysqlEnum("outcome", ["Pass", "Fail", "Inconclusive", "Pending"]).default("Pending"),
   trlLevelJustified: int("trlLevelJustified"),  // TRL level this experiment supports
+  offeringId: varchar("offeringId", { length: 36 }),
   conductedAt: timestamp("conductedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
-
-export type Experiment = typeof experiments.$inferSelect;
+export type Experiment = typeof experiments.$inferSelect;;
 export type InsertExperiment = typeof experiments.$inferInsert;
 
 // ── Customer Interviews ───────────────────────────────────────────────────────
@@ -3210,6 +3210,7 @@ export const workflowTriggerLog = mysqlTable("workflowTriggerLog", {
   targetModule:     varchar("targetModule", { length: 64 }),
   targetRecordId:   int("targetRecordId"),
   ventureId:        varchar("ventureId", { length: 64 }),
+  offeringId:       varchar("offeringId", { length: 36 }),
   status:           varchar("status", { length: 16 }).notNull().default("pending"),
   payload:          text("payload"),
   result:           text("result"),
@@ -3488,6 +3489,7 @@ export type InsertDmFeedbackEntry = typeof dmFeedbackEntries.$inferInsert;
 export const crmPipelines = mysqlTable("crmPipelines", {
   id:          int("id").primaryKey().autoincrement(),
   ventureId:   varchar("ventureId", { length: 36 }),
+  offeringId:  varchar("offeringId", { length: 36 }),
   name:        varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   isDefault:   boolean("isDefault").default(false),
@@ -4162,3 +4164,152 @@ export const founderOnboardingSubmissions = mysqlTable("founderOnboardingSubmiss
 });
 export type FounderOnboardingSubmission = typeof founderOnboardingSubmissions.$inferSelect;
 export type InsertFounderOnboardingSubmission = typeof founderOnboardingSubmissions.$inferInsert;
+
+// ── Sprint 61: Venture → Portfolio → Offering Architecture ───────────────────
+
+export const portfolios = mysqlTable("portfolios", {
+  id:            varchar("id", { length: 64 }).primaryKey(),
+  ventureId:     varchar("ventureId", { length: 64 }).notNull(),
+  name:          varchar("name", { length: 128 }).notNull(),
+  description:   text("description"),
+  portfolioType: mysqlEnum("portfolioType", [
+    "Product", "Service", "Licensing", "Platform", "Mixed",
+  ]).default("Mixed"),
+  status:        mysqlEnum("portfolioStatus", ["Active", "Pre-Launch", "Archived"]).default("Pre-Launch"),
+  color:         varchar("color", { length: 32 }).default("#51AF37"),
+  sortOrder:     int("sortOrder").default(0),
+  createdAt:     timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:     timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type Portfolio = typeof portfolios.$inferSelect;
+export type InsertPortfolio = typeof portfolios.$inferInsert;
+
+export const offerings = mysqlTable("offerings", {
+  id:             varchar("id", { length: 64 }).primaryKey(),
+  portfolioId:    varchar("portfolioId", { length: 64 }).notNull(),
+  ventureId:      varchar("ventureId", { length: 64 }).notNull(),
+  name:           varchar("name", { length: 128 }).notNull(),
+  description:    text("description"),
+  offeringType:   mysqlEnum("offeringType", [
+    "Physical Product", "Digital Product", "Service", "SaaS",
+    "Subscription", "Marketplace",
+  ]).default("Physical Product"),
+  offeringStatus: mysqlEnum("offeringStatus", [
+    "Concept", "Development", "Pilot", "Live", "Scaling", "Sunset",
+  ]).default("Concept"),
+  trl:            int("trl").default(1),
+  brlScore:       int("brlScore").default(0),
+  revenueModel:   mysqlEnum("revenueModel", [
+    "B2B", "D2C", "B2B2C", "Marketplace", "Licensing", "Freemium",
+  ]).default("B2B"),
+  targetSegment:  text("targetSegment"),
+  pricePoint:     decimal("pricePoint", { precision: 12, scale: 2 }),
+  currency:       varchar("currency", { length: 8 }).default("GBP"),
+  launchDate:     date("launchDate"),
+  color:          varchar("color", { length: 32 }).default("#3A97D3"),
+  logoUrl:        text("logoUrl"),
+  tags:           text("tags"),
+  sortOrder:      int("sortOrder").default(0),
+  createdAt:      timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:      timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type Offering = typeof offerings.$inferSelect;
+export type InsertOffering = typeof offerings.$inferInsert;
+
+// ── Offering-level KPI snapshots ──────────────────────────────────────────────
+export const offeringKpiSnapshots = mysqlTable("offeringKpiSnapshots", {
+  id:              int("id").primaryKey().autoincrement(),
+  offeringId:      varchar("offeringId", { length: 64 }).notNull(),
+  snapshotDate:    date("snapshotDate").notNull(),
+  revenue:         decimal("revenue", { precision: 14, scale: 2 }),
+  cogs:            decimal("cogs", { precision: 14, scale: 2 }),
+  grossMargin:     float("grossMargin"),
+  unitsSold:       int("unitsSold"),
+  activeCustomers: int("activeCustomers"),
+  cac:             decimal("cac", { precision: 10, scale: 2 }),
+  ltv:             decimal("ltv", { precision: 10, scale: 2 }),
+  nps:             int("nps"),
+  trlAtSnapshot:   int("trlAtSnapshot"),
+  brlAtSnapshot:   int("brlAtSnapshot"),
+  notes:           text("notes"),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+});
+export type OfferingKpiSnapshot = typeof offeringKpiSnapshots.$inferSelect;
+
+// ── Offering-level financial model ───────────────────────────────────────────
+export const offeringFinancialModels = mysqlTable("offeringFinancialModels", {
+  id:              int("id").primaryKey().autoincrement(),
+  offeringId:      varchar("offeringId", { length: 64 }).notNull(),
+  modelName:       varchar("modelName", { length: 128 }).notNull().default("Base Case"),
+  revenueYear1:    decimal("revenueYear1", { precision: 14, scale: 2 }),
+  revenueYear2:    decimal("revenueYear2", { precision: 14, scale: 2 }),
+  revenueYear3:    decimal("revenueYear3", { precision: 14, scale: 2 }),
+  cogsPercent:     float("cogsPercent"),
+  opexMonthly:     decimal("opexMonthly", { precision: 12, scale: 2 }),
+  breakEvenMonth:  int("breakEvenMonth"),
+  fundingRequired: decimal("fundingRequired", { precision: 14, scale: 2 }),
+  assumptions:     text("assumptions"),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type OfferingFinancialModel = typeof offeringFinancialModels.$inferSelect;
+
+// ── Offering execution linkage tables (additive — no existing tables modified) ─
+export const offeringWorkflowLinks = mysqlTable("offeringWorkflowLinks", {
+  id:           int("id").primaryKey().autoincrement(),
+  offeringId:   varchar("offeringId", { length: 64 }).notNull(),
+  triggerLogId: int("triggerLogId").notNull(),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const offeringRevenueLinks = mysqlTable("offeringRevenueLinks", {
+  id:           int("id").primaryKey().autoincrement(),
+  offeringId:   varchar("offeringId", { length: 64 }).notNull(),
+  snapshotId:   int("snapshotId").notNull(),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const offeringSupplyChainLinks = mysqlTable("offeringSupplyChainLinks", {
+  id:           int("id").primaryKey().autoincrement(),
+  offeringId:   varchar("offeringId", { length: 64 }).notNull(),
+  projectId:    int("projectId").notNull(),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const offeringExperimentLinks = mysqlTable("offeringExperimentLinks", {
+  id:           int("id").primaryKey().autoincrement(),
+  offeringId:   varchar("offeringId", { length: 64 }).notNull(),
+  experimentId: int("experimentId").notNull(),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const offeringRiskLinks = mysqlTable("offeringRiskLinks", {
+  id:           int("id").primaryKey().autoincrement(),
+  offeringId:   varchar("offeringId", { length: 64 }).notNull(),
+  riskId:       int("riskId").notNull(),
+  riskType:     mysqlEnum("offeringRiskType", ["venture", "engineering", "execution"]).default("venture"),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const offeringMilestoneLinks = mysqlTable("offeringMilestoneLinks", {
+  id:           int("id").primaryKey().autoincrement(),
+  offeringId:   varchar("offeringId", { length: 64 }).notNull(),
+  milestoneId:  int("milestoneId").notNull(),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const offeringCrmLinks = mysqlTable("offeringCrmLinks", {
+  id:           int("id").primaryKey().autoincrement(),
+  offeringId:   varchar("offeringId", { length: 64 }).notNull(),
+  pipelineId:   int("pipelineId"),
+  dealId:       int("dealId"),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const offeringAnalyticsLinks = mysqlTable("offeringAnalyticsLinks", {
+  id:               int("id").primaryKey().autoincrement(),
+  offeringId:       varchar("offeringId", { length: 64 }).notNull(),
+  marketAnalysisId: int("marketAnalysisId"),
+  reportId:         int("reportId"),
+  createdAt:        timestamp("createdAt").defaultNow().notNull(),
+});

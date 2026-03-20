@@ -48,6 +48,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: "command-centre", label: "Command Centre",      icon: "Zap",             href: "/command-centre" },
       { id: "portfolio",   label: "Portfolio Overview",   icon: "LayoutDashboard", href: "/" },
+      { id: "portfolio-manager", label: "Portfolio Manager",  icon: "Layers",          href: "/portfolio-manager" },
       { id: "pipeline",    label: "Opportunity Pipeline", icon: "Lightbulb",       href: "/pipeline" },
       { id: "onboarding",  label: "Onboard Founder",      icon: "Rocket",          href: "/onboarding" },
     ],

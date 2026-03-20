@@ -46,6 +46,8 @@ import {
   getPmHealth, getFinancialPerformance, getEsgMetrics,
   getEcosystemNodes, upsertEcosystemNode, getLearningVelocity,
   getVentureRevenueSparklines,
+  getOfferingAnalytics,
+  getPortfolioOfferingRollup,
 } from "./commandCentreDb";
 import {
   listPrograms, getProgram, createProgram, updateProgram, deleteProgram,
@@ -196,6 +198,7 @@ import { finPlRouter, finRunwayRouter, finWaterfallRouter, finReportsRouter, fin
 import { investorCrmRouter } from "./investorCrm.router";
 import { marketingBrandRouter } from "./marketingBrand.router";
 import { specialistServicesRouter } from "./specialistServices.router";
+import { portfoliosOfferingsRouter } from "./portfoliosOfferings.router";
 
 export const appRouter = router({
   system: systemRouter,
@@ -270,12 +273,13 @@ export const appRouter = router({
   // ── Milestones ───────────────────────────────────────────────────────────────
   milestones: router({
     list: publicProcedure
-      .input(z.object({ ventureId: z.string() }))
-      .query(async ({ input }) => getMilestonesForVenture(input.ventureId)),
+      .input(z.object({ ventureId: z.string(), offeringId: z.string().optional() }))
+      .query(async ({ input }) => getMilestonesForVenture(input.ventureId, input.offeringId)),
 
     add: publicProcedure
       .input(z.object({
         ventureId: z.string(),
+        offeringId: z.string().optional(),
         label: z.string(),
         targetDate: z.string().optional(),
         sortOrder: z.number().optional(),
@@ -306,12 +310,13 @@ export const appRouter = router({
   // ── Risks ────────────────────────────────────────────────────────────────────
   risks: router({
     list: publicProcedure
-      .input(z.object({ ventureId: z.string() }))
-      .query(async ({ input }) => getRisksForVenture(input.ventureId)),
+      .input(z.object({ ventureId: z.string(), offeringId: z.string().optional() }))
+      .query(async ({ input }) => getRisksForVenture(input.ventureId, input.offeringId)),
 
     add: publicProcedure
       .input(z.object({
         ventureId: z.string(),
+        offeringId: z.string().optional(),
         domain: z.string(),
         level: z.enum(["Low", "Medium", "High"]),
         mitigation: z.string().optional(),
@@ -462,12 +467,13 @@ export const appRouter = router({
   // ── Experiments ───────────────────────────────────────────────────────────────
   experiments: router({
     list: publicProcedure
-      .input(z.object({ ventureId: z.string() }))
-      .query(async ({ input }) => getExperimentsForVenture(input.ventureId)),
+      .input(z.object({ ventureId: z.string(), offeringId: z.string().optional() }))
+      .query(async ({ input }) => getExperimentsForVenture(input.ventureId, input.offeringId)),
 
     add: publicProcedure
       .input(z.object({
         ventureId: z.string(),
+        offeringId: z.string().optional(),
         title: z.string(),
         hypothesis: z.string().optional(),
         method: z.string().optional(),
@@ -1192,6 +1198,8 @@ Return a JSON object with exactly these fields:
     generateAI: publicProcedure
       .input(z.object({
         ventureId: z.string(),
+        offeringId: z.string().optional(),
+        offeringName: z.string().optional(),
         ventureName: z.string(),
         sector: z.string(),
         description: z.string(),
@@ -1330,6 +1338,8 @@ Return ONLY valid JSON matching this schema exactly:
     generateAI: publicProcedure
       .input(z.object({
         ventureId: z.string(),
+        offeringId: z.string().optional(),
+        offeringName: z.string().optional(),
         ventureName: z.string(),
         sector: z.string(),
         description: z.string(),
@@ -4147,6 +4157,12 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       .mutation(({ input }) => upsertEcosystemNode(input)),
     getRevenueSparklines: publicProcedure
       .query(() => getVentureRevenueSparklines()),
+    getOfferingAnalytics: publicProcedure
+      .input(z.object({ offeringId: z.string() }))
+      .query(({ input }) => getOfferingAnalytics(input.offeringId)),
+    getPortfolioOfferingRollup: publicProcedure
+      .input(z.object({ portfolioId: z.string() }))
+      .query(({ input }) => getPortfolioOfferingRollup(input.portfolioId)),
   }),
 
   // ── Matching Engine & Spin-Off OS ─────────────────────────────────────────
@@ -6805,5 +6821,6 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
   finSummary: finSummaryRouter,
   marketingBrand: marketingBrandRouter,
   specialistServices: specialistServicesRouter,
+  portfoliosOfferings: portfoliosOfferingsRouter,
 });
 export type AppRouter = typeof appRouter;

@@ -756,3 +756,17 @@
 - [x] Reconnect FounderOnboarding.tsx form to DB (persist submissions)
 - [x] Add submission history/review panel to FounderOnboarding page
 - [x] Write Sprint 60 vitest tests (13 tests)
+
+## Sprint 61 — Venture → Portfolio → Offering Architecture
+
+- [x] Add portfolios and offerings schema tables (migration)
+- [x] Build portfolios + offerings tRPC CRUD router
+- [x] Build Portfolio Manager page (/portfolios)
+- [x] Build Offering Detail page (/offerings/:offeringId)
+- [x] Add offeringId FK to P1 execution tables (financial_snapshots, finPlLines, mfg*, workflowTriggerLog)
+- [x] Add offeringId FK to P2 execution tables (milestones, experiments, ventureRisks, crmPipelines, crmDeals)
+- [x] Add offeringId FK to P3 analytics tables (dmDataAssets, marketAnalysis, competitors)
+- [x] Add Offering Scope Selector to Portfolio Overview, Financial Analytics, Supply Chain pages
+- [x] Update Market Intelligence and Financial Model Builder to operate at offering level
+- [x] Write vitest tests for portfolios + offerings router (51 tests)
+- [x] Run full test suite and save checkpoint (1059 tests passing)

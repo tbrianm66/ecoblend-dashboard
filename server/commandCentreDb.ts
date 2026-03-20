@@ -506,3 +506,116 @@ export async function getLearningVelocity() {
     byVenture: result,
   };
 }
+
+// ── Offering-Level Analytics ──────────────────────────────────────────────────
+/**
+ * Aggregates KPI snapshots, experiment outcomes, milestones, and risks
+ * for a single offering — the core analytics unit in the Venture → Portfolio → Offering hierarchy.
+ */
+export async function getOfferingAnalytics(offeringId: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const {
+    offeringKpiSnapshots,
+    offerings,
+    portfolios,
+    milestones,
+    risks,
+    experiments: experimentsTable,
+  } = await import("../drizzle/schema");
+  const { eq: eqOp, desc: descOp } = await import("drizzle-orm");
+
+  const offeringRows = await db.select().from(offerings).where(eqOp(offerings.id, offeringId)).limit(1);
+  const offering = offeringRows[0] ?? null;
+  if (!offering) return null;
+
+  const portfolioRows = await db.select().from(portfolios).where(eqOp(portfolios.id, offering.portfolioId)).limit(1);
+  const portfolio = portfolioRows[0] ?? null;
+
+  const kpiSnapshots = await db
+    .select()
+    .from(offeringKpiSnapshots)
+    .where(eqOp(offeringKpiSnapshots.offeringId, offeringId))
+    .orderBy(descOp(offeringKpiSnapshots.snapshotDate))
+    .limit(12);
+
+  const offeringMilestones = await db
+    .select()
+    .from(milestones)
+    .where(eqOp(milestones.offeringId, offeringId));
+  const totalMilestones = offeringMilestones.length;
+  const completedMilestones = offeringMilestones.filter((m) => m.completed).length;
+
+  const offeringRisks = await db
+    .select()
+    .from(risks)
+    .where(eqOp(risks.offeringId, offeringId));
+
+  const offeringExperiments = await db
+    .select()
+    .from(experimentsTable)
+    .where(eqOp(experimentsTable.offeringId, offeringId));
+  const totalExperiments = offeringExperiments.length;
+  const passingExperiments = offeringExperiments.filter((e) => e.outcome === "Pass").length;
+
+  return {
+    offering,
+    portfolio,
+    kpiSnapshots,
+    latestKpi: kpiSnapshots[0] ?? null,
+    milestones: {
+      total: totalMilestones,
+      completed: completedMilestones,
+      completionRate: totalMilestones > 0 ? Math.round((completedMilestones / totalMilestones) * 100) : 0,
+    },
+    risks: {
+      total: offeringRisks.length,
+      high: offeringRisks.filter((r) => r.level === "High").length,
+      medium: offeringRisks.filter((r) => r.level === "Medium").length,
+      low: offeringRisks.filter((r) => r.level === "Low").length,
+    },
+    experiments: {
+      total: totalExperiments,
+      passing: passingExperiments,
+      passRate: totalExperiments > 0 ? Math.round((passingExperiments / totalExperiments) * 100) : 0,
+    },
+  };
+}
+
+/**
+ * Returns a portfolio-level rollup: all offerings under a portfolio with their
+ * latest KPI snapshots and execution health scores.
+ */
+export async function getPortfolioOfferingRollup(portfolioId: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const { offerings, offeringKpiSnapshots, portfolios } = await import("../drizzle/schema");
+  const { eq: eqOp, desc: descOp } = await import("drizzle-orm");
+
+  const portfolioRows = await db.select().from(portfolios).where(eqOp(portfolios.id, portfolioId)).limit(1);
+  const portfolio = portfolioRows[0] ?? null;
+  if (!portfolio) return null;
+
+  const allOfferings = await db.select().from(offerings).where(eqOp(offerings.portfolioId, portfolioId));
+
+  const offeringsWithKpi = await Promise.all(
+    allOfferings.map(async (o) => {
+      const latestKpi = await db
+        .select()
+        .from(offeringKpiSnapshots)
+        .where(eqOp(offeringKpiSnapshots.offeringId, o.id))
+        .orderBy(descOp(offeringKpiSnapshots.snapshotDate))
+        .limit(1);
+      return { ...o, latestKpi: latestKpi[0] ?? null };
+    })
+  );
+
+  return {
+    portfolio,
+    offerings: offeringsWithKpi,
+    totalOfferings: allOfferings.length,
+    activeOfferings: allOfferings.filter((o) => o.offeringStatus === "Live" || o.offeringStatus === "Scaling").length,
+  };
+}
