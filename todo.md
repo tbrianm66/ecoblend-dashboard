@@ -728,21 +728,31 @@
 - [x] Write vitest tests for Sprint 54 reconnections
 
 ## Sprint 55 — Governance RBAC + Milestone Trigger
-- [ ] Add vitest coverage for governance router (auditLog, permissions, policies, compliance)
-- [ ] Wire milestone_overdue trigger into PM milestones updateMilestone mutation
-- [ ] Add user role management UI to Governance page (promote/demote users)
+- [x] Add vitest coverage for governance router (auditLog, permissions, policies, compliance)
+- [x] Wire milestone_overdue trigger into PM milestones updateMilestone mutation
+- [x] Add user role management UI to Governance page (promote/demote users)
 
 ## Sprint 56 — Marketing & Brand DB Layer
-- [ ] Add DB schema for marketing campaigns, channel splits, brand scores
-- [ ] Add DB schema for press releases, newsletter sends
-- [ ] Build tRPC routers for marketing, brand PR, brand readiness
-- [ ] Reconnect MarketingStrategy.tsx to new router
-- [ ] Reconnect BrandPR.tsx to new router
-- [ ] Reconnect BrandReadiness.tsx to new router
-- [ ] Write vitest tests for Sprint 56
+- [x] Add DB schema for marketing campaigns, channel splits, brand scores
+- [x] Add DB schema for press releases, newsletter sends
+- [x] Build tRPC routers for marketing, brand PR, brand readiness
+- [x] Reconnect MarketingStrategy.tsx to new router
+- [x] Reconnect BrandPR.tsx to new router
+- [x] Reconnect BrandReadiness.tsx to new router
+- [x] Write vitest tests for Sprint 56
 
 ## Sprint 57 — Specialist Services DB Layer
-- [ ] Add DB schema for specialists, engagements, commissions, task assignments
-- [ ] Build tRPC router for specialist services
-- [ ] Reconnect SpecialistServices.tsx to new router
-- [ ] Write vitest tests for Sprint 57
+- [x] Add DB schema for specialists, engagements, commissions, task assignments
+- [x] Build tRPC router for specialist services
+- [x] Reconnect SpecialistServices.tsx to new router
+- [x] Write vitest tests for Sprint 57
+
+## Sprint 60 — Founder Onboarding Persistence
+
+- [x] Audit FounderOnboarding.tsx and founders router for gaps
+- [x] Add founderOnboardingSubmissions schema table and run db:push
+- [x] Write trpc.onboardingSubmissions.submit mutation
+- [x] Write trpc.onboardingSubmissions.list and getById queries
+- [x] Reconnect FounderOnboarding.tsx form to DB (persist submissions)
+- [x] Add submission history/review panel to FounderOnboarding page
+- [x] Write Sprint 60 vitest tests (13 tests)

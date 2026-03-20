@@ -1,0 +1,22 @@
+CREATE TABLE `founderOnboardingSubmissions` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`ventureName` varchar(255) NOT NULL,
+	`tagline` varchar(255),
+	`sector` varchar(128) NOT NULL,
+	`channel` varchar(8) NOT NULL,
+	`nominatedCharity` varchar(255),
+	`brandColor` varchar(16),
+	`bmc` text,
+	`mmc` text,
+	`founderName` varchar(255) NOT NULL,
+	`founderEmail` varchar(255),
+	`checkedTasks` text,
+	`checkedCount` int DEFAULT 0,
+	`totalTasks` int DEFAULT 26,
+	`talentProfileId` int,
+	`ventureId` varchar(64),
+	`status` varchar(32) NOT NULL DEFAULT 'Completed',
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `founderOnboardingSubmissions_id` PRIMARY KEY(`id`)
+);

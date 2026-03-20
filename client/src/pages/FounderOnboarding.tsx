@@ -147,6 +147,11 @@ export default function FounderOnboarding() {
   const [savedProfileId, setSavedProfileId] = useState<number | null>(null);
 
   const upsertTalent = trpc.people.upsertTalent.useMutation();
+  const submitOnboarding = trpc.onboardingSubmissions.submit.useMutation();
+  const { data: submissions } = trpc.onboardingSubmissions.list.useQuery();
+  const deleteSubmission = trpc.onboardingSubmissions.delete.useMutation({
+    onSuccess: () => trpc.useUtils().onboardingSubmissions.list.invalidate(),
+  });
   const autoTriggerMatching = trpc.matching.autoTriggerMatchingForFounder.useMutation({
     onSuccess: (result) => {
       setMatchCount(result.matchesComputed);
@@ -213,6 +218,7 @@ export default function FounderOnboarding() {
     });
 
     // Save founder as talent profile and auto-trigger matching engine
+    let profileId: number | undefined;
     try {
       const result = await upsertTalent.mutateAsync({
         name: form.founderName,
@@ -221,12 +227,34 @@ export default function FounderOnboarding() {
         industryExpertise: form.sector,
         availability: "Immediately Available",
       });
-      const profileId = result.id;
-      setSavedProfileId(profileId);
+      profileId = result.id;
+      setSavedProfileId(result.id ?? null);
       // Fire-and-forget: compute matches in background
-      autoTriggerMatching.mutate({ talentProfileId: profileId });
+      autoTriggerMatching.mutate({ talentProfileId: result.id });
     } catch {
       // Non-critical: matching will still work manually
+    }
+    // Persist onboarding submission to DB
+    try {
+      await submitOnboarding.mutateAsync({
+        ventureName:      form.ventureName,
+        tagline:          form.tagline || undefined,
+        sector:           form.sector,
+        channel:          form.channel as "B2B" | "D2C",
+        nominatedCharity: form.nominatedCharity || undefined,
+        brandColor:       form.brandColor,
+        bmc:              form.bmc || undefined,
+        mmc:              form.mmc || undefined,
+        founderName:      form.founderName,
+        founderEmail:     form.founderEmail || undefined,
+        checkedTasks:     form.checkedTasks,
+        checkedCount,
+        totalTasks,
+        talentProfileId:  profileId,
+        ventureId:        newVenture.id,
+      });
+    } catch {
+      // Non-critical: onboarding still completes
     }
   };
 
@@ -552,6 +580,47 @@ export default function FounderOnboarding() {
           </div>
         </div>
       </div>
+
+      {/* Submission History Panel */}
+      {submissions && submissions.length > 0 && (
+        <div className="max-w-2xl mx-auto px-8 pb-8">
+          <div className="bg-white rounded-2xl border shadow-sm overflow-hidden" style={{ borderColor: "#e5e7eb" }}>
+            <div className="px-6 py-4 border-b flex items-center justify-between" style={{ borderColor: "#f3f4f6" }}>
+              <div>
+                <h3 className="text-sm font-bold text-gray-900" style={{ fontFamily: "'DM Sans', sans-serif" }}>Onboarding History</h3>
+                <p className="text-xs text-gray-400 mt-0.5">{submissions.length} founder{submissions.length !== 1 ? "s" : ""} onboarded via this wizard</p>
+              </div>
+              <span className="text-xs font-mono px-2 py-0.5 rounded" style={{ background: "#f0fdf4", color: "#16a34a" }}>DB-persisted</span>
+            </div>
+            <div className="divide-y" style={{ borderColor: "#f3f4f6" }}>
+              {submissions.map(sub => (
+                <div key={sub.id} className="px-6 py-3 flex items-center justify-between group">
+                  <div className="flex items-center gap-3">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ background: sub.brandColor || "#22c55e" }}>
+                      {sub.ventureName.charAt(0)}
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-gray-900">{sub.ventureName}</div>
+                      <div className="text-xs text-gray-400">{sub.founderName} · {sub.sector} · {sub.channel}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-gray-400">{sub.checkedCount}/{sub.totalTasks} tasks</span>
+                    <span className="text-xs text-gray-400">{new Date(sub.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
+                    <button
+                      onClick={() => deleteSubmission.mutate({ id: sub.id })}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity text-xs text-red-400 hover:text-red-600"
+                      title="Delete record"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

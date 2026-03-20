@@ -2155,6 +2155,78 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       }),
   }),
 
+  // ── Sprint 60: Founder Onboarding Submissions ─────────────────────────────
+  onboardingSubmissions: router({
+    submit: publicProcedure
+      .input(z.object({
+        ventureName:      z.string().min(2),
+        tagline:          z.string().optional(),
+        sector:           z.string().min(1),
+        channel:          z.enum(["B2B", "D2C"]),
+        nominatedCharity: z.string().optional(),
+        brandColor:       z.string().optional(),
+        bmc:              z.string().optional(),
+        mmc:              z.string().optional(),
+        founderName:      z.string().min(2),
+        founderEmail:     z.string().email().optional(),
+        checkedTasks:     z.record(z.string(), z.boolean()).optional(),
+        checkedCount:     z.number().default(0),
+        totalTasks:       z.number().default(26),
+        talentProfileId:  z.number().optional(),
+        ventureId:        z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { founderOnboardingSubmissions } = await import("../drizzle/schema");
+        const [result] = await db.insert(founderOnboardingSubmissions).values({
+          ventureName:      input.ventureName,
+          tagline:          input.tagline,
+          sector:           input.sector,
+          channel:          input.channel,
+          nominatedCharity: input.nominatedCharity,
+          brandColor:       input.brandColor,
+          bmc:              input.bmc,
+          mmc:              input.mmc,
+          founderName:      input.founderName,
+          founderEmail:     input.founderEmail,
+          checkedTasks:     input.checkedTasks ? JSON.stringify(input.checkedTasks) : null,
+          checkedCount:     input.checkedCount,
+          totalTasks:       input.totalTasks,
+          talentProfileId:  input.talentProfileId,
+          ventureId:        input.ventureId,
+          status:           "Completed",
+        } as any);
+        return { id: (result as any).insertId as number };
+      }),
+    list: publicProcedure
+      .query(async () => {
+        const db = (await getDb())!;
+        const { founderOnboardingSubmissions } = await import("../drizzle/schema");
+        const { desc: descOrd } = await import("drizzle-orm");
+        return db.select().from(founderOnboardingSubmissions)
+          .orderBy(descOrd(founderOnboardingSubmissions.createdAt));
+      }),
+    getById: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const db = (await getDb())!;
+        const { founderOnboardingSubmissions } = await import("../drizzle/schema");
+        const { eq: eqOp } = await import("drizzle-orm");
+        const [row] = await db.select().from(founderOnboardingSubmissions)
+          .where(eqOp(founderOnboardingSubmissions.id, input.id));
+        return row ?? null;
+      }),
+    delete: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = (await getDb())!;
+        const { founderOnboardingSubmissions } = await import("../drizzle/schema");
+        const { eq: eqOp } = await import("drizzle-orm");
+        await db.delete(founderOnboardingSubmissions)
+          .where(eqOp(founderOnboardingSubmissions.id, input.id));
+        return { success: true };
+      }),
+  }),
   // ── Literature Audit: Disruption Scoring (Innovator's Dilemma — Rec. 11 & 12) ─
   disruptionScoring: router({
     get: publicProcedure

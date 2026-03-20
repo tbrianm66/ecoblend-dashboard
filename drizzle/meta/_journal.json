@@ -253,6 +253,13 @@
       "when": 1773999762786,
       "tag": "0035_ambiguous_johnny_blaze",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "5",
+      "when": 1774000758269,
+      "tag": "0036_awesome_salo",
+      "breakpoints": true
     }
   ]
 }

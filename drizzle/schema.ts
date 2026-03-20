@@ -4131,3 +4131,34 @@ export const specialistServiceTasks = mysqlTable("specialistServiceTasks", {
 });
 export type SpecialistServiceTask = typeof specialistServiceTasks.$inferSelect;
 export type InsertSpecialistServiceTask = typeof specialistServiceTasks.$inferInsert;
+
+// ── Sprint 60: Founder Onboarding Submissions ──────────────────────────────
+export const founderOnboardingSubmissions = mysqlTable("founderOnboardingSubmissions", {
+  id:                int("id").primaryKey().autoincrement(),
+  // Venture details (Step 1)
+  ventureName:       varchar("ventureName", { length: 255 }).notNull(),
+  tagline:           varchar("tagline", { length: 255 }),
+  sector:            varchar("sector", { length: 128 }).notNull(),
+  channel:           varchar("channel", { length: 8 }).notNull(),
+  nominatedCharity:  varchar("nominatedCharity", { length: 255 }),
+  brandColor:        varchar("brandColor", { length: 16 }),
+  // Canvas (Step 2)
+  bmc:               text("bmc"),
+  mmc:               text("mmc"),
+  // Founder profile (Step 4)
+  founderName:       varchar("founderName", { length: 255 }).notNull(),
+  founderEmail:      varchar("founderEmail", { length: 255 }),
+  // Task checklist snapshot (JSON string)
+  checkedTasks:      text("checkedTasks"),
+  checkedCount:      int("checkedCount").default(0),
+  totalTasks:        int("totalTasks").default(26),
+  // Linked records created on completion
+  talentProfileId:   int("talentProfileId"),
+  ventureId:         varchar("ventureId", { length: 64 }),
+  // Status
+  status:            varchar("status", { length: 32 }).notNull().default("Completed"),
+  createdAt:         timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:         timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type FounderOnboardingSubmission = typeof founderOnboardingSubmissions.$inferSelect;
+export type InsertFounderOnboardingSubmission = typeof founderOnboardingSubmissions.$inferInsert;
