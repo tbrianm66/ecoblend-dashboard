@@ -3,6 +3,7 @@ import { dispatchTrigger } from "./workflowEngine";
 import { governanceRouter } from "./governance.router";
 import { mfgOnboardingRouter, mfgAuditRouter, mfgRfqRouter, mfgAslRouter, mfgContractRouter } from "./mfgPlaybookExtended.router";
 import { uniPartnersRouter, uniResearchRouter, uniTalentRouter, uniWorkflowRouter, uniIndustryRouter, uniGovernanceRouter, uniDataRouter, uniRoadmapRouter, uniSummaryRouter } from "./universityPlaybook.router";
+import { uniApprovalReportRouter } from "./uniApprovalReport.router";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -6801,6 +6802,7 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
   uniData: uniDataRouter,
   uniRoadmap: uniRoadmapRouter,
   uniSummary: uniSummaryRouter,
+  uniApprovalReport: uniApprovalReportRouter,
   workflowEngine: workflowEngineRouter,
   commercialCrm: commercialCrmRouter,
   investorCrm: investorCrmRouter,

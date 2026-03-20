@@ -24,6 +24,7 @@ import {
   CheckCircle2, Clock, AlertCircle, Sparkles, ArrowRight,
   Shield, Globe, BarChart3, TrendingUp, Lightbulb,
 } from "lucide-react";
+import UniApprovalReportTab from "@/components/UniApprovalReportTab";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type VentureId = string;
@@ -1356,6 +1357,7 @@ export default function UniversityPlaybook() {
     { id: "governance", label: "Governance", icon: Shield },
     { id: "data", label: "Data Strategy", icon: Database },
     { id: "roadmap", label: "Roadmap", icon: Map },
+    { id: "approvals", label: "Approval Reports", icon: FileText },
   ];
 
   return (
@@ -1409,6 +1411,7 @@ export default function UniversityPlaybook() {
           <TabsContent value="governance"><GovernanceTab ventureId={ventureId} /></TabsContent>
           <TabsContent value="data"><DataStrategyTab ventureId={ventureId} /></TabsContent>
           <TabsContent value="roadmap"><RoadmapTab ventureId={ventureId} /></TabsContent>
+          <TabsContent value="approvals"><UniApprovalReportTab ventureId={ventureId} /></TabsContent>
         </Tabs>
       </div>
     </div>

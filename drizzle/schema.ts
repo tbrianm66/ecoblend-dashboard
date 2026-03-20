@@ -4313,3 +4313,87 @@ export const offeringAnalyticsLinks = mysqlTable("offeringAnalyticsLinks", {
   reportId:         int("reportId"),
   createdAt:        timestamp("createdAt").defaultNow().notNull(),
 });
+
+// ── University Approval Reports (Sprint 62) ───────────────────────────────────
+// Formal approval documents linking offering-level research, validation evidence,
+// and academic partnerships for university/lecturer sign-off.
+export const uniApprovalReports = mysqlTable("uniApprovalReports", {
+  id:                   int("id").primaryKey().autoincrement(),
+  ventureId:            varchar("ventureId", { length: 64 }).notNull(),
+  offeringId:           varchar("offeringId", { length: 64 }),
+  portfolioId:          varchar("portfolioId", { length: 64 }),
+  title:                varchar("title", { length: 255 }).notNull(),
+  reportType:           mysqlEnum("uniApprovalReportType", [
+    "syllabus_approval",
+    "research_validation",
+    "industry_engagement",
+    "ethics_clearance",
+    "ip_disclosure",
+    "commercialisation_approval",
+  ]).notNull().default("syllabus_approval"),
+  status:               mysqlEnum("uniApprovalStatus", [
+    "draft",
+    "under_review",
+    "approved",
+    "rejected",
+    "revision_requested",
+    "archived",
+  ]).notNull().default("draft"),
+  productRiskOwner:     varchar("productRiskOwner", { length: 255 }),
+  businessRiskOwner:    varchar("businessRiskOwner", { length: 255 }),
+  executiveSummary:     text("executiveSummary"),
+  problemStatement:     text("problemStatement"),
+  researchObjectives:   text("researchObjectives"),
+  methodology:          text("methodology"),
+  validationEvidence:   text("validationEvidence"),
+  academicContribution: text("academicContribution"),
+  commercialPotential:  text("commercialPotential"),
+  ethicsStatement:      text("ethicsStatement"),
+  ipStatement:          text("ipStatement"),
+  recommendations:      text("recommendations"),
+  aiGenerated:          boolean("aiGenerated").default(false),
+  aiContent:            text("aiContent"),
+  confidenceScore:      int("confidenceScore"),
+  submittedBy:          varchar("submittedBy", { length: 255 }),
+  reviewedBy:           varchar("reviewedBy", { length: 255 }),
+  approvedBy:           varchar("approvedBy", { length: 255 }),
+  submittedAt:          bigint("submittedAt", { mode: "number" }),
+  reviewedAt:           bigint("reviewedAt", { mode: "number" }),
+  approvedAt:           bigint("approvedAt", { mode: "number" }),
+  reviewNotes:          text("reviewNotes"),
+  linkedResearchIds:    text("linkedResearchIds"),
+  linkedPartnerIds:     text("linkedPartnerIds"),
+  linkedTalentIds:      text("linkedTalentIds"),
+  linkedGovernanceIds:  text("linkedGovernanceIds"),
+  h4Stage:              mysqlEnum("h4Stage", [
+    "problem_definition",
+    "research_discovery",
+    "hypothesis_development",
+    "validation",
+    "commercialisation",
+  ]).default("problem_definition"),
+  vrlStage:             int("vrlStage"),
+  trlLevel:             int("trlLevel"),
+  brlScore:             int("brlScore"),
+  createdAt:            timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:            timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type UniApprovalReport = typeof uniApprovalReports.$inferSelect;
+export type InsertUniApprovalReport = typeof uniApprovalReports.$inferInsert;
+
+// ── Offering Research Links (Sprint 62) ───────────────────────────────────────
+export const offeringResearchLinks = mysqlTable("offeringResearchLinks", {
+  id:                int("id").primaryKey().autoincrement(),
+  offeringId:        varchar("offeringId", { length: 64 }).notNull(),
+  researchProjectId: int("researchProjectId").notNull(),
+  linkType:          mysqlEnum("offeringResearchLinkType", [
+    "primary",
+    "supporting",
+    "validation",
+    "market",
+  ]).default("supporting"),
+  notes:             text("notes"),
+  createdAt:         timestamp("createdAt").defaultNow().notNull(),
+});
+export type OfferingResearchLink = typeof offeringResearchLinks.$inferSelect;
+export type InsertOfferingResearchLink = typeof offeringResearchLinks.$inferInsert;

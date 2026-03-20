@@ -770,3 +770,17 @@
 - [x] Update Market Intelligence and Financial Model Builder to operate at offering level
 - [x] Write vitest tests for portfolios + offerings router (51 tests)
 - [x] Run full test suite and save checkpoint (1059 tests passing)
+
+## Sprint 62 — University Approval Report Module (Build Pack v2)
+
+- [x] Review EcoBlend Build Pack v2 brief and audit DB schema for gaps
+- [x] Add uniApprovalReports table (6 report types, 6 statuses, H4 stage, offering/portfolio FK, dual risk owner fields)
+- [x] Add offeringResearchLinks table (links reports to research projects with evidence strength and link type)
+- [x] Run migration 0039 — both tables live in production DB
+- [x] Build uniApprovalReport tRPC router (list, get, upsert, updateStatus, delete, generateAI, getSummary)
+- [x] AI generateAI: scoped to offering, pulls research projects, partners, experiments automatically, generates H4-structured report
+- [x] Build UniApprovalReportTab component (summary KPIs, filter toolbar, report cards, view dialog, create dialog, AI generate dialog)
+- [x] Add "Approval Reports" tab to University Playbook page (10th tab)
+- [x] TypeScript check: 0 errors
+- [x] Write vitest tests for approval report module (38 tests: schema validation, status transitions, summary calcs, AI context, offering linkage)
+- [x] Full test suite: 1097 tests passing across 44 test files
