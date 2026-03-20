@@ -795,3 +795,14 @@
 - [x] Add "Spin-Out Blueprint" to sidebar navigation (Intelligence group)
 - [x] Write 41 vitest tests (domain weights, readiness scoring, gate logic, library links, journey stages, pre-population)
 - [x] Full test suite: 1138 tests passing across 45 test files
+
+## Sprint 64 — Blueprint Dashboard Widget (Command Centre)
+
+- [x] Read Command Centre page and spinoutBlueprint router structure
+- [x] Fix: spinoutBlueprintRouter was imported but not registered in appRouter — now fixed
+- [x] Fix: spinoutBlueprint.router.ts used `import { db }` instead of `getDb()` — all procedures fixed
+- [x] Add getPipelineSummary tRPC procedure (top 5 blueprints by readiness, gate proximity, library link counts, summary stats)
+- [x] Build SpinoutPipelineWidget component (summary KPI row, per-blueprint readiness bars with 40% gate marker, domain mini-bars, launch CTA, empty state)
+- [x] Integrate widget as Row 7 in Command Centre page (between Venture Readiness Table and Live Event Stream)
+- [x] Write 12 vitest tests for pipeline summary sorting, stats, gate proximity, null handling, widget display logic
+- [x] Full test suite: 1150 tests passing across 45 test files

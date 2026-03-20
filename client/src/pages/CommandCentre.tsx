@@ -5,6 +5,7 @@
  */
 import { useMemo, useState, useEffect } from "react";
 import LiveEventFeed from "@/components/LiveEventFeed";
+import SpinoutPipelineWidget from "@/components/SpinoutPipelineWidget";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -974,7 +975,11 @@ export default function CommandCentre() {
           </Card>
         </div>
 
-        {/* ── Row 7: Live Event Stream ── */}
+        {/* ── Row 7: Spin-Out Pipeline ── */}
+        <div className="mt-6">
+          <SpinoutPipelineWidget />
+        </div>
+        {/* ── Row 8: Live Event Stream ── */}
         <div className="mt-2">
           <LiveEventFeed
             title="Live Operational Event Stream"

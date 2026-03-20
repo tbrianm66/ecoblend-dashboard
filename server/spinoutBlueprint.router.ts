@@ -9,7 +9,7 @@
 // ============================================================
 import { z } from "zod";
 import { router, protectedProcedure } from "./_core/trpc";
-import { db } from "./db";
+import { getDb } from "./db";
 import { invokeLLM } from "./_core/llm";
 import {
   spinoutBlueprints,
@@ -51,6 +51,7 @@ function computeGateStatus(score: number): "not_ready" | "approaching" | "ready_
 
 // ── Readiness computation helpers ─────────────────────────────────────────────
 async function computeDomainScores(offeringId: string, ventureId: string, blueprintId: number) {
+  const db = (await getDb())!;
   // Get library links for this blueprint
   const links = await db.select().from(blueprintLibraryLinks).where(eq(blueprintLibraryLinks.blueprintId, blueprintId));
 
@@ -125,6 +126,7 @@ export const spinoutBlueprintRouter = router({
       title: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
+      const db = (await getDb())!;
       const [offering] = await db.select().from(offerings).where(eq(offerings.id, input.offeringId)).limit(1);
       if (!offering) throw new Error("Offering not found");
       const title = input.title ?? `${offering.name} — Spin-Out Blueprint`;
@@ -143,6 +145,7 @@ export const spinoutBlueprintRouter = router({
   get: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
+      const db = (await getDb())!;
       const [blueprint] = await db.select().from(spinoutBlueprints).where(eq(spinoutBlueprints.id, input.id)).limit(1);
       if (!blueprint) return null;
       const links = await db.select().from(blueprintLibraryLinks).where(eq(blueprintLibraryLinks.blueprintId, input.id));
@@ -159,6 +162,7 @@ export const spinoutBlueprintRouter = router({
       offeringId: z.string().optional(),
     }))
     .query(async ({ input }) => {
+      const db = (await getDb())!;
       const rows = await db.select().from(spinoutBlueprints).orderBy(desc(spinoutBlueprints.updatedAt));
       return rows.filter(b =>
         (!input.ventureId || b.ventureId === input.ventureId) &&
@@ -176,6 +180,7 @@ export const spinoutBlueprintRouter = router({
       reviewNotes: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
+      const db = (await getDb())!;
       const { id, ...rest } = input;
       await db.update(spinoutBlueprints).set({ ...rest, updatedAt: new Date() }).where(eq(spinoutBlueprints.id, id));
       return db.select().from(spinoutBlueprints).where(eq(spinoutBlueprints.id, id)).limit(1).then(r => r[0]);
@@ -185,6 +190,7 @@ export const spinoutBlueprintRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
+      const db = (await getDb())!;
       await db.delete(blueprintLibraryLinks).where(eq(blueprintLibraryLinks.blueprintId, input.id));
       await db.delete(spinoutBlueprints).where(eq(spinoutBlueprints.id, input.id));
       return { success: true };
@@ -194,6 +200,7 @@ export const spinoutBlueprintRouter = router({
   computeReadiness: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
+      const db = (await getDb())!;
       const [blueprint] = await db.select().from(spinoutBlueprints).where(eq(spinoutBlueprints.id, input.id)).limit(1);
       if (!blueprint) throw new Error("Blueprint not found");
       const scores = await computeDomainScores(blueprint.offeringId, blueprint.ventureId, input.id);
@@ -216,6 +223,7 @@ export const spinoutBlueprintRouter = router({
       notes: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
+      const db = (await getDb())!;
       const [result] = await db.insert(blueprintLibraryLinks).values({
         blueprintId: input.blueprintId,
         domain: input.domain,
@@ -237,6 +245,7 @@ export const spinoutBlueprintRouter = router({
       notes: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
+      const db = (await getDb())!;
       await db.update(blueprintLibraryLinks)
         .set({ linkStatus: input.linkStatus, notes: input.notes, updatedAt: new Date() })
         .where(eq(blueprintLibraryLinks.id, input.linkId));
@@ -247,6 +256,7 @@ export const spinoutBlueprintRouter = router({
   removeLibraryLink: protectedProcedure
     .input(z.object({ linkId: z.number() }))
     .mutation(async ({ input }) => {
+      const db = (await getDb())!;
       await db.delete(blueprintLibraryLinks).where(eq(blueprintLibraryLinks.id, input.linkId));
       return { success: true };
     }),
@@ -254,9 +264,10 @@ export const spinoutBlueprintRouter = router({
   // List all library links for a blueprint
   listLibraryLinks: protectedProcedure
     .input(z.object({ blueprintId: z.number() }))
-    .query(({ input }) =>
-      db.select().from(blueprintLibraryLinks).where(eq(blueprintLibraryLinks.blueprintId, input.blueprintId))
-    ),
+    .query(async ({ input }) => {
+      const db = (await getDb())!;
+      return db.select().from(blueprintLibraryLinks).where(eq(blueprintLibraryLinks.blueprintId, input.blueprintId));
+    }),
 
   // Get available library records for a given domain and venture/offering
   getLibraryOptions: protectedProcedure
@@ -266,6 +277,7 @@ export const spinoutBlueprintRouter = router({
       offeringId: z.string().optional(),
     }))
     .query(async ({ input }) => {
+      const db = (await getDb())!;
       switch (input.domain) {
         case "talent": {
           const rows = await db.select({
@@ -333,6 +345,7 @@ export const spinoutBlueprintRouter = router({
   generateBlueprint: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
+      const db = (await getDb())!;
       const [blueprint] = await db.select().from(spinoutBlueprints).where(eq(spinoutBlueprints.id, input.id)).limit(1);
       if (!blueprint) throw new Error("Blueprint not found");
 
@@ -489,15 +502,16 @@ Be specific, actionable, and grounded in the H4 Lean Methodology and EcoRace VBS
       productOpportunityId: z.number().optional(),
     }))
     .mutation(async ({ input }) => {
+      const db = (await getDb())!;
       const [blueprint] = await db.select().from(spinoutBlueprints).where(eq(spinoutBlueprints.id, input.id)).limit(1);
       if (!blueprint) throw new Error("Blueprint not found");
-      if (blueprint.overallScore < 40) throw new Error("Blueprint readiness score is below 40% — not ready to launch");
+      if ((blueprint.overallScore ?? 0) < 40) throw new Error("Blueprint readiness score is below 40% — not ready to launch");
 
       const [offering] = await db.select().from(offerings).where(eq(offerings.id, blueprint.offeringId)).limit(1);
       const [venture] = await db.select().from(ventures).where(eq(ventures.id, blueprint.ventureId)).limit(1);
 
       const [result] = await db.insert(spinoffConfigurations).values({
-        productOpportunityId: input.productOpportunityId ?? null,
+        productOpportunityId: input.productOpportunityId ?? 0,
         founderProfileIds: input.founderProfileIds.join(","),
         proposedVentureName: offering?.name ?? venture?.name ?? "Spin-Out Venture",
         proposedTagline: offering?.description?.slice(0, 200) ?? venture?.tagline ?? "",
@@ -523,5 +537,83 @@ Be specific, actionable, and grounded in the H4 Lean Methodology and EcoRace VBS
       }).where(eq(spinoutBlueprints.id, input.id));
 
       return { spinoffConfigId, success: true };
+    }),
+
+  // ── Dashboard: Spin-Out Pipeline Summary ─────────────────────────────────
+  // Returns top offerings sorted by readiness score (closest to 40% gate first),
+  // with domain breakdown and gate status for the Command Centre widget.
+  getPipelineSummary: protectedProcedure
+    .input(z.object({
+      limit: z.number().min(1).max(20).default(5),
+    }))
+    .query(async ({ input }) => {
+      const db = (await getDb())!;
+      // Get all blueprints with their offering and venture info
+      const allBlueprints = await db.select({
+        id: spinoutBlueprints.id,
+        title: spinoutBlueprints.title,
+        offeringId: spinoutBlueprints.offeringId,
+        ventureId: spinoutBlueprints.ventureId,
+        overallScore: spinoutBlueprints.overallScore,
+        talentScore: spinoutBlueprints.talentScore,
+        supplyChainScore: spinoutBlueprints.supplyChainScore,
+        financeScore: spinoutBlueprints.financeScore,
+        marketScore: spinoutBlueprints.marketScore,
+        technologyScore: spinoutBlueprints.technologyScore,
+        governanceScore: spinoutBlueprints.governanceScore,
+        gateStatus: spinoutBlueprints.gateStatus,
+        blueprintMarkdown: spinoutBlueprints.blueprintMarkdown,
+        spinoffConfigId: spinoutBlueprints.spinoffConfigId,
+        updatedAt: spinoutBlueprints.updatedAt,
+      }).from(spinoutBlueprints)
+        .orderBy(desc(spinoutBlueprints.overallScore))
+        .limit(input.limit);
+
+      // Enrich with offering and venture names
+      const enriched = await Promise.all(allBlueprints.map(async (bp) => {
+        const [offering] = await db.select({ name: offerings.name, color: offerings.color, revenueModel: offerings.revenueModel })
+          .from(offerings).where(eq(offerings.id, bp.offeringId)).limit(1);
+        const [venture] = await db.select({ name: ventures.name, color: ventures.color })
+          .from(ventures).where(eq(ventures.id, bp.ventureId)).limit(1);
+        // Count library links
+        const links = await db.select({ linkStatus: blueprintLibraryLinks.linkStatus, domain: blueprintLibraryLinks.domain })
+          .from(blueprintLibraryLinks).where(eq(blueprintLibraryLinks.blueprintId, bp.id));
+        const confirmedLinks = links.filter(l => l.linkStatus === "confirmed" || l.linkStatus === "contracted").length;
+        const totalLinks = links.length;
+        // Compute proximity to 40% gate (distance from gate)
+        const gateProximity = (bp.overallScore ?? 0) >= 40 ? 0 : 40 - (bp.overallScore ?? 0);
+        return {
+          ...bp,
+          offeringName: offering?.name ?? "Unknown Offering",
+          offeringColor: offering?.color ?? venture?.color ?? "#51AF37",
+          offeringType: offering?.revenueModel ?? "Product",
+          ventureName: venture?.name ?? "Unknown Venture",
+          ventureColor: venture?.color ?? "#51AF37",
+          confirmedLinks,
+          totalLinks,
+          gateProximity,
+          hasBlueprint: !!bp.blueprintMarkdown,
+          isLaunched: bp.gateStatus === "launched",
+        };
+      }));
+
+      // Sort: launched last, then by score descending (closest to 40% gate at top for not_ready/approaching)
+      const sorted = enriched.sort((a, b) => {
+        if (a.isLaunched && !b.isLaunched) return 1;
+        if (!a.isLaunched && b.isLaunched) return -1;
+        return (b.overallScore ?? 0) - (a.overallScore ?? 0);
+      });
+
+      // Compute summary stats
+      const total = sorted.length;
+      const readyToReview = sorted.filter(b => b.gateStatus === "ready_to_review" || b.gateStatus === "approved").length;
+      const approaching = sorted.filter(b => b.gateStatus === "approaching").length;
+      const launched = sorted.filter(b => b.gateStatus === "launched").length;
+      const avgScore = total > 0 ? Math.round(sorted.reduce((s, b) => s + (b.overallScore ?? 0), 0) / total) : 0;
+
+      return {
+        blueprints: sorted,
+        summary: { total, readyToReview, approaching, launched, avgScore },
+      };
     }),
 });

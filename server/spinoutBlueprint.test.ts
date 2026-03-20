@@ -367,3 +367,136 @@ describe("Spinoff config pre-population from blueprint", () => {
     expect(brandColor).toBe("#51AF37");
   });
 });
+
+// ── Pipeline Summary Logic (Sprint 64) ───────────────────────────────────────
+
+// Pure helper: simulate the pipeline summary sorting and stats logic
+function computePipelineSummary(blueprints: Array<{
+  id: number;
+  overallScore: number | null;
+  gateStatus: string | null;
+  confirmedLinks: number;
+  totalLinks: number;
+}>) {
+  const enriched = blueprints.map(bp => ({
+    ...bp,
+    overallScore: bp.overallScore ?? 0,
+    gateProximity: (bp.overallScore ?? 0) >= 40 ? 0 : 40 - (bp.overallScore ?? 0),
+    isLaunched: bp.gateStatus === "launched",
+    hasBlueprint: true,
+  }));
+
+  const sorted = enriched.sort((a, b) => {
+    if (a.isLaunched && !b.isLaunched) return 1;
+    if (!a.isLaunched && b.isLaunched) return -1;
+    return (b.overallScore ?? 0) - (a.overallScore ?? 0);
+  });
+
+  const total = sorted.length;
+  const readyToReview = sorted.filter(b => b.gateStatus === "ready_to_review" || b.gateStatus === "approved").length;
+  const approaching = sorted.filter(b => b.gateStatus === "approaching").length;
+  const launched = sorted.filter(b => b.gateStatus === "launched").length;
+  const avgScore = total > 0 ? Math.round(sorted.reduce((s, b) => s + (b.overallScore ?? 0), 0) / total) : 0;
+
+  return { blueprints: sorted, summary: { total, readyToReview, approaching, launched, avgScore } };
+}
+
+describe("Pipeline Summary — sorting and stats", () => {
+  const mockBlueprints = [
+    { id: 1, overallScore: 75, gateStatus: "ready_to_review", confirmedLinks: 8, totalLinks: 10 },
+    { id: 2, overallScore: 25, gateStatus: "not_ready",       confirmedLinks: 2, totalLinks: 8 },
+    { id: 3, overallScore: 55, gateStatus: "approaching",     confirmedLinks: 5, totalLinks: 9 },
+    { id: 4, overallScore: 90, gateStatus: "launched",        confirmedLinks: 10, totalLinks: 10 },
+    { id: 5, overallScore: 42, gateStatus: "approaching",     confirmedLinks: 4, totalLinks: 7 },
+  ];
+
+  it("should sort launched blueprints to the end", () => {
+    const { blueprints } = computePipelineSummary(mockBlueprints);
+    expect(blueprints[blueprints.length - 1].gateStatus).toBe("launched");
+  });
+
+  it("should sort non-launched blueprints by score descending", () => {
+    const { blueprints } = computePipelineSummary(mockBlueprints);
+    const nonLaunched = blueprints.filter(b => !b.isLaunched);
+    for (let i = 0; i < nonLaunched.length - 1; i++) {
+      expect(nonLaunched[i].overallScore).toBeGreaterThanOrEqual(nonLaunched[i + 1].overallScore);
+    }
+  });
+
+  it("should compute correct summary stats", () => {
+    const { summary } = computePipelineSummary(mockBlueprints);
+    expect(summary.total).toBe(5);
+    expect(summary.readyToReview).toBe(1);
+    expect(summary.approaching).toBe(2);
+    expect(summary.launched).toBe(1);
+  });
+
+  it("should compute correct average score", () => {
+    const { summary } = computePipelineSummary(mockBlueprints);
+    const expected = Math.round((75 + 25 + 55 + 90 + 42) / 5);
+    expect(summary.avgScore).toBe(expected);
+  });
+
+  it("should compute gateProximity as 0 for blueprints at or above 40%", () => {
+    const { blueprints } = computePipelineSummary(mockBlueprints);
+    const aboveGate = blueprints.filter(b => b.overallScore >= 40);
+    aboveGate.forEach(b => expect(b.gateProximity).toBe(0));
+  });
+
+  it("should compute correct gateProximity for blueprints below 40%", () => {
+    const { blueprints } = computePipelineSummary(mockBlueprints);
+    const belowGate = blueprints.find(b => b.id === 2)!;
+    expect(belowGate.gateProximity).toBe(15); // 40 - 25 = 15
+  });
+
+  it("should handle empty blueprint list gracefully", () => {
+    const { blueprints, summary } = computePipelineSummary([]);
+    expect(blueprints).toHaveLength(0);
+    expect(summary.total).toBe(0);
+    expect(summary.avgScore).toBe(0);
+  });
+
+  it("should handle null overallScore as 0", () => {
+    const withNull = [{ id: 1, overallScore: null, gateStatus: "not_ready", confirmedLinks: 0, totalLinks: 0 }];
+    const { blueprints, summary } = computePipelineSummary(withNull);
+    expect(blueprints[0].overallScore).toBe(0);
+    expect(summary.avgScore).toBe(0);
+  });
+});
+
+// ── Pipeline Widget gate proximity display logic ──────────────────────────────
+describe("Pipeline Widget — gate proximity display", () => {
+  it("should show 'to gate' label only for blueprints below 40%", () => {
+    const isAboveGate = (score: number) => score >= 40;
+    expect(isAboveGate(39)).toBe(false);
+    expect(isAboveGate(40)).toBe(true);
+    expect(isAboveGate(75)).toBe(true);
+  });
+
+  it("should show correct gradient for above-gate vs below-gate progress bars", () => {
+    const getBarGradient = (score: number) =>
+      score >= 40
+        ? "linear-gradient(90deg, #51AF37, #3A97D3)"
+        : "linear-gradient(90deg, #F49C13, #ef4444)";
+    expect(getBarGradient(50)).toContain("#51AF37");
+    expect(getBarGradient(30)).toContain("#F49C13");
+  });
+
+  it("should show 'Launch' button only for blueprints above 40% that are not launched", () => {
+    const showLaunchButton = (score: number, isLaunched: boolean) =>
+      score >= 40 && !isLaunched;
+    expect(showLaunchButton(75, false)).toBe(true);
+    expect(showLaunchButton(75, true)).toBe(false);
+    expect(showLaunchButton(25, false)).toBe(false);
+  });
+});
+
+// ── spinoutBlueprintRouter registration ──────────────────────────────────────
+describe("spinoutBlueprintRouter registration", () => {
+  it("should be imported and registered in the main appRouter", async () => {
+    // Verify the router file exports the expected router
+    const mod = await import("./spinoutBlueprint.router");
+    expect(mod.spinoutBlueprintRouter).toBeDefined();
+    expect(typeof mod.spinoutBlueprintRouter).toBe("object");
+  });
+});

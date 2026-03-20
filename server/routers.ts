@@ -6825,5 +6825,6 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
   marketingBrand: marketingBrandRouter,
   specialistServices: specialistServicesRouter,
   portfoliosOfferings: portfoliosOfferingsRouter,
+  spinoutBlueprint: spinoutBlueprintRouter,
 });
 export type AppRouter = typeof appRouter;

@@ -196,7 +196,7 @@ export default function SpinOutBlueprint() {
 
   // Group links by domain
   const linksByDomain = useMemo(() => {
-    if (!blueprint?.links) return {} as Record<Domain, typeof blueprint.links>;
+    if (!blueprint?.links) return {} as Record<Domain, NonNullable<typeof blueprint>["links"]>;
     const grouped: Record<string, typeof blueprint.links> = {};
     for (const link of blueprint.links) {
       if (!grouped[link.domain]) grouped[link.domain] = [];
