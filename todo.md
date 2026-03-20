@@ -651,3 +651,41 @@
 - [x] Sidebar entries added under Analytics section (Briefcase + HandCoins icons)
 - [x] Vitest tests: crm.test.ts (44 tests covering lead scoring, deal probability, weighted pipeline, activity/contact validation, deal value formatting, conversion rate, funding progress, valuation/equity, dilution, round/status validation, cap table, term sheet expiry, investor pipeline scoring)
 - [x] 831 tests passing, 0 TypeScript errors
+
+## Sprint 50 — Workflow Engine Expansion
+- [ ] Add 4 new trigger handlers: triggerDealClosedWon, triggerFundingRoundClosed, triggerMilestoneOverdue, triggerDataQualityDegraded
+- [ ] Wire triggerDealClosedWon into commercialCrm.router upsertDeal mutation (status → closed_won)
+- [ ] Wire triggerFundingRoundClosed into investorCrm.router upsertRound mutation (status → closed)
+- [ ] Wire triggerMilestoneOverdue into pm router milestone check (overdue detection on list query)
+- [ ] Wire triggerDataQualityDegraded into dataManagement.router upsertQualityScore mutation (score < 60)
+- [ ] Add notifyOwner() call inside all 7 trigger handlers
+- [ ] Add trigger history count badge to CRM deal cards, investor round cards, audit cards, supplier onboarding cards
+- [ ] Update WorkflowEngine.tsx to show all 7 trigger types in the summary cards
+- [ ] Vitest tests for 4 new trigger handlers
+
+## Sprint 51 — Governance & RBAC
+- [ ] DB table: auditLog (id, userId, userEmail, action, entityType, entityId, entityName, oldValue, newValue, ipAddress, createdAt)
+- [ ] DB table: venturePermissions (id, userId, ventureId, role: owner|editor|viewer, grantedBy, createdAt)
+- [ ] Add logAudit() helper to server/auditLog.ts
+- [ ] Wire logAudit() into key mutation handlers (venture upsert, founder add, deal upsert, round upsert, task upsert)
+- [ ] tRPC router: admin sub-router (listUsers, updateUserRole, listAuditLog, getAuditStats, listVenturePermissions, grantVenturePermission, revokeVenturePermission)
+- [ ] AdminPanel.tsx: 3-tab page (Users & Roles, Venture Permissions, Audit Log)
+- [ ] Users & Roles tab: user list with role badge, promote/demote to admin button (admin only)
+- [ ] Venture Permissions tab: per-venture permission matrix (owner/editor/viewer per user)
+- [ ] Audit Log tab: filterable log table (entity type, action, user, date range) with diff viewer
+- [ ] Route /admin registered in App.tsx (admin-only guard)
+- [ ] Sidebar entry under Settings section
+- [ ] Vitest tests for admin procedures and audit log
+
+## Sprint 52 — Financial Model Builder
+- [ ] DB tables: finPnlModels, finPnlLineItems, finRunwayModels, finWaterfallScenarios, finWaterfallShareClasses, finInvestorReports
+- [ ] tRPC router: financialModel sub-router (pnl CRUD, runway CRUD, waterfall CRUD, report generation)
+- [ ] FinancialModelBuilder.tsx: 5-tab page (Overview, P&L Builder, Runway Calculator, Exit Waterfall, Investor Report)
+- [ ] Overview: model health KPIs, months runway, break-even month, exit return multiple
+- [ ] P&L Builder: revenue/cost line item CRUD with monthly projections, auto-computed gross margin, EBITDA, net profit
+- [ ] Runway Calculator: burn rate inputs (fixed/variable costs), revenue growth assumptions, cash balance over time chart
+- [ ] Exit Waterfall: share class CRUD (ordinary, preference, convertible), exit proceeds input, waterfall distribution table and chart
+- [ ] Investor Report: AI-generated report combining VRL/TRL scores, financial snapshot, milestone progress, risk summary
+- [ ] Route /financial-model registered in App.tsx
+- [ ] Sidebar entry under Investment section
+- [ ] Vitest tests for financial model procedures

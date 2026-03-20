@@ -1,4 +1,5 @@
 import { workflowEngineRouter } from "./workflowEngine.router";
+import { governanceRouter } from "./governance.router";
 import { mfgOnboardingRouter, mfgAuditRouter, mfgRfqRouter, mfgAslRouter, mfgContractRouter } from "./mfgPlaybookExtended.router";
 import { uniPartnersRouter, uniResearchRouter, uniTalentRouter, uniWorkflowRouter, uniIndustryRouter, uniGovernanceRouter, uniDataRouter, uniRoadmapRouter, uniSummaryRouter } from "./universityPlaybook.router";
 import { COOKIE_NAME } from "@shared/const";
@@ -190,6 +191,7 @@ import {
 } from "./poiDb";
 import { dmAssetsRouter, dmQualityRouter, dmPipelinesRouter, dmRagRouter, dmFineTuningRouter, dmFeedbackRouter, dmSummaryRouter } from "./dataManagement.router";
 import { commercialCrmRouter } from "./commercialCrm.router";
+import { finPlRouter, finRunwayRouter, finWaterfallRouter, finReportsRouter, finUnitEconRouter, finSummaryRouter } from "./financialModel.router";
 import { investorCrmRouter } from "./investorCrm.router";
 
 export const appRouter = router({
@@ -6711,5 +6713,12 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
   dmFineTuning: dmFineTuningRouter,
   dmFeedback: dmFeedbackRouter,
   dmSummary: dmSummaryRouter,
+  governance: governanceRouter,
+  finPl: finPlRouter,
+  finRunway: finRunwayRouter,
+  finWaterfall: finWaterfallRouter,
+  finReports: finReportsRouter,
+  finUnitEcon: finUnitEconRouter,
+  finSummary: finSummaryRouter,
 });
 export type AppRouter = typeof appRouter;

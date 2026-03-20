@@ -225,6 +225,20 @@
       "when": 1773962445199,
       "tag": "0031_dapper_patch",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "5",
+      "when": 1773992610742,
+      "tag": "0032_groovy_banshee",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "5",
+      "when": 1773993219160,
+      "tag": "0033_many_red_skull",
+      "breakpoints": true
     }
   ]
 }

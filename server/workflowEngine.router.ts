@@ -60,7 +60,7 @@ export const workflowEngineRouter = router({
   rerunTrigger: publicProcedure
     .input(
       z.object({
-        triggerType: z.enum(["research_completed", "audit_failed", "supplier_approved"]),
+        triggerType: z.enum(["research_completed", "audit_failed", "supplier_approved", "deal_closed_won", "funding_round_closed", "milestone_overdue", "data_quality_degraded"]),
         sourceRecordId: z.number(),
         originalLogId: z.number().optional(),
       })
@@ -116,7 +116,7 @@ export const workflowEngineRouter = router({
   fireTrigger: publicProcedure
     .input(
       z.object({
-        triggerType: z.enum(["research_completed", "audit_failed", "supplier_approved"]),
+        triggerType: z.enum(["research_completed", "audit_failed", "supplier_approved", "deal_closed_won", "funding_round_closed", "milestone_overdue", "data_quality_degraded"]),
         sourceRecordId: z.number(),
       })
     )

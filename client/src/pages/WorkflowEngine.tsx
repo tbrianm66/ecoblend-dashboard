@@ -48,11 +48,13 @@ import {
   Activity,
   AlertTriangle,
   Info,
+  Briefcase,
+  TrendingUp,
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type TriggerType = "research_completed" | "audit_failed" | "supplier_approved";
+type TriggerType = "research_completed" | "audit_failed" | "supplier_approved" | "deal_closed_won" | "funding_round_closed" | "milestone_overdue" | "data_quality_degraded";
 
 const TRIGGER_META: Record<
   TriggerType,
@@ -78,6 +80,34 @@ const TRIGGER_META: Record<
     source: "China Mfg Playbook",
     target: "Approved Supplier List",
     color: "#51AF37",
+  },
+  deal_closed_won: {
+    label: "Deal Closed Won",
+    icon: <Briefcase size={14} />,
+    source: "Commercial CRM",
+    target: "Venture Project Management (Onboarding Task)",
+    color: "#8B5CF6",
+  },
+  funding_round_closed: {
+    label: "Funding Round Closed",
+    icon: <TrendingUp size={14} />,
+    source: "Investor CRM",
+    target: "VRL Scoring Engine (Funding Confidence)",
+    color: "#EC4899",
+  },
+  milestone_overdue: {
+    label: "Milestone Overdue",
+    icon: <AlertTriangle size={14} />,
+    source: "Venture Project Management",
+    target: "Owner Notification + Task Escalation",
+    color: "#EF4444",
+  },
+  data_quality_degraded: {
+    label: "Data Quality Degraded",
+    icon: <Activity size={14} />,
+    source: "Data Management",
+    target: "Owner Notification + Quality Alert",
+    color: "#F59E0B",
   },
 };
 
@@ -162,6 +192,10 @@ function ManualFireDialog({ onClose }: { onClose: () => void }) {
               {triggerType === "research_completed" && "ID of the university research project"}
               {triggerType === "audit_failed" && "ID of the factory audit record"}
               {triggerType === "supplier_approved" && "ID of the supplier onboarding record"}
+              {triggerType === "deal_closed_won" && "ID of the CRM deal record"}
+              {triggerType === "funding_round_closed" && "ID of the funding round record"}
+              {triggerType === "milestone_overdue" && "ID of the venture milestone record"}
+              {triggerType === "data_quality_degraded" && "ID of the data quality score record"}
             </p>
           </div>
           <div className="rounded-lg p-3 text-xs" style={{ background: "#f0f9ff", border: "1px solid #bae6fd" }}>

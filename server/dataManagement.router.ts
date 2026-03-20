@@ -6,6 +6,7 @@ import { router, publicProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import { eq as eqOp, desc, and, sql } from "drizzle-orm";
 import { invokeLLM } from "./_core/llm";
+import { dispatchTrigger } from "./workflowEngine";
 import {
   dmDataAssets,
   dmQualityScores,
@@ -190,6 +191,10 @@ export const dmQualityRouter = router({
         // Update the asset's overall quality score
         if (overallScore !== undefined) {
           await db.update(dmDataAssets).set({ overallQuality: overallScore, lastValidated: new Date(), updatedAt: new Date() }).where(eqOp(dmDataAssets.id, data.assetId));
+          // Fire data_quality_degraded trigger if score drops below 60
+          if (overallScore < 60) {
+            dispatchTrigger("data_quality_degraded", id).catch(() => {});
+          }
         }
         return { id };
       }
@@ -197,6 +202,10 @@ export const dmQualityRouter = router({
       const newId = (result as any).insertId as number;
       if (overallScore !== undefined) {
         await db.update(dmDataAssets).set({ overallQuality: overallScore, lastValidated: new Date(), updatedAt: new Date() }).where(eqOp(dmDataAssets.id, data.assetId));
+        // Fire data_quality_degraded trigger if score drops below 60
+        if (overallScore < 60) {
+          dispatchTrigger("data_quality_degraded", newId).catch(() => {});
+        }
       }
       return { id: newId };
     }),

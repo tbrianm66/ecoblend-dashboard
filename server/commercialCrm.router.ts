@@ -10,6 +10,7 @@ import {
   crmLeads, crmDeals, crmActivities,
 } from "../drizzle/schema";
 import { eq, desc, and, isNull, sql } from "drizzle-orm";
+import { dispatchTrigger } from "./workflowEngine";
 
 // ─── Pipelines ────────────────────────────────────────────────────────────────
 const pipelinesRouter = router({
@@ -250,10 +251,18 @@ const dealsRouter = router({
       };
       if (input.id) {
         await db.update(crmDeals).set({ ...data, updatedAt: new Date() }).where(eq(crmDeals.id, input.id));
+        // Fire deal_closed_won trigger if status changed to won
+        if (input.status === "won") {
+          dispatchTrigger("deal_closed_won", input.id).catch(() => {});
+        }
         return { id: input.id };
       }
       const result = await db.insert(crmDeals).values(data);
-      return { id: (result as any).insertId };
+      const newId = (result as any).insertId as number;
+      if (input.status === "won") {
+        dispatchTrigger("deal_closed_won", newId).catch(() => {});
+      }
+      return { id: newId };
     }),
 
   delete: protectedProcedure

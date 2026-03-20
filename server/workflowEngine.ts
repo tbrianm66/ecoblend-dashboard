@@ -1,10 +1,14 @@
 // ── Workflow Engine ────────────────────────────────────────────────────────────
 // Cross-module trigger dispatcher for the EcoBlend Venture OS.
 //
-// Three automated triggers:
-//   1. research_completed  → create TRL evidence experiment in Experiment Log
-//   2. audit_failed        → create CAPA task in Venture Project Management
-//   3. supplier_approved   → pre-populate Approved Supplier List entry
+// Seven automated triggers:
+//   1. research_completed    → create TRL evidence experiment in Experiment Log
+//   2. audit_failed          → create CAPA task in Venture Project Management
+//   3. supplier_approved     → pre-populate Approved Supplier List entry
+//   4. deal_closed_won       → create Customer Onboarding task in PM
+//   5. funding_round_closed  → create Cap Table Update task in PM
+//   6. milestone_overdue     → escalation notification + High-priority task
+//   7. data_quality_degraded → create Data Review task in PM + owner notification
 //
 // Each trigger is idempotent: it checks whether a target record already exists
 // (via the workflowTriggerLog) before creating anything, so re-running is safe.
@@ -20,14 +24,24 @@ import {
   uniResearchProjects,
   mfgFactoryAudits,
   mfgSupplierOnboarding,
+  crmDeals,
+  invFundingRounds,
+  ventureMilestones,
+  dmDataAssets,
+  dmQualityScores,
 } from "../drizzle/schema";
+import { notifyOwner } from "./_core/notification";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type TriggerType =
   | "research_completed"
   | "audit_failed"
-  | "supplier_approved";
+  | "supplier_approved"
+  | "deal_closed_won"
+  | "funding_round_closed"
+  | "milestone_overdue"
+  | "data_quality_degraded";
 
 export interface TriggerResult {
   success: boolean;
@@ -69,8 +83,6 @@ async function logTrigger(params: {
 }
 
 // ── Helper: check idempotency ─────────────────────────────────────────────────
-// Returns true if a successful trigger of this type for this source record
-// already exists (so we skip re-running).
 
 async function alreadyFired(
   triggerType: TriggerType,
@@ -91,10 +103,35 @@ async function alreadyFired(
   return existing.length > 0;
 }
 
+// ── Helper: find or create Operations workstream ──────────────────────────────
+
+async function getOrCreateOpsWorkstream(ventureId: string, ownerName?: string): Promise<number> {
+  const db = (await getDb())!;
+  const existing = await db
+    .select({ id: ventureWorkstreams.id })
+    .from(ventureWorkstreams)
+    .where(
+      and(
+        eq(ventureWorkstreams.ventureId, ventureId),
+        eq(ventureWorkstreams.functionalArea, "Operations")
+      )
+    )
+    .limit(1);
+
+  if (existing.length > 0) return existing[0].id;
+
+  const [ws] = await db.insert(ventureWorkstreams).values({
+    phaseId: 1,
+    ventureId,
+    name: "Operations",
+    functionalArea: "Operations",
+    owner: ownerName ?? "Workflow Engine",
+    status: "In Progress",
+  });
+  return (ws as any).insertId as number;
+}
+
 // ── Trigger 1: research_completed → TRL evidence experiment ──────────────────
-// When a university research project is marked "completed", automatically
-// create an experiment in the Experiment Log with the research's trlImpact
-// as the TRL level justified and the key findings as the result.
 
 export async function triggerResearchCompleted(
   researchId: number,
@@ -102,7 +139,6 @@ export async function triggerResearchCompleted(
 ): Promise<TriggerResult> {
   const db = (await getDb())!;
 
-  // Fetch the research project
   const [research] = await db
     .select()
     .from(uniResearchProjects)
@@ -113,17 +149,11 @@ export async function triggerResearchCompleted(
     return { success: false, logId: 0, message: "Research project not found" };
   }
 
-  // Idempotency check
   if (!opts?.retriedFrom && (await alreadyFired("research_completed", researchId))) {
-    return {
-      success: true,
-      logId: 0,
-      message: "Trigger already fired for this research project — skipped",
-    };
+    return { success: true, logId: 0, message: "Trigger already fired — skipped" };
   }
 
   try {
-    // Create a TRL evidence experiment
     const [inserted] = await db.insert(experiments).values({
       ventureId: research.ventureId,
       title: `[Auto] TRL Evidence: ${research.title}`,
@@ -134,6 +164,12 @@ export async function triggerResearchCompleted(
       trlLevelJustified: research.trlImpact ?? null,
     });
     const experimentId = (inserted as any).insertId as number;
+
+    // Notify owner
+    await notifyOwner({
+      title: "Workflow Engine: TRL Evidence Created",
+      content: `Research project "${research.title}" completed. TRL evidence experiment #${experimentId} auto-created for venture ${research.ventureId}.`,
+    }).catch(() => {}); // non-blocking
 
     const logId = await logTrigger({
       triggerType: "research_completed",
@@ -169,11 +205,7 @@ export async function triggerResearchCompleted(
   }
 }
 
-// ── Trigger 2: audit_failed → CAPA task in Venture Project Management ─────────
-// When a factory audit has one or more "fail" items, automatically create a
-// CAPA (Corrective and Preventive Action) task in the venture's project
-// management workstream. The task is placed in the first available "Operations"
-// workstream for the venture, or a new one is created if none exists.
+// ── Trigger 2: audit_failed → CAPA task ──────────────────────────────────────
 
 export async function triggerAuditFailed(
   auditId: number,
@@ -191,7 +223,6 @@ export async function triggerAuditFailed(
     return { success: false, logId: 0, message: "Factory audit not found" };
   }
 
-  // Check if any item is "fail"
   const failedItems = [
     audit.facilityCondition,
     audit.equipmentCapability,
@@ -202,52 +233,16 @@ export async function triggerAuditFailed(
   ].filter((v) => v === "fail");
 
   if (failedItems.length === 0) {
-    return {
-      success: true,
-      logId: 0,
-      message: "No failed audit items — trigger skipped",
-    };
+    return { success: true, logId: 0, message: "No failed audit items — trigger skipped" };
   }
 
-  // Idempotency check
   if (!opts?.retriedFrom && (await alreadyFired("audit_failed", auditId))) {
-    return {
-      success: true,
-      logId: 0,
-      message: "Trigger already fired for this audit — skipped",
-    };
+    return { success: true, logId: 0, message: "Trigger already fired — skipped" };
   }
 
   try {
-    // Find or create an Operations workstream for this venture
-    let workstreamId: number;
-    const existing = await db
-      .select({ id: ventureWorkstreams.id })
-      .from(ventureWorkstreams)
-      .where(
-        and(
-          eq(ventureWorkstreams.ventureId, audit.ventureId),
-          eq(ventureWorkstreams.functionalArea, "Operations")
-        )
-      )
-      .limit(1);
+    const workstreamId = await getOrCreateOpsWorkstream(audit.ventureId, audit.auditorName ?? undefined);
 
-    if (existing.length > 0) {
-      workstreamId = existing[0].id;
-    } else {
-      // We need a phaseId — use 1 as a safe default (first phase)
-      const [ws] = await db.insert(ventureWorkstreams).values({
-        phaseId: 1,
-        ventureId: audit.ventureId,
-        name: "Manufacturing Operations",
-        functionalArea: "Operations",
-        owner: audit.auditorName ?? "Manufacturing Team",
-        status: "In Progress",
-      });
-      workstreamId = (ws as any).insertId as number;
-    }
-
-    // Build CAPA task description
     const failedLabels: Record<string, string> = {
       facilityCondition: "Facility Condition",
       equipmentCapability: "Equipment Capability",
@@ -272,13 +267,18 @@ export async function triggerAuditFailed(
       workstreamId,
       ventureId: audit.ventureId,
       title: `[CAPA] Factory Audit #${auditId} — ${audit.supplierName}`,
-      description: `Corrective and Preventive Action required for factory audit at ${audit.supplierName}.\n\nFailed items: ${failedNames}\n\nFindings: ${audit.findings ?? "See audit record."}\n\nRequired actions: ${audit.correctiveActions ?? "Define corrective actions."}`,
+      description: `Corrective and Preventive Action required.\n\nFailed items: ${failedNames}\n\nFindings: ${audit.findings ?? "See audit record."}\n\nRequired actions: ${audit.correctiveActions ?? "Define corrective actions."}`,
       kanbanStatus: "To Do",
       priority: "High",
       assignee: audit.auditorName ?? undefined,
       notes: `Auto-created by Workflow Engine from Factory Audit #${auditId}`,
     });
     const taskId = (inserted as any).insertId as number;
+
+    await notifyOwner({
+      title: "Workflow Engine: CAPA Task Created",
+      content: `Factory audit at ${audit.supplierName} has ${failedItems.length} failed item(s): ${failedNames}. CAPA task #${taskId} created in Venture Project Management.`,
+    }).catch(() => {});
 
     const logId = await logTrigger({
       triggerType: "audit_failed",
@@ -314,10 +314,7 @@ export async function triggerAuditFailed(
   }
 }
 
-// ── Trigger 3: supplier_approved → pre-populate Approved Supplier List ────────
-// When a supplier onboarding record is approved, automatically create an
-// Approved Supplier List entry pre-filled with the supplier's data.
-// If an ASL entry already exists with the same onboardingId, it is skipped.
+// ── Trigger 3: supplier_approved → pre-populate ASL ──────────────────────────
 
 export async function triggerSupplierApproved(
   onboardingId: number,
@@ -336,23 +333,13 @@ export async function triggerSupplierApproved(
   }
 
   if (supplier.status !== "approved") {
-    return {
-      success: true,
-      logId: 0,
-      message: `Supplier status is "${supplier.status}" — trigger only fires on "approved"`,
-    };
+    return { success: true, logId: 0, message: `Supplier status is "${supplier.status}" — trigger only fires on "approved"` };
   }
 
-  // Idempotency check
   if (!opts?.retriedFrom && (await alreadyFired("supplier_approved", onboardingId))) {
-    return {
-      success: true,
-      logId: 0,
-      message: "Trigger already fired for this supplier — skipped",
-    };
+    return { success: true, logId: 0, message: "Trigger already fired — skipped" };
   }
 
-  // Also check if an ASL entry with this onboardingId already exists
   const existingAsl = await db
     .select({ id: mfgApprovedSuppliers.id })
     .from(mfgApprovedSuppliers)
@@ -360,15 +347,10 @@ export async function triggerSupplierApproved(
     .limit(1);
 
   if (existingAsl.length > 0) {
-    return {
-      success: true,
-      logId: 0,
-      message: `ASL entry already exists for onboarding #${onboardingId} — skipped`,
-    };
+    return { success: true, logId: 0, message: `ASL entry already exists for onboarding #${onboardingId} — skipped` };
   }
 
   try {
-    // Compute overall performance score from capability scores
     const scores = [
       supplier.technicalCapability,
       supplier.qualitySystems,
@@ -377,10 +359,7 @@ export async function triggerSupplierApproved(
       supplier.communication,
       supplier.complianceStandards,
     ].filter((s) => s != null) as number[];
-    const avgScore =
-      scores.length > 0
-        ? scores.reduce((a, b) => a + b, 0) / scores.length
-        : 0;
+    const avgScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
 
     const [inserted] = await db.insert(mfgApprovedSuppliers).values({
       ventureId: supplier.ventureId,
@@ -399,6 +378,11 @@ export async function triggerSupplierApproved(
       notes: `Auto-created from Supplier Onboarding #${supplier.id}. Review and update scores as needed.`,
     });
     const aslId = (inserted as any).insertId as number;
+
+    await notifyOwner({
+      title: "Workflow Engine: Supplier Added to ASL",
+      content: `Supplier "${supplier.companyName}" approved. ASL entry #${aslId} auto-created with performance score ${Math.round(avgScore * 10) / 10}/10.`,
+    }).catch(() => {});
 
     const logId = await logTrigger({
       triggerType: "supplier_approved",
@@ -434,8 +418,361 @@ export async function triggerSupplierApproved(
   }
 }
 
+// ── Trigger 4: deal_closed_won → Customer Onboarding task ────────────────────
+
+export async function triggerDealClosedWon(
+  dealId: number,
+  opts?: { retriedFrom?: number }
+): Promise<TriggerResult> {
+  const db = (await getDb())!;
+
+  const [deal] = await db
+    .select()
+    .from(crmDeals)
+    .where(eq(crmDeals.id, dealId))
+    .limit(1);
+
+  if (!deal) {
+    return { success: false, logId: 0, message: "Deal not found" };
+  }
+
+  if (deal.status !== "won") {
+    return { success: true, logId: 0, message: `Deal status is "${deal.status}" — trigger only fires on "won"` };
+  }
+
+  if (!opts?.retriedFrom && (await alreadyFired("deal_closed_won", dealId))) {
+    return { success: true, logId: 0, message: "Trigger already fired — skipped" };
+  }
+
+  const ventureId = deal.ventureId ?? "unknown";
+
+  try {
+    const workstreamId = await getOrCreateOpsWorkstream(ventureId, deal.assignedTo ?? undefined);
+
+    const [inserted] = await db.insert(ventureTasks).values({
+      workstreamId,
+      ventureId,
+      title: `[Onboarding] New Customer: ${deal.company ?? deal.title}`,
+      description: `Deal "${deal.title}" closed won (value: £${(deal.value ?? 0).toLocaleString()}).\n\nInitiate customer onboarding process:\n- Send welcome pack\n- Schedule kickoff call\n- Set up access and accounts\n- Assign customer success owner`,
+      kanbanStatus: "To Do",
+      priority: "High",
+      assignee: deal.assignedTo ?? undefined,
+      notes: `Auto-created by Workflow Engine from CRM Deal #${dealId}`,
+    });
+    const taskId = (inserted as any).insertId as number;
+
+    await notifyOwner({
+      title: "🎉 Deal Closed Won!",
+      content: `Deal "${deal.title}" with ${deal.company ?? "unknown company"} closed won (£${(deal.value ?? 0).toLocaleString()}). Customer onboarding task #${taskId} created in Venture Project Management.`,
+    }).catch(() => {});
+
+    const logId = await logTrigger({
+      triggerType: "deal_closed_won",
+      sourceModule: "commercialCrm",
+      sourceRecordId: dealId,
+      ventureId,
+      payload: { dealId, title: deal.title, company: deal.company, value: deal.value },
+      status: "success",
+      result: { taskId, message: "Customer onboarding task created" },
+      targetModule: "ventureProjectManagement",
+      targetRecordId: taskId,
+      retriedFrom: opts?.retriedFrom,
+    });
+
+    return {
+      success: true,
+      logId,
+      targetRecordId: taskId,
+      message: `Created customer onboarding task #${taskId} for deal "${deal.title}"`,
+    };
+  } catch (err: any) {
+    const logId = await logTrigger({
+      triggerType: "deal_closed_won",
+      sourceModule: "commercialCrm",
+      sourceRecordId: dealId,
+      ventureId,
+      payload: { dealId },
+      status: "failed",
+      error: err?.message ?? String(err),
+      retriedFrom: opts?.retriedFrom,
+    });
+    return { success: false, logId, message: err?.message ?? "Unknown error" };
+  }
+}
+
+// ── Trigger 5: funding_round_closed → Cap Table Update task ──────────────────
+
+export async function triggerFundingRoundClosed(
+  roundId: number,
+  opts?: { retriedFrom?: number }
+): Promise<TriggerResult> {
+  const db = (await getDb())!;
+
+  const [round] = await db
+    .select()
+    .from(invFundingRounds)
+    .where(eq(invFundingRounds.id, roundId))
+    .limit(1);
+
+  if (!round) {
+    return { success: false, logId: 0, message: "Funding round not found" };
+  }
+
+  if (round.status !== "closed") {
+    return { success: true, logId: 0, message: `Round status is "${round.status}" — trigger only fires on "closed"` };
+  }
+
+  if (!opts?.retriedFrom && (await alreadyFired("funding_round_closed", roundId))) {
+    return { success: true, logId: 0, message: "Trigger already fired — skipped" };
+  }
+
+  try {
+    const workstreamId = await getOrCreateOpsWorkstream(round.ventureId);
+
+    const [inserted] = await db.insert(ventureTasks).values({
+      workstreamId,
+      ventureId: round.ventureId,
+      title: `[Finance] Update Cap Table — ${round.name}`,
+      description: `Funding round "${round.name}" (${round.roundType}) closed.\n\nRaised: £${(round.raisedAmount ?? 0).toLocaleString()} of £${(round.targetAmount ?? 0).toLocaleString()} target.\nPost-money valuation: £${(round.postMoneyVal ?? 0).toLocaleString()}\nEquity offered: ${round.equityOffered ?? 0}%\nLead investor: ${round.leadInvestor ?? "TBC"}\n\nRequired actions:\n- Update cap table with new shareholders\n- Issue share certificates\n- File at Companies House\n- Update financial model`,
+      kanbanStatus: "To Do",
+      priority: "Critical",
+      notes: `Auto-created by Workflow Engine from Funding Round #${roundId}`,
+    });
+    const taskId = (inserted as any).insertId as number;
+
+    await notifyOwner({
+      title: "Funding Round Closed",
+      content: `Round "${round.name}" closed — £${(round.raisedAmount ?? 0).toLocaleString()} raised at £${(round.postMoneyVal ?? 0).toLocaleString()} post-money valuation. Cap table update task #${taskId} created.`,
+    }).catch(() => {});
+
+    const logId = await logTrigger({
+      triggerType: "funding_round_closed",
+      sourceModule: "investorCrm",
+      sourceRecordId: roundId,
+      ventureId: round.ventureId,
+      payload: { roundId, name: round.name, raisedAmount: round.raisedAmount, postMoneyVal: round.postMoneyVal },
+      status: "success",
+      result: { taskId, message: "Cap table update task created" },
+      targetModule: "ventureProjectManagement",
+      targetRecordId: taskId,
+      retriedFrom: opts?.retriedFrom,
+    });
+
+    return {
+      success: true,
+      logId,
+      targetRecordId: taskId,
+      message: `Created cap table update task #${taskId} for round "${round.name}"`,
+    };
+  } catch (err: any) {
+    const logId = await logTrigger({
+      triggerType: "funding_round_closed",
+      sourceModule: "investorCrm",
+      sourceRecordId: roundId,
+      ventureId: round.ventureId,
+      payload: { roundId },
+      status: "failed",
+      error: err?.message ?? String(err),
+      retriedFrom: opts?.retriedFrom,
+    });
+    return { success: false, logId, message: err?.message ?? "Unknown error" };
+  }
+}
+
+// ── Trigger 6: milestone_overdue → escalation notification + task ─────────────
+
+export async function triggerMilestoneOverdue(
+  milestoneId: number,
+  opts?: { retriedFrom?: number }
+): Promise<TriggerResult> {
+  const db = (await getDb())!;
+
+  const [milestone] = await db
+    .select()
+    .from(ventureMilestones)
+    .where(eq(ventureMilestones.id, milestoneId))
+    .limit(1);
+
+  if (!milestone) {
+    return { success: false, logId: 0, message: "Milestone not found" };
+  }
+
+  // Check if milestone is actually overdue
+  const isOverdue =
+    milestone.status === "Overdue" ||
+    (milestone.status !== "Completed" &&
+      milestone.status !== "Cancelled" &&
+      milestone.targetDate != null &&
+      new Date(milestone.targetDate) < new Date());
+
+  if (!isOverdue) {
+    return { success: true, logId: 0, message: "Milestone is not overdue — trigger skipped" };
+  }
+
+  if (!opts?.retriedFrom && (await alreadyFired("milestone_overdue", milestoneId))) {
+    return { success: true, logId: 0, message: "Trigger already fired — skipped" };
+  }
+
+  try {
+    const workstreamId = await getOrCreateOpsWorkstream(milestone.ventureId);
+
+    const daysOverdue = milestone.targetDate
+      ? Math.floor((Date.now() - new Date(milestone.targetDate).getTime()) / 86400000)
+      : 0;
+
+    const [inserted] = await db.insert(ventureTasks).values({
+      workstreamId,
+      ventureId: milestone.ventureId,
+      title: `[Escalation] Overdue Milestone: ${milestone.title}`,
+      description: `Milestone "${milestone.title}" is ${daysOverdue} day(s) overdue (target: ${milestone.targetDate ?? "unknown"}).\n\nMilestone type: ${milestone.milestoneType ?? "Deliverable"}\nCurrent status: ${milestone.status}\n\nRequired actions:\n- Review blockers and dependencies\n- Update milestone status or target date\n- Escalate to venture lead if blocked`,
+      kanbanStatus: "To Do",
+      priority: "Critical",
+      notes: `Auto-created by Workflow Engine from Milestone #${milestoneId}`,
+    });
+    const taskId = (inserted as any).insertId as number;
+
+    // Mark milestone as Overdue in the DB if not already
+    if (milestone.status !== "Overdue") {
+      await db.update(ventureMilestones)
+        .set({ status: "Overdue", updatedAt: new Date() })
+        .where(eq(ventureMilestones.id, milestoneId));
+    }
+
+    await notifyOwner({
+      title: "⚠️ Milestone Overdue",
+      content: `Milestone "${milestone.title}" is ${daysOverdue} day(s) overdue. Escalation task #${taskId} created in Venture Project Management.`,
+    }).catch(() => {});
+
+    const logId = await logTrigger({
+      triggerType: "milestone_overdue",
+      sourceModule: "ventureProjectManagement",
+      sourceRecordId: milestoneId,
+      ventureId: milestone.ventureId,
+      payload: { milestoneId, title: milestone.title, targetDate: milestone.targetDate, daysOverdue },
+      status: "success",
+      result: { taskId, message: "Escalation task created" },
+      targetModule: "ventureProjectManagement",
+      targetRecordId: taskId,
+      retriedFrom: opts?.retriedFrom,
+    });
+
+    return {
+      success: true,
+      logId,
+      targetRecordId: taskId,
+      message: `Created escalation task #${taskId} for overdue milestone "${milestone.title}" (${daysOverdue} days overdue)`,
+    };
+  } catch (err: any) {
+    const logId = await logTrigger({
+      triggerType: "milestone_overdue",
+      sourceModule: "ventureProjectManagement",
+      sourceRecordId: milestoneId,
+      ventureId: milestone.ventureId,
+      payload: { milestoneId },
+      status: "failed",
+      error: err?.message ?? String(err),
+      retriedFrom: opts?.retriedFrom,
+    });
+    return { success: false, logId, message: err?.message ?? "Unknown error" };
+  }
+}
+
+// ── Trigger 7: data_quality_degraded → Data Review task ──────────────────────
+
+export async function triggerDataQualityDegraded(
+  qualityScoreId: number,
+  opts?: { retriedFrom?: number }
+): Promise<TriggerResult> {
+  const db = (await getDb())!;
+
+  const [score] = await db
+    .select()
+    .from(dmQualityScores)
+    .where(eq(dmQualityScores.id, qualityScoreId))
+    .limit(1);
+
+  if (!score) {
+    return { success: false, logId: 0, message: "Quality score record not found" };
+  }
+
+  const threshold = 60;
+  if ((score.overallScore ?? 100) >= threshold) {
+    return { success: true, logId: 0, message: `Quality score ${score.overallScore} is above threshold ${threshold} — trigger skipped` };
+  }
+
+  if (!opts?.retriedFrom && (await alreadyFired("data_quality_degraded", qualityScoreId))) {
+    return { success: true, logId: 0, message: "Trigger already fired — skipped" };
+  }
+
+  // Get the asset for context
+  const [asset] = await db
+    .select()
+    .from(dmDataAssets)
+    .where(eq(dmDataAssets.id, score.assetId))
+    .limit(1);
+
+  const assetName = asset?.name ?? `Asset #${score.assetId}`;
+  const ventureId = asset?.ventureId ?? "unknown";
+
+  try {
+    const workstreamId = await getOrCreateOpsWorkstream(ventureId);
+
+    const issues = score.issues ? JSON.parse(score.issues) : [];
+    const issuesSummary = Array.isArray(issues) && issues.length > 0
+      ? issues.slice(0, 3).map((i: any) => `• ${i.field ?? "?"}: ${i.type ?? "?"} (${i.severity ?? "?"})`).join("\n")
+      : "See quality score record for details.";
+
+    const [inserted] = await db.insert(ventureTasks).values({
+      workstreamId,
+      ventureId,
+      title: `[Data Quality] Review Required: ${assetName}`,
+      description: `Data asset "${assetName}" quality score has degraded to ${score.overallScore?.toFixed(1) ?? "?"}/100 (threshold: ${threshold}).\n\nDimension scores:\n- Completeness: ${score.completeness ?? "N/A"}\n- Accuracy: ${score.accuracy ?? "N/A"}\n- Freshness: ${score.freshness ?? "N/A"}\n- Consistency: ${score.consistency ?? "N/A"}\n- Uniqueness: ${score.uniqueness ?? "N/A"}\n\nTop issues:\n${issuesSummary}\n\nRequired actions:\n- Review and remediate data quality issues\n- Re-run quality assessment after fixes\n- Update data ingestion pipeline if needed`,
+      kanbanStatus: "To Do",
+      priority: "High",
+      notes: `Auto-created by Workflow Engine from Quality Score #${qualityScoreId}`,
+    });
+    const taskId = (inserted as any).insertId as number;
+
+    await notifyOwner({
+      title: "⚠️ Data Quality Alert",
+      content: `Data asset "${assetName}" quality score degraded to ${score.overallScore?.toFixed(1) ?? "?"}% (below ${threshold}% threshold). Data review task #${taskId} created.`,
+    }).catch(() => {});
+
+    const logId = await logTrigger({
+      triggerType: "data_quality_degraded",
+      sourceModule: "dataManagement",
+      sourceRecordId: qualityScoreId,
+      ventureId,
+      payload: { qualityScoreId, assetName, overallScore: score.overallScore, threshold },
+      status: "success",
+      result: { taskId, message: "Data review task created" },
+      targetModule: "ventureProjectManagement",
+      targetRecordId: taskId,
+      retriedFrom: opts?.retriedFrom,
+    });
+
+    return {
+      success: true,
+      logId,
+      targetRecordId: taskId,
+      message: `Created data review task #${taskId} for asset "${assetName}" (score: ${score.overallScore?.toFixed(1) ?? "?"})`,
+    };
+  } catch (err: any) {
+    const logId = await logTrigger({
+      triggerType: "data_quality_degraded",
+      sourceModule: "dataManagement",
+      sourceRecordId: qualityScoreId,
+      ventureId,
+      payload: { qualityScoreId },
+      status: "failed",
+      error: err?.message ?? String(err),
+      retriedFrom: opts?.retriedFrom,
+    });
+    return { success: false, logId, message: err?.message ?? "Unknown error" };
+  }
+}
+
 // ── Main dispatcher ───────────────────────────────────────────────────────────
-// Call this from any tRPC mutation to fire the appropriate trigger.
 
 export async function dispatchTrigger(
   triggerType: TriggerType,
@@ -449,6 +786,14 @@ export async function dispatchTrigger(
       return triggerAuditFailed(sourceRecordId, opts);
     case "supplier_approved":
       return triggerSupplierApproved(sourceRecordId, opts);
+    case "deal_closed_won":
+      return triggerDealClosedWon(sourceRecordId, opts);
+    case "funding_round_closed":
+      return triggerFundingRoundClosed(sourceRecordId, opts);
+    case "milestone_overdue":
+      return triggerMilestoneOverdue(sourceRecordId, opts);
+    case "data_quality_degraded":
+      return triggerDataQualityDegraded(sourceRecordId, opts);
     default:
       return { success: false, logId: 0, message: `Unknown trigger type: ${triggerType}` };
   }

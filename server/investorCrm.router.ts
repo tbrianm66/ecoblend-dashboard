@@ -10,6 +10,7 @@ import {
   invCapTable, invDueDiligence, invUpdates,
 } from "../drizzle/schema";
 import { eq, desc, and } from "drizzle-orm";
+import { dispatchTrigger } from "./workflowEngine";
 
 // ─── Investor Contacts ────────────────────────────────────────────────────────
 const invContactsRouter = router({
@@ -111,10 +112,18 @@ const roundsRouter = router({
       if (!db) throw new Error("DB unavailable");
       if (input.id) {
         await db.update(invFundingRounds).set({ ...input, updatedAt: new Date() }).where(eq(invFundingRounds.id, input.id));
+        // Fire funding_round_closed trigger if status changed to closed
+        if (input.status === "closed") {
+          dispatchTrigger("funding_round_closed", input.id).catch(() => {});
+        }
         return { id: input.id };
       }
       const result = await db.insert(invFundingRounds).values(input);
-      return { id: (result as any).insertId };
+      const newId = (result as any).insertId as number;
+      if (input.status === "closed") {
+        dispatchTrigger("funding_round_closed", newId).catch(() => {});
+      }
+      return { id: newId };
     }),
 
   delete: protectedProcedure

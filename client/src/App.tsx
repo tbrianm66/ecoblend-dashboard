@@ -48,6 +48,7 @@ import WorkflowEngine from "./pages/WorkflowEngine";
 import DataManagement from "./pages/DataManagement";
 import CommercialCRM from "./pages/CommercialCRM";
 import InvestorCRM from "./pages/InvestorCRM";
+import FinancialModelBuilder from "./pages/FinancialModelBuilder";
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
@@ -94,6 +95,7 @@ function Router() {
       <Route path="/university-playbook" component={UniversityPlaybook} />
       <Route path="/commercial-crm" component={CommercialCRM} />
       <Route path="/investor-crm" component={InvestorCRM} />
+      <Route path="/financial-model-builder" component={FinancialModelBuilder} />
       <Route component={Home} />
     </Switch>
   );
