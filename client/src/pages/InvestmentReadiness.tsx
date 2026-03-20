@@ -1,39 +1,20 @@
 // ============================================================
 // ECOBLEND INVESTMENT READINESS PAGE
 // Design: Precision Industrial — investor-facing view
-// Now linked to Financial Analytics: funding ask, gap, burn, runway
+// DB-backed: trpc.financial.latestAll + trpc.irl.portfolioIrlSummary
 // ============================================================
 
+import { trpc } from "@/lib/trpc";
 import { useVentures } from "@/contexts/VentureContext";
 import {
   DollarSign, CheckCircle2, XCircle, TrendingUp, AlertTriangle,
-  Clock, Target, Zap, ChevronRight
+  Clock, Target, Zap, ChevronRight, Loader2
 } from "lucide-react";
 import {
   ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell, ReferenceLine, BarChart, Bar, Legend
 } from "recharts";
 import { useLocation } from "wouter";
-
-// ── Financial data (shared source of truth with FinancialAnalytics) ───────────
-interface BrandFinancials {
-  id: string;
-  monthlyBurn: number;
-  cashRunway: number;
-  revenueActual: number;
-  revenueTarget: number;
-  investmentRaised: number;
-  investmentTarget: number;
-}
-
-const BRAND_FINANCIALS: Record<string, BrandFinancials> = {
-  "ecoblend":    { id: "ecoblend",    monthlyBurn: 18000, cashRunway: 14, revenueActual: 73000,  revenueTarget: 120000, investmentRaised: 280000, investmentTarget: 500000 },
-  "bebus":       { id: "bebus",       monthlyBurn: 12000, cashRunway: 8,  revenueActual: 0,      revenueTarget: 80000,  investmentRaised: 120000, investmentTarget: 400000 },
-  "tone":        { id: "tone",        monthlyBurn: 8000,  cashRunway: 5,  revenueActual: 2500,   revenueTarget: 60000,  investmentRaised: 50000,  investmentTarget: 300000 },
-  "real":        { id: "real",        monthlyBurn: 9500,  cashRunway: 10, revenueActual: 14200,  revenueTarget: 75000,  investmentRaised: 95000,  investmentTarget: 350000 },
-  "pipe":        { id: "pipe",        monthlyBurn: 5000,  cashRunway: 6,  revenueActual: 0,      revenueTarget: 50000,  investmentRaised: 0,      investmentTarget: 250000 },
-  "ecoblend-rd": { id: "ecoblend-rd", monthlyBurn: 22000, cashRunway: 12, revenueActual: 0,      revenueTarget: 0,      investmentRaised: 350000, investmentTarget: 600000 },
-};
 
 const INVESTMENT_CRITERIA = [
   { label: "VRL Stage ≥ 3 (Go-to-Market)", description: "Venture has completed Kickoff and entered Go-to-Market phase", check: (v: { vrl: number }) => v.vrl >= 3 },
@@ -74,6 +55,50 @@ export default function InvestmentReadiness() {
   const [, navigate] = useLocation();
   const ventures = allVentures.filter(v => !v.isInternalLab);
 
+  // DB-backed financial data
+  const { data: financialSnapshots, isLoading: finLoading } = trpc.financial.latestAll.useQuery();
+  // DB-backed IRL portfolio summary
+  const { data: irlSummary, isLoading: irlLoading } = trpc.irl.portfolioIrlSummary.useQuery();
+
+  const isLoading = finLoading || irlLoading;
+
+  // Build a map of ventureId → financial snapshot
+  const finMap: Record<string, {
+    monthlyBurn: number;
+    cashRunway: number;
+    revenueActual: number;
+    revenueTarget: number;
+    investmentRaised: number;
+    investmentTarget: number;
+  }> = {};
+
+  if (financialSnapshots) {
+    for (const snap of financialSnapshots as any[]) {
+      finMap[snap.ventureId] = {
+        monthlyBurn: snap.monthlyBurn ?? 0,
+        cashRunway: snap.cashRunway ?? 0,
+        revenueActual: snap.revenueActual ?? 0,
+        revenueTarget: snap.revenueTarget ?? 0,
+        investmentRaised: snap.investmentRaised ?? 0,
+        investmentTarget: snap.investmentTarget ?? 0,
+      };
+    }
+  }
+
+  // Build IRL score map
+  const irlMap: Record<string, number> = {};
+  if (irlSummary) {
+    const ventures = (irlSummary as { avgIrl: number; avgTvis: number; ventures: any[] }).ventures;
+    for (const entry of ventures) {
+      irlMap[entry.ventureId] = entry.irlScore ?? 0;
+    }
+  }
+
+  const totalAsk = ventures.reduce((a, v) => a + (finMap[v.id]?.investmentTarget ?? 0), 0);
+  const totalRaised = ventures.reduce((a, v) => a + (finMap[v.id]?.investmentRaised ?? 0), 0);
+  const totalGap = totalAsk - totalRaised;
+  const totalBurn = ventures.reduce((a, v) => a + (finMap[v.id]?.monthlyBurn ?? 0), 0);
+
   const scatterData = ventures.map(v => ({
     name: v.name,
     vrl: v.vrl + v.vrlPercent / 100,
@@ -83,13 +108,8 @@ export default function InvestmentReadiness() {
     ready: v.investmentReady,
   }));
 
-  const totalAsk = ventures.reduce((a, v) => a + (BRAND_FINANCIALS[v.id]?.investmentTarget ?? 0), 0);
-  const totalRaised = ventures.reduce((a, v) => a + (BRAND_FINANCIALS[v.id]?.investmentRaised ?? 0), 0);
-  const totalGap = totalAsk - totalRaised;
-  const totalBurn = ventures.reduce((a, v) => a + (BRAND_FINANCIALS[v.id]?.monthlyBurn ?? 0), 0);
-
   const fundingBarData = ventures.map(v => {
-    const f = BRAND_FINANCIALS[v.id] ?? { investmentRaised: 0, investmentTarget: 0 };
+    const f = finMap[v.id] ?? { investmentRaised: 0, investmentTarget: 0 };
     return {
       name: v.name,
       Raised: f.investmentRaised,
@@ -97,6 +117,14 @@ export default function InvestmentReadiness() {
       color: v.color,
     };
   });
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-gray-50">
+        <Loader2 className="animate-spin text-gray-400" size={32} />
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 overflow-y-auto bg-gray-50">
@@ -107,7 +135,9 @@ export default function InvestmentReadiness() {
           <span className="vos-badge vos-badge-warning" style={{ fontSize: "0.65rem" }}>Investment Readiness</span>
         </div>
         <h1 className="vos-page-title mb-1">Investment Readiness</h1>
-        <p className="text-sm text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>Dual-readiness scoring linked to live financial data — VRL × TRL matrix + funding pipeline</p>
+        <p className="text-sm text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>
+          Dual-readiness scoring linked to live financial data — VRL × TRL matrix + funding pipeline
+        </p>
       </div>
 
       <div className="p-8 space-y-8">
@@ -118,7 +148,7 @@ export default function InvestmentReadiness() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               { label: "Total Funding Ask", value: fmt(totalAsk), sub: "across all brands", color: "#f59e0b", icon: Target },
-              { label: "Total Raised", value: fmt(totalRaised), sub: `${Math.round((totalRaised / totalAsk) * 100)}% of target`, color: "#22c55e", icon: TrendingUp },
+              { label: "Total Raised", value: fmt(totalRaised), sub: `${totalAsk > 0 ? Math.round((totalRaised / totalAsk) * 100) : 0}% of target`, color: "#22c55e", icon: TrendingUp },
               { label: "Funding Gap", value: fmt(totalGap), sub: "still required", color: "#ef4444", icon: AlertTriangle },
               { label: "Combined Burn", value: fmt(totalBurn) + "/mo", sub: "across portfolio", color: "#3A97D3", icon: Zap },
             ].map(k => (
@@ -139,10 +169,11 @@ export default function InvestmentReadiness() {
           <h2 className="vos-section-title mb-4">Brand Funding Pipeline</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
             {ventures.map(v => {
-              const f = BRAND_FINANCIALS[v.id] ?? { monthlyBurn: 0, cashRunway: 0, revenueActual: 0, revenueTarget: 0, investmentRaised: 0, investmentTarget: 0 };
+              const f = finMap[v.id] ?? { monthlyBurn: 0, cashRunway: 0, revenueActual: 0, revenueTarget: 0, investmentRaised: 0, investmentTarget: 0 };
               const gap = Math.max(0, f.investmentTarget - f.investmentRaised);
               const raisedPct = f.investmentTarget > 0 ? Math.round((f.investmentRaised / f.investmentTarget) * 100) : 0;
               const criteriaMet = INVESTMENT_CRITERIA.filter(c => c.check(v)).length;
+              const irlScore = irlMap[v.id] ?? 0;
               return (
                 <div
                   key={v.id}
@@ -172,11 +203,12 @@ export default function InvestmentReadiness() {
                   </div>
 
                   {/* Key metrics */}
-                  <div className="grid grid-cols-3 gap-2 mb-3">
+                  <div className="grid grid-cols-4 gap-2 mb-3">
                     {[
                       { label: "Gap", value: fmt(gap), color: gap > 0 ? "#ef4444" : "#22c55e" },
                       { label: "Burn/mo", value: fmt(f.monthlyBurn), color: "#6b7280" },
                       { label: "Revenue", value: fmt(f.revenueActual), color: "#3A97D3" },
+                      { label: "IRL Score", value: irlScore > 0 ? irlScore.toFixed(1) : "—", color: irlScore >= 7 ? "#22c55e" : irlScore >= 4 ? "#f59e0b" : "#9ca3af" },
                     ].map(m => (
                       <div key={m.label} className="rounded-lg p-2 text-center" style={{ background: "#f9fafb" }}>
                         <div className="text-xs font-bold" style={{ color: m.color }}>{m.value}</div>
@@ -245,20 +277,20 @@ export default function InvestmentReadiness() {
                 content={({ payload }) => {
                   if (!payload?.length) return null;
                   const d = payload[0].payload;
-                  const f = BRAND_FINANCIALS[ventures.find(v => v.name === d.name)?.id ?? ""] ?? null;
+                  const f = finMap[ventures.find(v => v.name === d.name)?.id ?? ""] ?? null;
                   return (
                     <div className="bg-white border rounded-lg p-3 shadow-md text-xs" style={{ borderColor: "#e5e7eb" }}>
                       <div className="font-bold mb-1" style={{ color: d.color }}>{d.name}</div>
                       <div>VRL: {d.vrl.toFixed(1)} / 4</div>
                       <div>TRL: {d.trl.toFixed(1)} / 9</div>
                       <div>Channel: {d.channel}</div>
-                      {f && <>
+                      {f && (
                         <div className="mt-1 pt-1 border-t" style={{ borderColor: "#f3f4f6" }}>
                           <div>Ask: {fmt(f.investmentTarget)}</div>
                           <div>Raised: {fmt(f.investmentRaised)}</div>
                           <div>Runway: {f.cashRunway}m</div>
                         </div>
-                      </>}
+                      )}
                     </div>
                   );
                 }}
@@ -290,7 +322,9 @@ export default function InvestmentReadiness() {
               </div>
             ))}
           </div>
-          <p className="text-xs text-gray-400 mt-4">All criteria must be met for a brand to be marked Investment Ready. Current portfolio: {ventures.filter(v => v.investmentReady).length}/{ventures.length} brands ready.</p>
+          <p className="text-xs text-gray-400 mt-4">
+            All criteria must be met for a brand to be marked Investment Ready. Current portfolio: {ventures.filter(v => v.investmentReady).length}/{ventures.length} brands ready.
+          </p>
         </div>
 
         {/* ── Per-venture readiness table ── */}
@@ -300,15 +334,16 @@ export default function InvestmentReadiness() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b" style={{ borderColor: "#f3f4f6" }}>
-                  {["Brand", "Channel", "VRL", "TRL", "Funding Ask", "Raised", "Gap", "Runway", "Status"].map(h => (
+                  {["Brand", "Channel", "VRL", "TRL", "IRL", "Funding Ask", "Raised", "Gap", "Runway", "Status"].map(h => (
                     <th key={h} className="text-left py-2 pr-4 text-xs font-semibold uppercase tracking-widest text-gray-400">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {ventures.map(v => {
-                  const f = BRAND_FINANCIALS[v.id] ?? { investmentTarget: 0, investmentRaised: 0, cashRunway: 0 };
+                  const f = finMap[v.id] ?? { investmentTarget: 0, investmentRaised: 0, cashRunway: 0 };
                   const gap = Math.max(0, f.investmentTarget - f.investmentRaised);
+                  const irlScore = irlMap[v.id] ?? 0;
                   return (
                     <tr key={v.id} className="border-b last:border-0 hover:bg-gray-50 cursor-pointer" style={{ borderColor: "#f3f4f6" }}
                       onClick={() => navigate(`/venture/${v.id}`)}>
@@ -316,6 +351,9 @@ export default function InvestmentReadiness() {
                       <td className="py-3 pr-4 text-gray-500 text-xs">{v.channel}</td>
                       <td className="py-3 pr-4 font-mono text-xs" style={{ color: "#22c55e" }}>{v.vrl}/4</td>
                       <td className="py-3 pr-4 font-mono text-xs" style={{ color: "#1d4ed8" }}>{v.trl}/9</td>
+                      <td className="py-3 pr-4 font-mono text-xs" style={{ color: irlScore >= 7 ? "#22c55e" : irlScore >= 4 ? "#f59e0b" : "#9ca3af" }}>
+                        {irlScore > 0 ? irlScore.toFixed(1) : "—"}
+                      </td>
                       <td className="py-3 pr-4 font-mono text-xs text-gray-700">{fmt(f.investmentTarget)}</td>
                       <td className="py-3 pr-4 font-mono text-xs" style={{ color: "#22c55e" }}>{fmt(f.investmentRaised)}</td>
                       <td className="py-3 pr-4 font-mono text-xs" style={{ color: gap > 0 ? "#ef4444" : "#22c55e" }}>{fmt(gap)}</td>

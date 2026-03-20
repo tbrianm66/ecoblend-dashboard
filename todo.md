@@ -719,3 +719,30 @@
 - [ ] Wire triggerDataQualityDegraded into dataManagement.router upsertQualityScore mutation (score < 60)
 - [ ] Update WorkflowEngine.tsx to show all 7 trigger types in the summary cards
 - [ ] Vitest tests for 4 new trigger handlers
+
+## Sprint 54 — DB-Connect Static Pages
+- [x] Reconnect InvestmentReadiness.tsx to trpc.irl.* (IRL score, ESG, CSR, certifications)
+- [x] Reconnect FinancialAnalytics.tsx to trpc.financial.* and trpc.finPl.*
+- [x] Reconnect BCorpIso.tsx to trpc.irl.getCertifications / upsertCertification
+- [x] Reconnect PlaybookProgress.tsx to trpc.brl.* (tasks, completions)
+- [x] Write vitest tests for Sprint 54 reconnections
+
+## Sprint 55 — Governance RBAC + Milestone Trigger
+- [ ] Add vitest coverage for governance router (auditLog, permissions, policies, compliance)
+- [ ] Wire milestone_overdue trigger into PM milestones updateMilestone mutation
+- [ ] Add user role management UI to Governance page (promote/demote users)
+
+## Sprint 56 — Marketing & Brand DB Layer
+- [ ] Add DB schema for marketing campaigns, channel splits, brand scores
+- [ ] Add DB schema for press releases, newsletter sends
+- [ ] Build tRPC routers for marketing, brand PR, brand readiness
+- [ ] Reconnect MarketingStrategy.tsx to new router
+- [ ] Reconnect BrandPR.tsx to new router
+- [ ] Reconnect BrandReadiness.tsx to new router
+- [ ] Write vitest tests for Sprint 56
+
+## Sprint 57 — Specialist Services DB Layer
+- [ ] Add DB schema for specialists, engagements, commissions, task assignments
+- [ ] Build tRPC router for specialist services
+- [ ] Reconnect SpecialistServices.tsx to new router
+- [ ] Write vitest tests for Sprint 57
