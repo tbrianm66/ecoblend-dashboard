@@ -4584,3 +4584,162 @@ export const vrlDynamicWeights = mysqlTable("vrl_dynamic_weights", {
 });
 export type VrlDynamicWeight = typeof vrlDynamicWeights.$inferSelect;
 export type InsertVrlDynamicWeight = typeof vrlDynamicWeights.$inferInsert;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// INVESTMENT MODULE — Sprint 66
+// Tables: invReadinessScores, invOutputs, invTargets, invKpis, invFundraisingRounds
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── Investment Readiness Scores ───────────────────────────────────────────────
+export const invReadinessScores = mysqlTable("invReadinessScores", {
+  id:                 int("id").autoincrement().primaryKey(),
+  offeringId:         int("offeringId"),
+  ventureId:          varchar("ventureId", { length: 64 }),
+  commercialScore:    float("commercialScore").default(0),
+  technicalScore:     float("technicalScore").default(0),
+  validationScore:    float("validationScore").default(0),
+  supplyChainScore:   float("supplyChainScore").default(0),
+  impactScore:        float("impactScore").default(0),
+  investmentAttractiveness: float("investmentAttractiveness").default(0),
+  compositeScore:     float("compositeScore").default(0),
+  h4Stage:            varchar("h4Stage", { length: 32 }),
+  vrlScore:           float("vrlScore"),
+  trlScore:           float("trlScore"),
+  brlScore:           float("brlScore"),
+  crlScore:           float("crlScore"),
+  riskIndex:          float("riskIndex"),
+  scoreSummary:       text("scoreSummary"),
+  strengthsJson:      text("strengthsJson"),
+  weaknessesJson:     text("weaknessesJson"),
+  gapsJson:           text("gapsJson"),
+  calculatedBy:       varchar("calculatedBy", { length: 64 }),
+  createdAt:          timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:          timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type InvReadinessScore = typeof invReadinessScores.$inferSelect;
+export type InsertInvReadinessScore = typeof invReadinessScores.$inferInsert;
+
+// ── Investment Outputs (Pitch Deck, Business Plan, Execution Plan) ─────────────
+export const invOutputs = mysqlTable("invOutputs", {
+  id:             int("id").autoincrement().primaryKey(),
+  offeringId:     int("offeringId"),
+  ventureId:      varchar("ventureId", { length: 64 }),
+  scoreId:        int("scoreId"),
+  outputType:     mysqlEnum("invOutputType", ["pitch_deck", "business_plan", "execution_plan", "investor_summary"]).notNull(),
+  title:          varchar("title", { length: 256 }).notNull(),
+  status:         mysqlEnum("invOutputStatus", ["draft", "in_review", "approved", "sent", "archived"]).default("draft"),
+  contentJson:    text("contentJson"),
+  aiNarrative:    text("aiNarrative"),
+  problemSection:     text("problemSection"),
+  opportunitySection: text("opportunitySection"),
+  solutionSection:    text("solutionSection"),
+  marketSection:      text("marketSection"),
+  tractionSection:    text("tractionSection"),
+  businessModelSection: text("businessModelSection"),
+  supplyChainSection: text("supplyChainSection"),
+  teamSection:        text("teamSection"),
+  financialsSection:  text("financialsSection"),
+  askSection:         text("askSection"),
+  executiveSummarySection: text("executiveSummarySection"),
+  marketAnalysisSection:   text("marketAnalysisSection"),
+  productServiceSection:   text("productServiceSection"),
+  commercialStrategySection: text("commercialStrategySection"),
+  financialProjectionsSection: text("financialProjectionsSection"),
+  riskAnalysisSection:     text("riskAnalysisSection"),
+  roadmap90DaySection:     text("roadmap90DaySection"),
+  productDevSection:       text("productDevSection"),
+  supplyChainPlanSection:  text("supplyChainPlanSection"),
+  teamPlanSection:         text("teamPlanSection"),
+  budgetSection:           text("budgetSection"),
+  milestonesSection:       text("milestonesSection"),
+  generatedAt:    timestamp("generatedAt"),
+  version:        int("version").default(1),
+  createdAt:      timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:      timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type InvOutput = typeof invOutputs.$inferSelect;
+export type InsertInvOutput = typeof invOutputs.$inferInsert;
+
+// ── Investor Targets (Matching & Outreach) ─────────────────────────────────────
+export const invTargets = mysqlTable("invTargets", {
+  id:                 int("id").autoincrement().primaryKey(),
+  offeringId:         int("offeringId"),
+  ventureId:          varchar("ventureId", { length: 64 }),
+  investorName:       varchar("investorName", { length: 256 }).notNull(),
+  fund:               varchar("fund", { length: 256 }),
+  investorType:       mysqlEnum("invTargetType", ["angel", "vc", "family_office", "corporate_vc", "impact_fund", "grant", "crowdfunding", "debt"]).default("vc"),
+  geographicFocus:    varchar("geographicFocus", { length: 128 }),
+  stageFocus:         varchar("stageFocus", { length: 128 }),
+  sectorFocus:        varchar("sectorFocus", { length: 256 }),
+  minCheque:          int("minCheque"),
+  maxCheque:          int("maxCheque"),
+  impactFocused:      boolean("impactFocused").default(false),
+  matchScore:         float("matchScore").default(0),
+  matchRationale:     text("matchRationale"),
+  outreachStatus:     mysqlEnum("invTargetStatus", ["identified", "researching", "warm_intro", "contacted", "meeting_booked", "dd_requested", "term_sheet", "closed", "passed"]).default("identified"),
+  contactEmail:       varchar("contactEmail", { length: 256 }),
+  linkedinUrl:        varchar("linkedinUrl", { length: 512 }),
+  warmIntroSource:    varchar("warmIntroSource", { length: 256 }),
+  lastContactedAt:    timestamp("lastContactedAt"),
+  nextFollowUpAt:     timestamp("nextFollowUpAt"),
+  notes:              text("notes"),
+  outputSentId:       int("outputSentId"),
+  createdAt:          timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:          timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type InvTarget = typeof invTargets.$inferSelect;
+export type InsertInvTarget = typeof invTargets.$inferInsert;
+
+// ── Investment KPIs ────────────────────────────────────────────────────────────
+export const invKpis = mysqlTable("invKpis", {
+  id:             int("id").autoincrement().primaryKey(),
+  offeringId:     int("offeringId"),
+  ventureId:      varchar("ventureId", { length: 64 }),
+  askAmount:      int("askAmount"),
+  preMoneyVal:    int("preMoneyVal"),
+  useOfFunds:     text("useOfFunds"),
+  revenueYear1:   int("revenueYear1"),
+  revenueYear3:   int("revenueYear3"),
+  revenueYear5:   int("revenueYear5"),
+  ebitdaYear3:    int("ebitdaYear3"),
+  ebitdaYear5:    int("ebitdaYear5"),
+  burnRate:       int("burnRate"),
+  runway:         int("runway"),
+  customersCount: int("customersCount"),
+  revenueActual:  int("revenueActual"),
+  growthRate:     float("growthRate"),
+  nps:            float("nps"),
+  cac:            int("cac"),
+  ltv:            int("ltv"),
+  socialImpactMetric: varchar("socialImpactMetric", { length: 256 }),
+  impactValue:    varchar("impactValue", { length: 128 }),
+  sdgAlignment:   varchar("sdgAlignment", { length: 256 }),
+  periodLabel:    varchar("periodLabel", { length: 64 }),
+  createdAt:      timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:      timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type InvKpi = typeof invKpis.$inferSelect;
+export type InsertInvKpi = typeof invKpis.$inferInsert;
+
+// ── Fundraising Rounds ─────────────────────────────────────────────────────────
+export const invFundraisingRounds = mysqlTable("invFundraisingRounds", {
+  id:                 int("id").autoincrement().primaryKey(),
+  offeringId:         int("offeringId"),
+  ventureId:          varchar("ventureId", { length: 64 }),
+  roundName:          varchar("roundName", { length: 128 }).notNull(),
+  roundType:          mysqlEnum("invRoundType", ["pre_seed", "seed", "series_a", "series_b", "bridge", "grant", "convertible_note"]).default("seed"),
+  targetAmount:       int("targetAmount"),
+  raisedAmount:       int("raisedAmount").default(0),
+  status:             mysqlEnum("invRoundStatus", ["planning", "open", "closing", "closed", "cancelled"]).default("planning"),
+  openDate:           timestamp("openDate"),
+  closeDate:          timestamp("closeDate"),
+  leadInvestor:       varchar("leadInvestor", { length: 256 }),
+  pitchDeckId:        int("pitchDeckId"),
+  businessPlanId:     int("businessPlanId"),
+  executionPlanId:    int("executionPlanId"),
+  notes:              text("notes"),
+  createdAt:          timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:          timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type InvFundraisingRound = typeof invFundraisingRounds.$inferSelect;
+export type InsertInvFundraisingRound = typeof invFundraisingRounds.$inferInsert;

@@ -85,6 +85,7 @@ const NAV_GROUPS: NavGroup[] = [
     defaultOpen: false,
     items: [
       { id: "investment",  label: "Investment Readiness", icon: "DollarSign",      href: "/investment" },
+      { id: "investment-module", label: "Investment Module",   icon: "TrendingUp",     href: "/investment-module" },
       { id: "financial",   label: "Financial Analytics",  icon: "BarChart2",       href: "/financial" },
       { id: "market",      label: "Market Intelligence",  icon: "PieChart",        href: "/market-intelligence" },
       { id: "risk",        label: "Risk Management",      icon: "ShieldAlert",     href: "/risk" },

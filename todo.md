@@ -823,3 +823,28 @@
 - [x] Fix TypeScript errors: ReactNode type issues in CulturalReadiness.tsx (Boolean() wrapping for unknown types)
 - [x] Fix undefined reference errors: venturesQuery and trpc.vrl references corrected
 - [x] Full test suite: 1150 tests passing across 45 test files, 0 TypeScript errors
+
+## Sprint 66 — Investment Module
+
+- [x] Read Investment_Module_System_Pack.docx and plan architecture
+- [x] Database schema: 5 new tables (invReadinessScores, invOutputs, invTargets, invKpis, invFundraisingRounds) — migration 0042
+- [x] Investment Module tRPC router (server/investmentModule.router.ts) with 6 sub-routers
+- [x] Composite readiness scoring engine (6 dimensions: commercial, technical, validation, supply chain, impact, attractiveness)
+- [x] AI Pitch Deck generation (10 narrative sections: problem, opportunity, solution, market, traction, business model, supply chain, team, financials, ask)
+- [x] AI Business Plan generation (6 sections: executive summary, market analysis, product, commercial strategy, financials, risk)
+- [x] AI Execution Plan generation (6 sections: 90-day roadmap, product dev, supply chain, team, budget, milestones)
+- [x] AI Investor Summary generation
+- [x] AI Investor Matching (aiMatch procedure — identifies aligned investors from venture profile)
+- [x] Investor Targets CRUD with 9-stage outreach pipeline (identified → closed/passed)
+- [x] Investment KPIs management (ask amount, pre-money valuation, burn rate, runway, 3-year revenue projections)
+- [x] Fundraising Rounds management with progress bars and status tracking
+- [x] Portfolio readiness summary (avgComposite, readyCount, byVenture breakdown)
+- [x] InvestmentModule.tsx UI page with 6 tabs (Readiness Score, Pitch Deck, Business Plan, Execution Plan, Investor Matching, Fundraising)
+- [x] Readiness tab: composite score ring chart, 6 dimension score rings, strengths/weaknesses/gaps panels
+- [x] Pitch Deck / Business Plan / Execution Plan tabs: list/detail layout with status management and delete
+- [x] Investor Matching tab: table with match score bars, outreach status inline selector, AI Match button, manual add dialog
+- [x] Fundraising tab: KPI summary cards, round cards with progress bars, Edit KPIs dialog, New Round dialog
+- [x] Sidebar nav entry: "Investment Module" under Analytics section (href: /investment-module)
+- [x] Route registered in App.tsx: /investment-module
+- [x] Vitest test suite: 26 tests covering all 6 sub-routers (server/investmentModule.test.ts)
+- [x] Full test suite: 1176 tests passing across 46 test files, 0 TypeScript errors

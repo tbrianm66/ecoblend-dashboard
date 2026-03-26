@@ -6,6 +6,7 @@ import { uniPartnersRouter, uniResearchRouter, uniTalentRouter, uniWorkflowRoute
 import { uniApprovalReportRouter } from "./uniApprovalReport.router";
 import { spinoutBlueprintRouter } from "./spinoutBlueprint.router";
 import { crlRouter } from "./crl.router";
+import { investmentModuleRouter } from "./investmentModule.router";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -6828,5 +6829,6 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
   portfoliosOfferings: portfoliosOfferingsRouter,
   spinoutBlueprint: spinoutBlueprintRouter,
   crl: crlRouter,
+  investmentModule: investmentModuleRouter,
 });
 export type AppRouter = typeof appRouter;
