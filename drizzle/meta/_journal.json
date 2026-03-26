@@ -302,6 +302,13 @@
       "when": 1774526481564,
       "tag": "0042_modern_pride",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "5",
+      "when": 1774527925323,
+      "tag": "0043_gorgeous_manta",
+      "breakpoints": true
     }
   ]
 }

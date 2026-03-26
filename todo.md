@@ -848,3 +848,25 @@
 - [x] Route registered in App.tsx: /investment-module
 - [x] Vitest test suite: 26 tests covering all 6 sub-routers (server/investmentModule.test.ts)
 - [x] Full test suite: 1176 tests passing across 46 test files, 0 TypeScript errors
+
+## Sprint 67 — EcoRace Lab Module
+
+- [x] DB schema: 7 new tables (erl_projects, erl_stages, erl_materials, erl_simulations, erl_ip_assets, erl_agent_runs, erl_validation_logs) — migration 0043
+- [x] tRPC router: ecoracelab.router.ts with 8 sub-routers (projects, stages, materials, simulations, ip, validation, agentRuns, dashboard)
+- [x] 7 AI agents: Opportunity Translator, Concept Engineer, Materials Scientist, Simulation Engineer, Manufacturing Planner, Validation Engineer, IP Generator
+- [x] 8-stage workflow engine: opportunity → concept → materials → simulation → prototype → manufacturing → validation → ip
+- [x] Stage agent runner with human review/approve/reject flow and iteration tracking
+- [x] Materials library with AI generation from stage output and sustainability scoring
+- [x] Simulations register with FEA/thermal/fatigue/CFD/impact/vibration/lifecycle types
+- [x] IP assets with patent claims, prior art search, and filing status tracking
+- [x] Validation log with compliance standards and pass/fail tracking
+- [x] Agent run log with duration, status, and error tracking
+- [x] EcoraceLab.tsx UI page with 6 tabs: Workflow, Materials, Simulations, IP Assets, Validation, Agent Log
+- [x] 8-stage visual pipeline with status indicators and stage navigation
+- [x] Project sidebar with priority and status indicators
+- [x] New project dialog with venture linking
+- [x] Route /ecorace-lab registered in App.tsx
+- [x] Sidebar nav item added under Analytics section
+- [x] 58 vitest tests — all passing
+- [x] Full test suite: 1,234 tests passing (47 test files)
+- [x] 0 TypeScript errors

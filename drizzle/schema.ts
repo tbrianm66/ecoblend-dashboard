@@ -4743,3 +4743,150 @@ export const invFundraisingRounds = mysqlTable("invFundraisingRounds", {
 });
 export type InvFundraisingRound = typeof invFundraisingRounds.$inferSelect;
 export type InsertInvFundraisingRound = typeof invFundraisingRounds.$inferInsert;
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ECORACE LAB — 8-Stage Engineering Workflow (Sprint 67)
+// Tables: erl_projects, erl_stages, erl_materials, erl_simulations,
+//         erl_ip_assets, erl_agent_runs, erl_validation_logs
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const erlProjects = mysqlTable("erl_projects", {
+  id:               int("id").autoincrement().primaryKey(),
+  ventureId:        varchar("ventureId", { length: 64 }),
+  offeringId:       int("offeringId"),
+  title:            varchar("title", { length: 256 }).notNull(),
+  description:      text("description"),
+  problemStatement: text("problemStatement"),
+  marketReqs:       text("marketReqs"),
+  technicalReqs:    text("technicalReqs"),
+  status:           mysqlEnum("erlProjectStatus", ["draft","active","on_hold","completed","archived"]).default("draft"),
+  currentStage:     mysqlEnum("erlCurrentStage", ["opportunity","concept","materials","simulation","prototype","manufacturing","validation","ip"]).default("opportunity"),
+  priority:         mysqlEnum("erlPriority", ["low","medium","high","critical"]).default("medium"),
+  targetCompletionDate: timestamp("targetCompletionDate"),
+  createdAt:        timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:        timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ErlProject = typeof erlProjects.$inferSelect;
+export type InsertErlProject = typeof erlProjects.$inferInsert;
+
+export const erlStages = mysqlTable("erl_stages", {
+  id:               int("id").autoincrement().primaryKey(),
+  projectId:        int("projectId").notNull(),
+  stage:            mysqlEnum("erlStageType", ["opportunity","concept","materials","simulation","prototype","manufacturing","validation","ip"]).notNull(),
+  status:           mysqlEnum("erlStageStatus", ["pending","in_progress","human_review","completed","blocked"]).default("pending"),
+  agentId:          varchar("agentId", { length: 64 }),
+  inputData:        text("inputData"),
+  outputData:       text("outputData"),
+  aiNarrative:      text("aiNarrative"),
+  performanceTargets: text("performanceTargets"),
+  validationCriteria: text("validationCriteria"),
+  humanApproved:    boolean("humanApproved").default(false),
+  humanNotes:       text("humanNotes"),
+  iterationCount:   int("iterationCount").default(0),
+  completedAt:      timestamp("completedAt"),
+  createdAt:        timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:        timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ErlStage = typeof erlStages.$inferSelect;
+export type InsertErlStage = typeof erlStages.$inferInsert;
+
+export const erlMaterials = mysqlTable("erl_materials", {
+  id:               int("id").autoincrement().primaryKey(),
+  projectId:        int("projectId"),
+  name:             varchar("name", { length: 256 }).notNull(),
+  category:         mysqlEnum("erlMaterialCategory", ["polymer","composite","metal","ceramic","bio_based","recycled","nano","hybrid"]).default("composite"),
+  formulation:      text("formulation"),
+  sustainabilityScore: int("sustainabilityScore").default(0),
+  recycledContent:  int("recycledContent").default(0),
+  carbonFootprint:  varchar("carbonFootprint", { length: 64 }),
+  tensileStrength:  varchar("tensileStrength", { length: 64 }),
+  density:          varchar("density", { length: 64 }),
+  thermalRating:    varchar("thermalRating", { length: 64 }),
+  costPerKg:        int("costPerKg"),
+  supplier:         varchar("supplier", { length: 256 }),
+  certifications:   text("certifications"),
+  aiGenerated:      boolean("aiGenerated").default(false),
+  notes:            text("notes"),
+  createdAt:        timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:        timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ErlMaterial = typeof erlMaterials.$inferSelect;
+export type InsertErlMaterial = typeof erlMaterials.$inferInsert;
+
+export const erlSimulations = mysqlTable("erl_simulations", {
+  id:               int("id").autoincrement().primaryKey(),
+  projectId:        int("projectId").notNull(),
+  stageId:          int("stageId"),
+  simType:          mysqlEnum("erlSimType", ["fea","thermal","fatigue","cfd","impact","vibration","lifecycle"]).notNull(),
+  title:            varchar("title", { length: 256 }).notNull(),
+  softwareTool:     varchar("softwareTool", { length: 128 }),
+  inputParams:      text("inputParams"),
+  results:          text("results"),
+  aiAnalysis:       text("aiAnalysis"),
+  passedValidation: boolean("passedValidation").default(false),
+  safetyFactor:     varchar("safetyFactor", { length: 32 }),
+  iterationNumber:  int("iterationNumber").default(1),
+  status:           mysqlEnum("erlSimStatus", ["queued","running","completed","failed","needs_iteration"]).default("queued"),
+  createdAt:        timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:        timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ErlSimulation = typeof erlSimulations.$inferSelect;
+export type InsertErlSimulation = typeof erlSimulations.$inferInsert;
+
+export const erlIpAssets = mysqlTable("erl_ip_assets", {
+  id:               int("id").autoincrement().primaryKey(),
+  projectId:        int("projectId").notNull(),
+  title:            varchar("title", { length: 256 }).notNull(),
+  ipType:           mysqlEnum("erlIpType", ["patent","trade_secret","design_right","copyright","trademark","know_how"]).default("patent"),
+  claimsJson:       text("claimsJson"),
+  technicalSummary: text("technicalSummary"),
+  noveltyStatement: text("noveltyStatement"),
+  priorArtSearch:   text("priorArtSearch"),
+  draftClaims:      text("draftClaims"),
+  filingStatus:     mysqlEnum("erlFilingStatus", ["draft","review","filed","granted","rejected","abandoned"]).default("draft"),
+  filingDate:       timestamp("filingDate"),
+  grantDate:        timestamp("grantDate"),
+  jurisdiction:     varchar("jurisdiction", { length: 128 }),
+  aiGenerated:      boolean("aiGenerated").default(false),
+  createdAt:        timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:        timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ErlIpAsset = typeof erlIpAssets.$inferSelect;
+export type InsertErlIpAsset = typeof erlIpAssets.$inferInsert;
+
+export const erlAgentRuns = mysqlTable("erl_agent_runs", {
+  id:               int("id").autoincrement().primaryKey(),
+  projectId:        int("projectId").notNull(),
+  stageId:          int("stageId"),
+  agentId:          varchar("agentId", { length: 64 }).notNull(),
+  agentName:        varchar("agentName", { length: 128 }).notNull(),
+  promptUsed:       text("promptUsed"),
+  inputContext:     text("inputContext"),
+  outputJson:       text("outputJson"),
+  tokensUsed:       int("tokensUsed"),
+  durationMs:       int("durationMs"),
+  status:           mysqlEnum("erlAgentStatus", ["queued","running","completed","failed","retrying"]).default("queued"),
+  errorMessage:     text("errorMessage"),
+  createdAt:        timestamp("createdAt").defaultNow().notNull(),
+});
+export type ErlAgentRun = typeof erlAgentRuns.$inferSelect;
+export type InsertErlAgentRun = typeof erlAgentRuns.$inferInsert;
+
+export const erlValidationLogs = mysqlTable("erl_validation_logs", {
+  id:               int("id").autoincrement().primaryKey(),
+  projectId:        int("projectId").notNull(),
+  stageId:          int("stageId"),
+  validationType:   mysqlEnum("erlValidationType", ["performance","compliance","lifecycle","safety","market","technical"]).notNull(),
+  title:            varchar("title", { length: 256 }).notNull(),
+  standard:         varchar("standard", { length: 256 }),
+  testMethod:       text("testMethod"),
+  results:          text("results"),
+  passed:           boolean("passed").default(false),
+  score:            int("score"),
+  notes:            text("notes"),
+  createdAt:        timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:        timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ErlValidationLog = typeof erlValidationLogs.$inferSelect;
+export type InsertErlValidationLog = typeof erlValidationLogs.$inferInsert;
