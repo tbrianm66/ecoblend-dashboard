@@ -1,0 +1,258 @@
+{
+  "query": "DESCRIBE portfolios; DESCRIBE offerings;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3HthdpivREJ9B8M.root --database ggmroLG8ezURUZiLzGveTG --execute DESCRIBE portfolios; DESCRIBE offerings;",
+  "rows": [
+    {
+      "Field": "id",
+      "Type": "varchar(64)",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "ventureId",
+      "Type": "varchar(64)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "name",
+      "Type": "varchar(128)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "description",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "portfolioType",
+      "Type": "enum('Product','Service','Licensing','Platform','Mixed')",
+      "Null": "YES",
+      "Key": "",
+      "Default": "Mixed",
+      "Extra": ""
+    },
+    {
+      "Field": "portfolioStatus",
+      "Type": "enum('Active','Pre-Launch','Archived')",
+      "Null": "YES",
+      "Key": "",
+      "Default": "Pre-Launch",
+      "Extra": ""
+    },
+    {
+      "Field": "color",
+      "Type": "varchar(32)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "#51AF37",
+      "Extra": ""
+    },
+    {
+      "Field": "sortOrder",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "createdAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": ""
+    },
+    {
+      "Field": "updatedAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+    },
+    {
+      "Field": "Field",
+      "Type": "Type",
+      "Null": "Null",
+      "Key": "Key",
+      "Default": "Default",
+      "Extra": "Extra"
+    },
+    {
+      "Field": "id",
+      "Type": "varchar(64)",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "portfolioId",
+      "Type": "varchar(64)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "ventureId",
+      "Type": "varchar(64)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "name",
+      "Type": "varchar(128)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "description",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "offeringType",
+      "Type": "enum('Physical Product','Digital Product','Service','SaaS','Subscription','Marketplace')",
+      "Null": "YES",
+      "Key": "",
+      "Default": "Physical Product",
+      "Extra": ""
+    },
+    {
+      "Field": "offeringStatus",
+      "Type": "enum('Concept','Development','Pilot','Live','Scaling','Sunset')",
+      "Null": "YES",
+      "Key": "",
+      "Default": "Concept",
+      "Extra": ""
+    },
+    {
+      "Field": "trl",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "1",
+      "Extra": ""
+    },
+    {
+      "Field": "brlScore",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "revenueModel",
+      "Type": "enum('B2B','D2C','B2B2C','Marketplace','Licensing','Freemium')",
+      "Null": "YES",
+      "Key": "",
+      "Default": "B2B",
+      "Extra": ""
+    },
+    {
+      "Field": "targetSegment",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "pricePoint",
+      "Type": "decimal(12,2)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "currency",
+      "Type": "varchar(8)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "GBP",
+      "Extra": ""
+    },
+    {
+      "Field": "launchDate",
+      "Type": "date",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "color",
+      "Type": "varchar(32)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "#3A97D3",
+      "Extra": ""
+    },
+    {
+      "Field": "logoUrl",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "tags",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "sortOrder",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "createdAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": ""
+    },
+    {
+      "Field": "updatedAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nid\tvarchar(64)\tNO\tPRI\tNULL\t\nventureId\tvarchar(64)\tNO\t\tNULL\t\nname\tvarchar(128)\tNO\t\tNULL\t\ndescription\ttext\tYES\t\tNULL\t\nportfolioType\tenum('Product','Service','Licensing','Platform','Mixed')\tYES\t\tMixed\t\nportfolioStatus\tenum('Active','Pre-Launch','Archived')\tYES\t\tPre-Launch\t\ncolor\tvarchar(32)\tYES\t\t#51AF37\t\nsortOrder\tint\tYES\t\t0\t\ncreatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\nupdatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP\nField\tType\tNull\tKey\tDefault\tExtra\nid\tvarchar(64)\tNO\tPRI\tNULL\t\nportfolioId\tvarchar(64)\tNO\t\tNULL\t\nventureId\tvarchar(64)\tNO\t\tNULL\t\nname\tvarchar(128)\tNO\t\tNULL\t\ndescription\ttext\tYES\t\tNULL\t\nofferingType\tenum('Physical Product','Digital Product','Service','SaaS','Subscription','Marketplace')\tYES\t\tPhysical Product\t\nofferingStatus\tenum('Concept','Development','Pilot','Live','Scaling','Sunset')\tYES\t\tConcept\t\ntrl\tint\tYES\t\t1\t\nbrlScore\tint\tYES\t\t0\t\nrevenueModel\tenum('B2B','D2C','B2B2C','Marketplace','Licensing','Freemium')\tYES\t\tB2B\t\ntargetSegment\ttext\tYES\t\tNULL\t\npricePoint\tdecimal(12,2)\tYES\t\tNULL\t\ncurrency\tvarchar(8)\tYES\t\tGBP\t\nlaunchDate\tdate\tYES\t\tNULL\t\ncolor\tvarchar(32)\tYES\t\t#3A97D3\t\nlogoUrl\ttext\tYES\t\tNULL\t\ntags\ttext\tYES\t\tNULL\t\nsortOrder\tint\tYES\t\t0\t\ncreatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\nupdatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP\n",
+  "stderr": "",
+  "execution_time_ms": 392
+}

@@ -1,0 +1,8 @@
+{
+  "query": "SELECT * FROM ip_assets ORDER BY ventureId, assetType; SELECT * FROM patent_projects ORDER BY ventureId; SELECT * FROM patent_hypotheses ORDER BY ventureId; SELECT * FROM ip_licenses ORDER BY ventureId;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3HthdpivREJ9B8M.root --database ggmroLG8ezURUZiLzGveTG --execute SELECT * FROM ip_assets ORDER BY ventureId, assetType; SELECT * FROM patent_projects ORDER BY ventureId; SELECT * FROM patent_hypotheses ORDER BY ventureId; SELECT * FROM ip_licenses ORDER BY ventureId;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'assetType' in 'order clause'"
+  ]
+}

@@ -1,0 +1,150 @@
+{
+  "query": "SELECT id, ventureId, title, hypothesis, method, result, outcome, trlLevelJustified FROM experiments WHERE outcome != 'Pending' ORDER BY ventureId LIMIT 15; SELECT id, ventureId, marketName, geography, tamValue, samValue, somValue FROM market_analysis ORDER BY ventureId LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3HthdpivREJ9B8M.root --database ggmroLG8ezURUZiLzGveTG --execute SELECT id, ventureId, title, hypothesis, method, result, outcome, trlLevelJustified FROM experiments WHERE outcome != 'Pending' ORDER BY ventureId LIMIT 15; SELECT id, ventureId, marketName, geography, tamValue, samValue, somValue FROM market_analysis ORDER BY ventureId LIMIT 10;",
+  "rows": [
+    {
+      "id": "30051",
+      "ventureId": "bebus",
+      "title": "Regenerative braking efficiency in hilly terrain",
+      "hypothesis": "Regenerative braking recovers ≥15% of energy on Bristol's gradient profile",
+      "method": "Instrumented test rides on 8 routes with elevation gain >50m",
+      "result": "12.3% energy recovery — below 15% target on steepest routes",
+      "outcome": "Inconclusive",
+      "trlLevelJustified": "3"
+    },
+    {
+      "id": "30050",
+      "ventureId": "bebus",
+      "title": "Fleet operator pricing model validation",
+      "hypothesis": "Fleet operators will commit to ≥5 unit trial at £3,200/unit/year lease",
+      "method": "10 structured interviews with logistics managers + 3 LOI requests",
+      "result": "7/10 expressed strong interest; 2 signed LOIs at £3,400/unit/year",
+      "outcome": "Pass",
+      "trlLevelJustified": "3"
+    },
+    {
+      "id": "30049",
+      "ventureId": "bebus",
+      "title": "Electric cargo bike range under load",
+      "hypothesis": "BEBUS cargo bike achieves 60km range at 80kg payload in urban conditions",
+      "method": "GPS-tracked test rides across 5 Bristol routes with standardised payload",
+      "result": "Average 67km range achieved; battery thermal management performing above spec",
+      "outcome": "Pass",
+      "trlLevelJustified": "3"
+    },
+    {
+      "id": "30044",
+      "ventureId": "ecoblend",
+      "title": "Retail packaging customer acceptance trial",
+      "hypothesis": "Eco-packaging increases purchase intent by ≥15% among target demographic",
+      "method": "A/B test with 200 participants at Bristol Farmers Market over 4 weeks",
+      "result": "Purchase intent increased 22% with eco-packaging; price sensitivity decreased",
+      "outcome": "Pass",
+      "trlLevelJustified": "4"
+    },
+    {
+      "id": "30045",
+      "ventureId": "ecoblend",
+      "title": "Industrial compostability certification test",
+      "hypothesis": "EcoBlend material meets EN 13432 industrial compostability standard",
+      "method": "60-day composting trial at certified facility with mass loss measurement",
+      "result": "87% mass loss at 60 days; EN 13432 threshold is 90% — narrowly failed",
+      "outcome": "Fail",
+      "trlLevelJustified": "3"
+    },
+    {
+      "id": "30043",
+      "ventureId": "ecoblend",
+      "title": "Bio-polymer blend tensile strength test",
+      "hypothesis": "EcoBlend formulation X-7 achieves ≥85% tensile strength of virgin plastic at 30% lower cost",
+      "method": "ASTM D638 tensile testing on 50 samples across 3 formulations",
+      "result": "Formulation X-7 achieved 91% tensile strength at 28% lower material cost",
+      "outcome": "Pass",
+      "trlLevelJustified": "4"
+    },
+    {
+      "id": "30046",
+      "ventureId": "ecoblend-rd",
+      "title": "Mycelium composite structural integrity",
+      "hypothesis": "Mycelium-hemp composite achieves 40 MPa compressive strength",
+      "method": "Compression testing on 30 samples grown under controlled humidity",
+      "result": "Average 44.2 MPa compressive strength achieved across all samples",
+      "outcome": "Pass",
+      "trlLevelJustified": "4"
+    },
+    {
+      "id": "30047",
+      "ventureId": "ecoblend-rd",
+      "title": "Algae-based bioplastic UV degradation rate",
+      "hypothesis": "Algae bioplastic degrades 60% faster than PLA under UV exposure",
+      "method": "UV weatherometer test at 1000W/m² for 500 hours with mass measurement",
+      "result": "68% faster degradation confirmed; colour stability also superior to PLA",
+      "outcome": "Pass",
+      "trlLevelJustified": "3"
+    },
+    {
+      "id": "30048",
+      "ventureId": "ecoblend-rd",
+      "title": "Scale-up fermentation yield consistency",
+      "hypothesis": "Pilot fermentation batch (500L) achieves ≥90% yield consistency vs lab (5L)",
+      "method": "3 × 500L fermentation runs with HPLC yield analysis",
+      "result": "Yield consistency 78% — below target; temperature gradient identified as cause",
+      "outcome": "Fail",
+      "trlLevelJustified": "4"
+    },
+    {
+      "id": "30056",
+      "ventureId": "pipe",
+      "title": "Recycled ocean plastic board blank structural test",
+      "hypothesis": "PIPE board blank from 100% recycled ocean plastic meets ISO 18776 flex standard",
+      "method": "3-point bend test on 10 blanks vs virgin EPS control",
+      "result": "Flex index 94% of control; delamination risk identified at fin box junction",
+      "outcome": "Inconclusive",
+      "trlLevelJustified": "1"
+    },
+    {
+      "id": "30054",
+      "ventureId": "real",
+      "title": "Bio-foam impact absorption vs EPS benchmark",
+      "hypothesis": "REAL bio-foam achieves ≥95% impact absorption of EPS at equal density",
+      "method": "EN 1621-1 impact testing on 20 samples vs EPS control",
+      "result": "97.4% impact absorption achieved; weight 8% lighter than EPS equivalent",
+      "outcome": "Pass",
+      "trlLevelJustified": "2"
+    },
+    {
+      "id": "30055",
+      "ventureId": "real",
+      "title": "Athletes' perception of bio-material protection",
+      "hypothesis": "Athletes rate bio-foam protection ≥8/10 after 4-week trial",
+      "method": "Blind trial with 12 amateur cyclists; weekly perception surveys",
+      "result": "Average protection rating 7.6/10; comfort rated 9.1/10",
+      "outcome": "Inconclusive",
+      "trlLevelJustified": "2"
+    },
+    {
+      "id": "30053",
+      "ventureId": "tone",
+      "title": "Carbon-neutral print production feasibility",
+      "hypothesis": "Carbon-neutral print production is achievable at <10% cost premium",
+      "method": "Quotes from 6 certified printers + lifecycle carbon calculation",
+      "result": "8.2% average cost premium confirmed; 3 supplier partnerships established",
+      "outcome": "Pass",
+      "trlLevelJustified": "2"
+    },
+    {
+      "id": "30052",
+      "ventureId": "tone",
+      "title": "Eco-creative brief client conversion rate",
+      "hypothesis": "TONE's sustainability-first creative brief increases client conversion by 20%",
+      "method": "Pilot with 15 SME clients comparing standard vs eco-brief onboarding",
+      "result": "28% higher conversion rate; average project value also 15% higher",
+      "outcome": "Pass",
+      "trlLevelJustified": "2"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tventureId\ttitle\thypothesis\tmethod\tresult\toutcome\ttrlLevelJustified\n30051\tbebus\tRegenerative braking efficiency in hilly terrain\tRegenerative braking recovers ≥15% of energy on Bristol's gradient profile\tInstrumented test rides on 8 routes with elevation gain >50m\t12.3% energy recovery — below 15% target on steepest routes\tInconclusive\t3\n30050\tbebus\tFleet operator pricing model validation\tFleet operators will commit to ≥5 unit trial at £3,200/unit/year lease\t10 structured interviews with logistics managers + 3 LOI requests\t7/10 expressed strong interest; 2 signed LOIs at £3,400/unit/year\tPass\t3\n30049\tbebus\tElectric cargo bike range under load\tBEBUS cargo bike achieves 60km range at 80kg payload in urban conditions\tGPS-tracked test rides across 5 Bristol routes with standardised payload\tAverage 67km range achieved; battery thermal management performing above spec\tPass\t3\n30044\tecoblend\tRetail packaging customer acceptance trial\tEco-packaging increases purchase intent by ≥15% among target demographic\tA/B test with 200 participants at Bristol Farmers Market over 4 weeks\tPurchase intent increased 22% with eco-packaging; price sensitivity decreased\tPass\t4\n30045\tecoblend\tIndustrial compostability certification test\tEcoBlend material meets EN 13432 industrial compostability standard\t60-day composting trial at certified facility with mass loss measurement\t87% mass loss at 60 days; EN 13432 threshold is 90% — narrowly failed\tFail\t3\n30043\tecoblend\tBio-polymer blend tensile strength test\tEcoBlend formulation X-7 achieves ≥85% tensile strength of virgin plastic at 30% lower cost\tASTM D638 tensile testing on 50 samples across 3 formulations\tFormulation X-7 achieved 91% tensile strength at 28% lower material cost\tPass\t4\n30046\tecoblend-rd\tMycelium composite structural integrity\tMycelium-hemp composite achieves 40 MPa compressive strength\tCompression testing on 30 samples grown under controlled humidity\tAverage 44.2 MPa compressive strength achieved across all samples\tPass\t4\n30047\tecoblend-rd\tAlgae-based bioplastic UV degradation rate\tAlgae bioplastic degrades 60% faster than PLA under UV exposure\tUV weatherometer test at 1000W/m² for 500 hours with mass measurement\t68% faster degradation confirmed; colour stability also superior to PLA\tPass\t3\n30048\tecoblend-rd\tScale-up fermentation yield consistency\tPilot fermentation batch (500L) achieves ≥90% yield consistency vs lab (5L)\t3 × 500L fermentation runs with HPLC yield analysis\tYield consistency 78% — below target; temperature gradient identified as cause\tFail\t4\n30056\tpipe\tRecycled ocean plastic board blank structural test\tPIPE board blank from 100% recycled ocean plastic meets ISO 18776 flex standard\t3-point bend test on 10 blanks vs virgin EPS control\tFlex index 94% of control; delamination risk identified at fin box junction\tInconclusive\t1\n30054\treal\tBio-foam impact absorption vs EPS benchmark\tREAL bio-foam achieves ≥95% impact absorption of EPS at equal density\tEN 1621-1 impact testing on 20 samples vs EPS control\t97.4% impact absorption achieved; weight 8% lighter than EPS equivalent\tPass\t2\n30055\treal\tAthletes' perception of bio-material protection\tAthletes rate bio-foam protection ≥8/10 after 4-week trial\tBlind trial with 12 amateur cyclists; weekly perception surveys\tAverage protection rating 7.6/10; comfort rated 9.1/10\tInconclusive\t2\n30053\ttone\tCarbon-neutral print production feasibility\tCarbon-neutral print production is achievable at <10% cost premium\tQuotes from 6 certified printers + lifecycle carbon calculation\t8.2% average cost premium confirmed; 3 supplier partnerships established\tPass\t2\n30052\ttone\tEco-creative brief client conversion rate\tTONE's sustainability-first creative brief increases client conversion by 20%\tPilot with 15 SME clients comparing standard vs eco-brief onboarding\t28% higher conversion rate; average project value also 15% higher\tPass\t2\n",
+  "stderr": "",
+  "execution_time_ms": 403
+}

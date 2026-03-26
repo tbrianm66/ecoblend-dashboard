@@ -4467,3 +4467,120 @@ export const blueprintLibraryLinks = mysqlTable("blueprintLibraryLinks", {
 });
 export type BlueprintLibraryLink = typeof blueprintLibraryLinks.$inferSelect;
 export type InsertBlueprintLibraryLink = typeof blueprintLibraryLinks.$inferInsert;
+
+// ╔══════════════════════════════════════════════════════════════════════════════╗
+// ║  CULTURAL READINESS LEVEL (CRL) MODULE                                       ║
+// ║  Wasserman (2012): 65% of high-potential startups fail due to co-founder     ║
+// ║  conflict. CRL provides systematic, AI-powered cultural alignment assessment. ║
+// ╚══════════════════════════════════════════════════════════════════════════════╝
+
+// ── CRL Assessments ───────────────────────────────────────────────────────────
+export const crlAssessments = mysqlTable("crl_assessments", {
+  id:             int("id").autoincrement().primaryKey(),
+  ventureId:      varchar("ventureId", { length: 64 }).notNull(),
+  assessmentType: mysqlEnum("crlAssessmentType", ["initial", "periodic", "triggered"]).notNull().default("initial"),
+  status:         mysqlEnum("crlAssessmentStatus", ["initiated", "in_progress", "completed"]).notNull().default("initiated"),
+  h4Stage:        mysqlEnum("crlH4Stage", ["H4.1_ideation", "H4.2_build_launch", "H4.3_validation", "H4.4_grow_scale"]).notNull().default("H4.1_ideation"),
+  overallAlignmentScore: float("overallAlignmentScore"),
+  visionScore:           float("visionScore"),
+  operationalScore:      float("operationalScore"),
+  conflictScore:         float("conflictScore"),
+  crlScore:              float("crlScore"),
+  crlLevel:              int("crlLevel"),
+  readinessLevel:        mysqlEnum("crlReadinessLevel", ["high", "moderate", "low"]),
+  confidenceScore:       float("confidenceScore"),
+  aiSummary:             text("aiSummary"),
+  criticalMisalignments: text("criticalMisalignments"),
+  actionPlan:            text("actionPlan"),
+  createdAt:  timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:  timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CrlAssessment = typeof crlAssessments.$inferSelect;
+export type InsertCrlAssessment = typeof crlAssessments.$inferInsert;
+
+// ── CRL Founder Responses ─────────────────────────────────────────────────────
+export const crlFounderResponses = mysqlTable("crl_founder_responses", {
+  id:             int("id").autoincrement().primaryKey(),
+  assessmentId:   int("assessmentId").notNull(),
+  founderId:      int("founderId").notNull(),
+  founderName:    varchar("founderName", { length: 128 }).notNull(),
+  questionId:     varchar("questionId", { length: 16 }).notNull(),
+  questionPhase:  mysqlEnum("crlQuestionPhase", ["vision", "operational", "conflict"]).notNull(),
+  responseText:   text("responseText").notNull(),
+  responseOption: varchar("responseOption", { length: 64 }),
+  confidenceLevel: int("confidenceLevel").default(3),
+  submittedAt:    timestamp("submittedAt").defaultNow().notNull(),
+});
+export type CrlFounderResponse = typeof crlFounderResponses.$inferSelect;
+export type InsertCrlFounderResponse = typeof crlFounderResponses.$inferInsert;
+
+// ── CRL Interventions ─────────────────────────────────────────────────────────
+export const crlInterventions = mysqlTable("crl_interventions", {
+  id:               int("id").autoincrement().primaryKey(),
+  ventureId:        varchar("ventureId", { length: 64 }).notNull(),
+  assessmentId:     int("assessmentId"),
+  triggeredBy:      mysqlEnum("crlTriggerReason", [
+    "low_crl", "misalignment_detected", "founder_request", "scheduled_review", "drift_detected"
+  ]).notNull(),
+  interventionType: mysqlEnum("crlInterventionType", [
+    "mediation", "founders_agreement", "coaching", "conflict_resolution", "check_in"
+  ]).notNull(),
+  status:           mysqlEnum("crlInterventionStatus", ["scheduled", "in_progress", "completed", "cancelled"]).default("scheduled"),
+  participatingFounderIds: text("participatingFounderIds"),
+  conversationLog:  text("conversationLog"),
+  resolutionAchieved: boolean("resolutionAchieved").default(false),
+  agreementsDocumented: text("agreementsDocumented"),
+  followUpRequired: boolean("followUpRequired").default(false),
+  followUpDate:     timestamp("followUpDate"),
+  postInterventionCrl: float("postInterventionCrl"),
+  crlImprovement:      float("crlImprovement"),
+  founderSatisfactionScore: int("founderSatisfactionScore"),
+  createdAt:  timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:  timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CrlIntervention = typeof crlInterventions.$inferSelect;
+export type InsertCrlIntervention = typeof crlInterventions.$inferInsert;
+
+// ── CRL Monitoring Records ────────────────────────────────────────────────────
+export const crlMonitoringRecords = mysqlTable("crl_monitoring_records", {
+  id:             int("id").autoincrement().primaryKey(),
+  ventureId:      varchar("ventureId", { length: 64 }).notNull(),
+  assessmentId:   int("assessmentId"),
+  checkInDate:    timestamp("checkInDate").defaultNow().notNull(),
+  frequency:      mysqlEnum("crlMonitoringFrequency", ["biweekly", "monthly", "quarterly"]).default("monthly"),
+  crlScoreCurrent:  float("crlScoreCurrent"),
+  crlScorePrevious: float("crlScorePrevious"),
+  driftScore:       float("driftScore"),
+  driftLevel:       mysqlEnum("crlDriftLevel", ["none", "minor", "moderate", "critical"]).default("none"),
+  questionsChecked: text("questionsChecked"),
+  driftDetected:    boolean("driftDetected").default(false),
+  escalationTriggered: boolean("escalationTriggered").default(false),
+  aiReport:         text("aiReport"),
+  createdAt:  timestamp("createdAt").defaultNow().notNull(),
+});
+export type CrlMonitoringRecord = typeof crlMonitoringRecords.$inferSelect;
+export type InsertCrlMonitoringRecord = typeof crlMonitoringRecords.$inferInsert;
+
+// ── VRL Dynamic Weight Configs ────────────────────────────────────────────────
+export const vrlDynamicWeights = mysqlTable("vrl_dynamic_weights", {
+  id:           int("id").autoincrement().primaryKey(),
+  ventureId:    varchar("ventureId", { length: 64 }).notNull().unique(),
+  h4Stage:      mysqlEnum("vrlDynH4Stage", ["H4.1_ideation", "H4.2_build_launch", "H4.3_validation", "H4.4_grow_scale"]).notNull().default("H4.1_ideation"),
+  alphaWeight:  float("alphaWeight").notNull().default(0.225),
+  betaWeight:   float("betaWeight").notNull().default(0.325),
+  gammaWeight:  float("gammaWeight").notNull().default(0.450),
+  trlNormalized: float("trlNormalized"),
+  brlNormalized: float("brlNormalized"),
+  crlNormalized: float("crlNormalized"),
+  riskIndex:     float("riskIndex").default(0.3),
+  confidenceScore: float("confidenceScore").default(0.7),
+  computedVrl:   float("computedVrl"),
+  trlContribution: float("trlContribution"),
+  brlContribution: float("brlContribution"),
+  crlContribution: float("crlContribution"),
+  lastCalculatedAt: timestamp("lastCalculatedAt"),
+  createdAt:  timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:  timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type VrlDynamicWeight = typeof vrlDynamicWeights.$inferSelect;
+export type InsertVrlDynamicWeight = typeof vrlDynamicWeights.$inferInsert;

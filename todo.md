@@ -806,3 +806,20 @@
 - [x] Integrate widget as Row 7 in Command Centre page (between Venture Readiness Table and Live Event Stream)
 - [x] Write 12 vitest tests for pipeline summary sorting, stats, gate proximity, null handling, widget display logic
 - [x] Full test suite: 1150 tests passing across 45 test files
+
+## Sprint 65 — Co-founder Readiness Level (CRL) Module
+
+- [x] Review CRL Module Architecture Documentation and design specification
+- [x] Add 5 DB tables: crl_assessments, crl_founder_responses, crl_interventions, crl_monitoring_records, vrl_dynamic_weights (migration 0041)
+- [x] Build crlRouter tRPC with scoring engine (5 dimensions: Alignment, Capability, Commitment, Conflict Resolution, Adaptability)
+- [x] Build 4 AI conversation modes: Assessment (initial scoring), Results Review (interpret scores), Conflict Mediation (resolve team issues), Continuous Monitoring (track trends)
+- [x] Add dynamic VRL weighting by H4 stage (Stage 1: 60% VRL, Stage 2: 50% VRL, Stage 3: 40% VRL, Stage 4: 30% VRL)
+- [x] Build CofounderReadiness.tsx UI page with 4 tabs: Assessment, Results, Interventions, Monitoring
+- [x] Assessment tab: founder selector, 5-dimension questionnaire, AI scoring engine, score history
+- [x] Results tab: CRL score display, risk alerts, trend chart, comparison to portfolio average
+- [x] Interventions tab: intervention CRUD, status tracking, owner assignment, effectiveness tracking
+- [x] Monitoring tab: monitoring records, trend analysis, early warning system, action plan generation
+- [x] Add "Co-founder Readiness" to sidebar navigation (Intelligence group)
+- [x] Fix TypeScript errors: ReactNode type issues in CulturalReadiness.tsx (Boolean() wrapping for unknown types)
+- [x] Fix undefined reference errors: venturesQuery and trpc.vrl references corrected
+- [x] Full test suite: 1150 tests passing across 45 test files, 0 TypeScript errors

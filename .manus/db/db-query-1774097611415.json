@@ -1,0 +1,88 @@
+{
+  "query": "SELECT id, name, tagline, sector, channel, status, vrl, trl, strategicClassification, engineOfGrowth, color FROM ventures ORDER BY name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3HthdpivREJ9B8M.root --database ggmroLG8ezURUZiLzGveTG --execute SELECT id, name, tagline, sector, channel, status, vrl, trl, strategicClassification, engineOfGrowth, color FROM ventures ORDER BY name;",
+  "rows": [
+    {
+      "id": "bebus",
+      "name": "BEBUS",
+      "tagline": "Eco-Transport Solutions",
+      "sector": "Sustainable Transport",
+      "channel": "B2B",
+      "status": "Active",
+      "vrl": "2",
+      "trl": "3",
+      "strategicClassification": "Sustaining",
+      "engineOfGrowth": "NULL",
+      "color": "#3A97D3"
+    },
+    {
+      "id": "ecoblend",
+      "name": "EcoComp",
+      "tagline": "Advanced Materials Formulation & Distribution",
+      "sector": "Materials Science / Green Chemistry",
+      "channel": "B2B",
+      "status": "Active",
+      "vrl": "2",
+      "trl": "4",
+      "strategicClassification": "Sustaining",
+      "engineOfGrowth": "NULL",
+      "color": "#51AF37"
+    },
+    {
+      "id": "ecoblend-rd",
+      "name": "EcoRace",
+      "tagline": "Central IP & Technology Engine",
+      "sector": "Deep Tech / Materials Science",
+      "channel": "B2B",
+      "status": "Active",
+      "vrl": "2",
+      "trl": "4",
+      "strategicClassification": "Sustaining",
+      "engineOfGrowth": "NULL",
+      "color": "#51AF37"
+    },
+    {
+      "id": "pipe",
+      "name": "PIPE",
+      "tagline": "Eco-Water Sport & Performance Brand",
+      "sector": "Water Sports / Outdoor Performance",
+      "channel": "D2C",
+      "status": "Pre-Launch",
+      "vrl": "1",
+      "trl": "1",
+      "strategicClassification": "Sustaining",
+      "engineOfGrowth": "NULL",
+      "color": "#0ea5e9"
+    },
+    {
+      "id": "real",
+      "name": "REAL",
+      "tagline": "Sports Protection — F1 Science for the Person",
+      "sector": "Sports Protection / Performance Tech",
+      "channel": "D2C",
+      "status": "Pre-Launch",
+      "vrl": "1",
+      "trl": "2",
+      "strategicClassification": "Sustaining",
+      "engineOfGrowth": "NULL",
+      "color": "#ef4444"
+    },
+    {
+      "id": "tone",
+      "name": "TONE",
+      "tagline": "Eco-Creative Industry Brand",
+      "sector": "Creative Industries / Sustainable Arts",
+      "channel": "D2C",
+      "status": "Active",
+      "vrl": "1",
+      "trl": "2",
+      "strategicClassification": "Sustaining",
+      "engineOfGrowth": "NULL",
+      "color": "#F49C13"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\ttagline\tsector\tchannel\tstatus\tvrl\ttrl\tstrategicClassification\tengineOfGrowth\tcolor\nbebus\tBEBUS\tEco-Transport Solutions\tSustainable Transport\tB2B\tActive\t2\t3\tSustaining\tNULL\t#3A97D3\necoblend\tEcoComp\tAdvanced Materials Formulation & Distribution\tMaterials Science / Green Chemistry\tB2B\tActive\t2\t4\tSustaining\tNULL\t#51AF37\necoblend-rd\tEcoRace\tCentral IP & Technology Engine\tDeep Tech / Materials Science\tB2B\tActive\t2\t4\tSustaining\tNULL\t#51AF37\npipe\tPIPE\tEco-Water Sport & Performance Brand\tWater Sports / Outdoor Performance\tD2C\tPre-Launch\t1\t1\tSustaining\tNULL\t#0ea5e9\nreal\tREAL\tSports Protection — F1 Science for the Person\tSports Protection / Performance Tech\tD2C\tPre-Launch\t1\t2\tSustaining\tNULL\t#ef4444\ntone\tTONE\tEco-Creative Industry Brand\tCreative Industries / Sustainable Arts\tD2C\tActive\t1\t2\tSustaining\tNULL\t#F49C13\n",
+  "stderr": "",
+  "execution_time_ms": 1027
+}

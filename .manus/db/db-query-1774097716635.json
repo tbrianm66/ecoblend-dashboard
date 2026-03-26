@@ -1,0 +1,45 @@
+{
+  "query": "SELECT id, ventureId, title, outcome, trlLevelJustified FROM experiments WHERE outcome != 'Pending' AND ventureId IN ('pipe','real','tone') ORDER BY ventureId; SELECT id, ventureId, title, researchType, status FROM uniResearchProjects ORDER BY ventureId LIMIT 15;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3HthdpivREJ9B8M.root --database ggmroLG8ezURUZiLzGveTG --execute SELECT id, ventureId, title, outcome, trlLevelJustified FROM experiments WHERE outcome != 'Pending' AND ventureId IN ('pipe','real','tone') ORDER BY ventureId; SELECT id, ventureId, title, researchType, status FROM uniResearchProjects ORDER BY ventureId LIMIT 15;",
+  "rows": [
+    {
+      "id": "30056",
+      "ventureId": "pipe",
+      "title": "Recycled ocean plastic board blank structural test",
+      "outcome": "Inconclusive",
+      "trlLevelJustified": "1"
+    },
+    {
+      "id": "30054",
+      "ventureId": "real",
+      "title": "Bio-foam impact absorption vs EPS benchmark",
+      "outcome": "Pass",
+      "trlLevelJustified": "2"
+    },
+    {
+      "id": "30055",
+      "ventureId": "real",
+      "title": "Athletes' perception of bio-material protection",
+      "outcome": "Inconclusive",
+      "trlLevelJustified": "2"
+    },
+    {
+      "id": "30052",
+      "ventureId": "tone",
+      "title": "Eco-creative brief client conversion rate",
+      "outcome": "Pass",
+      "trlLevelJustified": "2"
+    },
+    {
+      "id": "30053",
+      "ventureId": "tone",
+      "title": "Carbon-neutral print production feasibility",
+      "outcome": "Pass",
+      "trlLevelJustified": "2"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tventureId\ttitle\toutcome\ttrlLevelJustified\n30056\tpipe\tRecycled ocean plastic board blank structural test\tInconclusive\t1\n30054\treal\tBio-foam impact absorption vs EPS benchmark\tPass\t2\n30055\treal\tAthletes' perception of bio-material protection\tInconclusive\t2\n30052\ttone\tEco-creative brief client conversion rate\tPass\t2\n30053\ttone\tCarbon-neutral print production feasibility\tPass\t2\n",
+  "stderr": "",
+  "execution_time_ms": 394
+}

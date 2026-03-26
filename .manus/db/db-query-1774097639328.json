@@ -1,0 +1,49 @@
+{
+  "query": "SHOW TABLES LIKE '%ip%'; SHOW TABLES LIKE '%patent%'; SHOW TABLES LIKE '%trademark%'; SHOW TABLES LIKE '%intellectual%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3HthdpivREJ9B8M.root --database ggmroLG8ezURUZiLzGveTG --execute SHOW TABLES LIKE '%ip%'; SHOW TABLES LIKE '%patent%'; SHOW TABLES LIKE '%trademark%'; SHOW TABLES LIKE '%intellectual%';",
+  "rows": [
+    {
+      "Tables_in_ggmroLG8ezURUZiLzGveTG (%ip%)": "crmPipelineStages"
+    },
+    {
+      "Tables_in_ggmroLG8ezURUZiLzGveTG (%ip%)": "crmPipelines"
+    },
+    {
+      "Tables_in_ggmroLG8ezURUZiLzGveTG (%ip%)": "dmAiPipelines"
+    },
+    {
+      "Tables_in_ggmroLG8ezURUZiLzGveTG (%ip%)": "dmPipelineRuns"
+    },
+    {
+      "Tables_in_ggmroLG8ezURUZiLzGveTG (%ip%)": "dmRagPipelines"
+    },
+    {
+      "Tables_in_ggmroLG8ezURUZiLzGveTG (%ip%)": "ip_assets"
+    },
+    {
+      "Tables_in_ggmroLG8ezURUZiLzGveTG (%ip%)": "ip_licenses"
+    },
+    {
+      "Tables_in_ggmroLG8ezURUZiLzGveTG (%ip%)": "mfgLogisticsShipments"
+    },
+    {
+      "Tables_in_ggmroLG8ezURUZiLzGveTG (%ip%)": "uniPartners"
+    },
+    {
+      "Tables_in_ggmroLG8ezURUZiLzGveTG (%ip%)": "university_partnerships"
+    },
+    {
+      "Tables_in_ggmroLG8ezURUZiLzGveTG (%ip%)": "Tables_in_ggmroLG8ezURUZiLzGveTG (%patent%)"
+    },
+    {
+      "Tables_in_ggmroLG8ezURUZiLzGveTG (%ip%)": "patent_hypotheses"
+    },
+    {
+      "Tables_in_ggmroLG8ezURUZiLzGveTG (%ip%)": "patent_projects"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_ggmroLG8ezURUZiLzGveTG (%ip%)\ncrmPipelineStages\ncrmPipelines\ndmAiPipelines\ndmPipelineRuns\ndmRagPipelines\nip_assets\nip_licenses\nmfgLogisticsShipments\nuniPartners\nuniversity_partnerships\nTables_in_ggmroLG8ezURUZiLzGveTG (%patent%)\npatent_hypotheses\npatent_projects\n",
+  "stderr": "",
+  "execution_time_ms": 492
+}

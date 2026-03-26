@@ -1,0 +1,82 @@
+{
+  "query": "SELECT ventureId, title, hypothesis, result FROM experiments ORDER BY id ASC LIMIT 12;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3HthdpivREJ9B8M.root --database ggmroLG8ezURUZiLzGveTG --execute SELECT ventureId, title, hypothesis, result FROM experiments ORDER BY id ASC LIMIT 12;",
+  "rows": [
+    {
+      "ventureId": "ecoblend",
+      "title": "Bio-polymer blend tensile strength test",
+      "hypothesis": "EcoBlend formulation X-7 achieves ≥85% tensile strength of virgin plastic at 30% lower cost",
+      "result": "Formulation X-7 achieved 91% tensile strength at 28% lower material cost"
+    },
+    {
+      "ventureId": "ecoblend",
+      "title": "Retail packaging customer acceptance trial",
+      "hypothesis": "Eco-packaging increases purchase intent by ≥15% among target demographic",
+      "result": "Purchase intent increased 22% with eco-packaging; price sensitivity decreased"
+    },
+    {
+      "ventureId": "ecoblend",
+      "title": "Industrial compostability certification test",
+      "hypothesis": "EcoBlend material meets EN 13432 industrial compostability standard",
+      "result": "87% mass loss at 60 days; EN 13432 threshold is 90% — narrowly failed"
+    },
+    {
+      "ventureId": "ecoblend-rd",
+      "title": "Mycelium composite structural integrity",
+      "hypothesis": "Mycelium-hemp composite achieves 40 MPa compressive strength",
+      "result": "Average 44.2 MPa compressive strength achieved across all samples"
+    },
+    {
+      "ventureId": "ecoblend-rd",
+      "title": "Algae-based bioplastic UV degradation rate",
+      "hypothesis": "Algae bioplastic degrades 60% faster than PLA under UV exposure",
+      "result": "68% faster degradation confirmed; colour stability also superior to PLA"
+    },
+    {
+      "ventureId": "ecoblend-rd",
+      "title": "Scale-up fermentation yield consistency",
+      "hypothesis": "Pilot fermentation batch (500L) achieves ≥90% yield consistency vs lab (5L)",
+      "result": "Yield consistency 78% — below target; temperature gradient identified as cause"
+    },
+    {
+      "ventureId": "bebus",
+      "title": "Electric cargo bike range under load",
+      "hypothesis": "BEBUS cargo bike achieves 60km range at 80kg payload in urban conditions",
+      "result": "Average 67km range achieved; battery thermal management performing above spec"
+    },
+    {
+      "ventureId": "bebus",
+      "title": "Fleet operator pricing model validation",
+      "hypothesis": "Fleet operators will commit to ≥5 unit trial at £3,200/unit/year lease",
+      "result": "7/10 expressed strong interest; 2 signed LOIs at £3,400/unit/year"
+    },
+    {
+      "ventureId": "bebus",
+      "title": "Regenerative braking efficiency in hilly terrain",
+      "hypothesis": "Regenerative braking recovers ≥15% of energy on Bristol's gradient profile",
+      "result": "12.3% energy recovery — below 15% target on steepest routes"
+    },
+    {
+      "ventureId": "tone",
+      "title": "Eco-creative brief client conversion rate",
+      "hypothesis": "TONE's sustainability-first creative brief increases client conversion by 20%",
+      "result": "28% higher conversion rate; average project value also 15% higher"
+    },
+    {
+      "ventureId": "tone",
+      "title": "Carbon-neutral print production feasibility",
+      "hypothesis": "Carbon-neutral print production is achievable at <10% cost premium",
+      "result": "8.2% average cost premium confirmed; 3 supplier partnerships established"
+    },
+    {
+      "ventureId": "real",
+      "title": "Bio-foam impact absorption vs EPS benchmark",
+      "hypothesis": "REAL bio-foam achieves ≥95% impact absorption of EPS at equal density",
+      "result": "97.4% impact absorption achieved; weight 8% lighter than EPS equivalent"
+    }
+  ],
+  "messages": [],
+  "stdout": "ventureId\ttitle\thypothesis\tresult\necoblend\tBio-polymer blend tensile strength test\tEcoBlend formulation X-7 achieves ≥85% tensile strength of virgin plastic at 30% lower cost\tFormulation X-7 achieved 91% tensile strength at 28% lower material cost\necoblend\tRetail packaging customer acceptance trial\tEco-packaging increases purchase intent by ≥15% among target demographic\tPurchase intent increased 22% with eco-packaging; price sensitivity decreased\necoblend\tIndustrial compostability certification test\tEcoBlend material meets EN 13432 industrial compostability standard\t87% mass loss at 60 days; EN 13432 threshold is 90% — narrowly failed\necoblend-rd\tMycelium composite structural integrity\tMycelium-hemp composite achieves 40 MPa compressive strength\tAverage 44.2 MPa compressive strength achieved across all samples\necoblend-rd\tAlgae-based bioplastic UV degradation rate\tAlgae bioplastic degrades 60% faster than PLA under UV exposure\t68% faster degradation confirmed; colour stability also superior to PLA\necoblend-rd\tScale-up fermentation yield consistency\tPilot fermentation batch (500L) achieves ≥90% yield consistency vs lab (5L)\tYield consistency 78% — below target; temperature gradient identified as cause\nbebus\tElectric cargo bike range under load\tBEBUS cargo bike achieves 60km range at 80kg payload in urban conditions\tAverage 67km range achieved; battery thermal management performing above spec\nbebus\tFleet operator pricing model validation\tFleet operators will commit to ≥5 unit trial at £3,200/unit/year lease\t7/10 expressed strong interest; 2 signed LOIs at £3,400/unit/year\nbebus\tRegenerative braking efficiency in hilly terrain\tRegenerative braking recovers ≥15% of energy on Bristol's gradient profile\t12.3% energy recovery — below 15% target on steepest routes\ntone\tEco-creative brief client conversion rate\tTONE's sustainability-first creative brief increases client conversion by 20%\t28% higher conversion rate; average project value also 15% higher\ntone\tCarbon-neutral print production feasibility\tCarbon-neutral print production is achievable at <10% cost premium\t8.2% average cost premium confirmed; 3 supplier partnerships established\nreal\tBio-foam impact absorption vs EPS benchmark\tREAL bio-foam achieves ≥95% impact absorption of EPS at equal density\t97.4% impact absorption achieved; weight 8% lighter than EPS equivalent\n",
+  "stderr": "",
+  "execution_time_ms": 366
+}

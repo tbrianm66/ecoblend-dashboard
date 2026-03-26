@@ -1,0 +1,82 @@
+{
+  "query": "SELECT name, description, sector, targetMarket, productStage, status, submittedBy FROM product_opportunities ORDER BY id ASC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3HthdpivREJ9B8M.root --database ggmroLG8ezURUZiLzGveTG --execute SELECT name, description, sector, targetMarket, productStage, status, submittedBy FROM product_opportunities ORDER BY id ASC;",
+  "rows": [
+    {
+      "name": "Hemp-Fibre Insulation Panel",
+      "description": "NULL",
+      "sector": "Construction Materials",
+      "targetMarket": "UK residential retrofit market",
+      "productStage": "Prototype",
+      "status": "Scored",
+      "submittedBy": "EcoBlend VBS Team"
+    },
+    {
+      "name": "Seaweed-Based Food Packaging",
+      "description": "NULL",
+      "sector": "Food & Beverage Packaging",
+      "targetMarket": "UK supermarket own-label",
+      "productStage": "Pilot",
+      "status": "Approved for VRL",
+      "submittedBy": "EcoBlend VBS Team"
+    },
+    {
+      "name": "Cargo Trike Last-Mile Delivery",
+      "description": "NULL",
+      "sector": "Urban Logistics",
+      "targetMarket": "Bristol & Bath city centres",
+      "productStage": "Prototype",
+      "status": "Under Assessment",
+      "submittedBy": "EcoBlend VBS Team"
+    },
+    {
+      "name": "Mycelium Acoustic Panels",
+      "description": "NULL",
+      "sector": "Interior Design",
+      "targetMarket": "Commercial office fit-out",
+      "productStage": "Concept",
+      "status": "Identified",
+      "submittedBy": "EcoBlend VBS Team"
+    },
+    {
+      "name": "Upcycled Textile Sports Gear",
+      "description": "NULL",
+      "sector": "Sportswear",
+      "targetMarket": "UK outdoor sports retail",
+      "productStage": "Pilot",
+      "status": "Scored",
+      "submittedBy": "EcoBlend VBS Team"
+    },
+    {
+      "name": "Solar-Integrated Garden Furniture",
+      "description": "NULL",
+      "sector": "Garden & Outdoor",
+      "targetMarket": "UK garden retail",
+      "productStage": "Concept",
+      "status": "Identified",
+      "submittedBy": "EcoBlend VBS Team"
+    },
+    {
+      "name": "Bamboo Bicycle Frame",
+      "description": "NULL",
+      "sector": "Cycling",
+      "targetMarket": "UK premium cycling market",
+      "productStage": "Prototype",
+      "status": "Under Assessment",
+      "submittedBy": "EcoBlend VBS Team"
+    },
+    {
+      "name": "Eco-Packaging Design Service",
+      "description": "NULL",
+      "sector": "Creative Services",
+      "targetMarket": "UK SME brands",
+      "productStage": "Commercial",
+      "status": "Approved for VRL",
+      "submittedBy": "EcoBlend VBS Team"
+    }
+  ],
+  "messages": [],
+  "stdout": "name\tdescription\tsector\ttargetMarket\tproductStage\tstatus\tsubmittedBy\nHemp-Fibre Insulation Panel\tNULL\tConstruction Materials\tUK residential retrofit market\tPrototype\tScored\tEcoBlend VBS Team\nSeaweed-Based Food Packaging\tNULL\tFood & Beverage Packaging\tUK supermarket own-label\tPilot\tApproved for VRL\tEcoBlend VBS Team\nCargo Trike Last-Mile Delivery\tNULL\tUrban Logistics\tBristol & Bath city centres\tPrototype\tUnder Assessment\tEcoBlend VBS Team\nMycelium Acoustic Panels\tNULL\tInterior Design\tCommercial office fit-out\tConcept\tIdentified\tEcoBlend VBS Team\nUpcycled Textile Sports Gear\tNULL\tSportswear\tUK outdoor sports retail\tPilot\tScored\tEcoBlend VBS Team\nSolar-Integrated Garden Furniture\tNULL\tGarden & Outdoor\tUK garden retail\tConcept\tIdentified\tEcoBlend VBS Team\nBamboo Bicycle Frame\tNULL\tCycling\tUK premium cycling market\tPrototype\tUnder Assessment\tEcoBlend VBS Team\nEco-Packaging Design Service\tNULL\tCreative Services\tUK SME brands\tCommercial\tApproved for VRL\tEcoBlend VBS Team\n",
+  "stderr": "",
+  "execution_time_ms": 357
+}

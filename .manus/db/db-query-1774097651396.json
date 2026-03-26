@@ -1,0 +1,602 @@
+{
+  "query": "DESCRIBE ip_assets; DESCRIBE patent_projects; DESCRIBE patent_hypotheses; DESCRIBE ip_licenses;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3HthdpivREJ9B8M.root --database ggmroLG8ezURUZiLzGveTG --execute DESCRIBE ip_assets; DESCRIBE patent_projects; DESCRIBE patent_hypotheses; DESCRIBE ip_licenses;",
+  "rows": [
+    {
+      "Field": "id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": "NULL",
+      "Extra": "auto_increment"
+    },
+    {
+      "Field": "ventureId",
+      "Type": "varchar(64)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "ventureName",
+      "Type": "varchar(128)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "ventureColor",
+      "Type": "varchar(16)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "#22c55e",
+      "Extra": ""
+    },
+    {
+      "Field": "ipType",
+      "Type": "varchar(32)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "title",
+      "Type": "varchar(256)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "reference",
+      "Type": "varchar(64)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "description",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "status",
+      "Type": "varchar(32)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "Draft",
+      "Extra": ""
+    },
+    {
+      "Field": "jurisdiction",
+      "Type": "varchar(64)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "UK",
+      "Extra": ""
+    },
+    {
+      "Field": "filedDate",
+      "Type": "varchar(16)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "grantedDate",
+      "Type": "varchar(16)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "expiryDate",
+      "Type": "varchar(16)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "renewalDueDate",
+      "Type": "varchar(16)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "commercialPotential",
+      "Type": "varchar(16)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "Medium",
+      "Extra": ""
+    },
+    {
+      "Field": "estimatedValue",
+      "Type": "float",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "trl",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "1",
+      "Extra": ""
+    },
+    {
+      "Field": "claimsCount",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "priorArtSummary",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "trademarkClass",
+      "Type": "varchar(64)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "trademarkType",
+      "Type": "varchar(32)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "copyrightWork",
+      "Type": "varchar(64)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "author",
+      "Type": "varchar(128)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "designType",
+      "Type": "varchar(32)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "secretCategory",
+      "Type": "varchar(64)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "protectionMeasures",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "ownedBy",
+      "Type": "varchar(128)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "EcoRace Ltd",
+      "Extra": ""
+    },
+    {
+      "Field": "assignedTo",
+      "Type": "varchar(128)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "notes",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "createdAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": ""
+    },
+    {
+      "Field": "updatedAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+    },
+    {
+      "Field": "Field",
+      "Type": "Type",
+      "Null": "Null",
+      "Key": "Key",
+      "Default": "Default",
+      "Extra": "Extra"
+    },
+    {
+      "Field": "id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": "NULL",
+      "Extra": "auto_increment"
+    },
+    {
+      "Field": "ipAssetId",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "ventureId",
+      "Type": "varchar(64)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "title",
+      "Type": "varchar(256)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "phase",
+      "Type": "varchar(32)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "Ingestion",
+      "Extra": ""
+    },
+    {
+      "Field": "coreInventionNotes",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "priorArtNotes",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "draftAbstract",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "draftBackground",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "draftSummary",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "draftDetailedDesc",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "draftClaims",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "jurisdiction",
+      "Type": "varchar(64)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "UK/EPO",
+      "Extra": ""
+    },
+    {
+      "Field": "createdAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": ""
+    },
+    {
+      "Field": "updatedAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+    },
+    {
+      "Field": "Field",
+      "Type": "Type",
+      "Null": "Null",
+      "Key": "Key",
+      "Default": "Default",
+      "Extra": "Extra"
+    },
+    {
+      "Field": "id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": "NULL",
+      "Extra": "auto_increment"
+    },
+    {
+      "Field": "projectId",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "title",
+      "Type": "varchar(256)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "description",
+      "Type": "text",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "rationale",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "claimImpact",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "included",
+      "Type": "tinyint(1)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "sortOrder",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "createdAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": ""
+    },
+    {
+      "Field": "Field",
+      "Type": "Type",
+      "Null": "Null",
+      "Key": "Key",
+      "Default": "Default",
+      "Extra": "Extra"
+    },
+    {
+      "Field": "id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": "NULL",
+      "Extra": "auto_increment"
+    },
+    {
+      "Field": "ipAssetId",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "licensee",
+      "Type": "varchar(128)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "country",
+      "Type": "varchar(64)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "region",
+      "Type": "varchar(64)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "licenseType",
+      "Type": "varchar(32)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "Non-Exclusive",
+      "Extra": ""
+    },
+    {
+      "Field": "status",
+      "Type": "varchar(32)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "Negotiating",
+      "Extra": ""
+    },
+    {
+      "Field": "annualValue",
+      "Type": "float",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "upfrontFee",
+      "Type": "float",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "royaltyRate",
+      "Type": "float",
+      "Null": "YES",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "startDate",
+      "Type": "varchar(16)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "endDate",
+      "Type": "varchar(16)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "valuesAligned",
+      "Type": "tinyint(1)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "1",
+      "Extra": ""
+    },
+    {
+      "Field": "notes",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "createdAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": ""
+    },
+    {
+      "Field": "updatedAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nid\tint\tNO\tPRI\tNULL\tauto_increment\nventureId\tvarchar(64)\tNO\t\tNULL\t\nventureName\tvarchar(128)\tYES\t\tNULL\t\nventureColor\tvarchar(16)\tYES\t\t#22c55e\t\nipType\tvarchar(32)\tNO\t\tNULL\t\ntitle\tvarchar(256)\tNO\t\tNULL\t\nreference\tvarchar(64)\tYES\t\tNULL\t\ndescription\ttext\tYES\t\tNULL\t\nstatus\tvarchar(32)\tNO\t\tDraft\t\njurisdiction\tvarchar(64)\tYES\t\tUK\t\nfiledDate\tvarchar(16)\tYES\t\tNULL\t\ngrantedDate\tvarchar(16)\tYES\t\tNULL\t\nexpiryDate\tvarchar(16)\tYES\t\tNULL\t\nrenewalDueDate\tvarchar(16)\tYES\t\tNULL\t\ncommercialPotential\tvarchar(16)\tYES\t\tMedium\t\nestimatedValue\tfloat\tYES\t\t0\t\ntrl\tint\tYES\t\t1\t\nclaimsCount\tint\tYES\t\t0\t\npriorArtSummary\ttext\tYES\t\tNULL\t\ntrademarkClass\tvarchar(64)\tYES\t\tNULL\t\ntrademarkType\tvarchar(32)\tYES\t\tNULL\t\ncopyrightWork\tvarchar(64)\tYES\t\tNULL\t\nauthor\tvarchar(128)\tYES\t\tNULL\t\ndesignType\tvarchar(32)\tYES\t\tNULL\t\nsecretCategory\tvarchar(64)\tYES\t\tNULL\t\nprotectionMeasures\ttext\tYES\t\tNULL\t\nownedBy\tvarchar(128)\tYES\t\tEcoRace Ltd\t\nassignedTo\tvarchar(128)\tYES\t\tNULL\t\nnotes\ttext\tYES\t\tNULL\t\ncreatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\nupdatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP\nField\tType\tNull\tKey\tDefault\tExtra\nid\tint\tNO\tPRI\tNULL\tauto_increment\nipAssetId\tint\tYES\t\tNULL\t\nventureId\tvarchar(64)\tNO\t\tNULL\t\ntitle\tvarchar(256)\tNO\t\tNULL\t\nphase\tvarchar(32)\tNO\t\tIngestion\t\ncoreInventionNotes\ttext\tYES\t\tNULL\t\npriorArtNotes\ttext\tYES\t\tNULL\t\ndraftAbstract\ttext\tYES\t\tNULL\t\ndraftBackground\ttext\tYES\t\tNULL\t\ndraftSummary\ttext\tYES\t\tNULL\t\ndraftDetailedDesc\ttext\tYES\t\tNULL\t\ndraftClaims\ttext\tYES\t\tNULL\t\njurisdiction\tvarchar(64)\tYES\t\tUK/EPO\t\ncreatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\nupdatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP\nField\tType\tNull\tKey\tDefault\tExtra\nid\tint\tNO\tPRI\tNULL\tauto_increment\nprojectId\tint\tNO\t\tNULL\t\ntitle\tvarchar(256)\tNO\t\tNULL\t\ndescription\ttext\tNO\t\tNULL\t\nrationale\ttext\tYES\t\tNULL\t\nclaimImpact\ttext\tYES\t\tNULL\t\nincluded\ttinyint(1)\tYES\t\t0\t\nsortOrder\tint\tYES\t\t0\t\ncreatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\nField\tType\tNull\tKey\tDefault\tExtra\nid\tint\tNO\tPRI\tNULL\tauto_increment\nipAssetId\tint\tNO\t\tNULL\t\nlicensee\tvarchar(128)\tNO\t\tNULL\t\ncountry\tvarchar(64)\tYES\t\tNULL\t\nregion\tvarchar(64)\tYES\t\tNULL\t\nlicenseType\tvarchar(32)\tNO\t\tNon-Exclusive\t\nstatus\tvarchar(32)\tNO\t\tNegotiating\t\nannualValue\tfloat\tYES\t\t0\t\nupfrontFee\tfloat\tYES\t\t0\t\nroyaltyRate\tfloat\tYES\t\t0\t\nstartDate\tvarchar(16)\tYES\t\tNULL\t\nendDate\tvarchar(16)\tYES\t\tNULL\t\nvaluesAligned\ttinyint(1)\tYES\t\t1\t\nnotes\ttext\tYES\t\tNULL\t\ncreatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\nupdatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP\n",
+  "stderr": "",
+  "execution_time_ms": 487
+}

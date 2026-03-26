@@ -1,0 +1,9 @@
+{
+  "query": "SELECT p.id, p.ventureId, p.name, p.description, p.portfolioType, p.portfolioStatus, v.name as ventureName, v.sector FROM portfolios p LEFT JOIN ventures v ON p.ventureId = v.id ORDER BY p.ventureId; SELECT o.id, o.portfolioId, o.ventureId, o.name, o.description, o.offeringType, o.offeringStatus, o.trl, o.revenueModel FROM offerings o ORDER BY o.ventureId, o.portfolioId;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3HthdpivREJ9B8M.root --database ggmroLG8ezURUZiLzGveTG --execute SELECT p.id, p.ventureId, p.name, p.description, p.portfolioType, p.portfolioStatus, v.name as ventureName, v.sector FROM portfolios p LEFT JOIN ventures v ON p.ventureId = v.id ORDER BY p.ventureId; SELECT o.id, o.portfolioId, o.ventureId, o.name, o.description, o.offeringType, o.offeringStatus, o.trl, o.revenueModel FROM offerings o ORDER BY o.ventureId, o.portfolioId;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 409
+}

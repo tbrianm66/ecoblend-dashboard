@@ -131,6 +131,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: "matching",    label: "Matching Engine",       icon: "Shuffle",         href: "/matching" },
       { id: "spinoff",     label: "Spin-Off OS",           icon: "GitBranch",       href: "/spinoff" },
       { id: "spinout-blueprint", label: "Spin-Out Blueprint", icon: "Rocket",         href: "/spinout-blueprint" },
+      { id: "cultural-readiness", label: "Cultural Readiness",  icon: "Users",          href: "/cultural-readiness" },
       { id: "co-founder",  label: "Co-Founder Matrix",    icon: "Users2",          href: "/co-founder-matrix" },
     ],
   },

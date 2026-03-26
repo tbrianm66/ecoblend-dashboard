@@ -1,0 +1,14 @@
+{
+  "query": "SELECT id, ventureId, title, outcome, trlLevelJustified FROM experiments WHERE outcome != 'Pending' AND ventureId IN ('pipe','real','tone') ORDER BY ventureId; SELECT id, ventureId, title, researchType, status, partnerUniversity FROM uniResearchProjects ORDER BY ventureId LIMIT 15;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3HthdpivREJ9B8M.root --database ggmroLG8ezURUZiLzGveTG --execute SELECT id, ventureId, title, outcome, trlLevelJustified FROM experiments WHERE outcome != 'Pending' AND ventureId IN ('pipe','real','tone') ORDER BY ventureId; SELECT id, ventureId, title, researchType, status, partnerUniversity FROM uniResearchProjects ORDER BY ventureId LIMIT 15;",
+  "returncode": 1,
+  "logs": [
+    "id\tventureId\ttitle\toutcome\ttrlLevelJustified",
+    "30056\tpipe\tRecycled ocean plastic board blank structural test\tInconclusive\t1",
+    "30054\treal\tBio-foam impact absorption vs EPS benchmark\tPass\t2",
+    "30055\treal\tAthletes' perception of bio-material protection\tInconclusive\t2",
+    "30052\ttone\tEco-creative brief client conversion rate\tPass\t2",
+    "30053\ttone\tCarbon-neutral print production feasibility\tPass\t2",
+    "ERROR 1054 (42S22) at line 1: Unknown column 'partneruniversity' in 'field list'"
+  ]
+}
