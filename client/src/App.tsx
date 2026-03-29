@@ -55,6 +55,7 @@ import SpinOutBlueprint from "./pages/SpinOutBlueprint";
 import CulturalReadiness from "./pages/CulturalReadiness";
 import InvestmentModule from "./pages/InvestmentModule";
 import EcoraceLab from "./pages/EcoraceLab";
+import InvestorDataRoom from "./pages/InvestorDataRoom";
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
@@ -108,6 +109,7 @@ function Router() {
       <Route path="/cultural-readiness" component={CulturalReadiness} />
       <Route path="/investment-module" component={InvestmentModule} />
       <Route path="/ecorace-lab" component={EcoraceLab} />
+      <Route path="/investor-data-room" component={InvestorDataRoom} />
       <Route component={Home} />
     </Switch>
   );

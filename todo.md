@@ -870,3 +870,20 @@
 - [x] 58 vitest tests — all passing
 - [x] Full test suite: 1,234 tests passing (47 test files)
 - [x] 0 TypeScript errors
+
+## Sprint 68 — Investor Data Room Module
+
+- [x] 10 new DB tables: dr_rooms, dr_assets, dr_readiness_checklist, dr_investors, dr_permissions, dr_engagement_events, dr_qa_requests, dr_asset_generation_log, dr_approvals (migration 0044)
+- [x] tRPC router with 9 sub-routers: rooms, assets, readiness, investors, permissions, engagement, qa, assetFactory, approvals
+- [x] Readiness scoring engine with 5-category checklist (overview, market, financials, legal, compliance)
+- [x] AI Asset Factory: generateOnePager, generatePitchDeck, generateFinancialSummary, generateDdIndex
+- [x] Investor pipeline with 9 stages: identified → contacted → meeting_scheduled → nda_signed → room_invited → reviewing → term_sheet → closed_won → closed_lost
+- [x] Permissions system with role-based access: viewer, reviewer, lead_investor, co_investor
+- [x] Engagement analytics: per-room event log, portfolio-level analytics
+- [x] Q&A module with AI-assisted response generation
+- [x] Approvals workflow: request, review, approve/reject
+- [x] InvestorDataRoom.tsx UI with 6 tabs: Portfolio Rooms, Room Dashboard, Asset Manager, Investor Portal, Analytics, Admin
+- [x] Sidebar nav item added (FolderLock icon, Analytics section)
+- [x] Route /investor-data-room registered in App.tsx
+- [x] 45 vitest tests — all passing
+- [x] Full test suite: 1,279 tests passing (48 test files)

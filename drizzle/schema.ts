@@ -4890,3 +4890,226 @@ export const erlValidationLogs = mysqlTable("erl_validation_logs", {
 });
 export type ErlValidationLog = typeof erlValidationLogs.$inferSelect;
 export type InsertErlValidationLog = typeof erlValidationLogs.$inferInsert;
+
+// ─────────────────────────────────────────────────────────────
+// INVESTOR DATA ROOM MODULE — 10 tables (migration 0044)
+// ─────────────────────────────────────────────────────────────
+
+// 1. Data Room Rooms
+export const drRooms = mysqlTable("dr_rooms", {
+  id:               int("id").autoincrement().primaryKey(),
+  ventureId:        int("ventureId").notNull(),
+  name:             varchar("name", { length: 256 }).notNull(),
+  description:      text("description"),
+  roomType:         mysqlEnum("drRoomType", ["teaser","full","due_diligence","custom"]).notNull().default("teaser"),
+  status:           mysqlEnum("drRoomStatus", ["draft","internal_review","approved","published","expired","archived"]).notNull().default("draft"),
+  visibilityTier:   mysqlEnum("drVisibilityTier", ["teaser","full","due_diligence"]).notNull().default("teaser"),
+  fundingRound:     varchar("fundingRound", { length: 128 }),
+  fundingTarget:    varchar("fundingTarget", { length: 128 }),
+  expiresAt:        timestamp("expiresAt"),
+  publishedAt:      timestamp("publishedAt"),
+  ownerId:          int("ownerId"),
+  watermarkEnabled: boolean("watermarkEnabled").default(true),
+  downloadEnabled:  boolean("downloadEnabled").default(false),
+  ndaRequired:      boolean("ndaRequired").default(false),
+  accessCode:       varchar("accessCode", { length: 64 }),
+  createdAt:        timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:        timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type DrRoom = typeof drRooms.$inferSelect;
+export type InsertDrRoom = typeof drRooms.$inferInsert;
+
+// 2. Data Room Assets
+export const drAssets = mysqlTable("dr_assets", {
+  id:              int("id").autoincrement().primaryKey(),
+  roomId:          int("roomId").notNull(),
+  ventureId:       int("ventureId").notNull(),
+  folder:          mysqlEnum("drFolder", [
+    "01_Overview","02_Problem_Market","03_Product_Technology",
+    "04_Business_Model_Financials","05_Execution_Operations",
+    "06_Impact_Compliance","07_Legal_Corporate",
+    "08_Due_Diligence_QA","09_Access_Logs_Archive"
+  ]).notNull().default("01_Overview"),
+  name:            varchar("name", { length: 256 }).notNull(),
+  description:     text("description"),
+  fileUrl:         text("fileUrl"),
+  fileKey:         varchar("fileKey", { length: 512 }),
+  mimeType:        varchar("mimeType", { length: 128 }),
+  fileSizeBytes:   int("fileSizeBytes"),
+  assetType:       mysqlEnum("drAssetType", [
+    "pitch_deck","one_pager","financial_summary","technical_dossier",
+    "impact_summary","seis_eis_pack","business_plan","exec_plan",
+    "legal_doc","cap_table","market_research","product_demo",
+    "dd_index","qa_log","other"
+  ]).notNull().default("other"),
+  status:          mysqlEnum("drAssetStatus", ["draft","internal_review","approved","superseded","archived"]).notNull().default("draft"),
+  version:         int("version").default(1),
+  isAiGenerated:   boolean("isAiGenerated").default(false),
+  sourceDataRef:   text("sourceDataRef"),
+  approvedById:    int("approvedById"),
+  approvedAt:      timestamp("approvedAt"),
+  visibilityTier:  mysqlEnum("drAssetTier", ["teaser","full","due_diligence"]).notNull().default("teaser"),
+  downloadAllowed: boolean("downloadAllowed").default(false),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type DrAsset = typeof drAssets.$inferSelect;
+export type InsertDrAsset = typeof drAssets.$inferInsert;
+
+// 3. Readiness Checks
+export const drReadinessChecks = mysqlTable("dr_readiness_checks", {
+  id:            int("id").autoincrement().primaryKey(),
+  roomId:        int("roomId").notNull(),
+  ventureId:     int("ventureId").notNull(),
+  category:      mysqlEnum("drCheckCategory", [
+    "overview","market","product","financials","legal","compliance","team","ip","governance"
+  ]).notNull(),
+  title:         varchar("title", { length: 256 }).notNull(),
+  description:   text("description"),
+  severity:      mysqlEnum("drSeverity", ["critical","high","medium","low"]).notNull().default("medium"),
+  status:        mysqlEnum("drCheckStatus", ["pending","in_progress","resolved","waived"]).notNull().default("pending"),
+  blocksPublish: boolean("blocksPublish").default(false),
+  ownerId:       int("ownerId"),
+  dueDate:       timestamp("dueDate"),
+  resolvedAt:    timestamp("resolvedAt"),
+  notes:         text("notes"),
+  createdAt:     timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:     timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type DrReadinessCheck = typeof drReadinessChecks.$inferSelect;
+export type InsertDrReadinessCheck = typeof drReadinessChecks.$inferInsert;
+
+// 4. Investors
+export const drInvestors = mysqlTable("dr_investors", {
+  id:           int("id").autoincrement().primaryKey(),
+  ventureId:    int("ventureId").notNull(),
+  name:         varchar("name", { length: 256 }).notNull(),
+  organisation: varchar("organisation", { length: 256 }),
+  email:        varchar("email", { length: 256 }),
+  phone:        varchar("phone", { length: 64 }),
+  investorType: mysqlEnum("drInvestorType", ["angel","vc","family_office","corporate","accelerator","grant","other"]).notNull().default("vc"),
+  thesisFit:    mysqlEnum("drThesisFit", ["strong","moderate","weak","unknown"]).notNull().default("unknown"),
+  stage:        mysqlEnum("drInvestorStage", ["identified","contacted","nda_signed","room_invited","active_review","meeting_booked","term_sheet","closed","passed"]).notNull().default("identified"),
+  ndaSigned:    boolean("ndaSigned").default(false),
+  ndaSignedAt:  timestamp("ndaSignedAt"),
+  notes:        text("notes"),
+  linkedinUrl:  varchar("linkedinUrl", { length: 512 }),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:    timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type DrInvestor = typeof drInvestors.$inferSelect;
+export type InsertDrInvestor = typeof drInvestors.$inferInsert;
+
+// 5. Room Permissions
+export const drPermissions = mysqlTable("dr_permissions", {
+  id:          int("id").autoincrement().primaryKey(),
+  roomId:      int("roomId").notNull(),
+  investorId:  int("investorId").notNull(),
+  accessLevel: mysqlEnum("drAccessLevel", ["teaser","full","due_diligence"]).notNull().default("teaser"),
+  invitedAt:   timestamp("invitedAt").defaultNow().notNull(),
+  acceptedAt:  timestamp("acceptedAt"),
+  expiresAt:   timestamp("expiresAt"),
+  revokedAt:   timestamp("revokedAt"),
+  inviteToken: varchar("inviteToken", { length: 128 }),
+  isActive:    boolean("isActive").default(true),
+  createdAt:   timestamp("createdAt").defaultNow().notNull(),
+});
+export type DrPermission = typeof drPermissions.$inferSelect;
+export type InsertDrPermission = typeof drPermissions.$inferInsert;
+
+// 6. Engagement Events
+export const drEngagementEvents = mysqlTable("dr_engagement_events", {
+  id:              int("id").autoincrement().primaryKey(),
+  roomId:          int("roomId").notNull(),
+  assetId:         int("assetId"),
+  investorId:      int("investorId"),
+  eventType:       mysqlEnum("drEventType", [
+    "room_opened","room_viewed","asset_opened","asset_viewed",
+    "asset_downloaded","question_submitted","nda_signed",
+    "meeting_requested","room_shared","access_revoked"
+  ]).notNull(),
+  durationSeconds: int("durationSeconds"),
+  ipAddress:       varchar("ipAddress", { length: 64 }),
+  userAgent:       text("userAgent"),
+  metadata:        text("metadata"),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+});
+export type DrEngagementEvent = typeof drEngagementEvents.$inferSelect;
+export type InsertDrEngagementEvent = typeof drEngagementEvents.$inferInsert;
+
+// 7. Q&A Requests
+export const drQaRequests = mysqlTable("dr_qa_requests", {
+  id:              int("id").autoincrement().primaryKey(),
+  roomId:          int("roomId").notNull(),
+  investorId:      int("investorId").notNull(),
+  assetId:         int("assetId"),
+  question:        text("question").notNull(),
+  category:        mysqlEnum("drQaCategory", ["financial","legal","technical","market","team","product","compliance","other"]).notNull().default("other"),
+  priority:        mysqlEnum("drQaPriority", ["urgent","high","normal","low"]).notNull().default("normal"),
+  status:          mysqlEnum("drQaStatus", ["open","in_progress","answered","closed"]).notNull().default("open"),
+  responseOwnerId: int("responseOwnerId"),
+  response:        text("response"),
+  respondedAt:     timestamp("respondedAt"),
+  dueDate:         timestamp("dueDate"),
+  isPublic:        boolean("isPublic").default(false),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type DrQaRequest = typeof drQaRequests.$inferSelect;
+export type InsertDrQaRequest = typeof drQaRequests.$inferInsert;
+
+// 8. Asset Generation Templates
+export const drTemplates = mysqlTable("dr_templates", {
+  id:              int("id").autoincrement().primaryKey(),
+  name:            varchar("name", { length: 256 }).notNull(),
+  outputType:      mysqlEnum("drTemplateOutput", [
+    "one_pager","pitch_deck","financial_summary","technical_dossier",
+    "impact_summary","seis_eis_pack","dd_index","business_plan"
+  ]).notNull(),
+  promptTemplate:  text("promptTemplate").notNull(),
+  mandatoryInputs: text("mandatoryInputs"),
+  optionalInputs:  text("optionalInputs"),
+  visibilityTier:  mysqlEnum("drTemplateTier", ["teaser","full","due_diligence"]).notNull().default("full"),
+  isActive:        boolean("isActive").default(true),
+  version:         int("version").default(1),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type DrTemplate = typeof drTemplates.$inferSelect;
+export type InsertDrTemplate = typeof drTemplates.$inferInsert;
+
+// 9. Asset Approvals
+export const drApprovals = mysqlTable("dr_approvals", {
+  id:           int("id").autoincrement().primaryKey(),
+  assetId:      int("assetId").notNull(),
+  roomId:       int("roomId").notNull(),
+  reviewerRole: mysqlEnum("drReviewerRole", ["venture_lead","finance_reviewer","legal_reviewer","technical_reviewer","impact_reviewer","platform_admin"]).notNull(),
+  status:       mysqlEnum("drApprovalStatus", ["pending","approved","rejected","changes_requested"]).notNull().default("pending"),
+  reviewerId:   int("reviewerId"),
+  comments:     text("comments"),
+  reviewedAt:   timestamp("reviewedAt"),
+  dueDate:      timestamp("dueDate"),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:    timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type DrApproval = typeof drApprovals.$inferSelect;
+export type InsertDrApproval = typeof drApprovals.$inferInsert;
+
+// 10. AI Generation Log
+export const drAiGenerations = mysqlTable("dr_ai_generations", {
+  id:               int("id").autoincrement().primaryKey(),
+  roomId:           int("roomId").notNull(),
+  ventureId:        int("ventureId").notNull(),
+  templateId:       int("templateId"),
+  outputType:       varchar("outputType", { length: 128 }).notNull(),
+  inputSummary:     text("inputSummary"),
+  generatedContent: text("generatedContent"),
+  status:           mysqlEnum("drGenStatus", ["generating","completed","failed","approved","archived"]).notNull().default("generating"),
+  approvedById:     int("approvedById"),
+  approvedAt:       timestamp("approvedAt"),
+  tokensUsed:       int("tokensUsed"),
+  createdAt:        timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:        timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type DrAiGeneration = typeof drAiGenerations.$inferSelect;
+export type InsertDrAiGeneration = typeof drAiGenerations.$inferInsert;

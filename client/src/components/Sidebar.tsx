@@ -13,7 +13,7 @@ import {
   Award, Heart, ChevronRight, Rocket, MessageSquare, BookOpen,
   Bell, X, AlertTriangle, FileText, Newspaper, Briefcase,
   Lightbulb, TestTube2, UserCircle2, FolderOpen, Globe,
-  Building2, ChevronDown, GraduationCap, Search, PieChart, Leaf, Database, UserCheck, Package, ClipboardList, Zap, Shuffle, GitBranch, Users2, Truck, Factory, BookMarked, HandCoins, ShieldCheck, BarChart3
+  Building2, ChevronDown, GraduationCap, Search, PieChart, Leaf, Database, UserCheck, Package, ClipboardList, Zap, Shuffle, GitBranch, Users2, Truck, Factory, BookMarked, HandCoins, ShieldCheck, BarChart3, FolderLock
 } from "lucide-react";
 import { useVentures } from "@/contexts/VentureContext";
 
@@ -23,7 +23,7 @@ const iconMap: Record<string, React.ComponentType<{ size?: number; className?: s
   DollarSign, Layers, Lock, Users, Megaphone, BarChart2,
   Award, Heart, Rocket, MessageSquare, BookOpen, FileText,
   Newspaper, Briefcase, Lightbulb, TestTube2, UserCircle2,
-  FolderOpen, Globe, Building2, GraduationCap, Search, PieChart, Leaf, Database, UserCheck, Package, ClipboardList, Zap, Shuffle, GitBranch, Users2, Truck, Factory, BookMarked, HandCoins, ShieldCheck, BarChart3,
+  FolderOpen, Globe, Building2, GraduationCap, Search, PieChart, Leaf, Database, UserCheck, Package, ClipboardList, Zap, Shuffle, GitBranch, Users2, Truck, Factory, BookMarked, HandCoins, ShieldCheck, BarChart3, FolderLock,
 };
 
 interface NavItem {
@@ -97,6 +97,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: "data-management",      label: "Data Management",   icon: "Database",          href: "/data-management" },
       { id: "commercial-crm",        label: "Commercial CRM",     icon: "Briefcase",          href: "/commercial-crm" },
       { id: "investor-crm",          label: "Investor CRM",       icon: "HandCoins",          href: "/investor-crm" },
+      { id: "investor-data-room",    label: "Investor Data Room",  icon: "FolderLock",         href: "/investor-data-room" },
       { id: "financial-model-builder", label: "Financial Model Builder", icon: "BarChart3",   href: "/financial-model-builder" },
     ],
   },
