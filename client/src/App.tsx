@@ -1,4 +1,5 @@
 import { Toaster } from "@/components/ui/sonner";
+import LearningEngine from "@/pages/LearningEngine";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -110,6 +111,7 @@ function Router() {
       <Route path="/investment-module" component={InvestmentModule} />
       <Route path="/ecorace-lab" component={EcoraceLab} />
       <Route path="/investor-data-room" component={InvestorDataRoom} />
+          <Route path="/learning-engine" component={LearningEngine} />
       <Route component={Home} />
     </Switch>
   );

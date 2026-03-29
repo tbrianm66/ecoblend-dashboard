@@ -5113,3 +5113,127 @@ export const drAiGenerations = mysqlTable("dr_ai_generations", {
 });
 export type DrAiGeneration = typeof drAiGenerations.$inferSelect;
 export type InsertDrAiGeneration = typeof drAiGenerations.$inferInsert;
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LEARNING ENGINE MODULE (Sprint 69)
+// Tables: le_problems, le_insights, le_input_weights, le_vrl_metrics,
+//         le_learning_patterns, le_recommendations, le_knowledge_graph_nodes,
+//         le_knowledge_graph_edges
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const leProblems = mysqlTable("le_problems", {
+  id:              int("id").primaryKey().autoincrement(),
+  description:     text("description").notNull(),
+  sector:          varchar("sector", { length: 100 }).notNull(),
+  frequencyScore:  int("frequencyScore"),
+  severityScore:   int("severityScore"),
+  customerSegment: varchar("customerSegment", { length: 200 }),
+  context:         text("context"),
+  status:          mysqlEnum("leProblemStatus", ["active","validated","invalidated","archived"]).notNull().default("active"),
+  ventureId:       int("ventureId"),
+  tags:            text("tags"),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type LeProblem = typeof leProblems.$inferSelect;
+export type InsertLeProblem = typeof leProblems.$inferInsert;
+
+export const leInsights = mysqlTable("le_insights", {
+  id:              int("id").primaryKey().autoincrement(),
+  problemId:       int("problemId"),
+  ventureId:       int("ventureId"),
+  sourceType:      mysqlEnum("leInsightSource", ["interview","research","experiment","market_data","book","expert_input"]).notNull(),
+  sourceId:        int("sourceId"),
+  content:         text("content").notNull(),
+  evidenceStrength: int("evidenceStrength"),
+  confidenceScore: decimal("confidenceScore", { precision: 3, scale: 2 }),
+  tags:            text("tags"),
+  ipSensitive:     boolean("ipSensitive").default(false),
+  extractedAt:     timestamp("extractedAt").defaultNow().notNull(),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+});
+export type LeInsight = typeof leInsights.$inferSelect;
+export type InsertLeInsight = typeof leInsights.$inferInsert;
+
+export const leInputWeights = mysqlTable("le_input_weights", {
+  id:         int("id").primaryKey().autoincrement(),
+  sourceType: varchar("sourceType", { length: 64 }).notNull().unique(),
+  weight:     decimal("weight", { precision: 3, scale: 2 }).notNull(),
+  updatedAt:  timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type LeInputWeight = typeof leInputWeights.$inferSelect;
+
+export const leVrlMetrics = mysqlTable("le_vrl_metrics", {
+  id:                int("id").primaryKey().autoincrement(),
+  ventureId:         int("ventureId").notNull(),
+  trlScore:          decimal("trlScore", { precision: 4, scale: 2 }),
+  brlScore:          decimal("brlScore", { precision: 4, scale: 2 }),
+  alpha:             decimal("alpha", { precision: 3, scale: 2 }).default("0.50"),
+  beta:              decimal("beta", { precision: 3, scale: 2 }).default("0.50"),
+  riskIndex:         decimal("riskIndex", { precision: 3, scale: 2 }),
+  confidenceScore:   decimal("confidenceScore", { precision: 3, scale: 2 }),
+  vrlScore:          decimal("vrlScore", { precision: 5, scale: 2 }),
+  stage:             mysqlEnum("leVrlStage", ["idea","validation","mvp","scale_ready","investment_ready"]).default("idea"),
+  riskBreakdown:     text("riskBreakdown"),
+  calculationMethod: varchar("calculationMethod", { length: 100 }).default("multiplicative_dual_risk"),
+  notes:             text("notes"),
+  calculatedAt:      timestamp("calculatedAt").defaultNow().notNull(),
+});
+export type LeVrlMetric = typeof leVrlMetrics.$inferSelect;
+export type InsertLeVrlMetric = typeof leVrlMetrics.$inferInsert;
+
+export const leLearningPatterns = mysqlTable("le_learning_patterns", {
+  id:              int("id").primaryKey().autoincrement(),
+  patternType:     mysqlEnum("lePatternType", ["problem_cluster","success_indicator","failure_signal","pivot_trigger","sector_trend"]).notNull(),
+  sector:          varchar("sector", { length: 100 }),
+  title:           varchar("title", { length: 256 }).notNull(),
+  description:     text("description"),
+  frequency:       int("frequency").default(1),
+  confidenceScore: decimal("confidenceScore", { precision: 3, scale: 2 }),
+  supportingData:  text("supportingData"),
+  isActive:        boolean("isActive").default(true),
+  detectedAt:      timestamp("detectedAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type LeLearningPattern = typeof leLearningPatterns.$inferSelect;
+export type InsertLeLearningPattern = typeof leLearningPatterns.$inferInsert;
+
+export const leRecommendations = mysqlTable("le_recommendations", {
+  id:          int("id").primaryKey().autoincrement(),
+  ventureId:   int("ventureId").notNull(),
+  type:        mysqlEnum("leRecType", ["next_interview","missing_validation","technical_risk","pivot_signal","go_no_go"]).notNull(),
+  priority:    mysqlEnum("leRecPriority", ["low","medium","high","critical"]).notNull().default("medium"),
+  title:       varchar("title", { length: 256 }).notNull(),
+  description: text("description"),
+  actionItems: text("actionItems"),
+  confidence:  decimal("confidence", { precision: 3, scale: 2 }),
+  status:      mysqlEnum("leRecStatus", ["active","dismissed","completed"]).notNull().default("active"),
+  createdAt:   timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:   timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type LeRecommendation = typeof leRecommendations.$inferSelect;
+export type InsertLeRecommendation = typeof leRecommendations.$inferInsert;
+
+export const leKnowledgeGraphNodes = mysqlTable("le_kg_nodes", {
+  id:         int("id").primaryKey().autoincrement(),
+  nodeType:   mysqlEnum("leNodeType", ["problem","solution","technology","market","person","organization"]).notNull(),
+  label:      varchar("label", { length: 256 }).notNull(),
+  ventureId:  int("ventureId"),
+  properties: text("properties"),
+  createdAt:  timestamp("createdAt").defaultNow().notNull(),
+});
+export type LeKgNode = typeof leKnowledgeGraphNodes.$inferSelect;
+export type InsertLeKgNode = typeof leKnowledgeGraphNodes.$inferInsert;
+
+export const leKnowledgeGraphEdges = mysqlTable("le_kg_edges", {
+  id:           int("id").primaryKey().autoincrement(),
+  fromNodeId:   int("fromNodeId").notNull(),
+  toNodeId:     int("toNodeId").notNull(),
+  relationship: mysqlEnum("leEdgeRel", ["solves","requires","competes_with","serves","collaborates","invented_by"]).notNull(),
+  weight:       decimal("weight", { precision: 3, scale: 2 }).default("0.50"),
+  metadata:     text("metadata"),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+});
+export type LeKgEdge = typeof leKnowledgeGraphEdges.$inferSelect;
+export type InsertLeKgEdge = typeof leKnowledgeGraphEdges.$inferInsert;

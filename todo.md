@@ -887,3 +887,20 @@
 - [x] Route /investor-data-room registered in App.tsx
 - [x] 45 vitest tests — all passing
 - [x] Full test suite: 1,279 tests passing (48 test files)
+
+## Sprint 69 — Learning Engine Module (Mar 29, 2026)
+
+- [x] 8 new DB tables: le_raw_inputs, le_structured_insights, le_problem_statements, le_vrl_scores, le_patterns, le_recommendations, le_knowledge_nodes, le_knowledge_edges
+- [x] Migration 0045 applied successfully
+- [x] learningEngine.router.ts — 5 sub-routers: structuring, vrlEngine, patterns, recommendations, knowledgeGraph
+- [x] Structuring Engine: processInput (AI-powered), listInsights, listProblems, updateProblemStatus
+- [x] VRL Engine: calculate (formula-based TRL/BRL/Risk/Confidence), history, scenarioAnalysis, portfolioSummary
+- [x] Pattern Detection: detect (portfolio-wide AI analysis), list, predictSuccess
+- [x] Recommendation Engine: generate (AI-powered), list, updateStatus
+- [x] Knowledge Graph: build, getGraph, portfolioStats
+- [x] LearningEngine.tsx UI page — 5 tabs: Structuring Engine, VRL Dashboard, Pattern Detection, Recommendations, Knowledge Graph
+- [x] Route /learning-engine registered in App.tsx
+- [x] Brain icon added to Sidebar.tsx under Analytics section
+- [x] learningEngine.test.ts — 39 vitest tests, all passing
+- [x] Full test suite: 1,318 tests passing across 49 test files (0 failures)
+- [x] TypeScript: 0 errors
