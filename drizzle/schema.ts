@@ -5,6 +5,7 @@ import {
   decimal,
   float,
   int,
+  json,
   mysqlEnum,
   mysqlTable,
   text,
@@ -5355,3 +5356,77 @@ export const pbLinkedAssets = mysqlTable("pb_linked_assets", {
 });
 export type PbLinkedAsset = typeof pbLinkedAssets.$inferSelect;
 export type InsertPbLinkedAsset = typeof pbLinkedAssets.$inferInsert;
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// IP INTELLIGENCE MODULE — IP_OBJECT Schema (Sprint 71)
+// Tables: ip_analyses, ip_entities, ip_whitespace, ip_vrl_feed
+// Lightbringer-style mock analysis engine with VRL integration
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const ipAnalyses = mysqlTable("ip_analyses", {
+  id:              int("id").autoincrement().primaryKey(),
+  ventureId:       varchar("ventureId", { length: 50 }),
+  ideaName:        varchar("ideaName", { length: 200 }).notNull(),
+  description:     text("description").notNull(),
+  keywords:        text("keywords").notNull(),            // comma-separated
+  industry:        varchar("industry", { length: 100 }).notNull(),
+  geography:       varchar("geography", { length: 100 }).notNull(),
+  // Lightbringer API response fields
+  noveltyScore:    decimal("noveltyScore", { precision: 5, scale: 2 }).notNull().default("0"),
+  patentDensity:   mysqlEnum("patentDensity", ["LOW", "MED", "HIGH"]).notNull().default("LOW"),
+  ftoRisk:         mysqlEnum("ftoRisk", ["LOW", "MED", "HIGH"]).notNull().default("LOW"),
+  recommendation:  mysqlEnum("recommendation", ["PROCEED", "MODIFY", "KILL"]).notNull().default("PROCEED"),
+  ipScore:         decimal("ipScore", { precision: 5, scale: 2 }).notNull().default("0"),  // 0-100, fed to VRL
+  rawResponse:     json("rawResponse"),                  // full mock Lightbringer JSON
+  apiProvider:     varchar("apiProvider", { length: 50 }).notNull().default("lightbringer_mock"),
+  apiVersion:      varchar("apiVersion", { length: 20 }).notNull().default("v1.0"),
+  status:          mysqlEnum("ipAnalysisStatus", ["pending", "complete", "error"]).notNull().default("pending"),
+  analysedBy:      varchar("analysedBy", { length: 100 }),
+  notes:           text("notes"),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type IpAnalysis = typeof ipAnalyses.$inferSelect;
+export type InsertIpAnalysis = typeof ipAnalyses.$inferInsert;
+
+export const ipEntities = mysqlTable("ip_entities", {
+  id:              int("id").autoincrement().primaryKey(),
+  analysisId:      int("analysisId").notNull(),
+  entityName:      varchar("entityName", { length: 200 }).notNull(),
+  entityType:      mysqlEnum("ipEntityType", ["corporation", "university", "startup", "individual", "government"]).notNull(),
+  patentCount:     int("patentCount").notNull().default(0),
+  relevanceScore:  decimal("relevanceScore", { precision: 5, scale: 2 }).notNull().default("0"),
+  country:         varchar("country", { length: 100 }),
+  threat:          mysqlEnum("ipEntityThreat", ["LOW", "MED", "HIGH"]).notNull().default("LOW"),
+  notes:           text("notes"),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+});
+export type IpEntity = typeof ipEntities.$inferSelect;
+export type InsertIpEntity = typeof ipEntities.$inferInsert;
+
+export const ipWhitespace = mysqlTable("ip_whitespace", {
+  id:              int("id").autoincrement().primaryKey(),
+  analysisId:      int("analysisId").notNull(),
+  opportunity:     varchar("opportunity", { length: 500 }).notNull(),
+  category:        mysqlEnum("ipWhitespaceCategory", ["technology", "geography", "application", "combination"]).notNull(),
+  potentialScore:  decimal("potentialScore", { precision: 5, scale: 2 }).notNull().default("0"),
+  actionable:      boolean("actionable").notNull().default(true),
+  notes:           text("notes"),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+});
+export type IpWhitespace = typeof ipWhitespace.$inferSelect;
+export type InsertIpWhitespace = typeof ipWhitespace.$inferInsert;
+
+export const ipVrlFeed = mysqlTable("ip_vrl_feed", {
+  id:              int("id").autoincrement().primaryKey(),
+  ventureId:       varchar("ventureId", { length: 50 }).notNull(),
+  analysisId:      int("analysisId").notNull(),
+  ipScore:         decimal("ipScore", { precision: 5, scale: 2 }).notNull(),
+  vrlContribution: decimal("vrlContribution", { precision: 5, scale: 2 }).notNull().default("0"),  // weighted contribution to VRL
+  appliedAt:       timestamp("appliedAt").defaultNow().notNull(),
+  appliedBy:       varchar("appliedBy", { length: 100 }),
+  notes:           text("notes"),
+});
+export type IpVrlFeed = typeof ipVrlFeed.$inferSelect;
+export type InsertIpVrlFeed = typeof ipVrlFeed.$inferInsert;

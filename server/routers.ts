@@ -203,6 +203,7 @@ import { finPlRouter, finRunwayRouter, finWaterfallRouter, finReportsRouter, fin
 import { investorCrmRouter } from "./investorCrm.router";
 import { investorDataRoomRouter } from "./investorDataRoom.router";
 import { learningEngineRouter } from "./learningEngine.router";
+import { ipIntelligenceRouter } from "./ipIntelligence.router";
 import { playbookRouter } from "./playbook.router";
 import { marketingBrandRouter } from "./marketingBrand.router";
 import { specialistServicesRouter } from "./specialistServices.router";
@@ -6837,6 +6838,7 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
   ecoraceLab: ecoraceLab,
   investorDataRoom: investorDataRoomRouter,
   learningEngine: learningEngineRouter,
+  ipIntelligence: ipIntelligenceRouter,
   playbook: playbookRouter,
 });
 export type AppRouter = typeof appRouter;

@@ -919,3 +919,16 @@
 - [x] Sidebar nav item added (BookMarked icon) under Analytics section
 - [x] 38 vitest tests — all passing
 - [x] Full suite: 1,356 tests passing across 50 test files
+
+## Sprint 71 — IP Intelligence Module (Mar 30, 2026)
+- [x] 4 IP_OBJECT tables: ip_analyses, ip_entities, ip_whitespace, ip_vrl_feed (migration 0047)
+- [x] Lightbringer mock engine: deterministic novelty scoring, patent density, FTO risk, recommendation
+- [x] IP_OBJECT JSON schema (getSchema endpoint for future API integration)
+- [x] Analysis CRUD: run, list, get, delete, updateNotes
+- [x] VRL Feed: getByVenture, getLatestScore, portfolioSummary — 15% IP score contribution to VRL
+- [x] lightbringerRouter: preview (no DB save), getSchema, getOptions (industries/geographies/apiProviders)
+- [x] IpIntelligence.tsx UI: input form, IP Intelligence Card, entity table, whitespace opportunities, portfolio overview
+- [x] Route /ip-intelligence registered in App.tsx
+- [x] Sidebar nav item added (ShieldCheck icon) under Analytics section
+- [x] 26 vitest tests — all passing
+- [x] Full suite: 1,382 tests passing across 51 test files

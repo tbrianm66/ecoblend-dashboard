@@ -57,6 +57,7 @@ import CulturalReadiness from "./pages/CulturalReadiness";
 import InvestmentModule from "./pages/InvestmentModule";
 import EcoraceLab from "./pages/EcoraceLab";
 import InvestorDataRoom from "./pages/InvestorDataRoom";
+import IpIntelligence from "./pages/IpIntelligence";
 import PlaybookPortal from "./pages/PlaybookPortal";
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -113,6 +114,7 @@ function Router() {
       <Route path="/ecorace-lab" component={EcoraceLab} />
           <Route path="/playbook-portal" component={PlaybookPortal} />
       <Route path="/investor-data-room" component={InvestorDataRoom} />
+          <Route path="/ip-intelligence" component={IpIntelligence} />
           <Route path="/learning-engine" component={LearningEngine} />
       <Route component={Home} />
     </Switch>

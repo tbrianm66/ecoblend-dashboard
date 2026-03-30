@@ -330,6 +330,13 @@
       "when": 1774862480964,
       "tag": "0046_stale_justice",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "5",
+      "when": 1774872685710,
+      "tag": "0047_spooky_fenris",
+      "breakpoints": true
     }
   ]
 }
