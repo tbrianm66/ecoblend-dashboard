@@ -904,3 +904,18 @@
 - [x] learningEngine.test.ts — 39 vitest tests, all passing
 - [x] Full test suite: 1,318 tests passing across 49 test files (0 failures)
 - [x] TypeScript: 0 errors
+
+## Sprint 70 — Playbook Stewardship Portal
+
+- [x] 6 new DB tables: pb_playbooks, pb_steps, pb_step_runs, pb_runs, pb_kpi_entries, pb_linked_assets (migration 0046)
+- [x] playbookRouter with 6 sub-routers: playbooks (CRUD + seed), steps, runs (execution engine), kpis, assets, ai
+- [x] 10 pre-seeded playbooks across 5 strategic folders (PB-01 to PB-05, 2 variants each)
+- [x] AI playbook generator and portfolio pattern analyser
+- [x] Step-by-step execution engine with advance/block/cancel/summary
+- [x] KPI tracking and recording per playbook
+- [x] Linked asset management (pitch_deck, business_plan, etc.)
+- [x] PlaybookPortal.tsx UI with 5 tabs: Folder Browser, Playbook Viewer, Step Runner, KPI Dashboard, AI Generator
+- [x] Route /playbook-portal registered in App.tsx
+- [x] Sidebar nav item added (BookMarked icon) under Analytics section
+- [x] 38 vitest tests — all passing
+- [x] Full suite: 1,356 tests passing across 50 test files

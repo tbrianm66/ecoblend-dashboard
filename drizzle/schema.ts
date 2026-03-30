@@ -5237,3 +5237,121 @@ export const leKnowledgeGraphEdges = mysqlTable("le_kg_edges", {
 });
 export type LeKgEdge = typeof leKnowledgeGraphEdges.$inferSelect;
 export type InsertLeKgEdge = typeof leKnowledgeGraphEdges.$inferInsert;
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PLAYBOOK MODULE — Sprint 70
+// Tables: pb_playbooks, pb_steps, pb_runs, pb_run_steps, pb_kpi_entries, pb_linked_assets
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const pbPlaybooks = mysqlTable("pb_playbooks", {
+  id:                int("id").autoincrement().primaryKey(),
+  playbookId:        varchar("playbookId", { length: 20 }).notNull().unique(),
+  title:             varchar("title", { length: 200 }).notNull(),
+  subFolder:         mysqlEnum("subFolder", [
+    "avoid_catch22",
+    "democratize_quality",
+    "embed_operations",
+    "adapt_ai_genai",
+    "scale_governance"
+  ]).notNull(),
+  version:           varchar("version", { length: 20 }).notNull().default("1.0.0"),
+  ownerRole:         varchar("ownerRole", { length: 100 }),
+  strategicPrinciple: text("strategicPrinciple"),
+  triggerConditions: text("triggerConditions"),
+  kpis:              text("kpis"),
+  status:            mysqlEnum("pbStatus", ["draft", "active", "deprecated"]).notNull().default("draft"),
+  lastRun:           timestamp("lastRun"),
+  runCount:          int("runCount").notNull().default(0),
+  linkedAssetIds:    text("linkedAssetIds"),
+  ventureId:         varchar("ventureId", { length: 100 }),
+  createdBy:         varchar("createdBy", { length: 255 }),
+  createdAt:         timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:         timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type PbPlaybook = typeof pbPlaybooks.$inferSelect;
+export type InsertPbPlaybook = typeof pbPlaybooks.$inferInsert;
+
+export const pbSteps = mysqlTable("pb_steps", {
+  id:          int("id").autoincrement().primaryKey(),
+  playbookId:  int("playbookId").notNull(),
+  stepNumber:  int("stepNumber").notNull(),
+  title:       varchar("title", { length: 200 }).notNull(),
+  action:      text("action").notNull(),
+  assigneeRole: varchar("assigneeRole", { length: 100 }),
+  slaDays:     int("slaDays"),
+  toolsRequired: text("toolsRequired"),
+  outputArtifact: varchar("outputArtifact", { length: 200 }),
+  createdAt:   timestamp("createdAt").defaultNow().notNull(),
+});
+export type PbStep = typeof pbSteps.$inferSelect;
+export type InsertPbStep = typeof pbSteps.$inferInsert;
+
+export const pbRuns = mysqlTable("pb_runs", {
+  id:           int("id").autoincrement().primaryKey(),
+  playbookId:   int("playbookId").notNull(),
+  ventureId:    varchar("ventureId", { length: 100 }),
+  triggeredBy:  varchar("triggeredBy", { length: 255 }),
+  triggerReason: varchar("triggerReason", { length: 500 }),
+  status:       mysqlEnum("pbRunStatus", ["pending", "in_progress", "completed", "failed", "cancelled"]).notNull().default("pending"),
+  currentStep:  int("currentStep").notNull().default(1),
+  totalSteps:   int("totalSteps").notNull().default(0),
+  startedAt:    timestamp("startedAt").defaultNow().notNull(),
+  completedAt:  timestamp("completedAt"),
+  notes:        text("notes"),
+  aiSummary:    text("aiSummary"),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:    timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type PbRun = typeof pbRuns.$inferSelect;
+export type InsertPbRun = typeof pbRuns.$inferInsert;
+
+export const pbRunSteps = mysqlTable("pb_run_steps", {
+  id:           int("id").autoincrement().primaryKey(),
+  runId:        int("runId").notNull(),
+  stepId:       int("stepId").notNull(),
+  stepNumber:   int("stepNumber").notNull(),
+  status:       mysqlEnum("pbRunStepStatus", ["pending", "in_progress", "completed", "skipped", "blocked"]).notNull().default("pending"),
+  assignedTo:   varchar("assignedTo", { length: 255 }),
+  startedAt:    timestamp("startedAt"),
+  completedAt:  timestamp("completedAt"),
+  notes:        text("notes"),
+  evidence:     text("evidence"),
+  blockerReason: text("blockerReason"),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:    timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type PbRunStep = typeof pbRunSteps.$inferSelect;
+export type InsertPbRunStep = typeof pbRunSteps.$inferInsert;
+
+export const pbKpiEntries = mysqlTable("pb_kpi_entries", {
+  id:           int("id").autoincrement().primaryKey(),
+  playbookId:   int("playbookId").notNull(),
+  runId:        int("runId"),
+  kpiLabel:     varchar("kpiLabel", { length: 300 }).notNull(),
+  targetValue:  varchar("targetValue", { length: 100 }),
+  actualValue:  varchar("actualValue", { length: 100 }),
+  unit:         varchar("unit", { length: 50 }),
+  achieved:     boolean("achieved"),
+  measuredAt:   timestamp("measuredAt").defaultNow().notNull(),
+  notes:        text("notes"),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+});
+export type PbKpiEntry = typeof pbKpiEntries.$inferSelect;
+export type InsertPbKpiEntry = typeof pbKpiEntries.$inferInsert;
+
+export const pbLinkedAssets = mysqlTable("pb_linked_assets", {
+  id:           int("id").autoincrement().primaryKey(),
+  playbookId:   int("playbookId").notNull(),
+  assetName:    varchar("assetName", { length: 200 }).notNull(),
+  assetType:    mysqlEnum("pbAssetType", ["data_asset", "venture", "document", "system", "api"]).notNull(),
+  assetRef:     varchar("assetRef", { length: 500 }),
+  domain:       varchar("domain", { length: 100 }),
+  classification: mysqlEnum("pbClassification", ["PII", "Confidential", "Internal", "Public"]),
+  zone:         mysqlEnum("pbZone", ["Bronze", "Silver", "Gold", "Platinum"]),
+  dqsCurrent:   decimal("dqsCurrent", { precision: 5, scale: 2 }),
+  notes:        text("notes"),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+});
+export type PbLinkedAsset = typeof pbLinkedAssets.$inferSelect;
+export type InsertPbLinkedAsset = typeof pbLinkedAssets.$inferInsert;

@@ -100,6 +100,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: "investor-crm",          label: "Investor CRM",       icon: "HandCoins",          href: "/investor-crm" },
       { id: "investor-data-room",    label: "Investor Data Room",  icon: "FolderLock",         href: "/investor-data-room" },
       { id: "learning-engine",      label: "Learning Engine",      icon: "Brain",              href: "/learning-engine" },
+      { id: "playbook-portal",     label: "Playbook Portal",      icon: "BookMarked",          href: "/playbook-portal" },
       { id: "financial-model-builder", label: "Financial Model Builder", icon: "BarChart3",   href: "/financial-model-builder" },
     ],
   },
