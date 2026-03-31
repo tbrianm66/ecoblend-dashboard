@@ -1,5 +1,10 @@
 import { Toaster } from "@/components/ui/sonner";
 import LearningEngine from "@/pages/LearningEngine";
+import GDriveWorkspace from "@/pages/GDriveWorkspace";
+import VrlDashboardV4 from "@/pages/VrlDashboardV4";
+import SpinoffSequenceOS from "@/pages/SpinoffSequenceOS";
+import BrandPipeline from "@/pages/BrandPipeline";
+import InsightAutomation from "@/pages/InsightAutomation";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -116,6 +121,11 @@ function Router() {
       <Route path="/investor-data-room" component={InvestorDataRoom} />
           <Route path="/ip-intelligence" component={IpIntelligence} />
           <Route path="/learning-engine" component={LearningEngine} />
+      <Route path="/gdrive-workspace" component={GDriveWorkspace} />
+      <Route path="/vrl-dashboard-v4" component={VrlDashboardV4} />
+      <Route path="/spinoff-sequence" component={SpinoffSequenceOS} />
+      <Route path="/brand-pipeline" component={BrandPipeline} />
+      <Route path="/insight-automation" component={InsightAutomation} />
       <Route component={Home} />
     </Switch>
   );

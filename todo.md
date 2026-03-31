@@ -932,3 +932,26 @@
 - [x] Sidebar nav item added (ShieldCheck icon) under Analytics section
 - [x] 26 vitest tests — all passing
 - [x] Full suite: 1,382 tests passing across 51 test files
+
+## Sprint 72-76 — V4 Architecture Brief (completed 2026-03-31)
+
+- [x] Sprint 72: G Drive Workspace Automation — 11-folder taxonomy, permission matrix, workspace provisioning
+- [x] Sprint 72: gdriveWorkspace.router.ts — listWorkspaces, getWorkspace, createWorkspace, getModuleTaxonomy, getPermissionMatrix, getPermissions
+- [x] Sprint 72: GDriveWorkspace.tsx UI — Overview / Folders / Permissions tabs
+- [x] Sprint 73: VRL Dashboard V4 — Stage gate tracking, Spin-Out Readiness Panel, Actions Log
+- [x] Sprint 73: vrlDashboardV4.router.ts — getDashboardSummary, getStageGates, upsertStageGate, getSpinoutChecklist, updateSpinoutGate, addAction, updateActionStatus
+- [x] Sprint 73: VrlDashboardV4.tsx UI — Stage Gates / Spin-Out Readiness / Actions Log tabs
+- [x] Sprint 74: Spin-Off Sequence Automation — 5-step workflow, asset migration, AI handover pack, data room setup
+- [x] Sprint 74: spinoffSequence.router.ts — triggerSpinoff, createSpinoffDrive, migrateAssets, generateHandoverPack, setupDataRoom, completeSequence
+- [x] Sprint 74: SpinoffSequenceOS.tsx UI — Stepper, asset migration, handover pack tabs
+- [x] Sprint 75: Brand Data Pipeline — Brand Asset Register, module auto-linking, AI document header generator
+- [x] Sprint 75: brandPipeline.router.ts — getAssetRegister, upsertAsset, getBrandPanel, autoLinkAllModules, generateDocumentHeader, getUpdateLog
+- [x] Sprint 75: BrandPipeline.tsx UI — Asset Register / Module Links / Update Log tabs
+- [x] Sprint 76: Interview-to-Insight Automation — AI transcript processing, insight board, Stage Gate Review pack
+- [x] Sprint 76: insightAutomation.router.ts — processTranscript, getInsightBoard, getInsightSummary, initiateStageGateReview, approveStageGateReview, listStageGateReviews
+- [x] Sprint 76: InsightAutomation.tsx UI — Process Transcript / Insight Board / Stage Gate Reviews tabs
+- [x] All 18 DB tables migrated (migration 0048)
+- [x] All 5 routers registered in routers.ts
+- [x] All 5 pages registered in App.tsx routes
+- [x] All 5 nav items added to Sidebar.tsx (Analytics section)
+- [x] Full test suite: 51 files, 1382 tests — all passing

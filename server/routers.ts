@@ -1,3 +1,8 @@
+import { gdriveWorkspaceRouter } from "./gdriveWorkspace.router";
+import { vrlDashboardV4Router } from "./vrlDashboardV4.router";
+import { spinoffSequenceRouter } from "./spinoffSequence.router";
+import { brandPipelineRouter } from "./brandPipeline.router";
+import { insightAutomationRouter } from "./insightAutomation.router";
 import { workflowEngineRouter } from "./workflowEngine.router";
 import { dispatchTrigger } from "./workflowEngine";
 import { governanceRouter } from "./governance.router";
@@ -6840,5 +6845,10 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
   learningEngine: learningEngineRouter,
   ipIntelligence: ipIntelligenceRouter,
   playbook: playbookRouter,
+  gdriveWorkspace: gdriveWorkspaceRouter,
+  vrlDashboardV4: vrlDashboardV4Router,
+  spinoffSequence: spinoffSequenceRouter,
+  brandPipeline: brandPipelineRouter,
+  insightAutomation: insightAutomationRouter,
 });
 export type AppRouter = typeof appRouter;

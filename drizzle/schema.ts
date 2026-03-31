@@ -5430,3 +5430,258 @@ export const ipVrlFeed = mysqlTable("ip_vrl_feed", {
 });
 export type IpVrlFeed = typeof ipVrlFeed.$inferSelect;
 export type InsertIpVrlFeed = typeof ipVrlFeed.$inferInsert;
+
+// ── Sprint 72: G Drive Workspace Automation ───────────────────────────────────
+export const gdWorkspaces = mysqlTable("gd_workspaces", {
+  id:             int("id").autoincrement().primaryKey(),
+  ventureId:      varchar("ventureId", { length: 50 }).notNull(),
+  ventureCode:    varchar("ventureCode", { length: 20 }).notNull(),
+  ventureName:    varchar("ventureName", { length: 200 }).notNull(),
+  driveId:        varchar("driveId", { length: 200 }),
+  driveUrl:       varchar("driveUrl", { length: 500 }),
+  status:         mysqlEnum("gdWorkspaceStatus", ["pending","creating","active","archived"]).default("pending").notNull(),
+  totalFolders:   int("totalFolders").default(0),
+  totalDocs:      int("totalDocs").default(0),
+  createdBy:      varchar("createdBy", { length: 100 }),
+  createdAt:      timestamp("createdAt").defaultNow().notNull(),
+  lastSyncAt:     timestamp("lastSyncAt"),
+});
+export type GdWorkspace = typeof gdWorkspaces.$inferSelect;
+export type InsertGdWorkspace = typeof gdWorkspaces.$inferInsert;
+
+export const gdFolders = mysqlTable("gd_folders", {
+  id:             int("id").autoincrement().primaryKey(),
+  workspaceId:    int("workspaceId").notNull(),
+  ventureId:      varchar("ventureId", { length: 50 }).notNull(),
+  moduleNumber:   varchar("moduleNumber", { length: 5 }).notNull(),
+  folderName:     varchar("folderName", { length: 300 }).notNull(),
+  folderId:       varchar("folderId", { length: 200 }),
+  driveUrl:       varchar("driveUrl", { length: 500 }),
+  parentFolderId: int("parentFolderId"),
+  docCount:       int("docCount").default(0).notNull(),
+  approvedCount:  int("approvedCount").default(0).notNull(),
+  permissions:    json("permissions"),
+  createdAt:      timestamp("createdAt").defaultNow().notNull(),
+});
+export type GdFolder = typeof gdFolders.$inferSelect;
+export type InsertGdFolder = typeof gdFolders.$inferInsert;
+
+export const gdPermissions = mysqlTable("gd_permissions", {
+  id:             int("id").autoincrement().primaryKey(),
+  workspaceId:    int("workspaceId").notNull(),
+  ventureId:      varchar("ventureId", { length: 50 }).notNull(),
+  role:           varchar("role", { length: 100 }).notNull(),
+  email:          varchar("email", { length: 320 }),
+  accessLevel:    mysqlEnum("gdAccessLevel", ["owner","editor","commenter","viewer","no_access"]).notNull(),
+  moduleScope:    json("moduleScope"),
+  grantedAt:      timestamp("grantedAt").defaultNow().notNull(),
+  grantedBy:      varchar("grantedBy", { length: 100 }),
+  revokedAt:      timestamp("revokedAt"),
+});
+export type GdPermission = typeof gdPermissions.$inferSelect;
+export type InsertGdPermission = typeof gdPermissions.$inferInsert;
+
+// ── Sprint 73: VRL Dashboard V4 ──────────────────────────────────────────────
+export const vrlStageGates = mysqlTable("vrl_stage_gates", {
+  id:              int("id").autoincrement().primaryKey(),
+  ventureId:       varchar("ventureId", { length: 50 }).notNull(),
+  stage:           mysqlEnum("vrlStage", ["discover","define","build","launch","spinout"]).notNull(),
+  status:          mysqlEnum("vrlGateStatus", ["not_started","in_progress","complete","blocked"]).default("not_started").notNull(),
+  evidenceDocUrl:  varchar("evidenceDocUrl", { length: 500 }),
+  evidenceDocName: varchar("evidenceDocName", { length: 300 }),
+  leadName:        varchar("leadName", { length: 100 }),
+  score:           decimal("score", { precision: 5, scale: 2 }).default("0"),
+  lastUpdated:     timestamp("lastUpdated").defaultNow().notNull(),
+  notes:           text("notes"),
+});
+export type VrlStageGate = typeof vrlStageGates.$inferSelect;
+export type InsertVrlStageGate = typeof vrlStageGates.$inferInsert;
+
+export const vrlSpinoutChecklist = mysqlTable("vrl_spinout_checklist", {
+  id:               int("id").autoincrement().primaryKey(),
+  ventureId:        varchar("ventureId", { length: 50 }).notNull(),
+  gateKey:          varchar("gateKey", { length: 100 }).notNull(),
+  gateLabel:        varchar("gateLabel", { length: 300 }).notNull(),
+  minThreshold:     varchar("minThreshold", { length: 300 }),
+  evidenceRequired: varchar("evidenceRequired", { length: 500 }),
+  approver:         varchar("approver", { length: 100 }),
+  met:              boolean("met").default(false).notNull(),
+  evidenceUrl:      varchar("evidenceUrl", { length: 500 }),
+  metAt:            timestamp("metAt"),
+  updatedAt:        timestamp("updatedAt").defaultNow().notNull(),
+});
+export type VrlSpinoutChecklist = typeof vrlSpinoutChecklist.$inferSelect;
+export type InsertVrlSpinoutChecklist = typeof vrlSpinoutChecklist.$inferInsert;
+
+export const vrlActionsLog = mysqlTable("vrl_actions_log", {
+  id:           int("id").autoincrement().primaryKey(),
+  ventureId:    varchar("ventureId", { length: 50 }).notNull(),
+  action:       text("action").notNull(),
+  owner:        varchar("owner", { length: 100 }),
+  status:       mysqlEnum("vrlActionStatus", ["pending","in_progress","complete","cancelled"]).default("pending").notNull(),
+  linkedModule: varchar("linkedModule", { length: 10 }),
+  completedAt:  timestamp("completedAt"),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+});
+export type VrlActionsLog = typeof vrlActionsLog.$inferSelect;
+export type InsertVrlActionsLog = typeof vrlActionsLog.$inferInsert;
+
+// ── Sprint 74: Spin-Off Sequence Automation ───────────────────────────────────
+export const spinoffSequences = mysqlTable("spinoff_sequences", {
+  id:               int("id").autoincrement().primaryKey(),
+  ventureId:        varchar("ventureId", { length: 50 }).notNull(),
+  ventureCode:      varchar("ventureCode", { length: 20 }).notNull(),
+  ventureName:      varchar("ventureName", { length: 200 }).notNull(),
+  triggerVrlScore:  decimal("triggerVrlScore", { precision: 5, scale: 2 }).notNull(),
+  approvedDate:     varchar("approvedDate", { length: 30 }).notNull(),
+  founderName:      varchar("founderName", { length: 200 }),
+  founderEmail:     varchar("founderEmail", { length: 320 }),
+  leadInvestorName: varchar("leadInvestorName", { length: 200 }),
+  status:           mysqlEnum("spinoffSeqStatus", ["pending","drive_created","assets_migrated","handover_generated","data_room_ready","completed","failed"]).default("pending").notNull(),
+  currentStep:      int("currentStep").default(1).notNull(),
+  spinoffDriveUrl:  varchar("spinoffDriveUrl", { length: 500 }),
+  dataRoomUrl:      varchar("dataRoomUrl", { length: 500 }),
+  completedAt:      timestamp("completedAt"),
+  createdAt:        timestamp("createdAt").defaultNow().notNull(),
+});
+export type SpinoffSequence = typeof spinoffSequences.$inferSelect;
+export type InsertSpinoffSequence = typeof spinoffSequences.$inferInsert;
+
+export const spinoffAssets = mysqlTable("spinoff_assets", {
+  id:           int("id").autoincrement().primaryKey(),
+  sequenceId:   int("sequenceId").notNull(),
+  assetType:    mysqlEnum("spinoffAssetType", ["business_plan","financial_model","pitch_deck","cap_table","entity_structure","ip_map","operator_playbook","handover_pack"]).notNull(),
+  sourceModule: varchar("sourceModule", { length: 300 }),
+  destPath:     varchar("destPath", { length: 300 }),
+  status:       mysqlEnum("spinoffAssetStatus", ["pending","copied","locked","missing","failed"]).default("pending").notNull(),
+  driveUrl:     varchar("driveUrl", { length: 500 }),
+  notes:        text("notes"),
+  migratedAt:   timestamp("migratedAt"),
+});
+export type SpinoffAsset = typeof spinoffAssets.$inferSelect;
+export type InsertSpinoffAsset = typeof spinoffAssets.$inferInsert;
+
+export const spinoffHandoverPacks = mysqlTable("spinoff_handover_packs", {
+  id:              int("id").autoincrement().primaryKey(),
+  sequenceId:      int("sequenceId").notNull(),
+  ventureId:       varchar("ventureId", { length: 50 }).notNull(),
+  executiveSummary: text("executiveSummary"),
+  operatorPlaybook: text("operatorPlaybook"),
+  ninetyDayPlan:   text("ninetyDayPlan"),
+  openRisks:       text("openRisks"),
+  keyContacts:     json("keyContacts"),
+  assetLinks:      json("assetLinks"),
+  generatedAt:     timestamp("generatedAt").defaultNow().notNull(),
+  approvedAt:      timestamp("approvedAt"),
+  driveUrl:        varchar("driveUrl", { length: 500 }),
+});
+export type SpinoffHandoverPack = typeof spinoffHandoverPacks.$inferSelect;
+export type InsertSpinoffHandoverPack = typeof spinoffHandoverPacks.$inferInsert;
+
+// ── Sprint 75: Brand Data Pipeline ───────────────────────────────────────────
+export const brandAssets = mysqlTable("brand_assets", {
+  id:             int("id").autoincrement().primaryKey(),
+  ventureId:      varchar("ventureId", { length: 50 }).notNull(),
+  assetType:      mysqlEnum("brandAssetType", ["name_tagline","logo","colour_palette","typography","messaging_house","icp_definition","brand_voice"]).notNull(),
+  assetName:      varchar("assetName", { length: 200 }),
+  masterLocation: varchar("masterLocation", { length: 500 }),
+  status:         mysqlEnum("brandAssetStatus", ["missing","draft","pending","approved"]).default("missing").notNull(),
+  version:        varchar("version", { length: 20 }).default("V1"),
+  content:        text("content"),
+  driveUrl:       varchar("driveUrl", { length: 500 }),
+  owner:          varchar("owner", { length: 100 }),
+  approvedAt:     timestamp("approvedAt"),
+  lastUpdated:    timestamp("lastUpdated").defaultNow().notNull(),
+});
+export type BrandAsset = typeof brandAssets.$inferSelect;
+export type InsertBrandAsset = typeof brandAssets.$inferInsert;
+
+export const brandLinks = mysqlTable("brand_links", {
+  id:               int("id").autoincrement().primaryKey(),
+  ventureId:        varchar("ventureId", { length: 50 }).notNull(),
+  assetId:          int("assetId").notNull(),
+  linkedModule:     varchar("linkedModule", { length: 10 }).notNull(),
+  linkedModuleName: varchar("linkedModuleName", { length: 200 }),
+  linkUrl:          varchar("linkUrl", { length: 500 }),
+  linkType:         mysqlEnum("brandLinkType", ["reference","embed","auto_push"]).default("reference").notNull(),
+  createdAt:        timestamp("createdAt").defaultNow().notNull(),
+});
+export type BrandLink = typeof brandLinks.$inferSelect;
+export type InsertBrandLink = typeof brandLinks.$inferInsert;
+
+export const brandUpdateLog = mysqlTable("brand_update_log", {
+  id:               int("id").autoincrement().primaryKey(),
+  ventureId:        varchar("ventureId", { length: 50 }).notNull(),
+  assetId:          int("assetId").notNull(),
+  assetType:        varchar("assetType", { length: 100 }).notNull(),
+  previousStatus:   varchar("previousStatus", { length: 50 }).notNull(),
+  newStatus:        varchar("newStatus", { length: 50 }).notNull(),
+  changedBy:        varchar("changedBy", { length: 100 }),
+  notifiedLeads:    json("notifiedLeads"),
+  downstreamFlags:  json("downstreamFlags"),
+  createdAt:        timestamp("createdAt").defaultNow().notNull(),
+});
+export type BrandUpdateLog = typeof brandUpdateLog.$inferSelect;
+export type InsertBrandUpdateLog = typeof brandUpdateLog.$inferInsert;
+
+// ── Sprint 76: Interview-to-Insight & Stage Gate Review ──────────────────────
+export const insightTriggers = mysqlTable("insight_triggers", {
+  id:          int("id").autoincrement().primaryKey(),
+  ventureId:   varchar("ventureId", { length: 50 }).notNull(),
+  fileName:    varchar("fileName", { length: 300 }).notNull(),
+  fileType:    mysqlEnum("insightFileType", ["docx","txt","pdf","mp4","mp3"]).notNull(),
+  fileUrl:     varchar("fileUrl", { length: 500 }),
+  status:      mysqlEnum("insightTriggerStatus", ["pending","processing","complete","failed"]).default("pending").notNull(),
+  processedAt: timestamp("processedAt"),
+  createdAt:   timestamp("createdAt").defaultNow().notNull(),
+});
+export type InsightTrigger = typeof insightTriggers.$inferSelect;
+export type InsertInsightTrigger = typeof insightTriggers.$inferInsert;
+
+export const insightSummaries = mysqlTable("insight_summaries", {
+  id:                   int("id").autoincrement().primaryKey(),
+  triggerId:            int("triggerId").notNull(),
+  ventureId:            varchar("ventureId", { length: 50 }).notNull(),
+  intervieweeType:      varchar("intervieweeType", { length: 100 }),
+  painPoints:           json("painPoints"),
+  jobsToBeDone:         json("jobsToBeDone"),
+  emotionalSignals:     json("emotionalSignals"),
+  functionalSignals:    json("functionalSignals"),
+  opportunityScore:     decimal("opportunityScore", { precision: 4, scale: 2 }),
+  opportunityRationale: text("opportunityRationale"),
+  hypothesesToTest:     json("hypothesesToTest"),
+  contradictionFlags:   json("contradictionFlags"),
+  rawSummary:           text("rawSummary"),
+  createdAt:            timestamp("createdAt").defaultNow().notNull(),
+});
+export type InsightSummary = typeof insightSummaries.$inferSelect;
+export type InsertInsightSummary = typeof insightSummaries.$inferInsert;
+
+export const stageGateReviews = mysqlTable("stage_gate_reviews", {
+  id:              int("id").autoincrement().primaryKey(),
+  ventureId:       varchar("ventureId", { length: 50 }).notNull(),
+  targetStage:     mysqlEnum("sgTargetStage", ["discover","define","build","launch","spinout"]).notNull(),
+  status:          mysqlEnum("sgReviewStatus", ["submitted","in_review","approved","rejected"]).default("submitted").notNull(),
+  recommendation:  mysqlEnum("sgRecommendation", ["advance","pause","requires_action"]),
+  narrativeMemo:   text("narrativeMemo"),
+  evidenceAudit:   json("evidenceAudit"),
+  gapList:         json("gapList"),
+  submittedBy:     varchar("submittedBy", { length: 100 }),
+  approvedBy:      varchar("approvedBy", { length: 100 }),
+  approvedAt:      timestamp("approvedAt"),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+});
+export type StageGateReview = typeof stageGateReviews.$inferSelect;
+export type InsertStageGateReview = typeof stageGateReviews.$inferInsert;
+
+export const stageGateEvidence = mysqlTable("stage_gate_evidence", {
+  id:           int("id").autoincrement().primaryKey(),
+  reviewId:     int("reviewId").notNull(),
+  moduleNumber: varchar("moduleNumber", { length: 5 }).notNull(),
+  docName:      varchar("docName", { length: 300 }).notNull(),
+  docUrl:       varchar("docUrl", { length: 500 }),
+  docStatus:    mysqlEnum("sgEvidenceStatus", ["present","missing","needs_approval"]).default("missing").notNull(),
+  notes:        text("notes"),
+});
+export type StageGateEvidence = typeof stageGateEvidence.$inferSelect;
+export type InsertStageGateEvidence = typeof stageGateEvidence.$inferInsert;
