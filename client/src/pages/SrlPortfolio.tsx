@@ -28,10 +28,10 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend,
 
 const SRL_LEVELS = [
   { level: 0, label: "Unassessed",  color: "#9ca3af", bg: "#f3f4f6" },
-  { level: 1, label: "Emerging",    color: "#f59e0b", bg: "#fef3c7" },
+  { level: 1, label: "Aware",       color: "#f59e0b", bg: "#fef3c7" },
   { level: 2, label: "Committed",   color: "#f97316", bg: "#ffedd5" },
-  { level: 3, label: "Established", color: "#3b82f6", bg: "#dbeafe" },
-  { level: 4, label: "Leading",     color: "#51AF37", bg: "#e8f7e3" },
+  { level: 3, label: "Measured",    color: "#3b82f6", bg: "#dbeafe" },
+  { level: 4, label: "Optimising",  color: "#51AF37", bg: "#e8f7e3" },
   { level: 5, label: "Exemplary",   color: "#2d9856", bg: "#d1fae5" },
 ];
 
@@ -44,11 +44,11 @@ const DIM_COLORS: Record<string, string> = {
 };
 
 const DIM_LABELS: Record<string, string> = {
-  ENV: "Environmental",
-  LCA: "Life Cycle Assessment",
-  SMF: "Sustainable Mfg & Finance",
-  SOC: "Social Impact",
-  ESG: "ESG Governance",
+  ENV: "Environmental Impact",
+  LCA: "Lifecycle and Circular Economy Alignment",
+  SMF: "Sustainable Manufacturing",
+  SOC: "Social Value and Impact",
+  ESG: "ESG Governance and Compliance",
 };
 
 function getSrlLevel(level: number) {
@@ -205,7 +205,7 @@ export default function SrlPortfolio() {
             <div className="text-3xl font-bold text-[#2d9856]" style={{ fontFamily: "'Prompt', sans-serif" }}>
               {levelDist.filter(l => l.level >= 4).reduce((s, l) => s + l.count, 0)}
             </div>
-            <div className="text-xs text-gray-400 mt-1">Leading or Exemplary</div>
+            <div className="text-xs text-gray-400 mt-1">Optimising or Exemplary</div>
           </div>
         </div>
 

@@ -17,10 +17,10 @@ import {
 
 const SRL_LEVELS = [
   { level: 0, label: "Unassessed",  color: "#9ca3af", bg: "#f3f4f6" },
-  { level: 1, label: "Emerging",    color: "#f59e0b", bg: "#fef3c7" },
+  { level: 1, label: "Aware",       color: "#f59e0b", bg: "#fef3c7" },
   { level: 2, label: "Committed",   color: "#f97316", bg: "#ffedd5" },
-  { level: 3, label: "Established", color: "#3b82f6", bg: "#dbeafe" },
-  { level: 4, label: "Leading",     color: "#51AF37", bg: "#e8f7e3" },
+  { level: 3, label: "Measured",    color: "#3b82f6", bg: "#dbeafe" },
+  { level: 4, label: "Optimising",  color: "#51AF37", bg: "#e8f7e3" },
   { level: 5, label: "Exemplary",   color: "#2d9856", bg: "#d1fae5" },
 ];
 
@@ -112,8 +112,8 @@ function AssessmentRow({ assessment }: { assessment: any }) {
                     </span>
                   </div>
                   <div className="mt-3 text-xs text-gray-400 space-y-1">
-                    {assessment.trajectoryBonus != null && <div>Trajectory bonus: <span className="font-semibold text-gray-600">+{Number(assessment.trajectoryBonus).toFixed(2)}</span></div>}
-                    {assessment.coverageFactor != null && <div>Coverage factor: <span className="font-semibold text-gray-600">{Number(assessment.coverageFactor).toFixed(3)}</span></div>}
+                    {assessment.trajectoryBonus != null && <div>Trajectory Bonus (§3.5): <span className="font-semibold text-gray-600">+{Number(assessment.trajectoryBonus).toFixed(2)}</span></div>}
+                    {assessment.coverageFactor != null && <div>Coverage Adjustment Factor (§3.4): <span className="font-semibold text-gray-600">{Number(assessment.coverageFactor).toFixed(3)}</span></div>}
                     {assessment.payloadHash && <div className="truncate">Hash: <span className="font-mono text-gray-600">{assessment.payloadHash.slice(0, 24)}…</span></div>}
                   </div>
                 </div>

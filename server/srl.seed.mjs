@@ -18,10 +18,10 @@ const conn = await mysql.createConnection(DB_URL);
 console.log("Seeding dimension definitions...");
 const DIMENSIONS = [
   { id: randomUUID(), srlDimDefCode: "ENV", dimensionName: "Environmental Impact", description: "Direct and indirect environmental impacts including GHG emissions, energy use, water, and waste.", defaultWeight: 0.22, sortOrder: 1, isActive: true },
-  { id: randomUUID(), srlDimDefCode: "LCA", dimensionName: "Lifecycle & Circular Economy", description: "Product lifecycle assessment, material circularity, and end-of-life management.", defaultWeight: 0.18, sortOrder: 2, isActive: true },
-  { id: randomUUID(), srlDimDefCode: "SMF", dimensionName: "Sustainable Manufacturing & Footprint", description: "Operational sustainability of manufacturing processes and supply chain footprint.", defaultWeight: 0.20, sortOrder: 3, isActive: true },
-  { id: randomUUID(), srlDimDefCode: "SOC", dimensionName: "Social & Governance", description: "Social impact, labour practices, community engagement, and governance structures.", defaultWeight: 0.20, sortOrder: 4, isActive: true },
-  { id: randomUUID(), srlDimDefCode: "ESG", dimensionName: "ESG Reporting & Compliance", description: "Formal ESG reporting alignment, certifications, and regulatory compliance.", defaultWeight: 0.20, sortOrder: 5, isActive: true },
+  { id: randomUUID(), srlDimDefCode: "LCA", dimensionName: "Lifecycle and Circular Economy Alignment", description: "Product lifecycle assessment, material circularity, and end-of-life management.", defaultWeight: 0.18, sortOrder: 2, isActive: true },
+  { id: randomUUID(), srlDimDefCode: "SMF", dimensionName: "Sustainable Manufacturing", description: "Operational sustainability of manufacturing processes and supply chain footprint.", defaultWeight: 0.20, sortOrder: 3, isActive: true },
+  { id: randomUUID(), srlDimDefCode: "SOC", dimensionName: "Social Value and Impact", description: "Social impact, labour practices, community engagement, and governance structures.", defaultWeight: 0.20, sortOrder: 4, isActive: true },
+  { id: randomUUID(), srlDimDefCode: "ESG", dimensionName: "ESG Governance and Compliance", description: "Formal ESG reporting alignment, certifications, and regulatory compliance.", defaultWeight: 0.20, sortOrder: 5, isActive: true },
 ];
 
 const dimIdMap = {};
@@ -59,7 +59,7 @@ const KPIS = [
   { kpiCode: "ENV-009", dimCode: "ENV", kpiName: "Land Use & Biodiversity Impact", srlKpiDataType: "NUMERIC", unit: "hectares affected", isMandatory: false, srlNormMethod: "TARGET_BASED", higherIsBetter: false, griTag: "GRI-304-1", sdgTag: "SDG-15" },
   { kpiCode: "ENV-010", dimCode: "ENV", kpiName: "Net Zero Target Committed", srlKpiDataType: "BOOLEAN", unit: "Y/N", isMandatory: true, srlNormMethod: "BINARY", higherIsBetter: true, sdgTag: "SDG-13", tcfdTag: "Strategy" },
 
-  // LCA — Lifecycle & Circular Economy (9 KPIs)
+  // LCA — Lifecycle and Circular Economy Alignment (9 KPIs)
   { kpiCode: "LCA-001", dimCode: "LCA", kpiName: "Product Carbon Footprint (PCF)", srlKpiDataType: "NUMERIC", unit: "kgCO2e/unit", isMandatory: true, srlNormMethod: "TARGET_BASED", higherIsBetter: false, griTag: "GRI-305-1", sdgTag: "SDG-12" },
   { kpiCode: "LCA-002", dimCode: "LCA", kpiName: "Recycled Material Content", srlKpiDataType: "NUMERIC", unit: "%", isMandatory: true, srlNormMethod: "MIN_MAX", normMin: 0, normMax: 100, higherIsBetter: true, griTag: "GRI-301-2", sdgTag: "SDG-12" },
   { kpiCode: "LCA-003", dimCode: "LCA", kpiName: "Product End-of-Life Recovery Rate", srlKpiDataType: "NUMERIC", unit: "%", isMandatory: true, srlNormMethod: "MIN_MAX", normMin: 0, normMax: 100, higherIsBetter: true, griTag: "GRI-306-2", sdgTag: "SDG-12" },
@@ -70,7 +70,7 @@ const KPIS = [
   { kpiCode: "LCA-008", dimCode: "LCA", kpiName: "Supplier Sustainability Assessment", srlKpiDataType: "NUMERIC", unit: "% suppliers assessed", isMandatory: false, srlNormMethod: "MIN_MAX", normMin: 0, normMax: 100, higherIsBetter: true, griTag: "GRI-308-1", sdgTag: "SDG-12" },
   { kpiCode: "LCA-009", dimCode: "LCA", kpiName: "Circular Revenue Share", srlKpiDataType: "NUMERIC", unit: "% revenue from circular models", isMandatory: false, srlNormMethod: "MIN_MAX", normMin: 0, normMax: 100, higherIsBetter: true, sdgTag: "SDG-12" },
 
-  // SMF — Sustainable Manufacturing & Footprint (9 KPIs)
+  // SMF — Sustainable Manufacturing (9 KPIs)
   { kpiCode: "SMF-001", dimCode: "SMF", kpiName: "Manufacturing Energy Intensity", srlKpiDataType: "NUMERIC", unit: "kWh/unit produced", isMandatory: true, srlNormMethod: "TARGET_BASED", higherIsBetter: false, griTag: "GRI-302-3", sdgTag: "SDG-9" },
   { kpiCode: "SMF-002", dimCode: "SMF", kpiName: "Process Waste Rate", srlKpiDataType: "NUMERIC", unit: "%", isMandatory: true, srlNormMethod: "MIN_MAX", normMin: 0, normMax: 100, higherIsBetter: false, griTag: "GRI-306-3", sdgTag: "SDG-12" },
   { kpiCode: "SMF-003", dimCode: "SMF", kpiName: "Supply Chain Emissions (Scope 3 Cat 1)", srlKpiDataType: "NUMERIC", unit: "tCO2e/year", isMandatory: false, srlNormMethod: "TARGET_BASED", higherIsBetter: false, griTag: "GRI-305-3", sdgTag: "SDG-13" },
@@ -81,7 +81,7 @@ const KPIS = [
   { kpiCode: "SMF-008", dimCode: "SMF", kpiName: "SBTi Target Validated", srlKpiDataType: "BOOLEAN", unit: "Y/N", isMandatory: false, srlNormMethod: "BINARY", higherIsBetter: true, sdgTag: "SDG-13" },
   { kpiCode: "SMF-009", dimCode: "SMF", kpiName: "Operational Carbon Intensity", srlKpiDataType: "NUMERIC", unit: "tCO2e/£M revenue", isMandatory: false, srlNormMethod: "TARGET_BASED", higherIsBetter: false, griTag: "GRI-305-4", sdgTag: "SDG-13" },
 
-  // SOC — Social & Governance (8 KPIs)
+  // SOC — Social Value and Impact (8 KPIs)
   { kpiCode: "SOC-001", dimCode: "SOC", kpiName: "Gender Pay Gap", srlKpiDataType: "NUMERIC", unit: "%", isMandatory: true, srlNormMethod: "THRESHOLD", thresholdValue: 5, srlThreshDir: "LTE", higherIsBetter: false, griTag: "GRI-405-2", sdgTag: "SDG-5" },
   { kpiCode: "SOC-002", dimCode: "SOC", kpiName: "Board Diversity (Gender)", srlKpiDataType: "NUMERIC", unit: "% women on board", isMandatory: true, srlNormMethod: "THRESHOLD", thresholdValue: 40, srlThreshDir: "GTE", higherIsBetter: true, griTag: "GRI-405-1", sdgTag: "SDG-5" },
   { kpiCode: "SOC-003", dimCode: "SOC", kpiName: "Employee Health & Safety Incidents", srlKpiDataType: "NUMERIC", unit: "incidents/100 FTE", isMandatory: true, srlNormMethod: "THRESHOLD", thresholdValue: 0, srlThreshDir: "EQ", higherIsBetter: false, griTag: "GRI-403-9", sdgTag: "SDG-8" },
@@ -91,7 +91,7 @@ const KPIS = [
   { kpiCode: "SOC-007", dimCode: "SOC", kpiName: "Training Hours per Employee", srlKpiDataType: "NUMERIC", unit: "hours/year", isMandatory: false, srlNormMethod: "THRESHOLD", thresholdValue: 20, srlThreshDir: "GTE", higherIsBetter: true, griTag: "GRI-404-1", sdgTag: "SDG-4" },
   { kpiCode: "SOC-008", dimCode: "SOC", kpiName: "Whistleblower Policy Active", srlKpiDataType: "BOOLEAN", unit: "Y/N", isMandatory: false, srlNormMethod: "BINARY", higherIsBetter: true, griTag: "GRI-205-1" },
 
-  // ESG — ESG Reporting & Compliance (8 KPIs)
+  // ESG — ESG Governance and Compliance (8 KPIs)
   { kpiCode: "ESG-001", dimCode: "ESG", kpiName: "ESG Report Published", srlKpiDataType: "BOOLEAN", unit: "Y/N", isMandatory: true, srlNormMethod: "BINARY", higherIsBetter: true, griTag: "GRI-2-14" },
   { kpiCode: "ESG-002", dimCode: "ESG", kpiName: "GRI Standards Aligned", srlKpiDataType: "BOOLEAN", unit: "Y/N", isMandatory: true, srlNormMethod: "BINARY", higherIsBetter: true, griTag: "GRI-2-14" },
   { kpiCode: "ESG-003", dimCode: "ESG", kpiName: "TCFD Disclosure Completed", srlKpiDataType: "BOOLEAN", unit: "Y/N", isMandatory: false, srlNormMethod: "BINARY", higherIsBetter: true, tcfdTag: "Governance" },

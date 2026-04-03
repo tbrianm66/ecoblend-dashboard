@@ -6,8 +6,8 @@
  * Implements:
  *   - 5 KPI normalisation methods (MIN_MAX, TARGET_BASED, THRESHOLD, BINARY, ORDINAL)
  *   - Stage-aware dimension weighting with sector overlay
- *   - Coverage adjustment factor (mandatory 80% / optional 20%)
- *   - Trajectory bonus (capped at +3.0 points)
+ *   - Coverage Adjustment Factor (§3.4: mandatory 80% / optional 20%)
+ *   - Trajectory Bonus (§3.5: capped at +3.0 points)
  *   - SRL level derivation (0–5)
  *   - Gate evaluation (G1–G5) with composite + per-dimension floors
  *   - MASRL / Sustainability Watch detection
@@ -138,7 +138,7 @@ export interface VrlSrlPayload {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-/** Default stage-aware dimension weights (Section 4.1) */
+/** Default stage-aware dimension weights (§4.1 — Stage-Aware Weighting) */
 export const DEFAULT_STAGE_WEIGHTS: Record<SrlStage, Record<SrlDimCode, number>> = {
   S0: { ENV: 0.15, LCA: 0.10, SMF: 0.10, SOC: 0.30, ESG: 0.35 },
   S1: { ENV: 0.18, LCA: 0.12, SMF: 0.12, SOC: 0.28, ESG: 0.30 },
@@ -147,7 +147,7 @@ export const DEFAULT_STAGE_WEIGHTS: Record<SrlStage, Record<SrlDimCode, number>>
   S4: { ENV: 0.25, LCA: 0.22, SMF: 0.23, SOC: 0.18, ESG: 0.12 },
 };
 
-/** Sector overlay deltas (Section 4.2) */
+/** Sector overlay deltas (§4.2 — Sector Overlay) */
 export const SECTOR_OVERLAYS: Record<string, Record<SrlDimCode, number>> = {
   CLEANTECH:  { ENV: +0.05, LCA: +0.02, SMF: +0.03, SOC: -0.05, ESG: -0.05 },
   AGRITECH:   { ENV: +0.03, LCA: +0.05, SMF:  0.00, SOC: -0.04, ESG: -0.04 },
@@ -156,7 +156,7 @@ export const SECTOR_OVERLAYS: Record<string, Record<SrlDimCode, number>> = {
   DIGITAL:    { ENV: -0.05, LCA: -0.05, SMF: -0.10, SOC: +0.10, ESG: +0.10 },
 };
 
-/** SRL level thresholds (Section 2.4) */
+/** SRL level thresholds (§2.4 — Maturity Level Definitions) */
 const SRL_LEVELS = [
   { level: 0, min: 0,  max: 19.99, label: "SRL-0: Unassessed / Baseline" },
   { level: 1, min: 20, max: 39.99, label: "SRL-1: Aware" },
@@ -166,7 +166,7 @@ const SRL_LEVELS = [
   { level: 5, min: 85, max: 100,   label: "SRL-5: Exemplary" },
 ];
 
-/** Gate thresholds (Section 5.2) */
+/** Gate thresholds (§5.2 — Gate Threshold Matrix) */
 export const GATE_THRESHOLDS: Record<SrlGateCode, {
   composite: number;
   floors: Record<SrlDimCode, number>;

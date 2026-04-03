@@ -881,7 +881,7 @@ export const srlRouter = router({
 
       // SRL-R01: MASRL (composite < 25)
       if (composite < 25) {
-        risks.push({ code: "SRL-R01", severity: "CRITICAL", message: `Composite score ${composite.toFixed(1)} below MASRL threshold (25). Sustainability Watch activated.` });
+        risks.push({ code: "SRL-R01", severity: "CRITICAL", message: `Composite score ${composite.toFixed(1)} below MASRL floor (25). Sustainability Watch status activated per §5.3.` });
       }
 
       for (const row of dsRows) {

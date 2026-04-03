@@ -40,10 +40,10 @@ ChartJS.register(
 
 const SRL_LEVELS = [
   { level: 0, label: "Unassessed",  color: "#9ca3af", bg: "#f3f4f6" },
-  { level: 1, label: "Emerging",    color: "#f59e0b", bg: "#fef3c7" },
+  { level: 1, label: "Aware",       color: "#f59e0b", bg: "#fef3c7" },
   { level: 2, label: "Committed",   color: "#f97316", bg: "#ffedd5" },
-  { level: 3, label: "Established", color: "#3b82f6", bg: "#dbeafe" },
-  { level: 4, label: "Leading",     color: "#51AF37", bg: "#e8f7e3" },
+  { level: 3, label: "Measured",    color: "#3b82f6", bg: "#dbeafe" },
+  { level: 4, label: "Optimising",  color: "#51AF37", bg: "#e8f7e3" },
   { level: 5, label: "Exemplary",   color: "#2d9856", bg: "#d1fae5" },
 ];
 
@@ -59,19 +59,19 @@ const DIM_COLORS: Record<DimCode, string> = {
 };
 
 const DIM_FULL: Record<DimCode, string> = {
-  ENV: "Environmental Performance",
-  LCA: "Life Cycle Assessment",
-  SMF: "Sustainable Mfg & Finance",
-  SOC: "Social Impact",
-  ESG: "ESG Governance",
+  ENV: "Environmental Impact",
+  LCA: "Lifecycle and Circular Economy Alignment",
+  SMF: "Sustainable Manufacturing",
+  SOC: "Social Value and Impact",
+  ESG: "ESG Governance and Compliance",
 };
 
 const GATE_THRESHOLDS: Record<string, { composite: number; label: string }> = {
-  G1: { composite: 25, label: "G1 — Seed Gate" },
-  G2: { composite: 35, label: "G2 — Pre-Seed Gate" },
-  G3: { composite: 55, label: "G3 — Series A Gate" },
-  G4: { composite: 70, label: "G4 — Scale Gate" },
-  G5: { composite: 85, label: "G5 — Exit Gate" },
+  G1: { composite: 25, label: "G1 — Awareness Gate" },
+  G2: { composite: 35, label: "G2 — Commitment Gate" },
+  G3: { composite: 55, label: "G3 — Measurement Gate" },
+  G4: { composite: 70, label: "G4 — Optimisation Gate" },
+  G5: { composite: 85, label: "G5 — Exemplary Gate" },
 };
 
 function getSrlLevel(level: number) {

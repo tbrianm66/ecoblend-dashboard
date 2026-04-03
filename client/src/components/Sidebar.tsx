@@ -13,7 +13,7 @@ import {
   Award, Heart, ChevronRight, Rocket, MessageSquare, BookOpen,
   Bell, X, AlertTriangle, FileText, Newspaper, Briefcase,
   Lightbulb, TestTube2, UserCircle2, FolderOpen, Globe,
-   Building2, ChevronDown, GraduationCap, Search, PieChart, Leaf, Database, UserCheck, Package, ClipboardList, Zap, Shuffle, GitBranch, Users2, Truck, Factory, BookMarked, HandCoins, ShieldCheck, BarChart3, FolderLock, Brain, Sparkles, History
+   Building2, ChevronDown, GraduationCap, Search, PieChart, Leaf, Database, UserCheck, Package, ClipboardList, Zap, Shuffle, GitBranch, Users2, Truck, Factory, BookMarked, HandCoins, ShieldCheck, BarChart3, FolderLock, Brain, Sparkles, History as HistoryIcon
 } from "lucide-react";
 import { useVentures } from "@/contexts/VentureContext";
 
@@ -24,7 +24,7 @@ const iconMap: Record<string, React.ComponentType<{ size?: number; className?: s
   Award, Heart, Rocket, MessageSquare, BookOpen, FileText,
   Newspaper, Briefcase, Lightbulb, TestTube2, UserCircle2,
   FolderOpen, Globe, Building2, GraduationCap, Search, PieChart, Leaf, Database, UserCheck, Package, ClipboardList, Zap, Shuffle, GitBranch, Users2, Truck, Factory, BookMarked, HandCoins, ShieldCheck, BarChart3, FolderLock,
-  Brain, Sparkles, History,
+  Brain, Sparkles, History: HistoryIcon,
 };
 
 interface NavItem {

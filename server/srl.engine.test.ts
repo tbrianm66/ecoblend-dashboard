@@ -2,8 +2,9 @@
  * SRL Scoring Engine Tests — BEBUS-SRL-SE-001
  *
  * Validates all mathematical formulas, normalisation methods, weighting,
- * coverage adjustment, trajectory bonus, gate evaluation, MASRL, and
- * risk condition classification against the worked examples in the spec.
+ * Coverage Adjustment Factor (§3.4), Trajectory Bonus (§3.5), gate evaluation,
+ * MASRL / Sustainability Watch detection, and risk condition classification
+ * against the worked examples in the academic framework specification.
  */
 
 import { describe, it, expect } from "vitest";
