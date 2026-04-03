@@ -344,6 +344,13 @@
       "when": 1774978666121,
       "tag": "0048_material_william_stryker",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "5",
+      "when": 1775211019543,
+      "tag": "0049_fluffy_hitman",
+      "breakpoints": true
     }
   ]
 }

@@ -1100,3 +1100,435 @@ export async function computePortfolioVrlScores(): Promise<Array<{
   );
   return results;
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SRL MODULE — DB HELPERS (BEBUS-SRL-DMS-001)
+// ══════════════════════════════════════════════════════════════════════════════
+import {
+  srlPortfolios,
+  srlVentureProfiles,
+  srlDimensionDefinitions,
+  srlKpiDefinitions,
+  srlDataSources,
+  srlWeightConfigs,
+  srlGateConfigs,
+  srlGateDimensionFloors,
+  srlAssessments,
+  srlDimensionScores,
+  srlKpiValues,
+  srlGateHoldingStatus,
+  srlReportingOutputs,
+  srlAuditLog,
+  InsertSrlPortfolio,
+  InsertSrlVentureProfile,
+  InsertSrlAssessment,
+  InsertSrlDimensionScore,
+  InsertSrlKpiValue,
+  InsertSrlWeightConfig,
+  InsertSrlGateConfig,
+  InsertSrlGateDimensionFloor,
+  InsertSrlGateHoldingStatus,
+  InsertSrlReportingOutput,
+  InsertSrlAuditLogEntry,
+  InsertSrlDimensionDefinition,
+  InsertSrlKpiDefinition,
+  InsertSrlDataSource,
+  SrlAssessment,
+  SrlDimensionScore,
+  SrlKpiValue,
+  SrlWeightConfig,
+  SrlGateConfig,
+  SrlVentureProfile,
+} from "../drizzle/schema";
+
+export async function getSrlPortfolios() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(srlPortfolios).orderBy(srlPortfolios.portfolioName);
+}
+
+export async function createSrlPortfolio(data: InsertSrlPortfolio) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.insert(srlPortfolios).values(data);
+  return data;
+}
+
+export async function getSrlVentureProfile(ventureId: string): Promise<SrlVentureProfile | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(srlVentureProfiles).where(eq(srlVentureProfiles.ventureId, ventureId));
+  return rows[0] ?? null;
+}
+
+export async function upsertSrlVentureProfile(data: InsertSrlVentureProfile) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  const existing = await getSrlVentureProfile(data.ventureId);
+  if (existing) {
+    await db.update(srlVentureProfiles).set(data).where(eq(srlVentureProfiles.ventureId, data.ventureId));
+  } else {
+    await db.insert(srlVentureProfiles).values(data);
+  }
+  return data;
+}
+
+export async function getAllSrlVentureProfiles() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(srlVentureProfiles).orderBy(srlVentureProfiles.ventureId);
+}
+
+export async function getSrlDimensionDefinitions() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(srlDimensionDefinitions).where(eq(srlDimensionDefinitions.isActive, true)).orderBy(srlDimensionDefinitions.sortOrder);
+}
+
+export async function seedSrlDimensionDefinitions(defs: InsertSrlDimensionDefinition[]) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  for (const def of defs) {
+    const existing = await db.select().from(srlDimensionDefinitions).where(eq(srlDimensionDefinitions.dimensionCode, def.dimensionCode));
+    if (existing.length === 0) {
+      await db.insert(srlDimensionDefinitions).values(def);
+    }
+  }
+}
+
+export async function getSrlKpiDefinitions(dimensionCode?: string) {
+  const db = await getDb();
+  if (!db) return [];
+  if (dimensionCode) {
+    const dimRows = await db.select().from(srlDimensionDefinitions).where(eq(srlDimensionDefinitions.dimensionCode, dimensionCode as any));
+    if (!dimRows[0]) return [];
+    return db.select().from(srlKpiDefinitions).where(eq(srlKpiDefinitions.dimensionId, dimRows[0].id));
+  }
+  return db.select().from(srlKpiDefinitions).orderBy(srlKpiDefinitions.kpiCode);
+}
+
+export async function getSrlKpiDefinitionByCode(kpiCode: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(srlKpiDefinitions).where(eq(srlKpiDefinitions.kpiCode, kpiCode));
+  return rows[0] ?? null;
+}
+
+export async function seedSrlKpiDefinitions(kpis: InsertSrlKpiDefinition[]) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  for (const kpi of kpis) {
+    const existing = await db.select().from(srlKpiDefinitions).where(eq(srlKpiDefinitions.kpiCode, kpi.kpiCode));
+    if (existing.length === 0) {
+      await db.insert(srlKpiDefinitions).values(kpi);
+    }
+  }
+}
+
+export async function getSrlWeightConfig(stage: string, sectorCode = "default"): Promise<SrlWeightConfig[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const sectorRows = await db.select().from(srlWeightConfigs).where(
+    and(eq(srlWeightConfigs.lifecycleStage, stage as any), eq(srlWeightConfigs.sectorCode, sectorCode))
+  );
+  if (sectorRows.length === 5) return sectorRows;
+  return db.select().from(srlWeightConfigs).where(
+    and(eq(srlWeightConfigs.lifecycleStage, stage as any), eq(srlWeightConfigs.sectorCode, "default"))
+  );
+}
+
+export async function seedSrlWeightConfigs(configs: InsertSrlWeightConfig[]) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  for (const cfg of configs) {
+    const existing = await db.select().from(srlWeightConfigs).where(
+      and(eq(srlWeightConfigs.dimensionCode, cfg.dimensionCode), eq(srlWeightConfigs.lifecycleStage, cfg.lifecycleStage), eq(srlWeightConfigs.sectorCode, cfg.sectorCode ?? "default"))
+    );
+    if (existing.length === 0) {
+      await db.insert(srlWeightConfigs).values(cfg);
+    }
+  }
+}
+
+export async function getSrlGateConfigs(): Promise<SrlGateConfig[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(srlGateConfigs).orderBy(srlGateConfigs.gateCode);
+}
+
+export async function getSrlGateConfig(gateCode: string): Promise<SrlGateConfig | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(srlGateConfigs).where(eq(srlGateConfigs.gateCode, gateCode as any));
+  return rows[0] ?? null;
+}
+
+export async function seedSrlGateConfigs(configs: InsertSrlGateConfig[]) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  for (const cfg of configs) {
+    const existing = await db.select().from(srlGateConfigs).where(eq(srlGateConfigs.gateCode, cfg.gateCode));
+    if (existing.length === 0) {
+      await db.insert(srlGateConfigs).values(cfg);
+    }
+  }
+}
+
+export async function seedSrlGateDimensionFloors(floors: InsertSrlGateDimensionFloor[]) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  for (const floor of floors) {
+    const existing = await db.select().from(srlGateDimensionFloors).where(
+      and(eq(srlGateDimensionFloors.gateConfigId, floor.gateConfigId), eq(srlGateDimensionFloors.dimensionCode, floor.dimensionCode))
+    );
+    if (existing.length === 0) {
+      await db.insert(srlGateDimensionFloors).values(floor);
+    }
+  }
+}
+
+export async function getSrlAssessments(ventureId: string): Promise<SrlAssessment[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(srlAssessments).where(eq(srlAssessments.ventureId, ventureId)).orderBy(desc(srlAssessments.assessmentDate));
+}
+
+export async function getLatestSrlAssessment(ventureId: string): Promise<SrlAssessment | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(srlAssessments)
+    .where(and(eq(srlAssessments.ventureId, ventureId), eq(srlAssessments.isLocked, true)))
+    .orderBy(desc(srlAssessments.assessmentDate))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+export async function getSrlAssessmentById(assessmentId: string): Promise<SrlAssessment | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(srlAssessments).where(eq(srlAssessments.id, assessmentId));
+  return rows[0] ?? null;
+}
+
+export async function createSrlAssessment(data: InsertSrlAssessment): Promise<InsertSrlAssessment> {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.insert(srlAssessments).values(data);
+  return data;
+}
+
+export async function lockSrlAssessment(assessmentId: string): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.update(srlAssessments).set({ isLocked: true }).where(eq(srlAssessments.id, assessmentId));
+}
+
+export async function getSrlDimensionScores(assessmentId: string): Promise<SrlDimensionScore[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(srlDimensionScores).where(eq(srlDimensionScores.assessmentId, assessmentId));
+}
+
+export async function createSrlDimensionScore(data: InsertSrlDimensionScore): Promise<InsertSrlDimensionScore> {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.insert(srlDimensionScores).values(data);
+  return data;
+}
+
+export async function getSrlKpiValues(dimScoreId: string): Promise<SrlKpiValue[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(srlKpiValues).where(eq(srlKpiValues.dimScoreId, dimScoreId));
+}
+
+export async function createSrlKpiValue(data: InsertSrlKpiValue): Promise<InsertSrlKpiValue> {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.insert(srlKpiValues).values(data);
+  return data;
+}
+
+export async function getSrlGateHoldingStatus(ventureId: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(srlGateHoldingStatus).where(eq(srlGateHoldingStatus.ventureId, ventureId));
+}
+
+export async function upsertSrlGateHoldingStatus(data: InsertSrlGateHoldingStatus) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  const existing = await db.select().from(srlGateHoldingStatus).where(
+    and(eq(srlGateHoldingStatus.ventureId, data.ventureId), eq(srlGateHoldingStatus.gateCode, data.gateCode))
+  );
+  if (existing.length > 0) {
+    await db.update(srlGateHoldingStatus).set(data).where(
+      and(eq(srlGateHoldingStatus.ventureId, data.ventureId), eq(srlGateHoldingStatus.gateCode, data.gateCode))
+    );
+  } else {
+    await db.insert(srlGateHoldingStatus).values(data);
+  }
+}
+
+export async function getSrlReportingOutputs(ventureId: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(srlReportingOutputs).where(eq(srlReportingOutputs.ventureId, ventureId)).orderBy(desc(srlReportingOutputs.generatedAt));
+}
+
+export async function createSrlReportingOutput(data: InsertSrlReportingOutput) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.insert(srlReportingOutputs).values(data);
+  return data;
+}
+
+export async function appendSrlAuditLog(data: InsertSrlAuditLogEntry) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.insert(srlAuditLog).values(data);
+}
+
+export async function getSrlAuditLog(ventureId?: string) {
+  const db = await getDb();
+  if (!db) return [];
+  if (ventureId) {
+    return db.select().from(srlAuditLog).where(eq(srlAuditLog.ventureId, ventureId)).orderBy(desc(srlAuditLog.eventTimestamp)).limit(100);
+  }
+  return db.select().from(srlAuditLog).orderBy(desc(srlAuditLog.eventTimestamp)).limit(200);
+}
+
+// ── SRL Scoring Engine ────────────────────────────────────────────────────────
+export type SrlDimCode = "ENV" | "LCA" | "SMF" | "SOC" | "ESG";
+
+const SRL_LEVEL_THRESHOLDS = [
+  { level: 0, min: 0,  max: 19.99,  label: "SRL-0: Pre-Sustainability" },
+  { level: 1, min: 20, max: 34.99,  label: "SRL-1: Sustainability Awareness" },
+  { level: 2, min: 35, max: 49.99,  label: "SRL-2: Sustainability Commitment" },
+  { level: 3, min: 50, max: 64.99,  label: "SRL-3: Sustainability Integration" },
+  { level: 4, min: 65, max: 79.99,  label: "SRL-4: Sustainability Leadership" },
+  { level: 5, min: 80, max: 100,    label: "SRL-5: Sustainability Excellence" },
+];
+
+export function determineSrlLevel(compositeScore: number): { level: number; label: string } {
+  const entry = SRL_LEVEL_THRESHOLDS.find(t => compositeScore >= t.min && compositeScore <= t.max);
+  return entry ? { level: entry.level, label: entry.label } : { level: 0, label: "SRL-0: Pre-Sustainability" };
+}
+
+export type NormalisedKpiInput = {
+  kpiCode: string;
+  rawValue: number;
+  normalisationMethod: "MIN_MAX" | "TARGET_BASED" | "THRESHOLD" | "BINARY";
+  normMin?: number;
+  normMax?: number;
+  normTarget?: number;
+  thresholdValue?: number;
+  thresholdDirection?: "GTE" | "LTE" | "EQ";
+  higherIsBetter: boolean;
+};
+
+export function normaliseSrlKpi(kpi: NormalisedKpiInput): number {
+  const { rawValue, normalisationMethod, normMin, normMax, normTarget, thresholdValue, thresholdDirection, higherIsBetter } = kpi;
+  let score = 0;
+  switch (normalisationMethod) {
+    case "MIN_MAX": {
+      const min = normMin ?? 0;
+      const max = normMax ?? 100;
+      if (max === min) { score = 50; break; }
+      const raw = (rawValue - min) / (max - min) * 100;
+      score = higherIsBetter ? Math.min(100, Math.max(0, raw)) : Math.min(100, Math.max(0, 100 - raw));
+      break;
+    }
+    case "TARGET_BASED": {
+      const target = normTarget ?? 0;
+      if (target === 0) { score = rawValue === 0 ? 100 : 0; break; }
+      const ratio = rawValue / target;
+      score = higherIsBetter ? Math.min(100, ratio * 100) : Math.min(100, (1 - Math.min(1, Math.abs(rawValue - target) / target)) * 100);
+      break;
+    }
+    case "THRESHOLD": {
+      const threshold = thresholdValue ?? 0;
+      const dir = thresholdDirection ?? "GTE";
+      let passes = dir === "GTE" ? rawValue >= threshold : dir === "LTE" ? rawValue <= threshold : rawValue === threshold;
+      if (passes) { score = 100; } else {
+        const ratio = dir === "GTE" ? rawValue / threshold : threshold / (rawValue || 1);
+        score = Math.min(99, Math.max(0, ratio * 100));
+      }
+      break;
+    }
+    case "BINARY": { score = rawValue ? 100 : 0; break; }
+  }
+  return Math.round(score * 100) / 100;
+}
+
+export type SrlDimensionInput = {
+  dimensionCode: SrlDimCode;
+  kpiScores: Array<{ kpiCode: string; normalisedScore: number; isMandatory: boolean }>;
+  weight: number;
+  gateFloor?: number;
+};
+
+export function computeSrlDimensionScore(dim: SrlDimensionInput) {
+  const { kpiScores, weight, gateFloor } = dim;
+  if (kpiScores.length === 0) return { rawScore: 0, weightedScore: 0, kpiCoveragePct: 0, gatePass: false };
+  const mandatoryKpis = kpiScores.filter(k => k.isMandatory);
+  const submittedMandatory = mandatoryKpis.filter(k => k.normalisedScore !== null && k.normalisedScore !== undefined);
+  const kpiCoveragePct = mandatoryKpis.length > 0 ? (submittedMandatory.length / mandatoryKpis.length) * 100 : 100;
+  const rawScore = kpiScores.reduce((sum, k) => sum + k.normalisedScore, 0) / kpiScores.length;
+  const weightedScore = rawScore * weight;
+  const gatePass = gateFloor !== undefined ? rawScore >= gateFloor : true;
+  return { rawScore: Math.round(rawScore * 100) / 100, weightedScore: Math.round(weightedScore * 100) / 100, kpiCoveragePct: Math.round(kpiCoveragePct * 100) / 100, gatePass };
+}
+
+export function computeSrlComposite(dimensions: SrlDimensionInput[], previousScore?: number) {
+  const dimensionResults = dimensions.map(dim => ({ ...computeSrlDimensionScore(dim), dimensionCode: dim.dimensionCode, weight: dim.weight }));
+  const baseComposite = dimensionResults.reduce((sum, d) => sum + d.weightedScore, 0);
+  let trajectoryBonus = 0;
+  if (previousScore !== undefined && previousScore !== null) {
+    const delta = baseComposite - previousScore;
+    if (delta >= 5) trajectoryBonus = 2;
+    else if (delta >= 2) trajectoryBonus = 1;
+  }
+  const compositeScore = Math.min(100, Math.round((baseComposite + trajectoryBonus) * 100) / 100);
+  const { level, label } = determineSrlLevel(compositeScore);
+  return { compositeScore, srlLevel: level, srlLevelLabel: label, trajectoryBonus, dimensionResults };
+}
+
+export async function buildSrlVrlPayload(assessmentId: string): Promise<object | null> {
+  const assessment = await getSrlAssessmentById(assessmentId);
+  if (!assessment || !assessment.isLocked) return null;
+  const dimScores = await getSrlDimensionScores(assessmentId);
+  const dimensionScores: Record<string, object> = {};
+  for (const ds of dimScores) {
+    dimensionScores[ds.dimensionCode] = { raw_score: Number(ds.rawScore), weighted_score: Number(ds.weightedScore), gate_pass: ds.gatePass };
+  }
+  return {
+    venture_id: assessment.ventureId,
+    assessment_id: assessment.id,
+    assessment_date: assessment.assessmentDate,
+    stage_at_assessment: assessment.stageAtAssessment,
+    composite_score: Number(assessment.compositeScore),
+    srl_level: assessment.srlLevel,
+    score_delta: assessment.scoreDelta !== null ? Number(assessment.scoreDelta) : null,
+    dimension_scores: dimensionScores,
+    gate_ref: assessment.gateRef,
+    gate_status: assessment.gateStatus,
+    weight_config_ref: assessment.weightConfigSnapshot,
+  };
+}
+
+export async function getSrlPortfolioSummary(portfolioId?: string) {
+  const db = await getDb();
+  if (!db) return [];
+  const profiles = portfolioId
+    ? await db.select().from(srlVentureProfiles).where(eq(srlVentureProfiles.portfolioId, portfolioId))
+    : await db.select().from(srlVentureProfiles);
+  return profiles.map(p => ({
+    ventureId: p.ventureId,
+    sectorCode: p.sectorCode,
+    currentStage: p.currentStage,
+    srlCurrentLevel: p.srlCurrentLevel,
+    srlCurrentScore: Number(p.srlCurrentScore),
+    sustainabilityWatch: p.sustainabilityWatch,
+  }));
+}

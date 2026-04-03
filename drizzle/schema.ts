@@ -5685,3 +5685,289 @@ export const stageGateEvidence = mysqlTable("stage_gate_evidence", {
 });
 export type StageGateEvidence = typeof stageGateEvidence.$inferSelect;
 export type InsertStageGateEvidence = typeof stageGateEvidence.$inferInsert;
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SRL MODULE — SUSTAINABILITY READINESS LEVEL DATA MODEL
+// Reference: BEBUS-SRL-DMS-001 v1.0 | April 2026
+// 11 entities covering the full SRL scoring lifecycle.
+//
+// Compatibility notes:
+//   - ventureId columns use VARCHAR(64) to match ventures.id PK
+//   - All timestamps use MySQL TIMESTAMP (not TIMESTAMPTZ — MySQL dialect)
+//   - UUIDs stored as VARCHAR(36) — MySQL has no native UUID type
+//   - JSONB → JSON (MySQL dialect)
+//   - DATERANGE not supported in MySQL; replaced with periodStart + periodEnd DATE pair
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── SRL Portfolio ─────────────────────────────────────────────────────────────
+// Master container for a set of ventures under common ownership or fund management.
+export const srlPortfolios = mysqlTable("srl_portfolios", {
+  id:            varchar("id", { length: 36 }).primaryKey(),
+  portfolioName: varchar("portfolioName", { length: 200 }).notNull(),
+  fundManager:   varchar("fundManager", { length: 200 }),
+  configProfile: json("configProfile").notNull().default({}),
+  currencyCode:  varchar("currencyCode", { length: 3 }).notNull().default("GBP"),
+  isActive:      boolean("isActive").notNull().default(true),
+  createdAt:     timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:     timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type SrlPortfolio = typeof srlPortfolios.$inferSelect;
+export type InsertSrlPortfolio = typeof srlPortfolios.$inferInsert;
+
+// ── SRL Venture Profile ───────────────────────────────────────────────────────
+// 1:1 companion to the existing ventures table — adds SRL-specific metadata
+// without altering the core ventures schema.
+export const srlVentureProfiles = mysqlTable("srl_venture_profiles", {
+  ventureId:           varchar("ventureId", { length: 64 }).primaryKey(),
+  portfolioId:         varchar("portfolioId", { length: 36 }),
+  sectorCode:          varchar("sectorCode", { length: 50 }).notNull().default("GENERAL"),
+  subSector:           varchar("subSector", { length: 100 }),
+  currentStage:        mysqlEnum("srlCurrentStage", ["S0","S1","S2","S3","S4"]).notNull().default("S0"),
+  srlCurrentLevel:     tinyint("srlCurrentLevel").default(0),
+  srlCurrentScore:     decimal("srlCurrentScore", { precision: 5, scale: 2 }).default("0.00"),
+  countryCode:         varchar("countryCode", { length: 2 }).notNull().default("GB"),
+  incorporatedDate:    date("incorporatedDate"),
+  sustainabilityWatch: boolean("sustainabilityWatch").notNull().default(false),
+  watchActivatedAt:    timestamp("watchActivatedAt"),
+  watchLiftedAt:       timestamp("watchLiftedAt"),
+  isActive:            boolean("isActive").notNull().default(true),
+  createdAt:           timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:           timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type SrlVentureProfile = typeof srlVentureProfiles.$inferSelect;
+export type InsertSrlVentureProfile = typeof srlVentureProfiles.$inferInsert;
+
+// ── SRL Dimension Definition ──────────────────────────────────────────────────
+// Master reference for the 5 scoring dimensions: ENV, LCA, SMF, SOC, ESG.
+// Seeded once; change-controlled thereafter.
+export const srlDimensionDefinitions = mysqlTable("srl_dimension_definitions", {
+  id:            varchar("id", { length: 36 }).primaryKey(),
+  dimensionCode: mysqlEnum("srlDimDefCode", ["ENV","LCA","SMF","SOC","ESG"]).notNull().unique(),
+  dimensionName: varchar("dimensionName", { length: 100 }).notNull(),
+  description:   text("description"),
+  defaultWeight: decimal("defaultWeight", { precision: 5, scale: 4 }).notNull(),
+  sortOrder:     tinyint("sortOrder").notNull(),
+  isActive:      boolean("isActive").notNull().default(true),
+  createdAt:     timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:     timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type SrlDimensionDefinition = typeof srlDimensionDefinitions.$inferSelect;
+export type InsertSrlDimensionDefinition = typeof srlDimensionDefinitions.$inferInsert;
+
+// ── SRL KPI Definition ────────────────────────────────────────────────────────
+// Master library of all 44 KPI metrics with normalisation rules and reporting tags.
+export const srlKpiDefinitions = mysqlTable("srl_kpi_definitions", {
+  id:                  varchar("id", { length: 36 }).primaryKey(),
+  dimensionId:         varchar("dimensionId", { length: 36 }).notNull(),
+  kpiCode:             varchar("kpiCode", { length: 20 }).notNull().unique(),
+  kpiName:             varchar("kpiName", { length: 200 }).notNull(),
+  description:         text("description"),
+  dataType:            mysqlEnum("srlKpiDataType", ["NUMERIC","PERCENT","BOOLEAN","INDEX","ORDINAL"]).notNull(),
+  unit:                varchar("unit", { length: 50 }).notNull(),
+  normalisationMethod: mysqlEnum("srlNormMethod", ["MIN_MAX","TARGET_BASED","THRESHOLD","BINARY"]).notNull(),
+  normTarget:          decimal("normTarget", { precision: 18, scale: 4 }),
+  normMin:             decimal("normMin", { precision: 18, scale: 4 }),
+  normMax:             decimal("normMax", { precision: 18, scale: 4 }),
+  thresholdValue:      decimal("thresholdValue", { precision: 18, scale: 4 }),
+  thresholdDirection:  mysqlEnum("srlThreshDir", ["GTE","LTE","EQ"]),
+  isMandatory:         boolean("isMandatory").notNull().default(false),
+  higherIsBetter:      boolean("higherIsBetter").notNull().default(true),
+  sdgTag:              varchar("sdgTag", { length: 50 }),
+  griTag:              varchar("griTag", { length: 50 }),
+  tcfdTag:             varchar("tcfdTag", { length: 50 }),
+  sasbTag:             varchar("sasbTag", { length: 50 }),
+  activatedByTrlLevel: tinyint("activatedByTrlLevel"),
+  activatedByMrlLevel: tinyint("activatedByMrlLevel"),
+  effectiveFrom:       date("effectiveFrom").notNull(),
+  effectiveTo:         date("effectiveTo"),
+  createdAt:           timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:           timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type SrlKpiDefinition = typeof srlKpiDefinitions.$inferSelect;
+export type InsertSrlKpiDefinition = typeof srlKpiDefinitions.$inferInsert;
+
+// ── SRL Data Source ───────────────────────────────────────────────────────────
+// Registry of all data sources feeding KPI values.
+export const srlDataSources = mysqlTable("srl_data_sources", {
+  id:          varchar("id", { length: 36 }).primaryKey(),
+  sourceName:  varchar("sourceName", { length: 200 }).notNull(),
+  sourceType:  mysqlEnum("srlSrcType", ["MANUAL","API","FILE_UPLOAD","SURVEY","SYSTEM"]).notNull(),
+  endpointUrl: varchar("endpointUrl", { length: 500 }),
+  frequency:   varchar("frequency", { length: 30 }),
+  dataOwner:   varchar("dataOwner", { length: 200 }),
+  isActive:    boolean("isActive").notNull().default(true),
+  createdAt:   timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:   timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type SrlDataSource = typeof srlDataSources.$inferSelect;
+export type InsertSrlDataSource = typeof srlDataSources.$inferInsert;
+
+// ── SRL Weight Configuration ──────────────────────────────────────────────────
+// Stage-aware and sector-aware weight configuration matrix.
+// Default weights per BEBUS-SRL-DMS-001 §6 — seeded by migration.
+export const srlWeightConfigs = mysqlTable("srl_weight_configs", {
+  id:             varchar("id", { length: 36 }).primaryKey(),
+  dimensionCode:  mysqlEnum("srlWcDimCode", ["ENV","LCA","SMF","SOC","ESG"]).notNull(),
+  lifecycleStage: mysqlEnum("srlWcStage", ["S0","S1","S2","S3","S4"]).notNull(),
+  sectorCode:     varchar("sectorCode", { length: 64 }).notNull().default("default"),
+  weightValue:    decimal("weightValue", { precision: 5, scale: 4 }).notNull(),
+  effectiveFrom:  date("effectiveFrom").notNull(),
+  effectiveTo:    date("effectiveTo"),
+  createdBy:      varchar("createdBy", { length: 128 }).notNull().default("system"),
+  notes:          text("notes"),
+  createdAt:      timestamp("createdAt").defaultNow().notNull(),
+});
+export type SrlWeightConfig = typeof srlWeightConfigs.$inferSelect;
+export type InsertSrlWeightConfig = typeof srlWeightConfigs.$inferInsert;
+
+// ── SRL Gate Configuration ────────────────────────────────────────────────────
+// Framework constants defining composite floor and block type for each gate (G1–G5).
+export const srlGateConfigs = mysqlTable("srl_gate_configs", {
+  id:                      varchar("id", { length: 36 }).primaryKey(),
+  gateCode:                mysqlEnum("srlGcCode", ["G1","G2","G3","G4","G5"]).notNull().unique(),
+  compositeFloor:          decimal("compositeFloor", { precision: 5, scale: 2 }).notNull(),
+  blockType:               mysqlEnum("srlBlockType", ["advisory","soft","hard"]).notNull(),
+  remediationWindowDays:   int("remediationWindowDays").notNull(),
+  effectiveFrom:           date("effectiveFrom").notNull(),
+  effectiveTo:             date("effectiveTo"),
+  createdAt:               timestamp("createdAt").defaultNow().notNull(),
+});
+export type SrlGateConfig = typeof srlGateConfigs.$inferSelect;
+export type InsertSrlGateConfig = typeof srlGateConfigs.$inferInsert;
+
+// ── SRL Gate Dimension Floors ─────────────────────────────────────────────────
+// Per-dimension minimum scores required at each gate.
+export const srlGateDimensionFloors = mysqlTable("srl_gate_dimension_floors", {
+  id:            varchar("id", { length: 36 }).primaryKey(),
+  gateConfigId:  varchar("gateConfigId", { length: 36 }).notNull(),
+  dimensionCode: mysqlEnum("srlGdfDimCode", ["ENV","LCA","SMF","SOC","ESG"]).notNull(),
+  floorValue:    decimal("floorValue", { precision: 5, scale: 2 }).notNull(),
+  createdAt:     timestamp("createdAt").defaultNow().notNull(),
+});
+export type SrlGateDimensionFloor = typeof srlGateDimensionFloors.$inferSelect;
+export type InsertSrlGateDimensionFloor = typeof srlGateDimensionFloors.$inferInsert;
+
+// ── SRL Assessment ────────────────────────────────────────────────────────────
+// Immutable scored assessment event for a venture at a point in time.
+// is_locked = TRUE once committed; amendments create a new version row.
+export const srlAssessments = mysqlTable("srl_assessments", {
+  id:                   varchar("id", { length: 36 }).primaryKey(),
+  ventureId:            varchar("ventureId", { length: 64 }).notNull(),
+  assessmentDate:       date("assessmentDate").notNull(),
+  stageAtAssessment:    mysqlEnum("srlStageAtAssmt", ["S0","S1","S2","S3","S4"]).notNull(),
+  compositeScore:       decimal("compositeScore", { precision: 5, scale: 2 }).notNull(),
+  srlLevel:             tinyint("srlLevel").notNull(),
+  scoreDelta:           decimal("scoreDelta", { precision: 5, scale: 2 }),
+  gateRef:              varchar("gateRef", { length: 10 }),
+  gateStatus:           mysqlEnum("srlGateStatus", ["PASS","FAIL","PENDING","NA"]),
+  sustainabilityWatch:  boolean("sustainabilityWatch").notNull().default(false),
+  trajectoryBonus:      decimal("trajectoryBonus", { precision: 5, scale: 2 }).default("0.00"),
+  weightConfigSnapshot: json("weightConfigSnapshot").notNull(),
+  assessedBy:           varchar("assessedBy", { length: 200 }).notNull(),
+  isLocked:             boolean("isLocked").notNull().default(false),
+  versionNo:            tinyint("versionNo").notNull().default(1),
+  notes:                text("notes"),
+  createdAt:            timestamp("createdAt").defaultNow().notNull(),
+});
+export type SrlAssessment = typeof srlAssessments.$inferSelect;
+export type InsertSrlAssessment = typeof srlAssessments.$inferInsert;
+
+// ── SRL Dimension Score ───────────────────────────────────────────────────────
+// Per-dimension weighted score within a given assessment (5 rows per assessment).
+export const srlDimensionScores = mysqlTable("srl_dimension_scores", {
+  id:             varchar("id", { length: 36 }).primaryKey(),
+  assessmentId:   varchar("assessmentId", { length: 36 }).notNull(),
+  dimensionId:    varchar("dimensionId", { length: 36 }).notNull(),
+  dimensionCode:  mysqlEnum("srlDimScoreCode", ["ENV","LCA","SMF","SOC","ESG"]).notNull(),
+  rawScore:       decimal("rawScore", { precision: 5, scale: 2 }).notNull(),
+  weightedScore:  decimal("weightedScore", { precision: 5, scale: 2 }).notNull(),
+  weightApplied:  decimal("weightApplied", { precision: 5, scale: 4 }).notNull(),
+  kpiCoveragePct: decimal("kpiCoveragePct", { precision: 5, scale: 2 }),
+  gatePass:       boolean("gatePass"),
+  gateFloorValue: decimal("gateFloorValue", { precision: 5, scale: 2 }),
+  gapFlags:       json("gapFlags"),
+  createdAt:      timestamp("createdAt").defaultNow().notNull(),
+});
+export type SrlDimensionScore = typeof srlDimensionScores.$inferSelect;
+export type InsertSrlDimensionScore = typeof srlDimensionScores.$inferInsert;
+
+// ── SRL KPI Value ─────────────────────────────────────────────────────────────
+// Individual KPI metric observation feeding a dimension score.
+export const srlKpiValues = mysqlTable("srl_kpi_values", {
+  id:               varchar("id", { length: 36 }).primaryKey(),
+  dimScoreId:       varchar("dimScoreId", { length: 36 }).notNull(),
+  kpiDefId:         varchar("kpiDefId", { length: 36 }).notNull(),
+  kpiCode:          varchar("kpiCode", { length: 20 }).notNull(),
+  sourceId:         varchar("sourceId", { length: 36 }).notNull(),
+  rawValue:         decimal("rawValue", { precision: 18, scale: 4 }),
+  unit:             varchar("unit", { length: 50 }).notNull(),
+  normalisedValue:  decimal("normalisedValue", { precision: 5, scale: 2 }),
+  periodStart:      date("periodStart"),
+  periodEnd:        date("periodEnd"),
+  submittedBy:      varchar("submittedBy", { length: 200 }).notNull(),
+  submittedAt:      timestamp("submittedAt").defaultNow().notNull(),
+  evidenceRef:      varchar("evidenceRef", { length: 500 }),
+  isVerified:       boolean("isVerified").notNull().default(false),
+  verifier:         varchar("verifier", { length: 200 }),
+  verificationDate: date("verificationDate"),
+  createdAt:        timestamp("createdAt").defaultNow().notNull(),
+});
+export type SrlKpiValue = typeof srlKpiValues.$inferSelect;
+export type InsertSrlKpiValue = typeof srlKpiValues.$inferInsert;
+
+// ── SRL Gate Holding Status ───────────────────────────────────────────────────
+// Tracks the compounding gate state machine per venture per gate.
+// REMEDIATION → HOLDING → CLEARED (or ESCALATED after 2 restarts).
+export const srlGateHoldingStatus = mysqlTable("srl_gate_holding_status", {
+  id:                    varchar("id", { length: 36 }).primaryKey(),
+  ventureId:             varchar("ventureId", { length: 64 }).notNull(),
+  gateCode:              mysqlEnum("srlGhsGate", ["G1","G2","G3","G4","G5"]).notNull(),
+  status:                mysqlEnum("srlGhsStatus", ["REMEDIATION","HOLDING","CLEARED","ESCALATED"]).notNull(),
+  firstFailAssessmentId: varchar("firstFailAssessmentId", { length: 36 }),
+  clearanceAssessmentId: varchar("clearanceAssessmentId", { length: 36 }),
+  remediationStartDate:  date("remediationStartDate"),
+  holdingStartDate:      date("holdingStartDate"),
+  clearanceDate:         date("clearanceDate"),
+  restartCount:          tinyint("restartCount").notNull().default(0),
+  updatedAt:             timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdAt:             timestamp("createdAt").defaultNow().notNull(),
+});
+export type SrlGateHoldingStatus = typeof srlGateHoldingStatus.$inferSelect;
+export type InsertSrlGateHoldingStatus = typeof srlGateHoldingStatus.$inferInsert;
+
+// ── SRL Reporting Output ──────────────────────────────────────────────────────
+// Persisted report artefacts generated from assessment data.
+export const srlReportingOutputs = mysqlTable("srl_reporting_outputs", {
+  id:             varchar("id", { length: 36 }).primaryKey(),
+  assessmentId:   varchar("assessmentId", { length: 36 }).notNull(),
+  ventureId:      varchar("ventureId", { length: 64 }).notNull(),
+  reportType:     mysqlEnum("srlReportType", ["SCORECARD","GATE_PACK","ESG_SUMMARY","EVIDENCE_BUNDLE","VRL_CONTRIBUTION","SDG_MAP"]).notNull(),
+  reportFormat:   mysqlEnum("srlReportFormat", ["PDF","DOCX","XLSX","JSON","HTML"]).notNull(),
+  reportStandard: mysqlEnum("srlReportStandard", ["GRI","TCFD","SASB","SDG","INTERNAL"]),
+  fileRef:        varchar("fileRef", { length: 500 }),
+  generatedBy:    varchar("generatedBy", { length: 200 }).notNull(),
+  generatedAt:    timestamp("generatedAt").defaultNow().notNull(),
+  periodStart:    date("periodStart"),
+  periodEnd:      date("periodEnd"),
+  createdAt:      timestamp("createdAt").defaultNow().notNull(),
+});
+export type SrlReportingOutput = typeof srlReportingOutputs.$inferSelect;
+export type InsertSrlReportingOutput = typeof srlReportingOutputs.$inferInsert;
+
+// ── SRL Audit Log ─────────────────────────────────────────────────────────────
+// Append-only, immutable audit record for all SRL scoring events and config changes.
+// payloadHash is SHA-256 of the submitted payload for tamper detection.
+export const srlAuditLog = mysqlTable("srl_audit_log", {
+  id:             bigint("id", { mode: "number" }).autoincrement().primaryKey(),
+  eventType:      mysqlEnum("srlAuditEvtType", ["assessment","config_change","data_submission","gate_change","watch_flag","report_generated"]).notNull(),
+  ventureId:      varchar("ventureId", { length: 64 }),
+  actorId:        varchar("actorId", { length: 128 }).notNull(),
+  actorRole:      varchar("actorRole", { length: 64 }),
+  eventTimestamp: timestamp("eventTimestamp").defaultNow().notNull(),
+  payloadHash:    varchar("payloadHash", { length: 64 }).notNull(),
+  referenceId:    varchar("referenceId", { length: 36 }),
+  notes:          text("notes"),
+});
+export type SrlAuditLogEntry = typeof srlAuditLog.$inferSelect;
+export type InsertSrlAuditLogEntry = typeof srlAuditLog.$inferInsert;
