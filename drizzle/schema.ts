@@ -6206,3 +6206,62 @@ export const mrlLevelDefs = mysqlTable("mrl_level_defs", {
 });
 export type MrlLevelDef = typeof mrlLevelDefs.$inferSelect;
 export type InsertMrlLevelDef = typeof mrlLevelDefs.$inferInsert;
+
+// ── TRL/MRL Sync Engine Tables ────────────────────────────────────────────────
+// Three tables only. ventures table already exists from MRL module.
+// Spec: BEBUS-SYNC-SE-001 / trlmrlsyncengine.pdf
+
+// sync_assessments — insert-only, one row per computeSync() call
+export const syncAssessments = mysqlTable("sync_assessments", {
+  syncId:           varchar("syncId", { length: 36 }).primaryKey(),
+  ventureId:        varchar("ventureId", { length: 36 }).notNull(),
+  trl:              int("trl").notNull(),
+  mrl:              int("mrl").notNull(),
+  delta:            int("delta").notNull(),
+  psi:              decimal("psi", { precision: 8, scale: 4 }).notNull(),
+  rho:              decimal("rho", { precision: 8, scale: 4 }).notNull(),
+  eta:              decimal("eta", { precision: 6, scale: 4 }).notNull(),
+  vrlPenalty:       decimal("vrlPenalty", { precision: 6, scale: 4 }).notNull(),
+  adjustedVrl:      decimal("adjustedVrl", { precision: 5, scale: 2 }),
+  wStage:           decimal("wStage", { precision: 5, scale: 3 }).notNull(),
+  wVelocity:        decimal("wVelocity", { precision: 6, scale: 4 }).notNull(),
+  severity:         mysqlEnum("syncSeverity", ["OK", "WATCH", "AMBER", "RED"]).notNull(),
+  primaryPath:      varchar("primaryPath", { length: 40 }).notNull(),
+  domainSupply:     decimal("domainSupply", { precision: 4, scale: 3 }).notNull().default("0.500"),
+  domainCost:       decimal("domainCost", { precision: 4, scale: 3 }).notNull().default("0.500"),
+  domainCompliance: decimal("domainCompliance", { precision: 4, scale: 3 }).notNull().default("0.500"),
+  actions:          json("actions").notNull(),
+  historySnapshot:  json("historySnapshot"),
+  createdAt:        timestamp("createdAt").defaultNow().notNull(),
+});
+export type SyncAssessment = typeof syncAssessments.$inferSelect;
+export type InsertSyncAssessment = typeof syncAssessments.$inferInsert;
+
+// sync_history — append-only, one row per TRL or MRL change
+export const syncHistory = mysqlTable("sync_history", {
+  historyId:   varchar("historyId", { length: 36 }).primaryKey(),
+  ventureId:   varchar("ventureId", { length: 36 }).notNull(),
+  trl:         int("trl").notNull(),
+  mrl:         int("mrl").notNull(),
+  delta:       int("delta").notNull(),
+  recordedAt:  timestamp("recordedAt").defaultNow().notNull(),
+});
+export type SyncHistoryRow = typeof syncHistory.$inferSelect;
+export type InsertSyncHistoryRow = typeof syncHistory.$inferInsert;
+
+// sync_scenarios — 5 seeded demo scenarios (isDemo = true)
+export const syncScenarios = mysqlTable("sync_scenarios", {
+  scenarioId:        varchar("scenarioId", { length: 36 }).primaryKey(),
+  name:              varchar("name", { length: 80 }).notNull(),
+  sector:            varchar("sector", { length: 80 }).notNull(),
+  trl:               int("trl").notNull(),
+  mrl:               int("mrl").notNull(),
+  domainSupply:      decimal("domainSupply", { precision: 4, scale: 3 }).notNull(),
+  domainCost:        decimal("domainCost", { precision: 4, scale: 3 }).notNull(),
+  domainCompliance:  decimal("domainCompliance", { precision: 4, scale: 3 }).notNull(),
+  history:           json("history").notNull(),
+  isDemo:            boolean("isDemo").notNull().default(true),
+  createdAt:         timestamp("createdAt").defaultNow().notNull(),
+});
+export type SyncScenario = typeof syncScenarios.$inferSelect;
+export type InsertSyncScenario = typeof syncScenarios.$inferInsert;

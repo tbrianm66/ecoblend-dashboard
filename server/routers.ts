@@ -1,3 +1,4 @@
+import { syncRouter } from "./sync.router";
 import { mrlRouter } from "./mrl.router";
 import { srlRouter } from "./srl.router";
 import { gdriveWorkspaceRouter } from "./gdriveWorkspace.router";
@@ -6854,5 +6855,6 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
   insightAutomation: insightAutomationRouter,
   srl: srlRouter,
   mrl: mrlRouter,
+  sync: syncRouter,
 });
 export type AppRouter = typeof appRouter;
