@@ -6265,3 +6265,62 @@ export const syncScenarios = mysqlTable("sync_scenarios", {
 });
 export type SyncScenario = typeof syncScenarios.$inferSelect;
 export type InsertSyncScenario = typeof syncScenarios.$inferInsert;
+
+// ============================================================
+// MRL SCORING SYSTEM — BEBUS-MRL-SCORE-001
+// Tables: scoring_sessions, scoring_category_results, scoring_datasets
+// Do NOT recreate: ventures, mrl_assessments (already exist)
+// ============================================================
+
+// scoring_sessions — insert-only audit log of every MRL score run
+export const scoringSessions = mysqlTable("scoring_sessions", {
+  sessionId:       varchar("sessionId", { length: 36 }).primaryKey(),
+  ventureId:       varchar("ventureId", { length: 36 }),
+  ventureName:     varchar("ventureName", { length: 120 }),
+  mrlScore:        decimal("mrlScore", { precision: 5, scale: 1 }).notNull(),
+  mrlScoreRaw:     decimal("mrlScoreRaw", { precision: 5, scale: 1 }).notNull(),
+  mrlLevel:        int("mrlLevel").notNull(),
+  mrlLabel:        varchar("mrlLabel", { length: 40 }).notNull(),
+  confidenceBand:  decimal("confidenceBand", { precision: 5, scale: 2 }).notNull(),
+  gateLocked:      boolean("gateLocked").notNull().default(false),
+  gateReason:      text("gateReason"),
+  schemaVersion:   varchar("schemaVersion", { length: 20 }).notNull().default("1.0.0"),
+  scoredBy:        varchar("scoredBy", { length: 36 }),
+  assessmentType:  varchar("assessmentType", { length: 20 }).notNull().default("manual"),
+  snapshotHash:    varchar("snapshotHash", { length: 64 }).notNull(),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+});
+export type ScoringSession = typeof scoringSessions.$inferSelect;
+export type InsertScoringSession = typeof scoringSessions.$inferInsert;
+
+// scoring_category_results — one row per category per session (5 rows per session)
+export const scoringCategoryResults = mysqlTable("scoring_category_results", {
+  resultId:        varchar("resultId", { length: 36 }).primaryKey(),
+  sessionId:       varchar("sessionId", { length: 36 }).notNull(),
+  category:        varchar("category", { length: 30 }).notNull(),
+  scoreS:          decimal("scoreS", { precision: 6, scale: 4 }).notNull(),
+  maturityM:       decimal("maturityM", { precision: 4, scale: 2 }).notNull(),
+  weightW:         decimal("weightW", { precision: 4, scale: 2 }).notNull(),
+  contribution:    decimal("contribution", { precision: 8, scale: 4 }).notNull(),
+  maturityLabel:   varchar("maturityLabel", { length: 20 }).notNull(),
+  indicatorScores: json("indicatorScores").notNull(),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+});
+export type ScoringCategoryResult = typeof scoringCategoryResults.$inferSelect;
+export type InsertScoringCategoryResult = typeof scoringCategoryResults.$inferInsert;
+
+// scoring_datasets — seeded demo datasets (4 canonical examples)
+export const scoringDatasets = mysqlTable("scoring_datasets", {
+  datasetId:           varchar("datasetId", { length: 36 }).primaryKey(),
+  name:                varchar("name", { length: 80 }).notNull(),
+  sector:              varchar("sector", { length: 80 }).notNull(),
+  description:         text("description"),
+  indicatorScores:     json("indicatorScores").notNull(),
+  maturityScores:      json("maturityScores").notNull(),
+  isDemo:              boolean("isDemo").notNull().default(true),
+  expectedMrlLevel:    int("expectedMrlLevel"),
+  expectedGateLocked:  boolean("expectedGateLocked"),
+  createdAt:           timestamp("createdAt").defaultNow().notNull(),
+});
+export type ScoringDataset = typeof scoringDatasets.$inferSelect;
+export type InsertScoringDataset = typeof scoringDatasets.$inferInsert;

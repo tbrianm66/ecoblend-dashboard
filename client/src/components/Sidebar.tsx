@@ -112,6 +112,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: "srl-history",    label: "SRL History & Audit", icon: "History",         href: "/srl-history" },
       { id: "mrl-portfolio",  label: "MRL Portfolio",        icon: "Factory",         href: "/mrl-portfolio" },
       { id: "mrl-venture",    label: "MRL Venture Detail",   icon: "Cog",             href: "/mrl-venture" },
+      { id: "mrl-scoring",    label: "MRL Scoring System",   icon: "FlaskConical",    href: "/mrl-scoring" },
       { id: "sync",           label: "TRL/MRL Sync Engine",  icon: "Zap",             href: "/sync" },
     ],
   },
