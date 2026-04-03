@@ -67,6 +67,8 @@ import PlaybookPortal from "./pages/PlaybookPortal";
 import SrlPortfolio from "./pages/SrlPortfolio";
 import SrlVentureDetail from "./pages/SrlVentureDetail";
 import SrlHistory from "./pages/SrlHistory";
+import MrlPortfolio from "./pages/MrlPortfolio";
+import MrlVentureDetail from "./pages/MrlVentureDetail";
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
@@ -132,6 +134,8 @@ function Router() {
       <Route path="/srl-portfolio" component={SrlPortfolio} />
       <Route path="/srl-venture/:ventureId" component={SrlVentureDetail} />
       <Route path="/srl-history" component={SrlHistory} />
+      <Route path="/mrl-portfolio" component={MrlPortfolio} />
+      <Route path="/mrl-venture" component={MrlVentureDetail} />
       <Route component={Home} />
     </Switch>
   );

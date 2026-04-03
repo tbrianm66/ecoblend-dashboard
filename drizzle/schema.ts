@@ -5971,3 +5971,238 @@ export const srlAuditLog = mysqlTable("srl_audit_log", {
 });
 export type SrlAuditLogEntry = typeof srlAuditLog.$inferSelect;
 export type InsertSrlAuditLogEntry = typeof srlAuditLog.$inferInsert;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MRL MODULE — Manufacturing Readiness Level Intelligence System v1.0
+// Five-engine architecture: PDE · SCIE · CSM · QCE · SIL
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── MRL Assessments ───────────────────────────────────────────────────────────
+// Top-level assessment record capturing composite MRL level and subsystem scores.
+export const mrlAssessments = mysqlTable("mrl_assessments", {
+  id:              varchar("id", { length: 36 }).primaryKey(),
+  ventureId:       varchar("ventureId", { length: 64 }).notNull(),
+  mrlLevel:        int("mrlLevel").notNull(),           // 1–9
+  mrlLabel:        varchar("mrlLabel", { length: 64 }).notNull(), // e.g. "Pilot Proven"
+  trlLevel:        int("trlLevel"),                     // TRL at time of assessment
+  // Subsystem scores (0–100 each)
+  pdeScore:        int("pdeScore"),                     // Process Design Engine
+  scieScore:       int("scieScore"),                    // Supply Chain Intelligence Engine
+  csmScore:        int("csmScore"),                     // Cost & Scale Model
+  qceScore:        int("qceScore"),                     // Quality & Compliance Engine
+  silScore:        int("silScore"),                     // Sustainability Integration Layer
+  compositeScore:  int("compositeScore"),               // weighted composite (0–100)
+  // VRL contribution (MRL weight = 0.30 in VRL composite)
+  vrlContribution: float("vrlContribution"),            // MRL × 0.30 contribution to VRL
+  // Risk summary
+  riskScoreOverall: int("riskScoreOverall"),            // 0–100 RAG aggregate
+  riskRag:         mysqlEnum("mrlRiskRag", ["GREEN","AMBER","RED"]).default("AMBER"),
+  // Integration model
+  mrlRegion: mysqlEnum("mrlRegion", ["CN","UK","HYBRID"]).default("HYBRID"),
+  notes:           text("notes"),
+  assessedBy:      varchar("assessedBy", { length: 128 }),
+  assessedAt:      timestamp("assessedAt").defaultNow().notNull(),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type MrlAssessment = typeof mrlAssessments.$inferSelect;
+export type InsertMrlAssessment = typeof mrlAssessments.$inferInsert;
+
+// ── MRL Process Routes (Process Design Engine — PDE) ─────────────────────────
+// Directed-graph process route: each record is a single operation node.
+export const mrlProcessRoutes = mysqlTable("mrl_process_routes", {
+  id:              varchar("id", { length: 36 }).primaryKey(),
+  ventureId:       varchar("ventureId", { length: 64 }).notNull(),
+  assessmentId:    varchar("assessmentId", { length: 36 }),
+  routeName:       varchar("routeName", { length: 255 }).notNull(),
+  // Operations stored as JSON array: [{id, label, type, cycleTimeSec, isBottleneck}]
+  operations:      json("operations").notNull(),
+  // Tooling requirements: [{tool, leadTimeWeeks, costGbp, isCustom}]
+  toolingSpecs:    json("toolingSpecs"),
+  bottleneckNodes: json("bottleneckNodes"),              // operation IDs flagged as bottlenecks
+  targetVolumePerYear: int("targetVolumePerYear"),
+  cycleTimeModelSec:   int("cycleTimeModelSec"),         // theoretical cycle time (seconds)
+  pdeScore:        int("pdeScore"),                      // 0–100
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type MrlProcessRoute = typeof mrlProcessRoutes.$inferSelect;
+export type InsertMrlProcessRoute = typeof mrlProcessRoutes.$inferInsert;
+
+// ── MRL Suppliers (Supply Chain Intelligence Engine — SCIE) ──────────────────
+// Supplier records linked to ventures via BOM tier.
+export const mrlSuppliers = mysqlTable("mrl_suppliers", {
+  id:              varchar("id", { length: 36 }).primaryKey(),
+  ventureId:       varchar("ventureId", { length: 64 }).notNull(),
+  name:            varchar("name", { length: 255 }).notNull(),
+  tier:            mysqlEnum("mrlSupplierTier", ["T1","T2","T3"]).default("T1"),
+  country:         varchar("country", { length: 64 }).notNull(),
+  region:          mysqlEnum("mrlSupplierRegion", ["CN","UK","EU","US","ROW"]).default("CN"),
+  category:        varchar("category", { length: 128 }),  // e.g. "Electronics", "Plastics"
+  // BOM components supplied: [{partNo, description, moq, leadTimeWeeks}]
+  bomComponents:   json("bomComponents"),
+  // Risk scoring
+  riskScore:       int("riskScore").default(0),           // 0–100 (RAG × P × I)
+  riskRag:         mysqlEnum("mrlScieRag", ["GREEN","AMBER","RED"]).default("AMBER"),
+  isSingleSource:  boolean("isSingleSource").default(false),
+  hasDualSource:   boolean("hasDualSource").default(false),
+  leadTimeWeeks:   int("leadTimeWeeks"),
+  moqUnits:        int("moqUnits"),
+  fxExposure:      mysqlEnum("mrlFxExposure", ["LOW","MED","HIGH"]).default("MED"),
+  geopoliticalRisk: mysqlEnum("mrlGeoRisk", ["LOW","MED","HIGH"]).default("LOW"),
+  auditStatus:     mysqlEnum("mrlAuditStatus", ["Not Audited","Pending","Passed","Failed"]).default("Not Audited"),
+  notes:           text("notes"),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type MrlSupplier = typeof mrlSuppliers.$inferSelect;
+export type InsertMrlSupplier = typeof mrlSuppliers.$inferInsert;
+
+// ── MRL Cost Models (Cost & Scale Model — CSM) ───────────────────────────────
+// Parametric cost model with volume scenarios and unit economics.
+export const mrlCostModels = mysqlTable("mrl_cost_models", {
+  id:              varchar("id", { length: 36 }).primaryKey(),
+  ventureId:       varchar("ventureId", { length: 64 }).notNull(),
+  assessmentId:    varchar("assessmentId", { length: 36 }),
+  modelName:       varchar("modelName", { length: 255 }).notNull(),
+  region:          mysqlEnum("mrlCostRegion", ["CN","UK","HYBRID"]).default("HYBRID"),
+  // Volume scenarios: [{volume, unitCostGbp, marginPct, breakEvenVol}]
+  volumeScenarios: json("volumeScenarios").notNull(),
+  // Unit economics at target volume
+  targetVolume:    int("targetVolume"),
+  unitCostGbp:     float("unitCostGbp"),
+  unitPriceGbp:    float("unitPriceGbp"),
+  grossMarginPct:  float("grossMarginPct"),
+  breakEvenVolume: int("breakEvenVolume"),
+  // CapEx / OpEx split
+  capexGbp:        float("capexGbp"),
+  opexAnnualGbp:   float("opexAnnualGbp"),
+  capexOpexRatio:  float("capexOpexRatio"),
+  // Labour rates by region: [{region, roleType, hourlyRateGbp}]
+  labourRates:     json("labourRates"),
+  // Sensitivity: [{driver, lowImpact, highImpact}]
+  sensitivityFactors: json("sensitivityFactors"),
+  csmScore:        int("csmScore"),                      // 0–100
+  notes:           text("notes"),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type MrlCostModel = typeof mrlCostModels.$inferSelect;
+export type InsertMrlCostModel = typeof mrlCostModels.$inferInsert;
+
+// ── MRL Compliance Records (Quality & Compliance Engine — QCE) ───────────────
+// Per-standard compliance tracking with certification roadmap.
+export const mrlComplianceRecords = mysqlTable("mrl_compliance_records", {
+  id:              varchar("id", { length: 36 }).primaryKey(),
+  ventureId:       varchar("ventureId", { length: 64 }).notNull(),
+  assessmentId:    varchar("assessmentId", { length: 36 }),
+  standard:        varchar("standard", { length: 128 }).notNull(), // e.g. "ISO 9001", "CE", "UKCA"
+  market:          varchar("market", { length: 64 }).notNull(),     // e.g. "UK", "EU", "US"
+  category:        mysqlEnum("mrlComplianceCat", [
+    "Quality Management",
+    "Product Safety",
+    "Environmental",
+    "Materials",
+    "Process",
+    "Social"
+  ]).default("Quality Management"),
+  status:          mysqlEnum("mrlComplianceStatus", [
+    "Not Started",
+    "Gap Analysis",
+    "In Progress",
+    "Submitted",
+    "Certified",
+    "Expired"
+  ]).default("Not Started"),
+  gapSummary:      text("gapSummary"),
+  certificationBody: varchar("certificationBody", { length: 255 }),
+  targetCertDate:  date("targetCertDate"),
+  actualCertDate:  date("actualCertDate"),
+  expiryDate:      date("expiryDate"),
+  estimatedCostGbp: float("estimatedCostGbp"),
+  estimatedWeeks:  int("estimatedWeeks"),
+  isOnCriticalPath: boolean("isOnCriticalPath").default(false),
+  // Quality KPIs: [{kpi, target, current, unit}]
+  qualityKpis:     json("qualityKpis"),
+  notes:           text("notes"),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type MrlComplianceRecord = typeof mrlComplianceRecords.$inferSelect;
+export type InsertMrlComplianceRecord = typeof mrlComplianceRecords.$inferInsert;
+
+// ── MRL LCSA Records (Sustainability Integration Layer — SIL) ─────────────────
+// Lifecycle and Social Assessment records aligned to ISO 14040/44 + SA8000.
+export const mrlLcsaRecords = mysqlTable("mrl_lcsa_records", {
+  id:              varchar("id", { length: 36 }).primaryKey(),
+  ventureId:       varchar("ventureId", { length: 64 }).notNull(),
+  assessmentId:    varchar("assessmentId", { length: 36 }),
+  // Carbon intensity
+  carbonScope1:    float("carbonScope1"),                // kgCO2e — direct emissions
+  carbonScope2:    float("carbonScope2"),                // kgCO2e — energy indirect
+  carbonScope3:    float("carbonScope3"),                // kgCO2e — value chain
+  carbonIntensityPerUnit: float("carbonIntensityPerUnit"), // kgCO2e per unit produced
+  // LCSA composite
+  lcsaScore:       int("lcsaScore"),                     // 0–100
+  circularityIndex: float("circularityIndex"),           // 0–1 (1 = fully circular)
+  // Social risk
+  socialRiskIndex: float("socialRiskIndex"),             // 0–100 (higher = more risk)
+  // Facility energy mix: [{facility, energyMixPct: {renewable, grid, fossil}}]
+  facilityEnergyMix: json("facilityEnergyMix"),
+  // CBAM exposure
+  cbamExposure:    mysqlEnum("mrlCbamExposure", ["None","Low","Medium","High"]).default("None"),
+  cbamEstimatedCostGbp: float("cbamEstimatedCostGbp"),
+  // Benchmark vs sector
+  sectorBenchmarkScore: int("sectorBenchmarkScore"),
+  silScore:        int("silScore"),                      // 0–100
+  notes:           text("notes"),
+  recordedAt:      timestamp("recordedAt").defaultNow().notNull(),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type MrlLcsaRecord = typeof mrlLcsaRecords.$inferSelect;
+export type InsertMrlLcsaRecord = typeof mrlLcsaRecords.$inferInsert;
+
+// ── MRL Risk Register ─────────────────────────────────────────────────────────
+// Per-assessment risk register using RAG × Probability × Impact formula.
+export const mrlRiskRegister = mysqlTable("mrl_risk_register", {
+  id:              varchar("id", { length: 36 }).primaryKey(),
+  ventureId:       varchar("ventureId", { length: 64 }).notNull(),
+  assessmentId:    varchar("assessmentId", { length: 36 }),
+  category:        mysqlEnum("mrlRiskCat", [
+    "Technical",
+    "Supply Chain",
+    "Cost",
+    "Compliance",
+    "Sustainability"
+  ]).notNull(),
+  description:     text("description").notNull(),
+  // RAG × Probability × Impact = Risk Score (0–100)
+  rag:             mysqlEnum("mrlRag", ["G","A","R"]).notNull(), // 1=G / 2=A / 3=R
+  probability:     int("probability").notNull(),                 // 0–100
+  impact:          int("impact").notNull(),                      // 0–100
+  riskScore:       int("riskScore").notNull(),                   // computed: rag×P×I / 300
+  priority:        mysqlEnum("mrlRiskPriority", ["LOW","MED","HIGH"]).default("MED"),
+  mitigationAction: text("mitigationAction"),
+  mitigationOwner: varchar("mitigationOwner", { length: 128 }),
+  targetResolutionDate: date("targetResolutionDate"),
+  status:          mysqlEnum("mrlRiskStatus", ["Open","In Progress","Mitigated","Accepted","Closed"]).default("Open"),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type MrlRiskItem = typeof mrlRiskRegister.$inferSelect;
+export type InsertMrlRiskItem = typeof mrlRiskRegister.$inferInsert;
+
+// ── MRL Level Definitions (reference / seed data) ────────────────────────────
+// Canonical MRL level definitions aligned to the ECOBLEND MRL framework v1.0.
+export const mrlLevelDefs = mysqlTable("mrl_level_defs", {
+  level:           int("level").primaryKey(),            // 1–9
+  label:           varchar("label", { length: 64 }).notNull(),  // e.g. "Pilot Proven"
+  trlAlignment:    varchar("trlAlignment", { length: 16 }),     // e.g. "5-6"
+  description:     text("description").notNull(),
+  keyActivities:   json("keyActivities"),                // string[]
+  exitCriteria:    json("exitCriteria"),                 // string[]
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+});
+export type MrlLevelDef = typeof mrlLevelDefs.$inferSelect;
+export type InsertMrlLevelDef = typeof mrlLevelDefs.$inferInsert;

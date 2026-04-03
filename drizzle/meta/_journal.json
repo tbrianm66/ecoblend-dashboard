@@ -351,6 +351,13 @@
       "when": 1775211019543,
       "tag": "0049_fluffy_hitman",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "5",
+      "when": 1775247394362,
+      "tag": "0050_talented_shockwave",
+      "breakpoints": true
     }
   ]
 }
