@@ -72,6 +72,7 @@ import MrlVentureDetail from "./pages/MrlVentureDetail";
 import SyncPortfolio from "./pages/SyncPortfolio";
 import SyncVentureDetail from "./pages/SyncVentureDetail";
 import MrlScoring from "./pages/MrlScoring";
+import MrlCommandDashboard from "./pages/MrlCommandDashboard";
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
@@ -140,6 +141,7 @@ function Router() {
       <Route path="/mrl-portfolio" component={MrlPortfolio} />
       <Route path="/mrl-venture" component={MrlVentureDetail} />
       <Route path="/mrl-scoring" component={MrlScoring} />
+      <Route path="/mrl-command" component={MrlCommandDashboard} />
       <Route path="/sync" component={SyncPortfolio} />
       <Route path="/sync/:ventureId" component={SyncVentureDetail} />
       <Route component={Home} />

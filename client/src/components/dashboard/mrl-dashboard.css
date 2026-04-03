@@ -1,0 +1,74 @@
+/* ═══════════════════════════════════════════════════════════════
+   ECOBLEND OS — MRL COMMAND DASHBOARD
+   Design tokens: Precision Industrial — dark alloy, amber signal
+   All colours referenced as CSS custom properties
+═══════════════════════════════════════════════════════════════ */
+
+.mrl-dashboard-root {
+  --bg0:    #06080A;
+  --bg1:    #0B0E12;
+  --bg2:    #101419;
+  --bg3:    #161B22;
+  --border: #1C2330;
+  --dim:    #253040;
+  --muted:  #3D5060;
+  --mid:    #5A7080;
+  --text:   #8BA0B0;
+  --hi:     #C8DDE8;
+  --white:  #EEF4F8;
+  --amber:  #D4880A;
+  --amberL: #F0A020;
+  --amberD: #8A5500;
+  --teal:   #00C4A8;
+  --tealD:  #006A5C;
+  --red:    #CC3340;
+  --redL:   #E84455;
+  --green:  #28A070;
+  --greenL: #3DC48A;
+  --blue:   #2878C8;
+  --blueL:  #4AA0E8;
+  --gold:   #C8A840;
+  --goldL:  #E8C860;
+
+  font-family: 'Courier New', 'Lucida Console', monospace;
+  background: var(--bg0);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* Ticker animation */
+@keyframes mrl-ticker {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.mrl-ticker-inner {
+  animation: mrl-ticker 60s linear infinite;
+  display: flex;
+  white-space: nowrap;
+}
+
+.mrl-ticker-inner:hover {
+  animation-play-state: paused;
+}
+
+/* Sync ring transition */
+.mrl-sync-ring {
+  transition: stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1),
+              stroke 0.4s ease;
+}
+
+/* Sparkbar animation */
+.mrl-sparkbar {
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Category score bar */
+.mrl-cat-bar {
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Circularity bar */
+.mrl-circularity-bar {
+  transition: width 1s ease;
+}
