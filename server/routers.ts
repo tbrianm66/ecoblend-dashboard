@@ -1,3 +1,4 @@
+import { srlRouter } from "./srl.router";
 import { gdriveWorkspaceRouter } from "./gdriveWorkspace.router";
 import { vrlDashboardV4Router } from "./vrlDashboardV4.router";
 import { spinoffSequenceRouter } from "./spinoffSequence.router";
@@ -6850,5 +6851,6 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
   spinoffSequence: spinoffSequenceRouter,
   brandPipeline: brandPipelineRouter,
   insightAutomation: insightAutomationRouter,
+  srl: srlRouter,
 });
 export type AppRouter = typeof appRouter;
