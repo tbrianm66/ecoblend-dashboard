@@ -64,6 +64,9 @@ import EcoraceLab from "./pages/EcoraceLab";
 import InvestorDataRoom from "./pages/InvestorDataRoom";
 import IpIntelligence from "./pages/IpIntelligence";
 import PlaybookPortal from "./pages/PlaybookPortal";
+import SrlPortfolio from "./pages/SrlPortfolio";
+import SrlVentureDetail from "./pages/SrlVentureDetail";
+import SrlHistory from "./pages/SrlHistory";
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
@@ -126,6 +129,9 @@ function Router() {
       <Route path="/spinoff-sequence" component={SpinoffSequenceOS} />
       <Route path="/brand-pipeline" component={BrandPipeline} />
       <Route path="/insight-automation" component={InsightAutomation} />
+      <Route path="/srl-portfolio" component={SrlPortfolio} />
+      <Route path="/srl-venture/:ventureId" component={SrlVentureDetail} />
+      <Route path="/srl-history" component={SrlHistory} />
       <Route component={Home} />
     </Switch>
   );

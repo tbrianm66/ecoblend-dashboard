@@ -13,7 +13,7 @@ import {
   Award, Heart, ChevronRight, Rocket, MessageSquare, BookOpen,
   Bell, X, AlertTriangle, FileText, Newspaper, Briefcase,
   Lightbulb, TestTube2, UserCircle2, FolderOpen, Globe,
-   Building2, ChevronDown, GraduationCap, Search, PieChart, Leaf, Database, UserCheck, Package, ClipboardList, Zap, Shuffle, GitBranch, Users2, Truck, Factory, BookMarked, HandCoins, ShieldCheck, BarChart3, FolderLock, Brain, Sparkles
+   Building2, ChevronDown, GraduationCap, Search, PieChart, Leaf, Database, UserCheck, Package, ClipboardList, Zap, Shuffle, GitBranch, Users2, Truck, Factory, BookMarked, HandCoins, ShieldCheck, BarChart3, FolderLock, Brain, Sparkles, History
 } from "lucide-react";
 import { useVentures } from "@/contexts/VentureContext";
 
@@ -24,7 +24,7 @@ const iconMap: Record<string, React.ComponentType<{ size?: number; className?: s
   Award, Heart, Rocket, MessageSquare, BookOpen, FileText,
   Newspaper, Briefcase, Lightbulb, TestTube2, UserCircle2,
   FolderOpen, Globe, Building2, GraduationCap, Search, PieChart, Leaf, Database, UserCheck, Package, ClipboardList, Zap, Shuffle, GitBranch, Users2, Truck, Factory, BookMarked, HandCoins, ShieldCheck, BarChart3, FolderLock,
-  Brain, Sparkles,
+  Brain, Sparkles, History,
 };
 
 interface NavItem {
@@ -108,6 +108,8 @@ const NAV_GROUPS: NavGroup[] = [
       { id: "spinoff-sequence",   label: "Spin-Off Sequence",    icon: "Rocket",              href: "/spinoff-sequence" },
       { id: "brand-pipeline",     label: "Brand Pipeline",       icon: "Sparkles",            href: "/brand-pipeline" },
       { id: "insight-automation", label: "Interview Insights",   icon: "Lightbulb",           href: "/insight-automation" },
+      { id: "srl-portfolio",  label: "SRL Portfolio",        icon: "Leaf",            href: "/srl-portfolio" },
+      { id: "srl-history",    label: "SRL History & Audit", icon: "History",         href: "/srl-history" },
     ],
   },
   {

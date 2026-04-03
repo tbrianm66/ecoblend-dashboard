@@ -21,7 +21,7 @@ import { TRPCError } from "@trpc/server";
 import { getDb } from "./db";
 import { nanoid } from "nanoid";
 import { createHash } from "crypto";
-import { eq, desc, and, isNull, or, sql } from "drizzle-orm";
+import { eq, desc, and, isNull, or, sql, inArray } from "drizzle-orm";
 import {
   srlDimensionDefinitions,
   srlKpiDefinitions,
@@ -601,8 +601,9 @@ export const srlRouter = router({
    */
   getAssessmentHistory: protectedProcedure
     .input(z.object({
-      ventureId: z.string(),
+      ventureId: z.string().optional(),
       limit: z.number().int().min(1).max(50).default(10),
+      offset: z.number().int().min(0).default(0),
     }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -624,9 +625,9 @@ export const srlRouter = router({
         createdAt: srlAssessments.createdAt,
       })
         .from(srlAssessments)
-        .where(eq(srlAssessments.ventureId, input.ventureId))
+        .where(input.ventureId ? eq(srlAssessments.ventureId, input.ventureId) : undefined)
         .orderBy(desc(srlAssessments.assessmentDate), desc(srlAssessments.createdAt))
-        .limit(input.limit);
+        .limit(input.limit).offset(input.offset);
     }),
 
   /**
@@ -923,5 +924,165 @@ export const srlRouter = router({
       }
 
       return risks;
+    }),
+
+  /**
+   * Historical SRL score time series for trend charts.
+   */
+  getTrends: protectedProcedure
+    .input(z.object({
+      ventureId: z.string(),
+      limit: z.number().int().min(1).max(24).default(8),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      const rows = await db.select({
+        id: srlAssessments.id,
+        assessmentDate: srlAssessments.assessmentDate,
+        compositeScore: srlAssessments.compositeScore,
+        srlLevel: srlAssessments.srlLevel,
+        scoreDelta: srlAssessments.scoreDelta,
+        trajectoryBonus: srlAssessments.trajectoryBonus,
+        gateStatus: srlAssessments.gateStatus,
+        gateRef: srlAssessments.gateRef,
+        stageAtAssessment: srlAssessments.stageAtAssessment,
+        sustainabilityWatch: srlAssessments.sustainabilityWatch,
+      })
+        .from(srlAssessments)
+        .where(and(
+          eq(srlAssessments.ventureId, input.ventureId),
+          eq(srlAssessments.isLocked, true)
+        ))
+        .orderBy(desc(srlAssessments.assessmentDate))
+        .limit(input.limit);
+
+      // Fetch dimension scores for each assessment
+      const assessmentIds = rows.map(r => r.id);
+      const dimScoreMap: Record<string, Array<{ dimensionCode: string | null; rawScore: string | null; coveredScore: string | null; kpiCoveragePct: string | null }>> = {};
+      if (assessmentIds.length > 0) {
+        const dimRows = await db.select({
+          assessmentId: srlDimensionScores.assessmentId,
+          dimensionCode: srlDimensionScores.dimensionCode,
+          rawScore: srlDimensionScores.rawScore,
+          coveredScore: srlDimensionScores.weightedScore,
+          kpiCoveragePct: srlDimensionScores.kpiCoveragePct,
+        })
+          .from(srlDimensionScores)
+          .where(inArray(srlDimensionScores.assessmentId, assessmentIds));
+        for (const dr of dimRows) {
+          if (!dr.assessmentId) continue;
+          if (!dimScoreMap[dr.assessmentId]) dimScoreMap[dr.assessmentId] = [];
+          dimScoreMap[dr.assessmentId].push(dr);
+        }
+      }
+
+      const series = rows.reverse().map(r => ({
+        ...r,
+        compositeScore: Number(r.compositeScore),
+        scoreDelta: r.scoreDelta !== null ? Number(r.scoreDelta) : null,
+        trajectoryBonus: r.trajectoryBonus !== null ? Number(r.trajectoryBonus) : null,
+        dimensionScores: (dimScoreMap[r.id] ?? []).reduce((acc, d) => {
+          if (d.dimensionCode) acc[d.dimensionCode] = {
+            rawScore: Number(d.rawScore ?? 0),
+            coveredScore: Number(d.coveredScore ?? 0),
+            coveragePct: Number(d.kpiCoveragePct ?? 0),
+          };
+          return acc;
+        }, {} as Record<string, { rawScore: number; coveredScore: number; coveragePct: number }>),
+      }));
+
+      const scores = series.map(s => s.compositeScore);
+      const avgGain = scores.length > 1
+        ? Math.round((scores[scores.length - 1] - scores[0]) / (scores.length - 1) * 100) / 100
+        : 0;
+      const projected = scores.length > 0 ? Math.min(100, Math.round((scores[scores.length - 1] + avgGain) * 100) / 100) : null;
+
+      return {
+        series,
+        trajectory: {
+          direction: avgGain > 0 ? "improving" : avgGain < 0 ? "declining" : "stable",
+          avgGain,
+          projected,
+        },
+      };
+    }),
+
+  /**
+   * Get latest KPI values for a venture (from latest locked assessment).
+   */
+  getLatestKpiValues: protectedProcedure
+    .input(z.object({
+      ventureId: z.string(),
+      dimensionCode: SrlDimCodeZ.optional(),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+
+      const assessmentRows = await db.select({ id: srlAssessments.id })
+        .from(srlAssessments)
+        .where(and(
+          eq(srlAssessments.ventureId, input.ventureId),
+          eq(srlAssessments.isLocked, true)
+        ))
+        .orderBy(desc(srlAssessments.assessmentDate))
+        .limit(1);
+
+      if (!assessmentRows.length) return [];
+      const assessmentId = assessmentRows[0].id;
+
+      const dimRows = await db.select({ id: srlDimensionScores.id, dimensionCode: srlDimensionScores.dimensionCode })
+        .from(srlDimensionScores)
+        .where(
+          input.dimensionCode
+            ? and(eq(srlDimensionScores.assessmentId, assessmentId), eq(srlDimensionScores.dimensionCode, input.dimensionCode as any))
+            : eq(srlDimensionScores.assessmentId, assessmentId)
+        );
+
+      if (!dimRows.length) return [];
+      const dimScoreIds = dimRows.map(d => d.id);
+
+      const kpiRows = await db.select({
+        kpiCode: srlKpiDefinitions.kpiCode,
+        kpiName: srlKpiDefinitions.kpiName,
+        rawValue: srlKpiValues.rawValue,
+        normalisedValue: srlKpiValues.normalisedValue,
+        unit: srlKpiValues.unit,
+        periodStart: srlKpiValues.periodStart,
+        periodEnd: srlKpiValues.periodEnd,
+        evidenceRef: srlKpiValues.evidenceRef,
+        isMandatory: srlKpiDefinitions.isMandatory,
+        dimensionCode: srlDimensionScores.dimensionCode,
+      })
+        .from(srlKpiValues)
+        .innerJoin(srlKpiDefinitions, eq(srlKpiValues.kpiDefId, srlKpiDefinitions.id))
+        .innerJoin(srlDimensionScores, eq(srlKpiValues.dimScoreId, srlDimensionScores.id))
+        .where(inArray(srlKpiValues.dimScoreId, dimScoreIds));
+
+      return kpiRows.map(r => ({
+        ...r,
+        rawValue: r.rawValue !== null ? Number(r.rawValue) : null,
+        normalisedValue: r.normalisedValue !== null ? Number(r.normalisedValue) : null,
+      }));
+    }),
+
+  getAuditLog: protectedProcedure
+    .input(z.object({
+      ventureId: z.string().optional(),
+      limit: z.number().min(1).max(100).default(21),
+      offset: z.number().min(0).default(0),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      const conditions = [];
+      if (input.ventureId) conditions.push(eq(srlAuditLog.ventureId, input.ventureId));
+      const rows = await db.select().from(srlAuditLog)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(desc(srlAuditLog.eventTimestamp))
+        .limit(input.limit)
+        .offset(input.offset);
+      return rows;
     }),
 });
