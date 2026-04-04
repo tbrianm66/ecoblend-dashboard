@@ -105,6 +105,8 @@ const NAV_GROUPS: NavGroup[] = [
       { id: "financial-model-builder", label: "Financial Model Builder", icon: "BarChart3",   href: "/financial-model-builder" },
       { id: "gdrive-workspace",    label: "G Drive Workspace",    icon: "FolderOpen",          href: "/gdrive-workspace" },
       { id: "vrl-dashboard-v4",   label: "VRL Dashboard V4",     icon: "TrendingUp",          href: "/vrl-dashboard-v4" },
+      { id: "vrl-assessment",     label: "VRL Assessment Form",  icon: "ClipboardList",       href: "/vrl-assessment" },
+      { id: "vrl-results",        label: "VRL Results",          icon: "BarChart3",           href: "/vrl-results" },
       { id: "spinoff-sequence",   label: "Spin-Off Sequence",    icon: "Rocket",              href: "/spinoff-sequence" },
       { id: "brand-pipeline",     label: "Brand Pipeline",       icon: "Sparkles",            href: "/brand-pipeline" },
       { id: "insight-automation", label: "Interview Insights",   icon: "Lightbulb",           href: "/insight-automation" },

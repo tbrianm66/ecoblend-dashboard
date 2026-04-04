@@ -372,6 +372,13 @@
       "when": 1775249684636,
       "tag": "0052_lean_slipstream",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "5",
+      "when": 1775304248105,
+      "tag": "0053_cynical_spencer_smythe",
+      "breakpoints": true
     }
   ]
 }

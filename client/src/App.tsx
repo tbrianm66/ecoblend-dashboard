@@ -14,6 +14,8 @@ import Sidebar from "./components/Sidebar";
 import Home from "./pages/Home";
 import VentureDetail from "./pages/VentureDetail";
 import VrlAnalytics from "./pages/VrlAnalytics";
+import VrlAssessmentForm from "./pages/VrlAssessmentForm";
+import VrlResults from "./pages/VrlResults";
 import TrlAnalytics from "./pages/TrlAnalytics";
 import InvestmentReadiness from "./pages/InvestmentReadiness";
 import PlaceholderPage from "./pages/PlaceholderPage";
@@ -132,6 +134,8 @@ function Router() {
           <Route path="/learning-engine" component={LearningEngine} />
       <Route path="/gdrive-workspace" component={GDriveWorkspace} />
       <Route path="/vrl-dashboard-v4" component={VrlDashboardV4} />
+      <Route path="/vrl-assessment" component={VrlAssessmentForm} />
+      <Route path="/vrl-results" component={VrlResults} />
       <Route path="/spinoff-sequence" component={SpinoffSequenceOS} />
       <Route path="/brand-pipeline" component={BrandPipeline} />
       <Route path="/insight-automation" component={InsightAutomation} />

@@ -6324,3 +6324,39 @@ export const scoringDatasets = mysqlTable("scoring_datasets", {
 });
 export type ScoringDataset = typeof scoringDatasets.$inferSelect;
 export type InsertScoringDataset = typeof scoringDatasets.$inferInsert;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// VRL WEIGHTED GATING MODEL — 9-Vector Assessment (BEBUS-VRL-UPDATE-001)
+// Spec: EcoBlendVRLUpdateManusPrompt.pdf — Changes 1–6
+// ═══════════════════════════════════════════════════════════════════════════════
+// vrl_assessments — one row per scored assessment, insert-only audit trail
+export const vrlAssessments = mysqlTable("vrl_assessments", {
+  id:                   varchar("id", { length: 64 }).primaryKey(),
+  ventureId:            varchar("ventureId", { length: 64 }).notNull(),
+  createdAt:            timestamp("createdAt").defaultNow().notNull(),
+  // ── 9 raw input scores (0–100) ──────────────────────────────────────────────
+  trlScore:             int("trl_score").notNull(),
+  mrlScore:             int("mrl_score").notNull(),
+  brlScore:             int("brl_score").notNull(),
+  ecoScore:             int("eco_score").notNull(),
+  prlScore:             int("prl_score").notNull(),
+  ipScore:              int("ip_score").notNull(),
+  frlScore:             int("frl_score").notNull(),
+  regScore:             int("reg_score").notNull(),
+  srlScore:             int("srl_score").notNull(),
+  // ── 5 computed meta-domain scores ──────────────────────────────────────────
+  productScore:         decimal("product_score",      { precision: 5, scale: 2 }),
+  marketScore:          decimal("market_score",       { precision: 5, scale: 2 }),
+  executionScore:       decimal("execution_score",    { precision: 5, scale: 2 }),
+  structuralScore:      decimal("structural_score",   { precision: 5, scale: 2 }),
+  sustainabilityScore:  decimal("sustainability_score", { precision: 5, scale: 2 }),
+  // ── VRL output ─────────────────────────────────────────────────────────────
+  baseAverage:          decimal("base_average",       { precision: 5, scale: 2 }),
+  isVetoed:             boolean("is_vetoed").default(false).notNull(),
+  globalVrlScore:       int("global_vrl_score"),
+  bandLabel:            varchar("band_label", { length: 64 }),
+  // ── Metadata ───────────────────────────────────────────────────────────────
+  submittedBy:          varchar("submitted_by", { length: 128 }),
+});
+export type VrlAssessment = typeof vrlAssessments.$inferSelect;
+export type InsertVrlAssessment = typeof vrlAssessments.$inferInsert;

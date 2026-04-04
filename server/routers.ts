@@ -1,3 +1,4 @@
+import { vrlRouter } from "./vrl.router";
 import { mrlScoringRouter } from "./mrlScoring.router";
 import { syncRouter } from "./sync.router";
 import { mrlRouter } from "./mrl.router";
@@ -6857,6 +6858,7 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
   srl: srlRouter,
   mrl: mrlRouter,
   sync: syncRouter,
+  vrl: vrlRouter,
   mrlScoring: mrlScoringRouter,
 });
 export type AppRouter = typeof appRouter;
