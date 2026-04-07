@@ -6664,3 +6664,52 @@ export const coachTrendCache = mysqlTable("coach_trend_cache", {
 });
 export type CoachTrendCache = typeof coachTrendCache.$inferSelect;
 export type InsertCoachTrendCache = typeof coachTrendCache.$inferInsert;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Sprint 86 — Founder Self-Assessment Portal
+// ═══════════════════════════════════════════════════════════════════════════════
+export const founderSelfAssessments = mysqlTable("founder_self_assessments", {
+  id:                    varchar("id", { length: 64 }).primaryKey(),
+  founderId:             int("founderId").notNull(),
+  weekOf:                date("weekOf").notNull(),
+  // Five PRL sub-dimension self-scores (0-100 each)
+  strategicClarity:      int("strategicClarity").notNull().default(0),
+  marketValidation:      int("marketValidation").notNull().default(0),
+  teamCapability:        int("teamCapability").notNull().default(0),
+  operationalExecution:  int("operationalExecution").notNull().default(0),
+  investorPreparedness:  int("investorPreparedness").notNull().default(0),
+  // Computed composite self-score
+  compositeScore:        decimal("compositeScore", { precision: 5, scale: 2 }),
+  founderNotes:          text("founderNotes"),
+  status:                mysqlEnum("status", ["pending", "approved", "rejected"]).notNull().default("pending"),
+  reviewedBy:            varchar("reviewedBy", { length: 128 }),
+  reviewedAt:            timestamp("reviewedAt"),
+  reviewNotes:           text("reviewNotes"),
+  // If approved, optionally create a PRL record from this self-assessment
+  prlRecordId:           varchar("prlRecordId", { length: 64 }),
+  createdAt:             timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:             timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type FounderSelfAssessment = typeof founderSelfAssessments.$inferSelect;
+export type InsertFounderSelfAssessment = typeof founderSelfAssessments.$inferInsert;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Sprint 88 — Commitment Template Library
+// ═══════════════════════════════════════════════════════════════════════════════
+export const commitmentTemplates = mysqlTable("commitment_templates", {
+  id:           varchar("id", { length: 64 }).primaryKey(),
+  title:        varchar("title", { length: 256 }).notNull(),
+  description:  text("description"),
+  vrlStage:     int("vrlStage").notNull().default(1),   // 1-9
+  category:     varchar("category", { length: 128 }),   // e.g. "market_validation", "team", "product"
+  priority:     mysqlEnum("priority", ["low", "medium", "high", "critical"]).notNull().default("medium"),
+  durationDays: int("durationDays").notNull().default(7),
+  tags:         json("tags"),                           // string[]
+  isDefault:    boolean("isDefault").notNull().default(false),
+  createdBy:    varchar("createdBy", { length: 128 }),
+  usageCount:   int("usageCount").notNull().default(0),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:    timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CommitmentTemplate = typeof commitmentTemplates.$inferSelect;
+export type InsertCommitmentTemplate = typeof commitmentTemplates.$inferInsert;

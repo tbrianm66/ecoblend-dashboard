@@ -1068,3 +1068,24 @@
 - [ ] Build SparklineChart component (inline SVG path, no external lib)
 - [ ] Add sparkline column to Coach Performance Leaderboard table
 - [ ] Vitest tests for Sprint 85
+
+## Sprint 86 — Founder Self-Assessment Portal
+- [x] Add founder_self_assessments DB table
+- [ ] Add tRPC procedures: selfAssessment.submit, selfAssessment.list, selfAssessment.approve, selfAssessment.reject
+- [ ] Add Self-Assessment form on Founder Coaching Dashboard (5 sub-dimension sliders)
+- [ ] Add pending approvals panel on Studio Dashboard for coach review
+- [x] Vitest tests for Sprint 86
+
+## Sprint 87 — Cohort Benchmarking
+- [ ] Add tRPC procedure: cohortBenchmark.get (aggregates anonymised avg PRL by VRL stage)
+- [ ] Add Cohort Benchmark chart on Founder Coaching Dashboard
+- [ ] Show founder's PRL vs cohort average over 6 weeks
+- [x] Vitest tests for Sprint 87
+
+## Sprint 88 — Commitment Template Library
+- [x] Add commitment_templates DB table
+- [ ] Add tRPC procedures: templates.create, templates.list, templates.search, templates.applyToFounder, templates.delete
+- [ ] Add searchable Template Library panel on Studio Dashboard
+- [ ] Add "Apply Template" button on Founder Coaching Dashboard
+- [ ] Seed default templates by VRL stage
+- [x] Vitest tests for Sprint 88

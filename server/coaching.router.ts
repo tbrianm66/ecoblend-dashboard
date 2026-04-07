@@ -31,6 +31,7 @@ import { invokeLLM } from "./_core/llm";
 import { randomUUID } from "crypto";
 import { alertsRouter, progressReportsRouter, leaderboardRouter } from "./coaching.sprint8082.router";
 import { alertSchedulingRouter, reportDeliveryRouter, leaderboardTrendRouter } from "./coaching.sprint8385.router";
+import { selfAssessmentRouter, cohortBenchmarkRouter, commitmentTemplatesRouter } from "./coaching.sprint8688.router";
 
 // ── PRL Scoring Engine ────────────────────────────────────────────────────────
 
@@ -1435,4 +1436,7 @@ export const coachingRouter = router({
   alertScheduling: alertSchedulingRouter,
   reportDelivery: reportDeliveryRouter,
   leaderboardTrend: leaderboardTrendRouter,
+  selfAssessment: selfAssessmentRouter,
+  cohortBenchmark: cohortBenchmarkRouter,
+  commitmentTemplates: commitmentTemplatesRouter,
 });

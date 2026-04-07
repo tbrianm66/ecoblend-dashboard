@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import {
   TrendingUp, TrendingDown, Minus, CheckCircle2, XCircle,
   Clock, AlertTriangle, Brain, Target, ChevronDown, Plus, Loader2,
-  Bell, FileText, X
+  Bell, FileText, X, ClipboardList, BarChart3, Library, Star
 } from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -155,6 +155,56 @@ export default function CoachingFounder() {
     onError: () => toast.error("Failed to update status"),
   });
 
+  // Sprint 86: Self-Assessment Portal
+  const [showSelfAssessment, setShowSelfAssessment] = useState(false);
+  const [selfScores, setSelfScores] = useState({
+    strategicClarity: 50,
+    marketValidation: 50,
+    teamCapability: 50,
+    operationalExecution: 50,
+    investorPreparedness: 50,
+  });
+  const [selfNotes, setSelfNotes] = useState("");
+  const submitSelfAssessment = trpc.coaching.selfAssessment.submit.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Self-assessment submitted — composite score: ${data.compositeScore.toFixed(1)}`);
+      setShowSelfAssessment(false);
+      setSelfNotes("");
+      setSelfScores({ strategicClarity: 50, marketValidation: 50, teamCapability: 50, operationalExecution: 50, investorPreparedness: 50 });
+    },
+    onError: () => toast.error("Failed to submit self-assessment"),
+  });
+  const { data: myAssessments } = trpc.coaching.selfAssessment.list.useQuery({ founderId: FOUNDER_ID, limit: 3 });
+
+  // Sprint 87: Cohort Benchmarking
+  const { data: benchmarkData } = trpc.coaching.cohortBenchmark.get.useQuery(
+    { founderId: FOUNDER_ID, vrlStage: 1, weeks: 6 },
+    { retry: false }
+  );
+
+  // Sprint 88: Commitment Template Library
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [templateSearch, setTemplateSearch] = useState("");
+  const { data: templates } = trpc.coaching.commitmentTemplates.list.useQuery(
+    { limit: 20 },
+    { enabled: showTemplates }
+  );
+  const { data: searchResults } = trpc.coaching.commitmentTemplates.search.useQuery(
+    { query: templateSearch, limit: 10 },
+    { enabled: templateSearch.length >= 2 }
+  );
+  const applyTemplate = trpc.coaching.commitmentTemplates.applyToFounder.useMutation({
+    onSuccess: (data) => {
+      toast.success(`"${data.templateTitle}" added as a commitment`);
+      utils.coaching.dashboard.founderDashboard.invalidate();
+    },
+    onError: () => toast.error("Failed to apply template"),
+  });
+  const seedTemplates = trpc.coaching.commitmentTemplates.seed.useMutation({
+    onSuccess: (data) => toast.success(data.message),
+    onError: () => toast.error("Failed to seed templates"),
+  });
+
   const generateInsights = trpc.coaching.insights.generate.useMutation({
     onSuccess: () => {
       utils.coaching.dashboard.founderDashboard.invalidate();
@@ -204,7 +254,25 @@ export default function CoachingFounder() {
             Week of {format(new Date(currentWeek), "dd MMMM yyyy")} · BEBUS-COACH-V2-001
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-2 border-emerald-500 text-emerald-300 hover:bg-emerald-900/30"
+            onClick={() => setShowSelfAssessment(!showSelfAssessment)}
+          >
+            <ClipboardList className="w-4 h-4" />
+            Self-Assess
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-2 border-cyan-500 text-cyan-300 hover:bg-cyan-900/30"
+            onClick={() => setShowTemplates(!showTemplates)}
+          >
+            <Library className="w-4 h-4" />
+            Templates
+          </Button>
           <Button
             size="sm"
             variant="outline"
@@ -534,6 +602,214 @@ export default function CoachingFounder() {
                   )}
                 </div>
               ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Sprint 86: Self-Assessment Panel */}
+      {showSelfAssessment && (
+        <Card className="bg-slate-900 border-emerald-700">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base text-white flex items-center gap-2">
+                <ClipboardList className="w-4 h-4 text-emerald-400" />
+                Weekly Self-Assessment
+              </CardTitle>
+              <button onClick={() => setShowSelfAssessment(false)}>
+                <X className="w-4 h-4 text-slate-400 hover:text-white" />
+              </button>
+            </div>
+            <p className="text-xs text-slate-400">Rate yourself 0–100 on each dimension. Your coach will review and approve.</p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {([
+              { key: "strategicClarity", label: "Strategic Clarity", desc: "Vision, direction, and decision-making clarity" },
+              { key: "marketValidation", label: "Market Validation", desc: "Customer evidence and demand confirmation" },
+              { key: "teamCapability", label: "Team Capability", desc: "Team skills, alignment, and execution capacity" },
+              { key: "operationalExecution", label: "Operational Execution", desc: "Process discipline and delivery consistency" },
+              { key: "investorPreparedness", label: "Investor Preparedness", desc: "Pitch readiness, data room, and narrative" },
+            ] as const).map(({ key, label, desc }) => (
+              <div key={key}>
+                <div className="flex items-center justify-between mb-1">
+                  <div>
+                    <span className="text-sm font-medium text-white">{label}</span>
+                    <span className="text-xs text-slate-500 ml-2">{desc}</span>
+                  </div>
+                  <span className="text-sm font-bold text-emerald-400 w-8 text-right">{selfScores[key]}</span>
+                </div>
+                <input
+                  type="range" min={0} max={100} step={5}
+                  value={selfScores[key]}
+                  onChange={(e) => setSelfScores((prev) => ({ ...prev, [key]: Number(e.target.value) }))}
+                  className="w-full accent-emerald-500"
+                />
+              </div>
+            ))}
+            <div>
+              <label className="text-xs text-slate-400 mb-1 block">Notes for your coach (optional)</label>
+              <Textarea
+                value={selfNotes}
+                onChange={(e) => setSelfNotes(e.target.value)}
+                placeholder="What went well? What blockers are you facing?"
+                className="bg-slate-800 border-slate-600 text-white text-sm resize-none"
+                rows={2}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="text-xs text-slate-400">
+                Composite preview: <span className="text-emerald-400 font-bold">
+                  {(selfScores.strategicClarity * 0.20 + selfScores.marketValidation * 0.25 +
+                    selfScores.teamCapability * 0.20 + selfScores.operationalExecution * 0.20 +
+                    selfScores.investorPreparedness * 0.15).toFixed(1)}
+                </span>
+              </div>
+              <Button
+                size="sm"
+                className="bg-emerald-600 hover:bg-emerald-500 text-white"
+                onClick={() => submitSelfAssessment.mutate({ founderId: FOUNDER_ID, ...selfScores, founderNotes: selfNotes || undefined })}
+                disabled={submitSelfAssessment.isPending}
+              >
+                {submitSelfAssessment.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Submit for Review"}
+              </Button>
+            </div>
+            {myAssessments && myAssessments.length > 0 && (
+              <div className="border-t border-slate-700 pt-3">
+                <p className="text-xs text-slate-400 mb-2">Recent submissions</p>
+                <div className="space-y-1">
+                  {myAssessments.map((a) => (
+                    <div key={a.id} className="flex items-center justify-between text-xs">
+                      <span className="text-slate-400">{a.weekOf as unknown as string}</span>
+                      <span className="text-white font-medium">{parseFloat(a.compositeScore as unknown as string).toFixed(1)}</span>
+                      <Badge className={`text-xs ${
+                        a.status === "approved" ? "bg-green-900 text-green-300" :
+                        a.status === "rejected" ? "bg-red-900 text-red-300" :
+                        "bg-slate-700 text-slate-300"
+                      }`}>{a.status}</Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Sprint 87: Cohort Benchmarking */}
+      {benchmarkData && benchmarkData.founderTrend.length > 0 && (
+        <Card className="bg-slate-900 border-slate-700">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base text-white flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-cyan-400" />
+              Cohort Benchmark
+            </CardTitle>
+            <p className="text-xs text-slate-400">
+              Your PRL vs cohort average — {benchmarkData.cohortStats.sampleSize} founders at VRL Stage {benchmarkData.cohortStats.vrlStage}
+            </p>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={180}>
+              <LineChart data={benchmarkData.founderTrend.map((f, i) => ({
+                week: f.week,
+                yourPrl: f.score,
+                cohortAvg: benchmarkData.cohortAverages[i]?.cohortAvg ?? null,
+              }))}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                <XAxis dataKey="week" tick={{ fill: "#94a3b8", fontSize: 10 }} />
+                <YAxis domain={[0, 100]} tick={{ fill: "#94a3b8", fontSize: 10 }} />
+                <Tooltip
+                  contentStyle={{ background: "#0f172a", border: "1px solid #334155", borderRadius: 8 }}
+                  labelStyle={{ color: "#94a3b8" }}
+                />
+                <ReferenceLine y={70} stroke="#22c55e" strokeDasharray="4 2" label={{ value: "Target", fill: "#22c55e", fontSize: 10 }} />
+                <Line type="monotone" dataKey="yourPrl" stroke="#22c55e" strokeWidth={2} dot={{ fill: "#22c55e", r: 3 }} name="Your PRL" />
+                <Line type="monotone" dataKey="cohortAvg" stroke="#94a3b8" strokeWidth={1.5} strokeDasharray="4 2" dot={false} name="Cohort Avg" />
+              </LineChart>
+            </ResponsiveContainer>
+            {benchmarkData.cohortStats.median !== null && (
+              <div className="flex gap-4 mt-3 text-xs text-slate-400">
+                <span>Cohort median: <span className="text-white font-medium">{benchmarkData.cohortStats.median?.toFixed(1)}</span></span>
+                <span>Cohort min: <span className="text-white font-medium">{benchmarkData.cohortStats.min?.toFixed(1)}</span></span>
+                <span>Cohort max: <span className="text-white font-medium">{benchmarkData.cohortStats.max?.toFixed(1)}</span></span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Sprint 88: Commitment Template Library */}
+      {showTemplates && (
+        <Card className="bg-slate-900 border-cyan-700">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base text-white flex items-center gap-2">
+                <Library className="w-4 h-4 text-cyan-400" />
+                Commitment Template Library
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-xs border-slate-600 text-slate-400"
+                  onClick={() => seedTemplates.mutate({ force: false })}
+                  disabled={seedTemplates.isPending}
+                >
+                  {seedTemplates.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Seed Defaults"}
+                </Button>
+                <button onClick={() => setShowTemplates(false)}>
+                  <X className="w-4 h-4 text-slate-400 hover:text-white" />
+                </button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <input
+              type="text"
+              placeholder="Search templates..."
+              value={templateSearch}
+              onChange={(e) => setTemplateSearch(e.target.value)}
+              className="w-full bg-slate-800 border border-slate-600 rounded-md px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+            />
+            <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+              {(templateSearch.length >= 2 ? searchResults : templates)?.map((tmpl) => (
+                <div key={tmpl.id} className="flex items-start gap-3 p-3 rounded-lg bg-slate-800 border border-slate-700 hover:border-cyan-700 transition-colors">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-sm font-medium text-white truncate">{tmpl.title}</span>
+                      <Badge className={`text-xs shrink-0 ${
+                        tmpl.priority === "critical" ? "bg-red-900 text-red-300" :
+                        tmpl.priority === "high" ? "bg-amber-900 text-amber-300" :
+                        tmpl.priority === "medium" ? "bg-blue-900 text-blue-300" :
+                        "bg-slate-700 text-slate-300"
+                      }`}>{tmpl.priority}</Badge>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-slate-400">
+                      <span>VRL {tmpl.vrlStage}</span>
+                      {tmpl.category && <span className="capitalize">{tmpl.category.replace("_", " ")}</span>}
+                      <span>{tmpl.durationDays}d</span>
+                      {tmpl.usageCount > 0 && (
+                        <span className="flex items-center gap-0.5"><Star className="w-3 h-3" />{tmpl.usageCount}</span>
+                      )}
+                    </div>
+                    {tmpl.description && (
+                      <p className="text-xs text-slate-500 mt-1 line-clamp-2">{tmpl.description}</p>
+                    )}
+                  </div>
+                  <Button
+                    size="sm"
+                    className="shrink-0 bg-cyan-700 hover:bg-cyan-600 text-white text-xs"
+                    onClick={() => applyTemplate.mutate({ templateId: tmpl.id, founderId: FOUNDER_ID })}
+                    disabled={applyTemplate.isPending}
+                  >
+                    Apply
+                  </Button>
+                </div>
+              ))}
+              {(templateSearch.length >= 2 ? searchResults : templates)?.length === 0 && (
+                <p className="text-sm text-slate-500 text-center py-4">
+                  {templateSearch.length >= 2 ? "No templates match your search" : "No templates yet. Click \"Seed Defaults\" to load the library."}
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>

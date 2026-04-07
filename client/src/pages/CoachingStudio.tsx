@@ -15,7 +15,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, LineChart, Line, ReferenceLine, Cell
 } from "recharts";
-import { Loader2, TrendingUp, TrendingDown, Minus, AlertTriangle, Users, Star, UserPlus, X, Check, Mail, PlusCircle, Bell, Trophy, RefreshCw, Calendar, Send, BarChart2 } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, Minus, AlertTriangle, Users, Star, UserPlus, X, Check, Mail, PlusCircle, Bell, Trophy, RefreshCw, Calendar, Send, BarChart2, ClipboardList, Library } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -1083,6 +1083,239 @@ export default function CoachingStudio() {
           )}
         </CardContent>
       </Card>
+
+      {/* Sprint 86: Pending Self-Assessments */}
+      <Card className="bg-slate-900 border-emerald-700">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base text-white flex items-center gap-2">
+            <ClipboardList className="w-4 h-4 text-emerald-400" />
+            Pending Self-Assessments
+          </CardTitle>
+          <p className="text-xs text-slate-400">Founder self-assessments awaiting coach review and approval</p>
+        </CardHeader>
+        <CardContent>
+          <PendingSelfAssessmentsPanel />
+        </CardContent>
+      </Card>
+
+      {/* Sprint 88: Template Library Management */}
+      <Card className="bg-slate-900 border-cyan-700">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base text-white flex items-center gap-2">
+            <Library className="w-4 h-4 text-cyan-400" />
+            Commitment Template Library
+          </CardTitle>
+          <p className="text-xs text-slate-400">Manage reusable commitment templates by VRL stage</p>
+        </CardHeader>
+        <CardContent>
+          <TemplateLibraryPanel />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ── Sprint 86: Pending Self-Assessments Panel ─────────────────────────────────
+
+function PendingSelfAssessmentsPanel() {
+  const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
+  const { data: pending, refetch } = trpc.coaching.selfAssessment.pending.useQuery({ limit: 20 });
+  const approve = trpc.coaching.selfAssessment.approve.useMutation({
+    onSuccess: () => { toast.success("Assessment approved — PRL record created"); refetch(); },
+    onError: () => toast.error("Failed to approve"),
+  });
+  const reject = trpc.coaching.selfAssessment.reject.useMutation({
+    onSuccess: () => { toast.success("Assessment rejected"); refetch(); },
+    onError: () => toast.error("Failed to reject"),
+  });
+
+  if (!pending || pending.length === 0) {
+    return <p className="text-sm text-slate-500 text-center py-6">No pending self-assessments.</p>;
+  }
+
+  return (
+    <div className="space-y-3">
+      {pending.map((a) => (
+        <div key={a.id} className="p-4 rounded-lg bg-slate-800 border border-slate-700">
+          <div className="flex items-start justify-between mb-2">
+            <div>
+              <p className="text-sm font-medium text-white">Founder #{a.founderId}</p>
+              <p className="text-xs text-slate-400">Week of {a.weekOf as unknown as string}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-lg font-bold text-emerald-400">{parseFloat(a.compositeScore as unknown as string).toFixed(1)}</p>
+              <p className="text-xs text-slate-400">composite</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-5 gap-1 mb-3 text-center">
+            {([
+              { label: "Strategy", val: a.strategicClarity },
+              { label: "Market", val: a.marketValidation },
+              { label: "Team", val: a.teamCapability },
+              { label: "Ops", val: a.operationalExecution },
+              { label: "Investor", val: a.investorPreparedness },
+            ] as const).map(({ label, val }) => (
+              <div key={label} className="bg-slate-700 rounded p-1">
+                <p className="text-xs text-slate-400">{label}</p>
+                <p className="text-sm font-bold text-white">{val}</p>
+              </div>
+            ))}
+          </div>
+          {a.founderNotes && (
+            <p className="text-xs text-slate-400 italic mb-2">"{a.founderNotes}"</p>
+          )}
+          <input
+            type="text"
+            placeholder="Review notes (optional)"
+            value={reviewNotes[a.id] ?? ""}
+            onChange={(e) => setReviewNotes((prev) => ({ ...prev, [a.id]: e.target.value }))}
+            className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1 text-xs text-white placeholder-slate-500 mb-2 focus:outline-none focus:border-emerald-500"
+          />
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              className="bg-emerald-700 hover:bg-emerald-600 text-white text-xs flex-1"
+              onClick={() => approve.mutate({ assessmentId: a.id, reviewedBy: "coach", reviewNotes: reviewNotes[a.id], createPrlRecord: true })}
+              disabled={approve.isPending}
+            >
+              <Check className="w-3 h-3 mr-1" /> Approve &amp; Create PRL
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-red-700 text-red-400 hover:bg-red-950 text-xs flex-1"
+              onClick={() => reject.mutate({ assessmentId: a.id, reviewedBy: "coach", reviewNotes: reviewNotes[a.id] ?? "Not approved" })}
+              disabled={reject.isPending}
+            >
+              <X className="w-3 h-3 mr-1" /> Reject
+            </Button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Sprint 88: Template Library Panel ────────────────────────────────────────────
+
+function TemplateLibraryPanel() {
+  const [search, setSearch] = useState("");
+  const [vrlFilter, setVrlFilter] = useState<number | undefined>(undefined);
+  const [showCreate, setShowCreate] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newDesc, setNewDesc] = useState("");
+  const [newVrl, setNewVrl] = useState(1);
+  const [newDays, setNewDays] = useState(7);
+  const [newPriority, setNewPriority] = useState<"low" | "medium" | "high" | "critical">("medium");
+
+  const { data: templates, refetch } = trpc.coaching.commitmentTemplates.list.useQuery({ vrlStage: vrlFilter, limit: 50 });
+  const { data: searchResults } = trpc.coaching.commitmentTemplates.search.useQuery(
+    { query: search, limit: 20 },
+    { enabled: search.length >= 2 }
+  );
+  const createTemplate = trpc.coaching.commitmentTemplates.create.useMutation({
+    onSuccess: () => { toast.success("Template created"); refetch(); setShowCreate(false); setNewTitle(""); setNewDesc(""); },
+    onError: () => toast.error("Failed to create template"),
+  });
+  const deleteTemplate = trpc.coaching.commitmentTemplates.delete.useMutation({
+    onSuccess: () => { toast.success("Template deleted"); refetch(); },
+    onError: () => toast.error("Failed to delete template"),
+  });
+  const seedTemplates = trpc.coaching.commitmentTemplates.seed.useMutation({
+    onSuccess: (data) => { toast.success(data.message); refetch(); },
+    onError: () => toast.error("Failed to seed templates"),
+  });
+
+  const displayed = search.length >= 2 ? searchResults : templates;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 flex-wrap">
+        <input
+          type="text"
+          placeholder="Search templates..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="flex-1 min-w-32 bg-slate-800 border border-slate-600 rounded px-3 py-1.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+        />
+        <select
+          value={vrlFilter ?? ""}
+          onChange={(e) => setVrlFilter(e.target.value ? Number(e.target.value) : undefined)}
+          className="bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-sm text-white focus:outline-none"
+        >
+          <option value="">All VRL</option>
+          {[1,2,3,4,5,6,7,8,9].map((v) => <option key={v} value={v}>VRL {v}</option>)}
+        </select>
+        <Button size="sm" className="bg-cyan-700 hover:bg-cyan-600 text-white text-xs" onClick={() => setShowCreate(!showCreate)}>
+          <PlusCircle className="w-3 h-3 mr-1" /> New
+        </Button>
+        <Button size="sm" variant="outline" className="border-slate-600 text-slate-400 text-xs" onClick={() => seedTemplates.mutate({ force: false })} disabled={seedTemplates.isPending}>
+          Seed Defaults
+        </Button>
+      </div>
+
+      {showCreate && (
+        <div className="p-3 rounded-lg bg-slate-800 border border-cyan-700 space-y-2">
+          <input type="text" placeholder="Template title *" value={newTitle} onChange={(e) => setNewTitle(e.target.value)}
+            className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white placeholder-slate-500 focus:outline-none" />
+          <textarea placeholder="Description (optional)" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} rows={2}
+            className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-sm text-white placeholder-slate-500 focus:outline-none resize-none" />
+          <div className="flex gap-2 flex-wrap">
+            <select value={newVrl} onChange={(e) => setNewVrl(Number(e.target.value))}
+              className="bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-xs text-white focus:outline-none">
+              {[1,2,3,4,5,6,7,8,9].map((v) => <option key={v} value={v}>VRL {v}</option>)}
+            </select>
+            <select value={newPriority} onChange={(e) => setNewPriority(e.target.value as "low" | "medium" | "high" | "critical")}
+              className="bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-xs text-white focus:outline-none">
+              {["low","medium","high","critical"].map((p) => <option key={p} value={p}>{p}</option>)}
+            </select>
+            <input type="number" min={1} max={365} value={newDays} onChange={(e) => setNewDays(Number(e.target.value))}
+              className="w-20 bg-slate-700 border border-slate-600 rounded px-2 py-1.5 text-xs text-white focus:outline-none" placeholder="Days" />
+            <Button size="sm" className="bg-cyan-700 hover:bg-cyan-600 text-white text-xs ml-auto"
+              onClick={() => createTemplate.mutate({ title: newTitle, description: newDesc || undefined, vrlStage: newVrl, priority: newPriority, durationDays: newDays, createdBy: "coach" })}
+              disabled={!newTitle || createTemplate.isPending}>
+              {createTemplate.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Create"}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
+        {displayed?.map((tmpl) => (
+          <div key={tmpl.id} className="flex items-start gap-3 p-3 rounded-lg bg-slate-800 border border-slate-700">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-sm font-medium text-white truncate">{tmpl.title}</span>
+                <Badge className={`text-xs shrink-0 ${
+                  tmpl.priority === "critical" ? "bg-red-900 text-red-300" :
+                  tmpl.priority === "high" ? "bg-amber-900 text-amber-300" :
+                  tmpl.priority === "medium" ? "bg-blue-900 text-blue-300" :
+                  "bg-slate-700 text-slate-300"
+                }`}>{tmpl.priority}</Badge>
+                {tmpl.isDefault && <Badge className="text-xs bg-slate-700 text-slate-400">default</Badge>}
+              </div>
+              <div className="flex items-center gap-3 text-xs text-slate-400">
+                <span>VRL {tmpl.vrlStage}</span>
+                {tmpl.category && <span className="capitalize">{tmpl.category.replace("_", " ")}</span>}
+                <span>{tmpl.durationDays}d</span>
+                <span>Used {tmpl.usageCount}x</span>
+              </div>
+            </div>
+            <button
+              onClick={() => deleteTemplate.mutate({ id: tmpl.id })}
+              className="text-slate-500 hover:text-red-400 transition-colors"
+              title="Delete template"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        ))}
+        {displayed?.length === 0 && (
+          <p className="text-sm text-slate-500 text-center py-4">
+            {search.length >= 2 ? "No templates match your search" : "No templates yet. Click \"Seed Defaults\" to load the library."}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
