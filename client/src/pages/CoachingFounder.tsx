@@ -16,7 +16,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
   TrendingUp, TrendingDown, Minus, CheckCircle2, XCircle,
-  Clock, AlertTriangle, Brain, Target, ChevronDown, Plus, Loader2
+  Clock, AlertTriangle, Brain, Target, ChevronDown, Plus, Loader2,
+  Bell, FileText, X
 } from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -98,6 +99,23 @@ export default function CoachingFounder() {
   const [showAddTask, setShowAddTask] = useState(false);
   const [expandedInsight, setExpandedInsight] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
+
+  // Sprint 80: PRL Trend Alerts
+  const { data: alertSummary, refetch: refetchAlerts } = trpc.coaching.alerts.summary.useQuery();
+  const acknowledgeAlert = trpc.coaching.alerts.acknowledge.useMutation({
+    onSuccess: () => { refetchAlerts(); toast.success("Alert acknowledged"); },
+  });
+
+  // Sprint 81: Progress Report generation
+  const generateReport = trpc.coaching.progressReports.generate.useMutation({
+    onSuccess: (data) => {
+      toast.success("Progress report generated — opening in new tab");
+      // Fetch the HTML and open in new tab
+      window.open(`/api/trpc/coaching.progressReports.getHtml?input=${encodeURIComponent(JSON.stringify({ id: data.id }))}`, "_blank");
+    },
+    onError: () => toast.error("Failed to generate progress report"),
+  });
 
   const utils = trpc.useUtils();
 
@@ -186,17 +204,65 @@ export default function CoachingFounder() {
             Week of {format(new Date(currentWeek), "dd MMMM yyyy")} · BEBUS-COACH-V2-001
           </p>
         </div>
-        <Button
-          size="sm"
-          variant="outline"
-          className="gap-2 border-purple-500 text-purple-300 hover:bg-purple-900/30"
-          onClick={() => generateInsights.mutate({ founderId: FOUNDER_ID, week: currentWeek })}
-          disabled={generateInsights.isPending}
-        >
-          {generateInsights.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Brain className="w-4 h-4" />}
-          Generate AI Insights
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-2 border-blue-500 text-blue-300 hover:bg-blue-900/30"
+            onClick={() => generateReport.mutate({ founderId: FOUNDER_ID, periodWeeks: 4 })}
+            disabled={generateReport.isPending}
+          >
+            {generateReport.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+            Progress Report
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-2 border-purple-500 text-purple-300 hover:bg-purple-900/30"
+            onClick={() => generateInsights.mutate({ founderId: FOUNDER_ID, week: currentWeek })}
+            disabled={generateInsights.isPending}
+          >
+            {generateInsights.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Brain className="w-4 h-4" />}
+            Generate AI Insights
+          </Button>
+        </div>
       </div>
+
+      {/* Sprint 80: PRL Trend Alert Banners */}
+      {alertSummary && alertSummary.alerts.filter((a) => !dismissedAlerts.has(a.id)).length > 0 && (
+        <div className="space-y-2">
+          {alertSummary.alerts.filter((a) => !dismissedAlerts.has(a.id)).slice(0, 3).map((alert) => (
+            <div
+              key={alert.id}
+              className={`flex items-start gap-3 px-4 py-3 rounded-lg border text-sm ${
+                alert.severity === "critical"
+                  ? "bg-red-950/60 border-red-700 text-red-200"
+                  : alert.severity === "warning"
+                  ? "bg-amber-950/60 border-amber-700 text-amber-200"
+                  : "bg-blue-950/60 border-blue-700 text-blue-200"
+              }`}
+            >
+              <Bell className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <span className="font-semibold capitalize mr-2">
+                  {alert.alertType.replace("_", " ").toUpperCase()}
+                </span>
+                {alert.message}
+              </div>
+              <button
+                onClick={() => {
+                  acknowledgeAlert.mutate({ id: alert.id, acknowledgedBy: "founder" });
+                  setDismissedAlerts((prev) => new Set([...prev, alert.id]));
+                }}
+                className="flex-shrink-0 opacity-60 hover:opacity-100"
+                title="Dismiss"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Top row: PRL gauge + stats */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">

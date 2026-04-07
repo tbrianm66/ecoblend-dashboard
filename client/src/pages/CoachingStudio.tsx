@@ -15,7 +15,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, LineChart, Line, ReferenceLine, Cell
 } from "recharts";
-import { Loader2, TrendingUp, TrendingDown, Minus, AlertTriangle, Users, Star, UserPlus, X, Check, Mail, PlusCircle } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, Minus, AlertTriangle, Users, Star, UserPlus, X, Check, Mail, PlusCircle, Bell, Trophy, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -418,6 +418,26 @@ export default function CoachingStudio() {
     rate: t.avgCompletionRate,
   }));
 
+  // Sprint 80: Alert summary
+  const { data: alertSummary } = trpc.coaching.alerts.summary.useQuery();
+  const generateAlerts = trpc.coaching.alerts.generate.useMutation({
+    onSuccess: (data) => toast.success(`${data.generated} alert(s) generated for ${data.foundersScanned} founders`),
+    onError: () => toast.error("Failed to generate alerts"),
+  });
+  const acknowledgeAlert = trpc.coaching.alerts.acknowledge.useMutation({
+    onSuccess: () => utils.coaching.alerts.summary.invalidate(),
+  });
+
+  // Sprint 82: Coach Performance Leaderboard
+  const { data: leaderboard = [] } = trpc.coaching.leaderboard.get.useQuery({ limit: 10 });
+  const computeLeaderboard = trpc.coaching.leaderboard.compute.useMutation({
+    onSuccess: (data) => {
+      utils.coaching.leaderboard.get.invalidate();
+      toast.success(`Leaderboard computed for ${data.computed} coaches`);
+    },
+    onError: () => toast.error("Failed to compute leaderboard"),
+  });
+
   const sendDigest = trpc.coaching.digest.sendWeeklyDigest.useMutation({
     onSuccess: (data) => {
       if (data.sent) {
@@ -650,7 +670,143 @@ export default function CoachingStudio() {
       {/* Coach Registration */}
       <CoachRegistrationPanel />
 
-      {/* Coach Performance */}
+      {/* Sprint 80: PRL Alert Summary */}
+      <Card className="bg-slate-900 border-slate-700">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base text-white flex items-center gap-2">
+              <Bell className="w-4 h-4 text-amber-400" />
+              PRL Trend Alerts
+              {alertSummary && alertSummary.total > 0 && (
+                <span className="ml-1 px-2 py-0.5 rounded-full text-xs font-bold bg-red-900 text-red-300">
+                  {alertSummary.total}
+                </span>
+              )}
+            </CardTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 text-xs border-amber-600 text-amber-300 hover:bg-amber-900/30"
+              onClick={() => generateAlerts.mutate({})}
+              disabled={generateAlerts.isPending}
+            >
+              {generateAlerts.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+              Run Alert Engine
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {!alertSummary || alertSummary.total === 0 ? (
+            <div className="text-center py-6 text-slate-500 text-sm">No active alerts. All founders are within normal PRL parameters.</div>
+          ) : (
+            <div className="space-y-2">
+              <div className="flex gap-4 mb-3">
+                {alertSummary.critical > 0 && <span className="text-xs font-semibold px-2 py-1 rounded-full bg-red-900/60 text-red-300">{alertSummary.critical} Critical</span>}
+                {alertSummary.warning > 0 && <span className="text-xs font-semibold px-2 py-1 rounded-full bg-amber-900/60 text-amber-300">{alertSummary.warning} Warning</span>}
+                {alertSummary.info > 0 && <span className="text-xs font-semibold px-2 py-1 rounded-full bg-blue-900/60 text-blue-300">{alertSummary.info} Info</span>}
+              </div>
+              {alertSummary.alerts.map((alert) => (
+                <div
+                  key={alert.id}
+                  className={`flex items-start gap-3 px-3 py-2 rounded-lg border text-xs ${
+                    alert.severity === "critical" ? "bg-red-950/50 border-red-800 text-red-200"
+                    : alert.severity === "warning" ? "bg-amber-950/50 border-amber-800 text-amber-200"
+                    : "bg-blue-950/50 border-blue-800 text-blue-200"
+                  }`}
+                >
+                  <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                  <span className="flex-1">{alert.message}</span>
+                  <button
+                    onClick={() => acknowledgeAlert.mutate({ id: alert.id, acknowledgedBy: "studio" })}
+                    className="flex-shrink-0 opacity-50 hover:opacity-100 ml-2"
+                    title="Acknowledge"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Sprint 82: Coach Performance Leaderboard */}
+      <Card className="bg-slate-900 border-slate-700">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base text-white flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-amber-400" />
+              Coach Performance Leaderboard
+            </CardTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 text-xs border-amber-600 text-amber-300 hover:bg-amber-900/30"
+              onClick={() => computeLeaderboard.mutate({})}
+              disabled={computeLeaderboard.isPending}
+            >
+              {computeLeaderboard.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+              Compute This Week
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {leaderboard.length === 0 ? (
+            <div className="text-center py-8 text-slate-500 text-sm">
+              No leaderboard data yet. Click "Compute This Week" to generate rankings.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-700">
+                    <th className="text-left py-2 px-3 text-xs text-slate-400 font-semibold">Rank</th>
+                    <th className="text-left py-2 px-3 text-xs text-slate-400 font-semibold">Coach</th>
+                    <th className="text-left py-2 px-3 text-xs text-slate-400 font-semibold">Type</th>
+                    <th className="text-right py-2 px-3 text-xs text-slate-400 font-semibold">Score</th>
+                    <th className="text-right py-2 px-3 text-xs text-slate-400 font-semibold">PRL Δ</th>
+                    <th className="text-right py-2 px-3 text-xs text-slate-400 font-semibold">Commit %</th>
+                    <th className="text-right py-2 px-3 text-xs text-slate-400 font-semibold">Sessions</th>
+                    <th className="text-right py-2 px-3 text-xs text-slate-400 font-semibold">Founders</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {leaderboard.map((coach, i) => (
+                    <tr key={coach.id} className={`border-b border-slate-800 ${ i === 0 ? "bg-amber-950/20" : "" }`}>
+                      <td className="py-2 px-3">
+                        <span className={`text-sm font-bold ${ i === 0 ? "text-amber-400" : i === 1 ? "text-slate-300" : i === 2 ? "text-amber-700" : "text-slate-500" }`}>
+                          #{coach.rank ?? i + 1}
+                        </span>
+                      </td>
+                      <td className="py-2 px-3 text-white font-medium">{coach.coachName}</td>
+                      <td className="py-2 px-3">
+                        <span className="text-xs capitalize text-slate-400">{coach.coachType}</span>
+                      </td>
+                      <td className="py-2 px-3 text-right">
+                        <span className="text-sm font-bold" style={{ color: getRagColor(parseFloat(coach.compositeScore as unknown as string)) }}>
+                          {parseFloat(coach.compositeScore as unknown as string).toFixed(1)}
+                        </span>
+                      </td>
+                      <td className="py-2 px-3 text-right">
+                        <span className={`text-xs font-mono ${ parseFloat(coach.avgPrlImprovement as unknown as string) >= 0 ? "text-green-400" : "text-red-400" }`}>
+                          {parseFloat(coach.avgPrlImprovement as unknown as string) >= 0 ? "+" : ""}{parseFloat(coach.avgPrlImprovement as unknown as string).toFixed(1)}
+                        </span>
+                      </td>
+                      <td className="py-2 px-3 text-right text-slate-300 text-xs font-mono">
+                        {parseFloat(coach.commitmentCompletionRate as unknown as string).toFixed(0)}%
+                      </td>
+                      <td className="py-2 px-3 text-right text-slate-300 text-xs">{coach.sessionCount}</td>
+                      <td className="py-2 px-3 text-right text-slate-300 text-xs">{coach.foundersAssigned}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Coach Performance (original cards) */}
       <Card className="bg-slate-900 border-slate-700">
         <CardHeader className="pb-3">
           <CardTitle className="text-base text-white flex items-center gap-2">

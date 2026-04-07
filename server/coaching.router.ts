@@ -29,6 +29,7 @@ import {
 import { eq, and, desc, asc, sql, lte, gte } from "drizzle-orm";
 import { invokeLLM } from "./_core/llm";
 import { randomUUID } from "crypto";
+import { alertsRouter, progressReportsRouter, leaderboardRouter } from "./coaching.sprint8082.router";
 
 // ── PRL Scoring Engine ────────────────────────────────────────────────────────
 
@@ -1427,4 +1428,7 @@ export const coachingRouter = router({
   onboarding: onboardingRouter,
   digest: digestRouter,
   coachRegistration: coachRegistrationRouter,
+  alerts: alertsRouter,
+  progressReports: progressReportsRouter,
+  leaderboard: leaderboardRouter,
 });

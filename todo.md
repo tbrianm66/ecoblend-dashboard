@@ -237,7 +237,7 @@
 - [ ] Add team_gap_analysis table (missing capabilities per venture)
 - [ ] Add talent_venture_assignments table (assigned people to ventures with role)
 - [ ] Push migration 0013
-- [ ] Add tRPC procedures: talent CRUD, computePVF, getTeamComposition, getTeamGaps, getRoleRankings, getFounderSuitability
+- [x] Add tRPC procedures: talent CRUD, computePVF, getTeamComposition, getTeamGaps, getRoleRankings, getFounderSuitability
 - [ ] Build People Intelligence dashboard page (6 components: talent pool, top rankings, role matrix, team composition, gap heatmap, founder scorecard)
 - [ ] Add People Intelligence to sidebar under Intelligence section
 - [ ] Wire route in App.tsx
@@ -375,7 +375,7 @@
 
 ## Sprint 34 — Legal Module Enhancements (Mar 2026)
 - [ ] Add expiryDate and architectureLayer fields to legal_contracts table (db:push)
-- [ ] Add tRPC procedures: contracts.getExpiring (within 60 days), contracts.renewContract (set status to Under Review)
+- [x] Add tRPC procedures: contracts.getExpiring (within 60 days), contracts.renewContract (set status to Under Review)
 - [ ] Add "Expiring Soon" banner to Contracts tab listing contracts expiring within 60 days with Renew CTA
 - [ ] Add architectureLayer tag selector to contract add/edit dialog
 - [ ] Architecture Map: clicking a layer filters the Contracts tab to show only contracts in that layer
@@ -1028,3 +1028,24 @@
 - [x] Coach Registration Panel in Studio Dashboard — form with name, type, bio, hourly rate, specialisms fields; coachRegistrationRouter with register/update/deactivate/list procedures
 - [x] 24 new Vitest tests for Sprint 79 features (onboarding, digest, coach registration, integration cycle)
 - [x] Total test suite: 1,671 tests passing across 59 test files
+
+## Sprint 80 — PRL Trend Alerts
+- [ ] Add prl_trend_alerts DB table (id, founderId, ventureId, alertType, severity, message, weekOf, acknowledged, createdAt)
+- [ ] Add alertEngine logic: detect >10pt WoW drop, sustained HIGH risk 3+ weeks, first-time HIGH risk
+- [x] Add tRPC procedures: generateAlerts (runs engine), listAlerts, acknowledgeAlert
+- [x] Add PRL Alert Banner to Founder Coaching Dashboard (dismissable, colour-coded by severity)
+- [x] Add Alert Summary panel to Studio Dashboard (count by severity, list with acknowledge button)
+- [x] Vitest tests for Sprint 80
+
+## Sprint 81 — Founder Progress Report PDF
+- [x] Add founder_progress_reports DB table (id, founderId, ventureId, reportHtml, generatedAt, sentAt)
+- [x] Add tRPC procedure: generateProgressReport (aggregates PRL history, commitment stats, session log, AI narrative)
+- [ ] Add "Generate Progress Report" button on Founder Coaching Dashboard
+- [x] Render report as downloadable HTML/PDF via browser print or server-side generation
+- [x] Vitest tests for Sprint 81
+
+## Sprint 82 — Coach Performance Leaderboard
+- [x] Add coach_performance_snapshots DB table (id, coachId, weekOf, avgPrlImprovement, sessionCount, commitmentCompletionRate, foundersAssigned, score)
+- [x] Add tRPC procedures: computeLeaderboard, getLeaderboard, getCoachTrend
+- [x] Add Coach Performance Leaderboard tab to Studio Dashboard (ranked table + sparklines)
+- [x] Vitest tests for Sprint 82

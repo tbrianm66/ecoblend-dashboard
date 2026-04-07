@@ -6,6 +6,7 @@ import {
   float,
   int,
   json,
+  longtext,
   mysqlEnum,
   mysqlTable,
   text,
@@ -6538,3 +6539,73 @@ export const coachingOnboardingState = mysqlTable("coaching_onboarding_state", {
 });
 export type CoachingOnboardingState = typeof coachingOnboardingState.$inferSelect;
 export type InsertCoachingOnboardingState = typeof coachingOnboardingState.$inferInsert;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Sprint 80 — PRL Trend Alerts
+// ═══════════════════════════════════════════════════════════════════════════════
+// prl_trend_alerts — auto-generated alerts when PRL drops or risk escalates
+export const prlTrendAlerts = mysqlTable("prl_trend_alerts", {
+  id:           varchar("id", { length: 64 }).primaryKey(),
+  founderId:    int("founderId").notNull(),          // FK → founders.id
+  ventureId:    varchar("ventureId", { length: 64 }), // FK → ventures.id
+  alertType:    mysqlEnum("alertType", [
+    "sharp_drop",        // >10pt WoW decline
+    "sustained_high",    // HIGH risk 3+ consecutive weeks
+    "first_high_risk",   // first time entering HIGH risk
+    "recovery",          // PRL improved from HIGH → MEDIUM/LOW
+  ]).notNull(),
+  severity:     mysqlEnum("severity", ["critical", "warning", "info"]).notNull().default("warning"),
+  message:      text("message").notNull(),           // human-readable alert message
+  weekOf:       date("weekOf").notNull(),             // ISO week start date
+  prlScore:     decimal("prlScore", { precision: 5, scale: 2 }), // PRL score at time of alert
+  prlDelta:     decimal("prlDelta", { precision: 5, scale: 2 }), // WoW change (negative = drop)
+  acknowledged: boolean("acknowledged").notNull().default(false),
+  acknowledgedAt: timestamp("acknowledgedAt"),
+  acknowledgedBy: varchar("acknowledgedBy", { length: 128 }), // coach/studio user
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+});
+export type PrlTrendAlert = typeof prlTrendAlerts.$inferSelect;
+export type InsertPrlTrendAlert = typeof prlTrendAlerts.$inferInsert;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Sprint 81 — Founder Progress Reports
+// ═══════════════════════════════════════════════════════════════════════════════
+// founder_progress_reports — AI-generated progress reports per founder
+export const founderProgressReports = mysqlTable("founder_progress_reports", {
+  id:           varchar("id", { length: 64 }).primaryKey(),
+  founderId:    int("founderId").notNull(),          // FK → founders.id
+  ventureId:    varchar("ventureId", { length: 64 }), // FK → ventures.id
+  reportHtml:   longtext("reportHtml").notNull(),    // rendered HTML content
+  aiNarrative:  text("aiNarrative"),                 // AI-generated executive summary
+  prlSummary:   json("prlSummary"),                  // { current, trend, weeksTracked, avgScore }
+  commitmentStats: json("commitmentStats"),           // { total, completed, missed, completionRate }
+  sessionCount: int("sessionCount").notNull().default(0),
+  periodStart:  date("periodStart").notNull(),        // report covers from this date
+  periodEnd:    date("periodEnd").notNull(),           // report covers to this date
+  generatedAt:  timestamp("generatedAt").defaultNow().notNull(),
+  sentAt:       timestamp("sentAt"),                  // null = not yet sent
+  status:       mysqlEnum("status", ["draft", "ready", "sent"]).notNull().default("draft"),
+});
+export type FounderProgressReport = typeof founderProgressReports.$inferSelect;
+export type InsertFounderProgressReport = typeof founderProgressReports.$inferInsert;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Sprint 82 — Coach Performance Leaderboard
+// ═══════════════════════════════════════════════════════════════════════════════
+// coach_performance_snapshots — weekly computed performance metrics per coach
+export const coachPerformanceSnapshots = mysqlTable("coach_performance_snapshots", {
+  id:                       varchar("id", { length: 64 }).primaryKey(),
+  coachId:                  varchar("coachId", { length: 64 }).notNull(), // FK → coaching_coaches.id
+  weekOf:                   date("weekOf").notNull(),                      // ISO week start date
+  foundersAssigned:         int("foundersAssigned").notNull().default(0),
+  sessionCount:             int("sessionCount").notNull().default(0),
+  avgPrlImprovement:        decimal("avgPrlImprovement", { precision: 6, scale: 2 }).notNull().default("0.00"), // avg WoW PRL delta across founders
+  commitmentCompletionRate: decimal("commitmentCompletionRate", { precision: 5, scale: 2 }).notNull().default("0.00"), // % of commitments completed
+  highRiskFounders:         int("highRiskFounders").notNull().default(0),  // founders in HIGH risk this week
+  recoveredFounders:        int("recoveredFounders").notNull().default(0), // founders moved out of HIGH risk
+  compositeScore:           decimal("compositeScore", { precision: 5, scale: 2 }).notNull().default("0.00"), // 0–100 leaderboard score
+  rank:                     int("rank"),                                    // rank among all coaches this week
+  computedAt:               timestamp("computedAt").defaultNow().notNull(),
+});
+export type CoachPerformanceSnapshot = typeof coachPerformanceSnapshots.$inferSelect;
+export type InsertCoachPerformanceSnapshot = typeof coachPerformanceSnapshots.$inferInsert;
