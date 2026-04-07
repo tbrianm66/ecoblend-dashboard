@@ -996,3 +996,35 @@
 - [x] UI: Coach Portal — Commitment Templates panel with stage selector, template preview, one-click apply to selected founder
 - [x] 13 Vitest tests passing (PRL-VRL integration, assignment validation, template logic, end-to-end cycle)
 - [x] All tests passing, server running cleanly
+
+## Sprint 79 — Coaching Module V2 Sprint 79 (Onboarding Flow, Digest Email, Coach Registration)
+
+### Step 1 — Founder PRL Onboarding Flow
+- [ ] DB: coaching_onboarding_state table (founderId, currentVrlStage, onboardingCompleted, templateApplied, completedAt)
+- [ ] Backend: coaching.onboarding.getState procedure (returns onboarding state for current user)
+- [ ] Backend: coaching.onboarding.complete procedure (marks onboarding done, triggers auto-template apply)
+- [ ] UI: Founder Coaching page — onboarding prompt modal on first login (VRL stage selector, confirm button)
+- [ ] UI: Auto-applies correct template set after stage selection, shows confirmation toast
+
+### Step 2 — Weekly PRL Digest Email
+- [ ] Backend: coaching.digest.sendWeeklyDigest procedure (protected, collects all founders' PRL scores + risk levels + trends, calls notifyOwner)
+- [ ] Backend: system.weeklyPrlDigest mutation exposed for scheduled/manual trigger
+- [ ] UI: Studio Dashboard — "Send Weekly Digest" button (manual trigger for testing)
+- [ ] Digest format: table of founder name, venture, PRL score, risk level, trend, week-on-week delta
+
+### Step 3 — Coach Registration UI
+- [ ] Backend: coaching.coaches.register procedure (creates new coach record with name, type, bio, hourlyRate, specialisms)
+- [ ] Backend: coaching.coaches.update procedure (edit existing coach)
+- [ ] Backend: coaching.coaches.deactivate procedure (soft-delete)
+- [ ] UI: Studio Dashboard — "Register Coach" button opens dialog form (name, type, bio, rate, specialisms)
+- [ ] UI: Coach list table with edit/deactivate actions
+- [ ] Vitest tests for all new procedures
+- [ ] All tests passing
+
+## Sprint 79 — Founder Onboarding, Weekly Digest, Coach Registration
+- [x] Founder PRL onboarding flow — DB table (coachingOnboardingState), tRPC procedures (getState, completeOnboarding with auto-template application), CoachingOnboardingModal component
+- [x] Weekly PRL digest email — digestRouter.sendWeeklyDigest procedure aggregates all founders' PRL data, calls notifyOwner with formatted report
+- [x] "Send Weekly PRL Digest" button in Studio Dashboard header (indigo button with Mail icon)
+- [x] Coach Registration Panel in Studio Dashboard — form with name, type, bio, hourly rate, specialisms fields; coachRegistrationRouter with register/update/deactivate/list procedures
+- [x] 24 new Vitest tests for Sprint 79 features (onboarding, digest, coach registration, integration cycle)
+- [x] Total test suite: 1,671 tests passing across 59 test files

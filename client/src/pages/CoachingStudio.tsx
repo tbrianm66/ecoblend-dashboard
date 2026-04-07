@@ -15,7 +15,10 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, LineChart, Line, ReferenceLine, Cell
 } from "recharts";
-import { Loader2, TrendingUp, TrendingDown, Minus, AlertTriangle, Users, Star, UserPlus, X, Check } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, Minus, AlertTriangle, Users, Star, UserPlus, X, Check, Mail, PlusCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { ventures as staticVentures } from "@/lib/data";
@@ -220,6 +223,171 @@ function CoachAssignmentPanel() {
   );
 }
 
+// ── Coach Registration Panel ──────────────────────────────────────────────────
+function CoachRegistrationPanel() {
+  const [showForm, setShowForm] = useState(false);
+  const [name, setName] = useState("");
+  const [type, setType] = useState<"executive" | "technical" | "commercial" | "wellbeing" | "specialist">("executive");
+  const [bio, setBio] = useState("");
+  const [hourlyRate, setHourlyRate] = useState("");
+  const [specialisms, setSpecialisms] = useState("");
+  const utils = trpc.useUtils();
+
+  const { data: coaches = [] } = trpc.coaching.coachRegistration.list.useQuery({ includeInactive: false });
+
+  const register = trpc.coaching.coachRegistration.register.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Coach "${data.name}" registered successfully`);
+      utils.coaching.coachRegistration.list.invalidate();
+      utils.coaching.coaches.list.invalidate();
+      setShowForm(false);
+      setName(""); setBio(""); setHourlyRate(""); setSpecialisms("");
+    },
+    onError: (err) => toast.error(`Registration failed: ${err.message}`),
+  });
+
+  const deactivate = trpc.coaching.coachRegistration.deactivate.useMutation({
+    onSuccess: () => {
+      toast.success("Coach deactivated");
+      utils.coaching.coachRegistration.list.invalidate();
+    },
+  });
+
+  const COACH_TYPES = ["executive", "technical", "commercial", "wellbeing", "specialist"] as const;
+
+  return (
+    <Card className="bg-slate-900 border-slate-700">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-white text-base flex items-center gap-2">
+            <Users className="w-4 h-4 text-purple-400" /> Coach Registry
+          </CardTitle>
+          <Button
+            size="sm"
+            onClick={() => setShowForm(!showForm)}
+            className="gap-1.5 bg-purple-700 hover:bg-purple-600 text-white text-xs"
+          >
+            <PlusCircle className="w-3.5 h-3.5" /> Register Coach
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {showForm && (
+          <div className="rounded-xl border border-purple-700 bg-slate-800 p-4 space-y-3">
+            <p className="text-sm font-semibold text-purple-300">New Coach Registration</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-slate-400 mb-1 block">Full Name *</label>
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. Dr. Sarah Johnson"
+                  className="bg-slate-700 border-slate-600 text-white text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-slate-400 mb-1 block">Coach Type *</label>
+                <Select value={type} onValueChange={(v) => setType(v as typeof type)}>
+                  <SelectTrigger className="bg-slate-700 border-slate-600 text-white text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-600">
+                    {COACH_TYPES.map((t) => (
+                      <SelectItem key={t} value={t} className="text-white capitalize">{t}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-slate-400 mb-1 block">Hourly Rate (£)</label>
+                <Input
+                  type="number"
+                  value={hourlyRate}
+                  onChange={(e) => setHourlyRate(e.target.value)}
+                  placeholder="e.g. 150"
+                  className="bg-slate-700 border-slate-600 text-white text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-slate-400 mb-1 block">Specialisms (comma-separated)</label>
+                <Input
+                  value={specialisms}
+                  onChange={(e) => setSpecialisms(e.target.value)}
+                  placeholder="e.g. TRL, MRL, ESG"
+                  className="bg-slate-700 border-slate-600 text-white text-sm"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 mb-1 block">Bio</label>
+              <Textarea
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder="Brief coach biography and experience..."
+                className="bg-slate-700 border-slate-600 text-white text-sm resize-none"
+                rows={2}
+              />
+            </div>
+            <div className="flex gap-2 pt-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowForm(false)}
+                className="flex-1 border-slate-600 text-slate-400 bg-transparent hover:bg-slate-700"
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                disabled={!name || register.isPending}
+                onClick={() => register.mutate({
+                  name,
+                  type,
+                  bio: bio || undefined,
+                  hourlyRate: hourlyRate ? parseFloat(hourlyRate) : undefined,
+                  specialisms: specialisms ? specialisms.split(",").map((s) => s.trim()).filter(Boolean) : undefined,
+                })}
+                className="flex-1 bg-purple-700 hover:bg-purple-600 text-white"
+              >
+                {register.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Register Coach"}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {coaches.length === 0 ? (
+          <p className="text-sm text-slate-500 text-center py-4">No coaches registered yet. Click "Register Coach" to add the first one.</p>
+        ) : (
+          <div className="space-y-2">
+            {coaches.map((c) => (
+              <div key={c.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-800 border border-slate-700">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-white truncate">{c.name}</span>
+                    <Badge className="text-xs capitalize bg-purple-900 text-purple-300 border-0">{c.type}</Badge>
+                    {c.hourlyRate && <span className="text-xs text-slate-400">£{c.hourlyRate}/hr</span>}
+                  </div>
+                  {c.bio && <p className="text-xs text-slate-500 mt-0.5 truncate">{c.bio}</p>}
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => deactivate.mutate({ id: c.id })}
+                  className="text-red-400 hover:text-red-300 hover:bg-red-900/30 ml-2 shrink-0"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function CoachingStudio() {
   const { data: studio, isLoading } = trpc.coaching.dashboard.studioDashboard.useQuery(
     undefined,
@@ -250,14 +418,36 @@ export default function CoachingStudio() {
     rate: t.avgCompletionRate,
   }));
 
+  const sendDigest = trpc.coaching.digest.sendWeeklyDigest.useMutation({
+    onSuccess: (data) => {
+      if (data.sent) {
+        toast.success(`Weekly PRL digest sent — ${data.foundersReported} founders reported`);
+      } else {
+        toast.info("No PRL data available to send");
+      }
+    },
+    onError: (err) => toast.error(`Digest failed: ${err.message}`),
+  });
+
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-white">Studio Execution Dashboard</h1>
-        <p className="text-sm text-slate-400 mt-1">
-          Portfolio-level execution intelligence · BEBUS-COACH-V2-001
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Studio Execution Dashboard</h1>
+          <p className="text-sm text-slate-400 mt-1">
+            Portfolio-level execution intelligence · BEBUS-COACH-V2-001
+          </p>
+        </div>
+        <Button
+          size="sm"
+          onClick={() => sendDigest.mutate()}
+          disabled={sendDigest.isPending}
+          className="gap-2 bg-indigo-700 hover:bg-indigo-600 text-white text-xs"
+        >
+          {sendDigest.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+          Send Weekly PRL Digest
+        </Button>
       </div>
 
       {/* KPI Row */}
@@ -456,6 +646,9 @@ export default function CoachingStudio() {
 
       {/* Coach Assignment */}
       <CoachAssignmentPanel />
+
+      {/* Coach Registration */}
+      <CoachRegistrationPanel />
 
       {/* Coach Performance */}
       <Card className="bg-slate-900 border-slate-700">

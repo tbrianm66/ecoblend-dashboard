@@ -6,8 +6,9 @@
  *        coach feedback, 12-week PRL chart, AI risk alerts
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
+import CoachingOnboardingModal from "@/components/CoachingOnboardingModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -96,8 +97,21 @@ export default function CoachingFounder() {
   const [newMetric, setNewMetric] = useState("");
   const [showAddTask, setShowAddTask] = useState(false);
   const [expandedInsight, setExpandedInsight] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   const utils = trpc.useUtils();
+
+  // Check if this founder has completed onboarding
+  const { data: onboardingState } = trpc.coaching.onboarding.getState.useQuery(
+    { founderId: String(FOUNDER_ID) },
+    { retry: false }
+  );
+
+  useEffect(() => {
+    if (onboardingState !== undefined && !onboardingState?.onboardingCompleted) {
+      setShowOnboarding(true);
+    }
+  }, [onboardingState]);
 
   const { data: dashboard, isLoading } = trpc.coaching.dashboard.founderDashboard.useQuery(
     { founderId: FOUNDER_ID },
@@ -458,6 +472,17 @@ export default function CoachingFounder() {
           </CardContent>
         </Card>
       )}
+
+      {/* Onboarding Modal — shown on first login if onboarding not yet complete */}
+      <CoachingOnboardingModal
+        founderId={String(FOUNDER_ID)}
+        founderName="Founder"
+        open={showOnboarding}
+        onClose={() => {
+          setShowOnboarding(false);
+          utils.coaching.onboarding.getState.invalidate();
+        }}
+      />
     </div>
   );
 }

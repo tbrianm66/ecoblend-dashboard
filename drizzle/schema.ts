@@ -6524,3 +6524,17 @@ export const coachingCommitmentTemplates = mysqlTable("coaching_commitment_templ
 });
 export type CoachingCommitmentTemplate = typeof coachingCommitmentTemplates.$inferSelect;
 export type InsertCoachingCommitmentTemplate = typeof coachingCommitmentTemplates.$inferInsert;
+
+// ── Sprint 79: Coaching Onboarding State ─────────────────────────────────────
+export const coachingOnboardingState = mysqlTable("coaching_onboarding_state", {
+  id: int("id").autoincrement().primaryKey(),
+  founderId: varchar("founder_id", { length: 255 }).notNull().unique(),
+  currentVrlStage: int("current_vrl_stage").notNull().default(1),
+  onboardingCompleted: boolean("onboarding_completed").notNull().default(false),
+  templateApplied: boolean("template_applied").notNull().default(false),
+  completedAt: bigint("completed_at", { mode: "number" }),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
+});
+export type CoachingOnboardingState = typeof coachingOnboardingState.$inferSelect;
+export type InsertCoachingOnboardingState = typeof coachingOnboardingState.$inferInsert;

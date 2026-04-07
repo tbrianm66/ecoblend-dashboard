@@ -22,6 +22,7 @@ import {
   coachingInsights,
   coachingAssignments,
   coachingCommitmentTemplates,
+  coachingOnboardingState,
   founders,
   ventures,
 } from "../drizzle/schema";
@@ -1237,6 +1238,182 @@ const templatesRouter = router({
     }),
 });
 
+// ── Sprint 79: Onboarding Router ─────────────────────────────────────────────
+const onboardingRouter = router({
+  getState: protectedProcedure
+    .input(z.object({ founderId: z.string() }))
+    .query(async ({ input }) => {
+      const db = getDb();
+      const rows = await db
+        .select()
+        .from(coachingOnboardingState)
+        .where(eq(coachingOnboardingState.founderId, input.founderId))
+        .limit(1);
+      return rows[0] ?? null;
+    }),
+
+  complete: protectedProcedure
+    .input(z.object({
+      founderId: z.string(),
+      vrlStage: z.number().int().min(1).max(9),
+      autoApplyTemplates: z.boolean().default(true),
+    }))
+    .mutation(async ({ input }) => {
+      const db = getDb();
+      const now = Date.now();
+      const existing = await db
+        .select()
+        .from(coachingOnboardingState)
+        .where(eq(coachingOnboardingState.founderId, input.founderId))
+        .limit(1);
+      if (existing[0]) {
+        await db
+          .update(coachingOnboardingState)
+          .set({ currentVrlStage: input.vrlStage, onboardingCompleted: true, completedAt: now, updatedAt: now })
+          .where(eq(coachingOnboardingState.founderId, input.founderId));
+      } else {
+        await db.insert(coachingOnboardingState).values({
+          founderId: input.founderId,
+          currentVrlStage: input.vrlStage,
+          onboardingCompleted: true,
+          templateApplied: false,
+          completedAt: now,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+      let templatesApplied = 0;
+      if (input.autoApplyTemplates) {
+        const templates = await db
+          .select()
+          .from(coachingCommitmentTemplates)
+          .where(and(
+            eq(coachingCommitmentTemplates.vrlStage, input.vrlStage),
+            eq(coachingCommitmentTemplates.isActive, true),
+          ));
+        const weekStart = new Date();
+        weekStart.setHours(0, 0, 0, 0);
+        weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
+        for (const t of templates) {
+          await db.insert(coachingCommitments).values({
+            id: randomUUID(),
+            founderId: parseInt(input.founderId) || 0,
+            ventureId: null,
+            week: weekStart,
+            task: t.title,
+            metric: t.metric || null,
+            status: "pending",
+            coachVerified: false,
+          });
+          templatesApplied++;
+        }
+        await db
+          .update(coachingOnboardingState)
+          .set({ templateApplied: true, updatedAt: Date.now() })
+          .where(eq(coachingOnboardingState.founderId, input.founderId));
+      }
+      return { success: true, vrlStage: input.vrlStage, templatesApplied };
+    }),
+});
+
+// ── Sprint 79: Digest Router ──────────────────────────────────────────────────
+const digestRouter = router({
+  sendWeeklyDigest: protectedProcedure
+    .mutation(async () => {
+      const db = getDb();
+      const { notifyOwner } = await import("./_core/notification");
+      const allFounders = await db.select().from(founders);
+      const rows: string[] = [];
+      for (const f of allFounders) {
+        const prlRows = await db
+          .select()
+          .from(coachingPrl)
+          .where(eq(coachingPrl.founderId, f.id))
+          .orderBy(desc(coachingPrl.week))
+          .limit(2);
+        if (prlRows.length === 0) continue;
+        const latest = prlRows[0];
+        const prev = prlRows[1];
+        const delta = prev
+          ? (parseFloat(latest.score as unknown as string) - parseFloat(prev.score as unknown as string)).toFixed(1)
+          : "N/A";
+        const deltaStr = delta !== "N/A" ? (parseFloat(delta) >= 0 ? `+${delta}` : delta) : delta;
+        rows.push(`• ${f.name} (${f.ventureId}) | PRL: ${parseFloat(latest.score as unknown as string).toFixed(0)} | Risk: ${latest.riskLevel} | Trend: ${latest.trend} | WoW: ${deltaStr}`);
+      }
+      if (rows.length === 0) return { sent: false, reason: "No PRL data available" };
+      const weekStr = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+      const content = `Weekly PRL Digest — ${weekStr}\n\n${rows.join("\n")}\n\nTotal founders tracked: ${rows.length}`;
+      const sent = await notifyOwner({ title: `📊 Weekly PRL Digest — ${weekStr}`, content });
+      return { sent, foundersReported: rows.length, weekOf: weekStr };
+    }),
+});
+
+// ── Sprint 79: Coach Registration Router ─────────────────────────────────────
+const coachRegistrationRouter = router({
+  register: protectedProcedure
+    .input(z.object({
+      name: z.string().min(1).max(128),
+      type: z.enum(["executive", "technical", "commercial", "wellbeing", "specialist"]),
+      bio: z.string().optional(),
+      hourlyRate: z.number().min(0).optional(),
+      specialisms: z.array(z.string()).optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = getDb();
+      const id = randomUUID();
+      await db.insert(coachingCoaches).values({
+        id,
+        name: input.name,
+        type: input.type,
+        bio: input.bio || null,
+        hourlyRate: input.hourlyRate ? input.hourlyRate.toString() : null,
+        specialisms: input.specialisms ? JSON.stringify(input.specialisms) : null,
+        isActive: true,
+      });
+      return { id, name: input.name };
+    }),
+
+  update: protectedProcedure
+    .input(z.object({
+      id: z.string(),
+      name: z.string().min(1).max(128).optional(),
+      bio: z.string().optional(),
+      hourlyRate: z.number().min(0).optional(),
+      specialisms: z.array(z.string()).optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = getDb();
+      const { id, ...rest } = input;
+      const updates: Record<string, unknown> = {};
+      if (rest.name) updates.name = rest.name;
+      if (rest.bio !== undefined) updates.bio = rest.bio;
+      if (rest.hourlyRate !== undefined) updates.hourlyRate = rest.hourlyRate.toString();
+      if (rest.specialisms !== undefined) updates.specialisms = JSON.stringify(rest.specialisms);
+      await db.update(coachingCoaches).set(updates).where(eq(coachingCoaches.id, id));
+      return { success: true };
+    }),
+
+  deactivate: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ input }) => {
+      const db = getDb();
+      await db.update(coachingCoaches).set({ isActive: false }).where(eq(coachingCoaches.id, input.id));
+      return { success: true };
+    }),
+
+  list: protectedProcedure
+    .input(z.object({ includeInactive: z.boolean().default(false) }))
+    .query(async ({ input }) => {
+      const db = getDb();
+      const rows = await db
+        .select()
+        .from(coachingCoaches)
+        .where(input.includeInactive ? undefined : eq(coachingCoaches.isActive, true))
+        .orderBy(asc(coachingCoaches.name));
+      return rows;
+    }),
+});
+
 export const coachingRouter = router({
   coaches: coachesRouter,
   commitments: commitmentsRouter,
@@ -1247,4 +1424,7 @@ export const coachingRouter = router({
   dashboard: dashboardRouter,
   assignments: assignmentsRouter,
   templates: templatesRouter,
+  onboarding: onboardingRouter,
+  digest: digestRouter,
+  coachRegistration: coachRegistrationRouter,
 });
