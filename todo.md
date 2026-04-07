@@ -1049,3 +1049,22 @@
 - [x] Add tRPC procedures: computeLeaderboard, getLeaderboard, getCoachTrend
 - [x] Add Coach Performance Leaderboard tab to Studio Dashboard (ranked table + sparklines)
 - [x] Vitest tests for Sprint 82
+
+## Sprint 83 — Automated Alert Scheduling
+- [ ] Add alert_schedule_log DB table (id, triggeredAt, foundersScanned, alertsGenerated, status)
+- [ ] Add tRPC procedures: alerts.scheduleRun, alerts.getScheduleLog
+- [ ] Add "Schedule Weekly Alerts" toggle and last-run status to Studio Dashboard
+- [ ] Vitest tests for Sprint 83
+
+## Sprint 84 — Progress Report Email Delivery
+- [ ] Add sentAt/status fields to founder_progress_reports (already present, wire delivery)
+- [ ] Add tRPC procedure: progressReports.sendToFounder (notifyOwner + update sentAt)
+- [ ] Add "Send to Founder" button on Progress Report in Founder Dashboard
+- [ ] Show delivery status (draft/ready/sent) badge on report list
+- [ ] Vitest tests for Sprint 84
+
+## Sprint 85 — Leaderboard Trend Sparklines
+- [ ] Add tRPC procedure: leaderboard.getCoachTrend (6-week composite score history)
+- [ ] Build SparklineChart component (inline SVG path, no external lib)
+- [ ] Add sparkline column to Coach Performance Leaderboard table
+- [ ] Vitest tests for Sprint 85

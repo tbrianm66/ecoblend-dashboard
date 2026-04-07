@@ -6609,3 +6609,58 @@ export const coachPerformanceSnapshots = mysqlTable("coach_performance_snapshots
 });
 export type CoachPerformanceSnapshot = typeof coachPerformanceSnapshots.$inferSelect;
 export type InsertCoachPerformanceSnapshot = typeof coachPerformanceSnapshots.$inferInsert;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Sprint 83 — Automated Alert Scheduling
+// ═══════════════════════════════════════════════════════════════════════════════
+export const alertScheduleLog = mysqlTable("alert_schedule_log", {
+  id:               varchar("id", { length: 64 }).primaryKey(),
+  triggeredAt:      timestamp("triggeredAt").defaultNow().notNull(),
+  triggeredBy:      mysqlEnum("triggeredBy", ["manual", "scheduled", "api"]).notNull().default("manual"),
+  foundersScanned:  int("foundersScanned").notNull().default(0),
+  alertsGenerated:  int("alertsGenerated").notNull().default(0),
+  alertsCritical:   int("alertsCritical").notNull().default(0),
+  alertsWarning:    int("alertsWarning").notNull().default(0),
+  alertsInfo:       int("alertsInfo").notNull().default(0),
+  durationMs:       int("durationMs"),
+  status:           mysqlEnum("status", ["success", "partial", "failed"]).notNull().default("success"),
+  errorMessage:     text("errorMessage"),
+  weekOf:           date("weekOf").notNull(),
+});
+export type AlertScheduleLog = typeof alertScheduleLog.$inferSelect;
+export type InsertAlertScheduleLog = typeof alertScheduleLog.$inferInsert;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Sprint 84 — Progress Report Email Delivery Log
+// ═══════════════════════════════════════════════════════════════════════════════
+export const reportDeliveryLog = mysqlTable("report_delivery_log", {
+  id:             varchar("id", { length: 64 }).primaryKey(),
+  reportId:       varchar("reportId", { length: 64 }).notNull(),
+  founderId:      int("founderId").notNull(),
+  sentAt:         timestamp("sentAt").defaultNow().notNull(),
+  sentBy:         varchar("sentBy", { length: 128 }),
+  channel:        mysqlEnum("channel", ["notification", "email", "manual"]).notNull().default("notification"),
+  status:         mysqlEnum("status", ["sent", "failed", "pending"]).notNull().default("sent"),
+  errorMessage:   text("errorMessage"),
+  notificationId: varchar("notificationId", { length: 128 }),
+});
+export type ReportDeliveryLog = typeof reportDeliveryLog.$inferSelect;
+export type InsertReportDeliveryLog = typeof reportDeliveryLog.$inferInsert;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Sprint 85 — Coach Trend Cache (sparkline data for leaderboard)
+// ═══════════════════════════════════════════════════════════════════════════════
+export const coachTrendCache = mysqlTable("coach_trend_cache", {
+  id:             varchar("id", { length: 64 }).primaryKey(),
+  coachId:        varchar("coachId", { length: 64 }).notNull(),
+  coachName:      varchar("coachName", { length: 256 }).notNull(),
+  sparklineData:  json("sparklineData").notNull(),
+  lastUpdated:    timestamp("lastUpdated").defaultNow().notNull(),
+  weekCount:      int("weekCount").notNull().default(0),
+  minScore:       decimal("minScore", { precision: 5, scale: 2 }),
+  maxScore:       decimal("maxScore", { precision: 5, scale: 2 }),
+  latestScore:    decimal("latestScore", { precision: 5, scale: 2 }),
+  trendDirection: mysqlEnum("trendDirection", ["improving", "declining", "stable"]).notNull().default("stable"),
+});
+export type CoachTrendCache = typeof coachTrendCache.$inferSelect;
+export type InsertCoachTrendCache = typeof coachTrendCache.$inferInsert;

@@ -15,7 +15,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, LineChart, Line, ReferenceLine, Cell
 } from "recharts";
-import { Loader2, TrendingUp, TrendingDown, Minus, AlertTriangle, Users, Star, UserPlus, X, Check, Mail, PlusCircle, Bell, Trophy, RefreshCw } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, Minus, AlertTriangle, Users, Star, UserPlus, X, Check, Mail, PlusCircle, Bell, Trophy, RefreshCw, Calendar, Send, BarChart2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -428,6 +428,37 @@ export default function CoachingStudio() {
     onSuccess: () => utils.coaching.alerts.summary.invalidate(),
   });
 
+  // Sprint 83: Alert Schedule Log
+  const { data: scheduleLog = [], refetch: refetchLog } = trpc.coaching.alertScheduling.getLog.useQuery({ limit: 5 });
+  const runScheduled = trpc.coaching.alertScheduling.runScheduled.useMutation({
+    onSuccess: (data) => {
+      refetchLog();
+      utils.coaching.alerts.summary.invalidate();
+      toast.success(`Alert engine ran: ${data.alertsGenerated} alerts generated for ${data.foundersScanned} founders (${data.durationMs}ms)`);
+    },
+    onError: () => toast.error("Alert engine failed"),
+  });
+
+  // Sprint 84: Report Delivery
+  const { data: reportList = [] } = trpc.coaching.reportDelivery.listWithStatus.useQuery({ limit: 10 });
+  const sendReport = trpc.coaching.reportDelivery.sendToFounder.useMutation({
+    onSuccess: (data) => {
+      utils.coaching.reportDelivery.listWithStatus.invalidate();
+      toast.success(`Report sent to ${data.founderName}`);
+    },
+    onError: () => toast.error("Failed to send report"),
+  });
+
+  // Sprint 85: Leaderboard Sparklines
+  const { data: sparklines = [] } = trpc.coaching.leaderboardTrend.getSparklines.useQuery({});
+  const computeSparklines = trpc.coaching.leaderboardTrend.computeSparklines.useMutation({
+    onSuccess: (data) => {
+      utils.coaching.leaderboardTrend.getSparklines.invalidate();
+      toast.success(`Sparklines computed for ${data.computed} coaches`);
+    },
+    onError: () => toast.error("Failed to compute sparklines"),
+  });
+
   // Sprint 82: Coach Performance Leaderboard
   const { data: leaderboard = [] } = trpc.coaching.leaderboard.get.useQuery({ limit: 10 });
   const computeLeaderboard = trpc.coaching.leaderboard.compute.useMutation({
@@ -801,6 +832,207 @@ export default function CoachingStudio() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Sprint 83: Alert Schedule Log */}
+      <Card className="bg-slate-900 border-slate-700">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base text-white flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-green-400" />
+              Alert Schedule Log
+            </CardTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 text-xs border-green-600 text-green-300 hover:bg-green-900/30"
+              onClick={() => runScheduled.mutate({ triggeredBy: "manual" })}
+              disabled={runScheduled.isPending}
+            >
+              {runScheduled.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+              Run Now
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {scheduleLog.length === 0 ? (
+            <div className="text-center py-6 text-slate-500 text-sm">No scheduled runs yet. Click "Run Now" to trigger the alert engine.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-slate-700">
+                    <th className="text-left py-2 px-3 text-slate-400">Triggered</th>
+                    <th className="text-left py-2 px-3 text-slate-400">By</th>
+                    <th className="text-right py-2 px-3 text-slate-400">Scanned</th>
+                    <th className="text-right py-2 px-3 text-slate-400">Alerts</th>
+                    <th className="text-right py-2 px-3 text-slate-400">Critical</th>
+                    <th className="text-right py-2 px-3 text-slate-400">Duration</th>
+                    <th className="text-left py-2 px-3 text-slate-400">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {scheduleLog.map((log) => (
+                    <tr key={log.id} className="border-b border-slate-800">
+                      <td className="py-2 px-3 text-slate-300">{new Date(log.triggeredAt).toLocaleString()}</td>
+                      <td className="py-2 px-3">
+                        <span className="capitalize text-slate-400">{log.triggeredBy}</span>
+                      </td>
+                      <td className="py-2 px-3 text-right text-slate-300">{log.foundersScanned}</td>
+                      <td className="py-2 px-3 text-right text-slate-300">{log.alertsGenerated}</td>
+                      <td className="py-2 px-3 text-right">
+                        <span className={log.alertsCritical > 0 ? "text-red-400 font-bold" : "text-slate-500"}>{log.alertsCritical}</span>
+                      </td>
+                      <td className="py-2 px-3 text-right text-slate-400">{log.durationMs ? `${log.durationMs}ms` : "—"}</td>
+                      <td className="py-2 px-3">
+                        <span className={`px-1.5 py-0.5 rounded text-xs font-semibold ${
+                          log.status === "success" ? "bg-green-900/60 text-green-300" :
+                          log.status === "failed" ? "bg-red-900/60 text-red-300" :
+                          "bg-amber-900/60 text-amber-300"
+                        }`}>{log.status}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Sprint 84: Progress Report Delivery */}
+      <Card className="bg-slate-900 border-slate-700">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base text-white flex items-center gap-2">
+            <Send className="w-4 h-4 text-blue-400" />
+            Progress Report Delivery
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {reportList.length === 0 ? (
+            <div className="text-center py-6 text-slate-500 text-sm">No progress reports generated yet. Use the Founder Dashboard to generate reports.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-slate-700">
+                    <th className="text-left py-2 px-3 text-slate-400">Founder</th>
+                    <th className="text-left py-2 px-3 text-slate-400">Period</th>
+                    <th className="text-left py-2 px-3 text-slate-400">Generated</th>
+                    <th className="text-left py-2 px-3 text-slate-400">Status</th>
+                    <th className="text-right py-2 px-3 text-slate-400">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reportList.map((report) => (
+                    <tr key={report.id} className="border-b border-slate-800">
+                      <td className="py-2 px-3 text-slate-300">Founder #{report.founderId}</td>
+                      <td className="py-2 px-3 text-slate-400">{report.periodStart} → {report.periodEnd}</td>
+                      <td className="py-2 px-3 text-slate-400">{new Date(report.generatedAt).toLocaleDateString()}</td>
+                      <td className="py-2 px-3">
+                        <span className={`px-1.5 py-0.5 rounded text-xs font-semibold ${
+                          report.status === "sent" ? "bg-green-900/60 text-green-300" :
+                          report.status === "ready" ? "bg-blue-900/60 text-blue-300" :
+                          "bg-slate-700 text-slate-400"
+                        }`}>{report.status}</span>
+                      </td>
+                      <td className="py-2 px-3 text-right">
+                        {report.status !== "sent" && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="gap-1 text-xs text-blue-300 hover:text-blue-200 h-6 px-2"
+                            onClick={() => sendReport.mutate({ reportId: report.id, sentBy: "studio" })}
+                            disabled={sendReport.isPending}
+                          >
+                            <Send className="w-3 h-3" /> Send
+                          </Button>
+                        )}
+                        {report.status === "sent" && (
+                          <span className="text-xs text-green-400">✓ Sent {report.sentAt ? new Date(report.sentAt).toLocaleDateString() : ""}</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Sprint 85: Leaderboard Trend Sparklines */}
+      <Card className="bg-slate-900 border-slate-700">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base text-white flex items-center gap-2">
+              <BarChart2 className="w-4 h-4 text-purple-400" />
+              Coach Score Trends (6-Week Sparklines)
+            </CardTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 text-xs border-purple-600 text-purple-300 hover:bg-purple-900/30"
+              onClick={() => computeSparklines.mutate({})}
+              disabled={computeSparklines.isPending}
+            >
+              {computeSparklines.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+              Refresh Sparklines
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {sparklines.length === 0 ? (
+            <div className="text-center py-6 text-slate-500 text-sm">No sparkline data yet. Compute the leaderboard first, then click "Refresh Sparklines".</div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {sparklines.map((s) => {
+                const data = (s.sparklineData as Array<{ week: string; score: number }>) || [];
+                const latest = parseFloat(s.latestScore as unknown as string);
+                const min = parseFloat(s.minScore as unknown as string);
+                const max = parseFloat(s.maxScore as unknown as string);
+                const range = max - min || 1;
+                const points = data.map((d, i) => {
+                  const x = (i / Math.max(data.length - 1, 1)) * 100;
+                  const y = 40 - ((d.score - min) / range) * 36;
+                  return `${x},${y}`;
+                }).join(" ");
+                return (
+                  <div key={s.id} className="p-3 rounded-lg bg-slate-800 border border-slate-700">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <p className="text-sm font-medium text-white">{s.coachName}</p>
+                        <p className="text-xs text-slate-400">{s.weekCount} weeks tracked</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold" style={{ color: getRagColor(latest) }}>{latest.toFixed(1)}</p>
+                        <span className={`text-xs ${
+                          s.trendDirection === "improving" ? "text-green-400" :
+                          s.trendDirection === "declining" ? "text-red-400" :
+                          "text-amber-400"
+                        }`}>
+                          {s.trendDirection === "improving" ? "↑" : s.trendDirection === "declining" ? "↓" : "→"} {s.trendDirection}
+                        </span>
+                      </div>
+                    </div>
+                    {data.length > 1 && (
+                      <svg viewBox="0 0 100 44" className="w-full h-10" preserveAspectRatio="none">
+                        <polyline
+                          points={points}
+                          fill="none"
+                          stroke={s.trendDirection === "improving" ? "#22c55e" : s.trendDirection === "declining" ? "#ef4444" : "#f59e0b"}
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </CardContent>
