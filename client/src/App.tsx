@@ -63,6 +63,9 @@ import SpinOutBlueprint from "./pages/SpinOutBlueprint";
 import CulturalReadiness from "./pages/CulturalReadiness";
 import InvestmentModule from "./pages/InvestmentModule";
 import EcoraceLab from "./pages/EcoraceLab";
+import CoachingFounder from "./pages/CoachingFounder";
+import CoachingCoach from "./pages/CoachingCoach";
+import CoachingStudio from "./pages/CoachingStudio";
 import InvestorDataRoom from "./pages/InvestorDataRoom";
 import IpIntelligence from "./pages/IpIntelligence";
 import PlaybookPortal from "./pages/PlaybookPortal";
@@ -128,6 +131,9 @@ function Router() {
       <Route path="/cultural-readiness" component={CulturalReadiness} />
       <Route path="/investment-module" component={InvestmentModule} />
       <Route path="/ecorace-lab" component={EcoraceLab} />
+      <Route path="/coaching" component={CoachingFounder} />
+      <Route path="/coaching-coach" component={CoachingCoach} />
+      <Route path="/coaching-studio" component={CoachingStudio} />
           <Route path="/playbook-portal" component={PlaybookPortal} />
       <Route path="/investor-data-room" component={InvestorDataRoom} />
           <Route path="/ip-intelligence" component={IpIntelligence} />

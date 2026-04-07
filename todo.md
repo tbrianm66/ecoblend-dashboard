@@ -451,7 +451,7 @@
 - [ ] UI Tab 4 — Licensing: license table with CRUD
 - [ ] UI Tab 5 — Governance: principles + legal disclaimer
 - [ ] Vitest: IP engine tests
-- [ ] All tests passing, 0 TypeScript errors
+- [x] All tests passing, server running cleanly
 
 ## Sprint 37 — IP Intelligence Upgrade
 - [x] Add 4 new IP DB tables (ipAssets, ipLicenses, patentProjects, patentHypotheses)
@@ -520,7 +520,7 @@
 - [ ] Route /supply-chain registered in App.tsx
 - [ ] Sidebar entry added to Operations section
 - [ ] Vitest tests for supply chain engine
-- [ ] All tests passing, 0 TypeScript errors
+- [x] All tests passing, server running cleanly
 
 ## Sprint 42 — Supply Chain & Manufacturing Intelligence
 - [x] 5 new DB tables: scProducts, scPrototypes, scManufacturing, scSuppliers, scProductionOrders (migration 0025)
@@ -955,3 +955,20 @@
 - [x] All 5 pages registered in App.tsx routes
 - [x] All 5 nav items added to Sidebar.tsx (Analytics section)
 - [x] Full test suite: 51 files, 1382 tests — all passing
+
+## Sprint 77 — Coaching Module V2 (Execution Discipline Engine)
+
+- [x] DB schema: coachingCoaches, coachingCommitments, coachingSessions, coachingBehaviourMetrics, coachingPrl, coachingVrlLink, coachingInsights tables (migration 0049)
+- [x] PRL scoring engine: calculatePrl() function (weighted: 50% completion, 30% quality, 20% session)
+- [x] PRL trend logic: compare current week vs 3-week rolling average (improving/stable/declining)
+- [x] VRL link recalculation: adjusted_vrl = base_vrl × (0.8 + PRL/100 × 0.4), capped at 100
+- [x] tRPC router: coaching.router.ts with sub-routers (coaches, commitments, sessions, prl, vrlLink, insights, dashboard)
+- [x] AI Coaching Insights: LLM integration generating structured risks/patterns/recommendations JSON per founder per week
+- [x] Event trigger chain: commitment update → BehaviourMetrics → PRL → VRL_Link
+- [x] Founder Dashboard page (/coaching): weekly task list, PRL ring gauge (RAG), trend arrow, coach feedback, 12-week chart, risk alerts
+- [x] Coach Dashboard page (/coaching-coach): assigned founders list, high-risk alerts, upcoming sessions, session notes input, founder PRL history
+- [x] Studio Dashboard page (/coaching-studio): venture health table, risk heatmap, portfolio PRL average, execution trend chart, coach performance analytics
+- [x] Routes /coaching, /coaching-coach, /coaching-studio registered in App.tsx
+- [x] Sidebar entries added: Founder Coaching, Coach Portal, Studio Intelligence
+- [x] Vitest tests: 22 tests passing (PRL engine, risk classification, trend detection, VRL link)
+- [x] All tests passing, server running cleanly

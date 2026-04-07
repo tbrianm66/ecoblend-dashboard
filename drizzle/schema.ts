@@ -6360,3 +6360,131 @@ export const vrlAssessments = mysqlTable("vrl_assessments", {
 });
 export type VrlAssessment = typeof vrlAssessments.$inferSelect;
 export type InsertVrlAssessment = typeof vrlAssessments.$inferInsert;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// COACHING MODULE V2 — Execution Discipline Engine (BEBUS-COACH-V2-001)
+// Architecture Pack: EcoBlendCoachingV2ManusArchitecturePack.docx
+// Tables created in FK dependency order per Section 2.2
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// coaching_coaches — coach profiles and availability
+export const coachingCoaches = mysqlTable("coaching_coaches", {
+  id:           varchar("id", { length: 64 }).primaryKey(),
+  name:         varchar("name", { length: 128 }).notNull(),
+  email:        varchar("email", { length: 320 }),
+  type:         mysqlEnum("type", ["execution", "strategy", "wellbeing"]).notNull().default("execution"),
+  rating:       decimal("rating", { precision: 3, scale: 2 }).default("0.00"), // 0.00 to 5.00
+  availability: json("availability"),  // schedule slots JSON
+  bio:          text("bio"),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:    timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CoachingCoach = typeof coachingCoaches.$inferSelect;
+export type InsertCoachingCoach = typeof coachingCoaches.$inferInsert;
+
+// coaching_commitments — weekly founder commitments with measurable success indicators
+export const coachingCommitments = mysqlTable("coaching_commitments", {
+  id:          varchar("id", { length: 64 }).primaryKey(),
+  founderId:   int("founderId").notNull(),  // FK → founders.id
+  ventureId:   varchar("ventureId", { length: 64 }),  // FK → ventures.id
+  week:        date("week").notNull(),  // ISO week start date (Monday)
+  task:        text("task").notNull(),
+  metric:      text("metric"),  // measurable success indicator
+  status:      mysqlEnum("status", ["pending", "complete", "missed", "delayed"]).notNull().default("pending"),
+  coachVerified: boolean("coachVerified").default(false),  // coach must verify before counting as complete
+  evidenceNote: text("evidenceNote"),  // evidence submitted by founder
+  createdAt:   timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:   timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CoachingCommitment = typeof coachingCommitments.$inferSelect;
+export type InsertCoachingCommitment = typeof coachingCommitments.$inferInsert;
+
+// coaching_sessions — logged coaching sessions with structured action items
+export const coachingSessions = mysqlTable("coaching_sessions", {
+  id:          varchar("id", { length: 64 }).primaryKey(),
+  coachId:     varchar("coachId", { length: 64 }).notNull(),  // FK → coaching_coaches.id
+  founderId:   int("founderId").notNull(),  // FK → founders.id
+  ventureId:   varchar("ventureId", { length: 64 }),
+  sessionDate: date("sessionDate").notNull(),
+  notes:       text("notes"),  // min 200 chars enforced in procedure
+  actions:     json("actions"),  // structured action items array
+  sessionType: mysqlEnum("sessionType", ["check_in", "deep_dive", "crisis", "review"]).default("check_in"),
+  durationMins: int("durationMins").default(60),
+  createdAt:   timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:   timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CoachingSession = typeof coachingSessions.$inferSelect;
+export type InsertCoachingSession = typeof coachingSessions.$inferInsert;
+
+// coaching_behaviour_metrics — weekly behavioural metrics per founder
+export const coachingBehaviourMetrics = mysqlTable("coaching_behaviour_metrics", {
+  id:                 varchar("id", { length: 64 }).primaryKey(),
+  founderId:          int("founderId").notNull(),  // FK → founders.id
+  ventureId:          varchar("ventureId", { length: 64 }),
+  week:               date("week").notNull(),  // ISO week start date
+  completionRate:     decimal("completionRate", { precision: 5, scale: 2 }).default("0.00"),  // 0.00 to 100.00
+  focusHours:         decimal("focusHours", { precision: 4, scale: 1 }).default("0.0"),  // hours per week
+  delayTime:          decimal("delayTime", { precision: 4, scale: 1 }).default("0.0"),  // avg days task delayed
+  missedCommitments:  int("missedCommitments").default(0),
+  totalCommitments:   int("totalCommitments").default(0),
+  completedCommitments: int("completedCommitments").default(0),
+  calculatedAt:       timestamp("calculatedAt").defaultNow().notNull(),
+});
+export type CoachingBehaviourMetric = typeof coachingBehaviourMetrics.$inferSelect;
+export type InsertCoachingBehaviourMetric = typeof coachingBehaviourMetrics.$inferInsert;
+
+// coaching_prl — Personal Readiness Level scores per founder per week
+// PRL = (0.4 × completion_rate) + (0.2 × focus_hours) - (0.2 × delay_time) - (0.2 × missed_commitments)
+export const coachingPrl = mysqlTable("coaching_prl", {
+  id:           varchar("id", { length: 64 }).primaryKey(),
+  founderId:    int("founderId").notNull(),  // FK → founders.id
+  ventureId:    varchar("ventureId", { length: 64 }),
+  week:         date("week").notNull(),
+  score:        decimal("score", { precision: 5, scale: 2 }).notNull().default("0.00"),  // 0.00 to 100.00
+  trend:        mysqlEnum("trend", ["improving", "stable", "declining"]).notNull().default("stable"),
+  riskLevel:    mysqlEnum("riskLevel", ["HIGH", "MEDIUM", "LOW"]).notNull().default("MEDIUM"),
+  // component scores for audit trail
+  completionComponent:  decimal("completionComponent", { precision: 5, scale: 2 }),
+  focusComponent:       decimal("focusComponent", { precision: 5, scale: 2 }),
+  delayPenalty:         decimal("delayPenalty", { precision: 5, scale: 2 }),
+  missedPenalty:        decimal("missedPenalty", { precision: 5, scale: 2 }),
+  calculatedAt: timestamp("calculatedAt").defaultNow().notNull(),
+});
+export type CoachingPrl = typeof coachingPrl.$inferSelect;
+export type InsertCoachingPrl = typeof coachingPrl.$inferInsert;
+
+// coaching_vrl_link — PRL-adjusted VRL execution score per venture
+// execution_score = PRL.score × prl_weight; adjusted_vrl = base_vrl + execution_score (capped at 100)
+export const coachingVrlLink = mysqlTable("coaching_vrl_link", {
+  id:             varchar("id", { length: 64 }).primaryKey(),
+  ventureId:      varchar("ventureId", { length: 64 }).notNull().unique(),  // FK → ventures.id
+  prlWeight:      decimal("prlWeight", { precision: 3, scale: 2 }).notNull().default("0.25"),  // configurable per venture, default 0.25
+  executionScore: decimal("executionScore", { precision: 5, scale: 2 }).default("0.00"),  // PRL-adjusted execution input
+  baseVrl:        decimal("baseVrl", { precision: 5, scale: 2 }).default("0.00"),  // base VRL before PRL adjustment
+  adjustedVrl:    decimal("adjustedVrl", { precision: 5, scale: 2 }).default("0.00"),  // resultant VRL score (capped at 100)
+  riskFlagged:    boolean("riskFlagged").default(false),  // true when PRL risk level is HIGH
+  updatedAt:      timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CoachingVrlLink = typeof coachingVrlLink.$inferSelect;
+export type InsertCoachingVrlLink = typeof coachingVrlLink.$inferInsert;
+
+// coaching_insights — AI-generated behavioural analysis per founder per week
+// Populated by LLM integration; stores structured risks, patterns, recommendations
+export const coachingInsights = mysqlTable("coaching_insights", {
+  id:              varchar("id", { length: 64 }).primaryKey(),
+  founderId:       int("founderId").notNull(),  // FK → founders.id
+  ventureId:       varchar("ventureId", { length: 64 }),
+  week:            date("week").notNull(),
+  prlScoreAtTime:  decimal("prlScoreAtTime", { precision: 5, scale: 2 }),
+  prlTrendAtTime:  varchar("prlTrendAtTime", { length: 20 }),
+  risks:           json("risks"),           // array of risk strings
+  patterns:        json("patterns"),        // array of pattern strings
+  recommendations: json("recommendations"), // array of recommendation strings
+  rawPayload:      json("rawPayload"),       // full input payload sent to LLM
+  rawResponse:     json("rawResponse"),     // full LLM response
+  generatedAt:     timestamp("generatedAt").defaultNow().notNull(),
+  retryCount:      int("retryCount").default(0),
+  status:          mysqlEnum("status", ["pending", "generated", "failed"]).default("pending"),
+});
+export type CoachingInsight = typeof coachingInsights.$inferSelect;
+export type InsertCoachingInsight = typeof coachingInsights.$inferInsert;
