@@ -15,11 +15,127 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
   AlertTriangle, Users, Calendar, CheckCircle2, Loader2,
-  TrendingUp, TrendingDown, Minus, Plus
+  TrendingUp, TrendingDown, Minus, Plus, BookTemplate, Zap
 } from "lucide-react";
 import { format } from "date-fns";
 
 const DEFAULT_COACH_ID = "coach-001"; // placeholder — replace with auth context
+
+// ── Commitment Templates Panel ─────────────────────────────────────────────────────
+function CommitmentTemplatesPanel({ founderId }: { founderId: number | null }) {
+  const [selectedStage, setSelectedStage] = useState<number>(1);
+  const [applying, setApplying] = useState(false);
+  const utils = trpc.useUtils();
+
+  const { data: templates = [], isLoading } = trpc.coaching.templates.list.useQuery(
+    { vrlStage: selectedStage },
+    { enabled: true }
+  );
+
+  const applyTemplate = trpc.coaching.templates.apply.useMutation({
+    onSuccess: (result) => {
+      toast.success(`Applied ${result.applied} commitment${result.applied !== 1 ? "s" : ""} from VRL Stage ${selectedStage} template`);
+      utils.coaching.commitments.list.invalidate();
+      utils.coaching.dashboard.coachDashboard.invalidate();
+      setApplying(false);
+    },
+    onError: (e) => {
+      toast.error(e.message);
+      setApplying(false);
+    },
+  });
+
+  const VRL_STAGES = [
+    { stage: 1, label: "Opportunity Discovery" },
+    { stage: 2, label: "Concept" },
+    { stage: 3, label: "Validation" },
+    { stage: 4, label: "Prototype" },
+  ];
+
+  return (
+    <Card className="bg-slate-900 border-slate-700">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm text-white flex items-center gap-2">
+            <BookTemplate className="w-4 h-4 text-amber-400" />
+            Weekly Commitment Templates
+          </CardTitle>
+          <Button
+            size="sm"
+            disabled={!founderId || applying || applyTemplate.isPending || templates.length === 0}
+            onClick={() => {
+              if (!founderId) { toast.error("Select a founder first"); return; }
+              setApplying(true);
+              applyTemplate.mutate({ founderId, vrlStage: selectedStage });
+            }}
+            className="bg-amber-600 hover:bg-amber-700 text-white text-xs gap-1"
+          >
+            {applyTemplate.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+            Apply to Founder
+          </Button>
+        </div>
+        <p className="text-xs text-slate-400 mt-1">
+          Pre-built commitment sets per VRL stage — apply in one click to onboard a founder onto a structured programme
+        </p>
+      </CardHeader>
+      <CardContent>
+        {/* Stage Selector */}
+        <div className="flex gap-2 mb-4 flex-wrap">
+          {VRL_STAGES.map((s) => (
+            <button
+              key={s.stage}
+              onClick={() => setSelectedStage(s.stage)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+                selectedStage === s.stage
+                  ? "bg-amber-600 border-amber-600 text-white"
+                  : "bg-transparent border-slate-600 text-slate-400 hover:border-amber-500 hover:text-amber-300"
+              }`}
+            >
+              Stage {s.stage} — {s.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Template List */}
+        {isLoading ? (
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-12 bg-slate-800 rounded-lg animate-pulse" />
+            ))}
+          </div>
+        ) : templates.length === 0 ? (
+          <p className="text-sm text-slate-500 text-center py-4">No templates for Stage {selectedStage}.</p>
+        ) : (
+          <div className="space-y-2">
+            {templates.map((t, i) => (
+              <div key={t.id} className="flex items-start gap-3 p-3 rounded-lg bg-slate-800 border border-slate-700">
+                <span className="w-5 h-5 rounded-full bg-amber-600/20 text-amber-400 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                  {i + 1}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-white">{t.taskTemplate}</p>
+                  {t.metricTemplate && (
+                    <p className="text-xs text-slate-400 mt-0.5">Metric: {t.metricTemplate}</p>
+                  )}
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-slate-700 text-slate-400 capitalize">{t.category}</span>
+                    <span className="text-xs text-slate-500">Priority {t.priority}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!founderId && (
+          <p className="text-xs text-amber-400/70 mt-3 text-center">
+            ⚠️ Select a founder from the list to enable the Apply button
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 function getRagColor(riskLevel: string | null) {
   if (riskLevel === "HIGH") return "#ef4444";
@@ -355,6 +471,9 @@ export default function CoachingCoach() {
               Select a founder from the list to view their details
             </div>
           )}
+
+          {/* Commitment Templates */}
+          <CommitmentTemplatesPanel founderId={selectedFounderId} />
 
           {/* Upcoming Sessions */}
           <Card className="bg-slate-900 border-slate-700">

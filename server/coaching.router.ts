@@ -20,6 +20,8 @@ import {
   coachingPrl,
   coachingVrlLink,
   coachingInsights,
+  coachingAssignments,
+  coachingCommitmentTemplates,
   founders,
   ventures,
 } from "../drizzle/schema";
@@ -1059,6 +1061,182 @@ const dashboardRouter = router({
   }),
 });
 
+// ── Coach Assignment Router ───────────────────────────────────────────────────
+const assignmentsRouter = router({
+  list: protectedProcedure
+    .input(z.object({ founderId: z.number().optional(), coachId: z.string().optional() }))
+    .query(async ({ input }) => {
+      const db = getDb();
+      const conditions: ReturnType<typeof eq>[] = [];
+      if (input.founderId) conditions.push(eq(coachingAssignments.founderId, input.founderId));
+      if (input.coachId) conditions.push(eq(coachingAssignments.coachId, input.coachId));
+      const rows = await db
+        .select()
+        .from(coachingAssignments)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(desc(coachingAssignments.createdAt));
+      // Enrich with coach and founder names
+      const coaches = await db.select().from(coachingCoaches);
+      const foundersAll = await db.select().from(founders);
+      const venturesAll = await db.select().from(ventures);
+      return rows.map((r) => ({
+        ...r,
+        coachName: coaches.find((c) => c.id === r.coachId)?.name ?? "Unknown",
+        founderName: foundersAll.find((f) => f.id === r.founderId)?.name ?? "Unknown",
+        ventureName: venturesAll.find((v) => v.id === r.ventureId)?.name ?? null,
+      }));
+    }),
+
+  assign: protectedProcedure
+    .input(z.object({
+      coachId: z.string(),
+      founderId: z.number(),
+      ventureId: z.string().optional(),
+      role: z.enum(["primary", "secondary", "specialist"]).default("primary"),
+      startDate: z.string(), // YYYY-MM-DD
+      notes: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = getDb();
+      const id = randomUUID();
+      await db.insert(coachingAssignments).values({
+        id,
+        coachId: input.coachId,
+        founderId: input.founderId,
+        ventureId: input.ventureId || null,
+        role: input.role,
+        startDate: input.startDate as unknown as Date,
+        notes: input.notes || null,
+      });
+      return { id };
+    }),
+
+  unassign: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ input }) => {
+      const db = getDb();
+      const today = new Date().toISOString().split("T")[0];
+      await db
+        .update(coachingAssignments)
+        .set({ endDate: today as unknown as Date })
+        .where(eq(coachingAssignments.id, input.id));
+      return { success: true };
+    }),
+
+  getActive: protectedProcedure
+    .input(z.object({ founderId: z.number() }))
+    .query(async ({ input }) => {
+      const db = getDb();
+      const rows = await db
+        .select()
+        .from(coachingAssignments)
+        .where(
+          and(
+            eq(coachingAssignments.founderId, input.founderId),
+            sql`${coachingAssignments.endDate} IS NULL`
+          )
+        )
+        .orderBy(asc(coachingAssignments.startDate));
+      const coaches = await db.select().from(coachingCoaches);
+      return rows.map((r) => ({
+        ...r,
+        coachName: coaches.find((c) => c.id === r.coachId)?.name ?? "Unknown",
+        coachType: coaches.find((c) => c.id === r.coachId)?.type ?? "execution",
+        coachRating: coaches.find((c) => c.id === r.coachId)?.rating ?? "0.00",
+      }));
+    }),
+});
+
+// ── Commitment Templates Router ───────────────────────────────────────────────
+const templatesRouter = router({
+  list: protectedProcedure
+    .input(z.object({ vrlStage: z.number().optional() }))
+    .query(async ({ input }) => {
+      const db = getDb();
+      const conditions = [eq(coachingCommitmentTemplates.isActive, true)];
+      if (input.vrlStage) conditions.push(eq(coachingCommitmentTemplates.vrlStage, input.vrlStage));
+      return db
+        .select()
+        .from(coachingCommitmentTemplates)
+        .where(and(...conditions))
+        .orderBy(asc(coachingCommitmentTemplates.vrlStage), asc(coachingCommitmentTemplates.priority));
+    }),
+
+  applyToFounder: protectedProcedure
+    .input(z.object({
+      founderId: z.number(),
+      ventureId: z.string().optional(),
+      vrlStage: z.number(),
+      week: z.string(), // YYYY-MM-DD (week start)
+      templateIds: z.array(z.string()).optional(), // if omitted, apply all for stage
+    }))
+    .mutation(async ({ input }) => {
+      const db = getDb();
+      // Fetch templates
+      const conditions = [
+        eq(coachingCommitmentTemplates.isActive, true),
+        eq(coachingCommitmentTemplates.vrlStage, input.vrlStage),
+      ];
+      const templates = await db
+        .select()
+        .from(coachingCommitmentTemplates)
+        .where(and(...conditions));
+      const toApply = input.templateIds
+        ? templates.filter((t) => input.templateIds!.includes(t.id))
+        : templates;
+      // Create commitments
+      const created: string[] = [];
+      for (const t of toApply) {
+        const id = randomUUID();
+        await db.insert(coachingCommitments).values({
+          id,
+          founderId: input.founderId,
+          ventureId: input.ventureId || null,
+          week: input.week as unknown as Date,
+          task: t.title,
+          metric: t.metric || null,
+          status: "pending",
+          coachVerified: false,
+        });
+        created.push(id);
+      }
+      return { created: created.length, commitmentIds: created };
+    }),
+
+  // PRL → VRL integration: get latest PRL for a venture to feed into VRL Scoring Engine
+  getPrlForVenture: protectedProcedure
+    .input(z.object({ ventureId: z.string() }))
+    .query(async ({ input }) => {
+      const db = getDb();
+      // Find founders linked to this venture via commitments or vrlLink
+      const vrlLinks = await db
+        .select()
+        .from(coachingVrlLink)
+        .where(eq(coachingVrlLink.ventureId, input.ventureId))
+        .orderBy(desc(coachingVrlLink.updatedAt))
+        .limit(1);
+      if (vrlLinks[0]) {
+        const prlRows = await db
+          .select()
+          .from(coachingPrl)
+          .where(eq(coachingPrl.founderId, vrlLinks[0].founderId))
+          .orderBy(desc(coachingPrl.week))
+          .limit(1);
+        if (prlRows[0]) {
+          return {
+            prlScore: parseFloat(prlRows[0].score as unknown as string),
+            riskLevel: prlRows[0].riskLevel,
+            trend: prlRows[0].trend,
+            week: prlRows[0].week,
+            adjustedVrl: parseFloat(vrlLinks[0].adjustedVrl as unknown as string),
+            baseVrl: parseFloat(vrlLinks[0].baseVrl as unknown as string),
+          };
+        }
+      }
+      return null;
+    }),
+});
+
 export const coachingRouter = router({
   coaches: coachesRouter,
   commitments: commitmentsRouter,
@@ -1067,4 +1245,6 @@ export const coachingRouter = router({
   vrlLink: vrlLinkRouter,
   insights: insightsRouter,
   dashboard: dashboardRouter,
+  assignments: assignmentsRouter,
+  templates: templatesRouter,
 });

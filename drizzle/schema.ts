@@ -6488,3 +6488,39 @@ export const coachingInsights = mysqlTable("coaching_insights", {
 });
 export type CoachingInsight = typeof coachingInsights.$inferSelect;
 export type InsertCoachingInsight = typeof coachingInsights.$inferInsert;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Sprint 78 — Coach Assignment & Commitment Templates
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// coaching_assignments — links coaches to founders/ventures
+export const coachingAssignments = mysqlTable("coaching_assignments", {
+  id:          varchar("id", { length: 64 }).primaryKey(),
+  coachId:     varchar("coachId", { length: 64 }).notNull(),   // FK → coaching_coaches.id
+  founderId:   int("founderId").notNull(),                      // FK → founders.id
+  ventureId:   varchar("ventureId", { length: 64 }),            // FK → ventures.id (optional)
+  role:        mysqlEnum("role", ["primary", "secondary", "specialist"]).notNull().default("primary"),
+  startDate:   date("startDate").notNull(),
+  endDate:     date("endDate"),                                  // null = active
+  notes:       text("notes"),
+  createdAt:   timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:   timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CoachingAssignment = typeof coachingAssignments.$inferSelect;
+export type InsertCoachingAssignment = typeof coachingAssignments.$inferInsert;
+
+// coaching_commitment_templates — pre-built commitment sets per VRL stage
+export const coachingCommitmentTemplates = mysqlTable("coaching_commitment_templates", {
+  id:                  varchar("id", { length: 64 }).primaryKey(),
+  vrlStage:            int("vrlStage").notNull(),                // 1–4 (maps to VRL stages)
+  title:               varchar("title", { length: 256 }).notNull(),
+  description:         text("description"),
+  category:            mysqlEnum("category", ["product", "market", "execution", "structural", "sustainability"]).notNull().default("execution"),
+  defaultDueOffsetDays: int("defaultDueOffsetDays").notNull().default(7), // days from week start
+  metric:              text("metric"),                           // measurable success indicator
+  priority:            mysqlEnum("priority", ["high", "medium", "low"]).notNull().default("medium"),
+  isActive:            boolean("isActive").notNull().default(true),
+  createdAt:           timestamp("createdAt").defaultNow().notNull(),
+});
+export type CoachingCommitmentTemplate = typeof coachingCommitmentTemplates.$inferSelect;
+export type InsertCoachingCommitmentTemplate = typeof coachingCommitmentTemplates.$inferInsert;

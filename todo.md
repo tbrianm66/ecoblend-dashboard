@@ -972,3 +972,27 @@
 - [x] Sidebar entries added: Founder Coaching, Coach Portal, Studio Intelligence
 - [x] Vitest tests: 22 tests passing (PRL engine, risk classification, trend detection, VRL link)
 - [x] All tests passing, server running cleanly
+
+## Sprint 78 — Coaching Module V2 Follow-Up (PRL-VRL Integration, Coach Assignment, Templates)
+
+### Step 1 — PRL → VRL Scoring Engine Integration
+- [x] Backend: coaching.prl.getLatestForVenture procedure (returns latest PRL score for a venture)
+- [x] Backend: coaching.vrlLink procedures for PRL-adjusted VRL score
+- [x] UI: VRL Analytics page — PRL Integration panel showing live PRL score with delta indicator
+- [x] UI: PRL-adjusted VRL score displayed alongside base VRL with gate status
+
+### Step 2 — Coach Assignment Flow
+- [x] DB: coaching_assignments table (coachId, founderId, ventureId, startDate, endDate, isActive)
+- [x] Backend: coaching.assignments.create procedure (link coach to venture/founder)
+- [x] Backend: coaching.assignments.deactivate procedure
+- [x] Backend: coaching.assignments.list procedure (list all active coach-venture pairs)
+- [x] UI: Studio Dashboard — Coach Assignment panel with venture dropdown, coach dropdown, assign/unassign buttons, active assignments table
+
+### Step 3 — Weekly Commitment Templates
+- [x] DB: coaching_commitment_templates table (vrlStage, taskTemplate, metricTemplate, category, priority)
+- [x] Seed: 5 commitment templates per VRL stage (Stages 1–4 = 20 templates total)
+- [x] Backend: coaching.templates.list procedure (filter by vrlStage)
+- [x] Backend: coaching.templates.apply procedure (bulk-creates commitments from template set)
+- [x] UI: Coach Portal — Commitment Templates panel with stage selector, template preview, one-click apply to selected founder
+- [x] 13 Vitest tests passing (PRL-VRL integration, assignment validation, template logic, end-to-end cycle)
+- [x] All tests passing, server running cleanly

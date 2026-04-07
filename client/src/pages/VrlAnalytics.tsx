@@ -8,7 +8,7 @@ import { trpc } from "@/lib/trpc";
 import { ventures as staticVentures } from "@/lib/data";
 import {
   TrendingUp, Calculator, Shield, FlaskConical, Briefcase,
-  ChevronDown, ChevronUp, Info, Sliders, RefreshCw
+  ChevronDown, ChevronUp, Info, Sliders, RefreshCw, BrainCircuit, AlertTriangle
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -497,6 +497,120 @@ function PortfolioComparison() {
   );
 }
 
+// ── PRL Integration Panel ────────────────────────────────────────────────────
+function PrlIntegrationPanel({ ventureId }: { ventureId: string }) {
+  const { data: prlData, isLoading } = trpc.coaching.templates.getPrlForVenture.useQuery(
+    { ventureId },
+    { enabled: !!ventureId }
+  );
+
+  const riskColor =
+    prlData?.riskLevel === "HIGH" ? "#ef4444" :
+    prlData?.riskLevel === "MEDIUM" ? "#f59e0b" : "#22c55e";
+
+  const trendIcon = prlData?.trend === "improving" ? "↑" : prlData?.trend === "declining" ? "↓" : "→";
+  const trendColor = prlData?.trend === "improving" ? "#22c55e" : prlData?.trend === "declining" ? "#ef4444" : "#6b7280";
+
+  if (isLoading) {
+    return (
+      <div className="vos-panel p-6 animate-pulse">
+        <div className="h-24 bg-gray-100 rounded-lg" />
+      </div>
+    );
+  }
+
+  if (!prlData) {
+    return (
+      <div className="vos-panel p-6">
+        <div className="flex items-center gap-2 mb-3">
+          <BrainCircuit size={16} style={{ color: "#8b5cf6" }} />
+          <h3 className="font-bold text-gray-900" style={{ fontFamily: "'Inter', sans-serif" }}>
+            PRL Execution Score
+          </h3>
+          <span className="text-xs px-2 py-0.5 rounded font-semibold ml-auto" style={{ background: "#8b5cf610", color: "#8b5cf6" }}>Coaching Module</span>
+        </div>
+        <div className="rounded-lg p-4 text-center" style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }}>
+          <AlertTriangle size={20} className="mx-auto mb-2" style={{ color: "#94a3b8" }} />
+          <p className="text-sm text-gray-500 mb-1">No PRL data for this venture</p>
+          <p className="text-xs text-gray-400">Assign a coach and log weekly commitments to activate PRL scoring</p>
+        </div>
+      </div>
+    );
+  }
+
+  const prlPct = Math.round(prlData.prlScore);
+  const adjustedDelta = prlData.adjustedVrl - prlData.baseVrl;
+
+  return (
+    <div className="vos-panel p-6">
+      <div className="flex items-center gap-2 mb-4">
+        <BrainCircuit size={16} style={{ color: "#8b5cf6" }} />
+        <h3 className="font-bold text-gray-900" style={{ fontFamily: "'Inter', sans-serif" }}>
+          PRL Execution Score
+        </h3>
+        <span className="text-xs px-2 py-0.5 rounded font-semibold ml-auto" style={{ background: "#8b5cf610", color: "#8b5cf6" }}>Coaching Module</span>
+      </div>
+
+      {/* PRL Ring Gauge */}
+      <div className="flex items-center gap-5 mb-5">
+        <div className="relative w-20 h-20 flex-shrink-0">
+          <svg viewBox="0 0 80 80" className="w-full h-full -rotate-90">
+            <circle cx="40" cy="40" r="32" fill="none" stroke="#f1f5f9" strokeWidth="8" />
+            <circle
+              cx="40" cy="40" r="32" fill="none"
+              stroke={riskColor}
+              strokeWidth="8"
+              strokeDasharray={`${2 * Math.PI * 32}`}
+              strokeDashoffset={`${2 * Math.PI * 32 * (1 - prlPct / 100)}`}
+              strokeLinecap="round"
+            />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-lg font-bold" style={{ color: riskColor, fontFamily: "'Inter', sans-serif" }}>{prlPct}</span>
+            <span className="text-xs text-gray-400">PRL</span>
+          </div>
+        </div>
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-sm font-semibold" style={{ color: riskColor }}>{prlData.riskLevel} RISK</span>
+            <span className="font-mono text-sm" style={{ color: trendColor }}>{trendIcon} {prlData.trend}</span>
+          </div>
+          <p className="text-xs text-gray-400 mb-2">Execution discipline score from coaching module</p>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500">Week:</span>
+            <span className="text-xs font-mono text-gray-700">{new Date(prlData.week).toLocaleDateString()}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* VRL Impact */}
+      <div className="rounded-lg p-4" style={{ background: "#f5f3ff", border: "1px solid #ddd6fe" }}>
+        <div className="text-xs font-semibold uppercase tracking-widest text-purple-500 mb-2">PRL → VRL Adjustment</div>
+        <div className="flex items-center gap-3">
+          <div className="text-center">
+            <div className="text-xs text-gray-400">Base VRL</div>
+            <div className="font-mono font-bold text-gray-700">{prlData.baseVrl.toFixed(2)}</div>
+          </div>
+          <span className="text-gray-400">→</span>
+          <div className="text-center">
+            <div className="text-xs text-gray-400">Adjusted VRL</div>
+            <div className="font-mono font-bold" style={{ color: "#8b5cf6" }}>{prlData.adjustedVrl.toFixed(2)}</div>
+          </div>
+          <div className="ml-auto text-right">
+            <div className="text-xs text-gray-400">Delta</div>
+            <div className="font-mono font-bold text-sm" style={{ color: adjustedDelta >= 0 ? "#22c55e" : "#ef4444" }}>
+              {adjustedDelta >= 0 ? "+" : ""}{adjustedDelta.toFixed(2)}
+            </div>
+          </div>
+        </div>
+        <p className="text-xs text-gray-400 mt-2">
+          Formula: Adjusted VRL = Base VRL × (0.8 + PRL/100 × 0.4), capped at 100
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function VrlAnalytics() {
   const dbVentures = staticVentures.filter(v => !v.isInternalLab);
@@ -617,6 +731,7 @@ export default function VrlAnalytics() {
 
             <div className="space-y-6">
               <VrlLevelIndicator currentLevel={score.vrlLevel} vrlScore={score.vrlScore} />
+              <PrlIntegrationPanel ventureId={selectedVentureId} />
               <ConfidencePanel
                 ventureId={selectedVentureId}
                 confidenceScore={score.confidenceScore}
