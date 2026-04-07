@@ -6779,3 +6779,57 @@ export const templateEffectivenessCache = mysqlTable("template_effectiveness_cac
 });
 export type TemplateEffectivenessCache = typeof templateEffectivenessCache.$inferSelect;
 export type InsertTemplateEffectivenessCache = typeof templateEffectivenessCache.$inferInsert;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Sprint 92 — Founder Notification Centre
+// ═══════════════════════════════════════════════════════════════════════════════
+export const founderNotifications = mysqlTable("founder_notifications", {
+  id:           varchar("id", { length: 64 }).primaryKey(),
+  ventureId:    varchar("ventureId", { length: 64 }).notNull(),
+  founderId:    varchar("founderId", { length: 64 }).notNull(),
+  type:         mysqlEnum("type", [
+    "alert_acknowledged",
+    "session_confirmed",
+    "session_rescheduled",
+    "session_declined",
+    "self_assessment_approved",
+    "self_assessment_rejected",
+    "leaderboard_rank_change",
+    "commitment_due",
+    "prl_score_updated",
+    "goal_updated",
+    "general",
+  ]).notNull().default("general"),
+  title:        varchar("title", { length: 255 }).notNull(),
+  body:         text("body").notNull(),
+  isRead:       boolean("isRead").notNull().default(false),
+  readAt:       timestamp("readAt"),
+  sourceId:     varchar("sourceId", { length: 64 }),
+  sourceType:   varchar("sourceType", { length: 64 }),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:    timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type FounderNotification = typeof founderNotifications.$inferSelect;
+export type InsertFounderNotification = typeof founderNotifications.$inferInsert;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Sprint 94 — PRL Goal Setting
+// ═══════════════════════════════════════════════════════════════════════════════
+export const prlGoals = mysqlTable("prl_goals", {
+  id:               varchar("id", { length: 64 }).primaryKey(),
+  ventureId:        varchar("ventureId", { length: 64 }).notNull(),
+  founderId:        varchar("founderId", { length: 64 }).notNull(),
+  coachId:          varchar("coachId", { length: 64 }).notNull(),
+  targetScore:      int("targetScore").notNull(),
+  targetDate:       date("targetDate").notNull(),
+  startScore:       int("startScore").notNull(),
+  currentScore:     int("currentScore").notNull(),
+  status:           mysqlEnum("status", ["active", "achieved", "missed", "cancelled"]).notNull().default("active"),
+  notes:            text("notes"),
+  achievedAt:       timestamp("achievedAt"),
+  progressPercent:  decimal("progressPercent", { precision: 5, scale: 2 }),
+  createdAt:        timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:        timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type PrlGoal = typeof prlGoals.$inferSelect;
+export type InsertPrlGoal = typeof prlGoals.$inferInsert;

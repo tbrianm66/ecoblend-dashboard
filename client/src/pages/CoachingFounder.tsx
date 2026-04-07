@@ -18,7 +18,7 @@ import {
   TrendingUp, TrendingDown, Minus, CheckCircle2, XCircle,
   Clock, AlertTriangle, Brain, Target, ChevronDown, Plus, Loader2,
   Bell, FileText, X, ClipboardList, BarChart3, Library, Star,
-  Trophy, CalendarPlus
+  Trophy, CalendarPlus, BellRing, CheckCheck, Flag, Crosshair
 } from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -822,6 +822,12 @@ export default function CoachingFounder() {
       {/* Sprint 90: Session Booking */}
       <SessionBookingCard />
 
+      {/* Sprint 92: Notification Centre */}
+      <NotificationCentreCard />
+
+      {/* Sprint 94: PRL Goal Progress */}
+      <PrlGoalCard />
+
       {/* Onboarding Modal — shown on first login if onboarding not yet complete */}
       <CoachingOnboardingModal
         founderId={String(FOUNDER_ID)}
@@ -1053,6 +1059,180 @@ function SessionBookingCard() {
               </div>
             ))}
           </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ── Sprint 92: Notification Centre Card ──────────────────────────────────────
+
+function NotificationCentreCard() {
+  const VENTURE_ID = "ecoblend";
+  const FOUNDER_ID_STR = String(1);
+
+  const { data: notifications, refetch } = trpc.coaching.notifications.list.useQuery(
+    { ventureId: VENTURE_ID, founderId: FOUNDER_ID_STR, limit: 20 },
+    { retry: false }
+  );
+  const { data: unreadData } = trpc.coaching.notifications.unreadCount.useQuery(
+    { ventureId: VENTURE_ID, founderId: FOUNDER_ID_STR },
+    { retry: false, refetchInterval: 30_000 }
+  );
+
+  const markRead = trpc.coaching.notifications.markRead.useMutation({
+    onSuccess: () => refetch(),
+  });
+  const markAllRead = trpc.coaching.notifications.markAllRead.useMutation({
+    onSuccess: () => { refetch(); toast.success("All notifications marked as read"); },
+  });
+
+  const unreadCount = unreadData?.count ?? 0;
+
+  const typeColor: Record<string, string> = {
+    alert_acknowledged: "text-amber-400",
+    session_confirmed: "text-green-400",
+    session_rescheduled: "text-blue-400",
+    session_declined: "text-red-400",
+    self_assessment_approved: "text-emerald-400",
+    self_assessment_rejected: "text-rose-400",
+    leaderboard_rank_change: "text-purple-400",
+    commitment_due: "text-orange-400",
+    prl_score_updated: "text-cyan-400",
+    goal_updated: "text-indigo-400",
+    general: "text-slate-400",
+  };
+
+  return (
+    <Card className="bg-slate-900 border-slate-700">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base font-semibold text-white flex items-center gap-2">
+            <BellRing className="w-4 h-4 text-amber-400" />
+            Notification Centre
+            {unreadCount > 0 && (
+              <span className="bg-amber-500 text-black text-xs font-bold px-1.5 py-0.5 rounded-full">
+                {unreadCount}
+              </span>
+            )}
+          </CardTitle>
+          {unreadCount > 0 && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-xs text-slate-400 hover:text-white gap-1"
+              onClick={() => markAllRead.mutate({ ventureId: VENTURE_ID, founderId: FOUNDER_ID_STR })}
+              disabled={markAllRead.isPending}
+            >
+              <CheckCheck className="w-3 h-3" />
+              Mark all read
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        {!notifications || notifications.length === 0 ? (
+          <p className="text-sm text-slate-500 text-center py-4">No notifications yet.</p>
+        ) : (
+          <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+            {notifications.map((n) => (
+              <div
+                key={n.id}
+                className={`flex items-start gap-3 p-3 rounded-lg border transition-colors cursor-pointer ${
+                  n.isRead
+                    ? "bg-slate-800/40 border-slate-700/50 opacity-60"
+                    : "bg-slate-800 border-slate-600 hover:border-slate-500"
+                }`}
+                onClick={() => { if (!n.isRead) markRead.mutate({ id: n.id }); }}
+              >
+                <Bell className={`w-4 h-4 mt-0.5 flex-shrink-0 ${typeColor[n.type] ?? "text-slate-400"}`} />
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm font-medium ${n.isRead ? "text-slate-400" : "text-white"}`}>{n.title}</p>
+                  <p className="text-xs text-slate-500 mt-0.5 truncate">{n.body}</p>
+                  <p className="text-xs text-slate-600 mt-1">{new Date(n.createdAt).toLocaleString()}</p>
+                </div>
+                {!n.isRead && (
+                  <div className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0 mt-1.5" />
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ── Sprint 94: PRL Goal Progress Card ────────────────────────────────────────
+
+function PrlGoalCard() {
+  const VENTURE_ID = "ecoblend";
+  const FOUNDER_ID_STR = String(1);
+
+  const { data: goal, refetch } = trpc.coaching.goals.get.useQuery(
+    { ventureId: VENTURE_ID, founderId: FOUNDER_ID_STR },
+    { retry: false }
+  );
+
+  if (!goal) {
+    return (
+      <Card className="bg-slate-900 border-slate-700">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-semibold text-white flex items-center gap-2">
+            <Crosshair className="w-4 h-4 text-indigo-400" />
+            PRL Goal
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-slate-500 text-center py-4">
+            No active PRL goal set. Ask your coach to set a target score and deadline.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const progress = goal.progressPercent ? parseFloat(goal.progressPercent as unknown as string) : 0;
+  const daysLeft = Math.ceil((new Date(goal.targetDate as unknown as string).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  const isOverdue = daysLeft < 0;
+  const statusColor = goal.status === "achieved" ? "text-green-400" : isOverdue ? "text-red-400" : "text-indigo-400";
+
+  return (
+    <Card className="bg-slate-900 border-slate-700">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base font-semibold text-white flex items-center gap-2">
+          <Crosshair className="w-4 h-4 text-indigo-400" />
+          PRL Goal
+          <span className={`text-xs font-normal ml-auto ${statusColor}`}>
+            {goal.status === "achieved" ? "✓ Achieved" : isOverdue ? "Overdue" : `${daysLeft}d remaining`}
+          </span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-slate-400">Start</span>
+          <span className="text-white font-mono">{goal.startScore}</span>
+          <span className="text-slate-400">→</span>
+          <span className="text-white font-mono">{goal.currentScore}</span>
+          <span className="text-slate-400">→</span>
+          <span className="text-indigo-300 font-bold font-mono">{goal.targetScore}</span>
+          <span className="text-slate-400">Target</span>
+        </div>
+        {/* Progress bar */}
+        <div className="w-full h-3 bg-slate-700 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-700 ${
+              goal.status === "achieved" ? "bg-green-500" : progress >= 75 ? "bg-indigo-500" : progress >= 40 ? "bg-amber-500" : "bg-red-500"
+            }`}
+            style={{ width: `${Math.min(100, progress)}%` }}
+          />
+        </div>
+        <div className="flex items-center justify-between text-xs text-slate-400">
+          <span>{progress.toFixed(1)}% progress to goal</span>
+          <span>Deadline: {new Date(goal.targetDate as unknown as string).toLocaleDateString()}</span>
+        </div>
+        {goal.notes && (
+          <p className="text-xs text-slate-500 italic border-t border-slate-700 pt-2">{goal.notes}</p>
         )}
       </CardContent>
     </Card>

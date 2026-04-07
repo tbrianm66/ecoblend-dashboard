@@ -33,6 +33,7 @@ import { alertsRouter, progressReportsRouter, leaderboardRouter } from "./coachi
 import { alertSchedulingRouter, reportDeliveryRouter, leaderboardTrendRouter } from "./coaching.sprint8385.router";
 import { selfAssessmentRouter, cohortBenchmarkRouter, commitmentTemplatesRouter } from "./coaching.sprint8688.router";
 import { leaderboardRouter as founderLeaderboardRouter, sessionRequestsRouter, templateEffectivenessRouter } from "./coaching.sprint8991.router";
+import { notificationsRouter, workloadRouter, goalsRouter } from "./coaching.sprint9294.router";
 
 // ── PRL Scoring Engine ────────────────────────────────────────────────────────
 
@@ -1443,4 +1444,7 @@ export const coachingRouter = router({
   founderLeaderboard: founderLeaderboardRouter,
   sessionRequests: sessionRequestsRouter,
   templateEffectiveness: templateEffectivenessRouter,
+  notifications: notificationsRouter,
+  workload: workloadRouter,
+  goals: goalsRouter,
 });

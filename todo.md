@@ -1108,3 +1108,36 @@
 - [ ] Add tRPC procedures: templateEffectiveness.compute, topTemplates
 - [ ] Add Top 5 Most Effective Templates panel on Studio Dashboard
 - [x] Vitest tests for Sprint 91
+
+## Sprint 92 — Founder Notification Centre
+- [x] Add founder_notifications DB table
+- [ ] Add tRPC procedures: notifications.list, notifications.markRead, notifications.markAllRead, notifications.create
+- [ ] Add Notification Centre feed panel on Founder Dashboard
+- [x] Vitest tests for Sprint 92
+
+## Sprint 93 — Coach Workload Dashboard
+- [x] Add tRPC procedure: workload.summary (no new table — queries existing tables)
+- [ ] Add Workload Summary panel to Studio Dashboard
+- [x] Vitest tests for Sprint 93
+
+## Sprint 94 — PRL Goal Setting
+- [x] Add prl_goals DB table
+- [ ] Add tRPC procedures: goals.set, goals.get, goals.list, goals.update, goals.delete
+- [ ] Add Progress-to-Goal indicator on Founder Dashboard
+- [x] Add Goal Management panel in Studio Dashboard
+- [x] Vitest tests for Sprint 94
+## Sprint 92 — Founder Notification Centre
+- [x] Add founder_notifications DB table
+- [ ] Add tRPC procedures: notifications.list, markRead, markAllRead, create
+- [ ] Add Notification Centre feed panel on Founder Dashboard
+- [x] Vitest tests for Sprint 92
+## Sprint 93 — Coach Workload Dashboard
+- [x] Add tRPC procedure: workload.summary
+- [ ] Add Workload Summary panel to Studio Dashboard
+- [x] Vitest tests for Sprint 93
+## Sprint 94 — PRL Goal Setting
+- [x] Add prl_goals DB table
+- [ ] Add tRPC procedures: goals.set, goals.get, goals.list, goals.update, goals.delete
+- [ ] Add Progress-to-Goal indicator on Founder Dashboard
+- [x] Add Goal Management panel in Studio Dashboard
+- [x] Vitest tests for Sprint 94

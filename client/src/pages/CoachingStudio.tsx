@@ -15,7 +15,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, LineChart, Line, ReferenceLine, Cell
 } from "recharts";
-import { Loader2, TrendingUp, TrendingDown, Minus, AlertTriangle, Users, Star, UserPlus, X, Check, Mail, PlusCircle, Bell, Trophy, RefreshCw, Calendar, Send, BarChart2, ClipboardList, Library } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, Minus, AlertTriangle, Users, Star, UserPlus, X, Check, Mail, PlusCircle, Bell, Trophy, RefreshCw, Calendar, Send, BarChart2, ClipboardList, Library, Briefcase, Crosshair, Flag } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -1139,6 +1139,34 @@ export default function CoachingStudio() {
           <TemplateEffectivenessPanel />
         </CardContent>
       </Card>
+
+      {/* Sprint 93: Coach Workload Dashboard */}
+      <Card className="bg-slate-900 border-slate-600">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base text-white flex items-center gap-2">
+            <Briefcase className="w-4 h-4 text-sky-400" />
+            Coach Workload Dashboard
+          </CardTitle>
+          <p className="text-xs text-slate-400">Active assignments, pending requests, and unreviewed assessments per coach</p>
+        </CardHeader>
+        <CardContent>
+          <CoachWorkloadPanel />
+        </CardContent>
+      </Card>
+
+      {/* Sprint 94: PRL Goal Management */}
+      <Card className="bg-slate-900 border-indigo-700">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base text-white flex items-center gap-2">
+            <Crosshair className="w-4 h-4 text-indigo-400" />
+            PRL Goal Management
+          </CardTitle>
+          <p className="text-xs text-slate-400">Set and track PRL targets for each founder</p>
+        </CardHeader>
+        <CardContent>
+          <PrlGoalManagementPanel />
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -1531,6 +1559,259 @@ function TemplateEffectivenessPanel() {
                     <p className="text-xs text-blue-400 mt-0.5">{completionRate.toFixed(1)}%</p>
                   </div>
                 </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Sprint 93: Coach Workload Panel ──────────────────────────────────────────
+
+function CoachWorkloadPanel() {
+  const { data, isLoading } = trpc.coaching.workload.summary.useQuery(undefined, { retry: false });
+
+  if (isLoading) return <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-sky-400" /></div>;
+
+  if (!data || data.coaches.length === 0) {
+    return <p className="text-sm text-slate-500 text-center py-4">No coach assignment data available yet.</p>;
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Portfolio totals */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: "Active Coaches", value: data.totals.totalCoaches, color: "text-sky-400" },
+          { label: "Active Assignments", value: data.totals.totalActiveAssignments, color: "text-green-400" },
+          { label: "Pending Requests", value: data.totals.totalPendingRequests, color: "text-amber-400" },
+          { label: "Unreviewed Assessments", value: data.totals.totalUnreviewedAssessments, color: "text-rose-400" },
+        ].map((stat) => (
+          <div key={stat.label} className="bg-slate-800 rounded-lg p-3 border border-slate-700">
+            <p className="text-xs text-slate-400 uppercase tracking-wider">{stat.label}</p>
+            <p className={`text-2xl font-bold mt-1 ${stat.color}`}>{stat.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Per-coach rows */}
+      <div className="space-y-2">
+        {data.coaches.map((coach) => {
+          const workloadScore = coach.activeFounderCount + coach.pendingSessionRequests * 0.5 + coach.unreviewedAssessments * 0.3;
+          const workloadColor = workloadScore > 8 ? "text-red-400" : workloadScore > 5 ? "text-amber-400" : "text-green-400";
+          return (
+            <div key={coach.coachId} className="flex items-center gap-4 p-3 bg-slate-800 rounded-lg border border-slate-700">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium text-white truncate">{coach.coachName}</p>
+                  <span className="text-xs text-slate-500 capitalize">{coach.coachType}</span>
+                </div>
+                <div className="flex items-center gap-4 mt-1 text-xs text-slate-400">
+                  <span className="flex items-center gap-1"><Users className="w-3 h-3" />{coach.activeFounderCount} founders</span>
+                  <span className="flex items-center gap-1"><Calendar className="w-3 h-3 text-amber-400" />{coach.pendingSessionRequests} pending</span>
+                  <span className="flex items-center gap-1"><ClipboardList className="w-3 h-3 text-rose-400" />{coach.unreviewedAssessments} unreviewed</span>
+                  {coach.highRiskFounders > 0 && (
+                    <span className="flex items-center gap-1 text-red-400"><AlertTriangle className="w-3 h-3" />{coach.highRiskFounders} high risk</span>
+                  )}
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-slate-500">Avg PRL</p>
+                <p className={`text-lg font-bold ${coach.avgPrl >= 70 ? "text-green-400" : coach.avgPrl >= 40 ? "text-amber-400" : "text-red-400"}`}>
+                  {coach.avgPrl}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-slate-500">Load</p>
+                <p className={`text-sm font-semibold ${workloadColor}`}>{workloadScore.toFixed(1)}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Sprint 94: PRL Goal Management Panel ─────────────────────────────────────
+
+function PrlGoalManagementPanel() {
+  const [showSetGoal, setShowSetGoal] = useState(false);
+  const [goalForm, setGoalForm] = useState({
+    ventureId: "",
+    founderId: "",
+    coachId: "",
+    targetScore: 70,
+    targetDate: "",
+    startScore: 50,
+    notes: "",
+  });
+
+  const { data: goals, refetch } = trpc.coaching.goals.list.useQuery(
+    { status: "active", limit: 50 },
+    { retry: false }
+  );
+
+  const setGoal = trpc.coaching.goals.set.useMutation({
+    onSuccess: () => {
+      toast.success("PRL goal set successfully");
+      setShowSetGoal(false);
+      setGoalForm({ ventureId: "", founderId: "", coachId: "", targetScore: 70, targetDate: "", startScore: 50, notes: "" });
+      refetch();
+    },
+    onError: () => toast.error("Failed to set goal"),
+  });
+
+  const cancelGoal = trpc.coaching.goals.cancel.useMutation({
+    onSuccess: () => { toast.success("Goal cancelled"); refetch(); },
+    onError: () => toast.error("Failed to cancel goal"),
+  });
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-slate-400">{goals?.length ?? 0} active goals across portfolio</p>
+        <Button
+          size="sm"
+          variant="outline"
+          className="gap-1.5 text-xs border-indigo-600 text-indigo-300 hover:bg-indigo-900/30"
+          onClick={() => setShowSetGoal(!showSetGoal)}
+        >
+          <Flag className="w-3.5 h-3.5" />
+          Set New Goal
+        </Button>
+      </div>
+
+      {showSetGoal && (
+        <div className="bg-slate-800 rounded-lg p-4 border border-indigo-700 space-y-3">
+          <p className="text-sm font-medium text-indigo-300">Set PRL Goal</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-slate-400 mb-1 block">Venture ID</label>
+              <Input
+                value={goalForm.ventureId}
+                onChange={(e) => setGoalForm({ ...goalForm, ventureId: e.target.value })}
+                placeholder="e.g. ecoblend"
+                className="bg-slate-700 border-slate-600 text-white text-xs h-8"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 mb-1 block">Founder ID</label>
+              <Input
+                value={goalForm.founderId}
+                onChange={(e) => setGoalForm({ ...goalForm, founderId: e.target.value })}
+                placeholder="e.g. 1"
+                className="bg-slate-700 border-slate-600 text-white text-xs h-8"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 mb-1 block">Coach ID</label>
+              <Input
+                value={goalForm.coachId}
+                onChange={(e) => setGoalForm({ ...goalForm, coachId: e.target.value })}
+                placeholder="Coach UUID"
+                className="bg-slate-700 border-slate-600 text-white text-xs h-8"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 mb-1 block">Target Score (1-100)</label>
+              <Input
+                type="number"
+                min={1}
+                max={100}
+                value={goalForm.targetScore}
+                onChange={(e) => setGoalForm({ ...goalForm, targetScore: parseInt(e.target.value) || 70 })}
+                className="bg-slate-700 border-slate-600 text-white text-xs h-8"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 mb-1 block">Start Score</label>
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                value={goalForm.startScore}
+                onChange={(e) => setGoalForm({ ...goalForm, startScore: parseInt(e.target.value) || 50 })}
+                className="bg-slate-700 border-slate-600 text-white text-xs h-8"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 mb-1 block">Target Date</label>
+              <Input
+                type="date"
+                value={goalForm.targetDate}
+                onChange={(e) => setGoalForm({ ...goalForm, targetDate: e.target.value })}
+                className="bg-slate-700 border-slate-600 text-white text-xs h-8"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs text-slate-400 mb-1 block">Notes (optional)</label>
+            <Textarea
+              value={goalForm.notes}
+              onChange={(e) => setGoalForm({ ...goalForm, notes: e.target.value })}
+              placeholder="Coaching context or milestones..."
+              className="bg-slate-700 border-slate-600 text-white text-xs"
+              rows={2}
+            />
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button size="sm" variant="ghost" className="text-xs" onClick={() => setShowSetGoal(false)}>Cancel</Button>
+            <Button
+              size="sm"
+              className="bg-indigo-700 hover:bg-indigo-600 text-white text-xs gap-1"
+              onClick={() => setGoal.mutate(goalForm)}
+              disabled={setGoal.isPending || !goalForm.ventureId || !goalForm.founderId || !goalForm.coachId || !goalForm.targetDate}
+            >
+              {setGoal.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Flag className="w-3 h-3" />}
+              Set Goal
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {!goals || goals.length === 0 ? (
+        <p className="text-sm text-slate-500 text-center py-4">No active goals set. Use "Set New Goal" to create the first one.</p>
+      ) : (
+        <div className="space-y-2">
+          {goals.map((goal) => {
+            const progress = goal.progressPercent ? parseFloat(goal.progressPercent as unknown as string) : 0;
+            const daysLeft = Math.ceil((new Date(goal.targetDate as unknown as string).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+            const isOverdue = daysLeft < 0;
+            return (
+              <div key={goal.id} className="flex items-center gap-4 p-3 bg-slate-800 rounded-lg border border-slate-700">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs text-slate-400 font-mono">{goal.ventureId}</span>
+                    <span className="text-xs text-slate-500">·</span>
+                    <span className="text-xs text-slate-400">Founder {goal.founderId}</span>
+                    <span className={`text-xs ml-auto ${isOverdue ? "text-red-400" : "text-slate-400"}`}>
+                      {isOverdue ? `${Math.abs(daysLeft)}d overdue` : `${daysLeft}d left`}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-500">{goal.currentScore}</span>
+                    <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${progress >= 75 ? "bg-indigo-500" : progress >= 40 ? "bg-amber-500" : "bg-red-500"}`}
+                        style={{ width: `${Math.min(100, progress)}%` }}
+                      />
+                    </div>
+                    <span className="text-xs text-indigo-300 font-bold">{goal.targetScore}</span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">{progress.toFixed(1)}% progress · deadline {new Date(goal.targetDate as unknown as string).toLocaleDateString()}</p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-slate-500 hover:text-red-400 text-xs"
+                  onClick={() => cancelGoal.mutate({ id: goal.id })}
+                  disabled={cancelGoal.isPending}
+                >
+                  <X className="w-3.5 h-3.5" />
+                </Button>
               </div>
             );
           })}
