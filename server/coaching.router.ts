@@ -32,6 +32,7 @@ import { randomUUID } from "crypto";
 import { alertsRouter, progressReportsRouter, leaderboardRouter } from "./coaching.sprint8082.router";
 import { alertSchedulingRouter, reportDeliveryRouter, leaderboardTrendRouter } from "./coaching.sprint8385.router";
 import { selfAssessmentRouter, cohortBenchmarkRouter, commitmentTemplatesRouter } from "./coaching.sprint8688.router";
+import { leaderboardRouter as founderLeaderboardRouter, sessionRequestsRouter, templateEffectivenessRouter } from "./coaching.sprint8991.router";
 
 // ── PRL Scoring Engine ────────────────────────────────────────────────────────
 
@@ -1439,4 +1440,7 @@ export const coachingRouter = router({
   selfAssessment: selfAssessmentRouter,
   cohortBenchmark: cohortBenchmarkRouter,
   commitmentTemplates: commitmentTemplatesRouter,
+  founderLeaderboard: founderLeaderboardRouter,
+  sessionRequests: sessionRequestsRouter,
+  templateEffectiveness: templateEffectivenessRouter,
 });

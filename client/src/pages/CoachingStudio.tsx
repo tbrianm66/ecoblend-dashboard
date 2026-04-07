@@ -1111,6 +1111,34 @@ export default function CoachingStudio() {
           <TemplateLibraryPanel />
         </CardContent>
       </Card>
+
+      {/* Sprint 90: Session Requests (Coach View) */}
+      <Card className="bg-slate-900 border-blue-700">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base text-white flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-blue-400" />
+            Session Requests
+          </CardTitle>
+          <p className="text-xs text-slate-400">Confirm, reschedule, or decline founder session requests</p>
+        </CardHeader>
+        <CardContent>
+          <SessionRequestsPanel />
+        </CardContent>
+      </Card>
+
+      {/* Sprint 91: Template Effectiveness Analytics */}
+      <Card className="bg-slate-900 border-purple-700">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base text-white flex items-center gap-2">
+            <BarChart2 className="w-4 h-4 text-purple-400" />
+            Template Effectiveness — Top 5
+          </CardTitle>
+          <p className="text-xs text-slate-400">Templates ranked by PRL uplift and commitment completion rate</p>
+        </CardHeader>
+        <CardContent>
+          <TemplateEffectivenessPanel />
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -1316,6 +1344,198 @@ function TemplateLibraryPanel() {
           </p>
         )}
       </div>
+    </div>
+  );
+}
+
+// ── Sprint 90: Session Requests Panel (Coach View) ────────────────────────────
+
+function SessionRequestsPanel() {
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [confirmedDate, setConfirmedDate] = useState("");
+  const [meetingLink, setMeetingLink] = useState("");
+  const [coachNotes, setCoachNotes] = useState("");
+  const [rescheduleId, setRescheduleId] = useState<string | null>(null);
+  const [rescheduleDate, setRescheduleDate] = useState("");
+
+  const { data: requests = [], refetch } = trpc.coaching.sessionRequests.list.useQuery({ role: "coach" });
+  const confirm = trpc.coaching.sessionRequests.confirm.useMutation({
+    onSuccess: () => { toast.success("Session confirmed"); setConfirmId(null); setConfirmedDate(""); setMeetingLink(""); setCoachNotes(""); refetch(); },
+    onError: () => toast.error("Failed to confirm session"),
+  });
+  const reschedule = trpc.coaching.sessionRequests.reschedule.useMutation({
+    onSuccess: () => { toast.success("Session rescheduled"); setRescheduleId(null); setRescheduleDate(""); refetch(); },
+    onError: () => toast.error("Failed to reschedule"),
+  });
+  const decline = trpc.coaching.sessionRequests.decline.useMutation({
+    onSuccess: () => { toast.success("Request declined"); refetch(); },
+    onError: () => toast.error("Failed to decline"),
+  });
+  const complete = trpc.coaching.sessionRequests.complete.useMutation({
+    onSuccess: () => { toast.success("Session marked as completed"); refetch(); },
+    onError: () => toast.error("Failed to mark complete"),
+  });
+
+  const statusColors: Record<string, string> = {
+    pending: "bg-amber-900 text-amber-300",
+    confirmed: "bg-green-900 text-green-300",
+    rescheduled: "bg-blue-900 text-blue-300",
+    cancelled: "bg-slate-700 text-slate-400",
+    completed: "bg-purple-900 text-purple-300",
+  };
+
+  if (requests.length === 0) {
+    return <p className="text-sm text-slate-500 text-center py-6">No session requests from founders yet.</p>;
+  }
+
+  return (
+    <div className="space-y-3">
+      {requests.map((req) => (
+        <div key={req.id} className="p-4 rounded-lg bg-slate-800 border border-slate-700">
+          <div className="flex items-start justify-between gap-3 mb-2">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${statusColors[req.status] ?? "bg-slate-700 text-slate-400"}`}>
+                  {req.status}
+                </span>
+                <span className="text-xs text-slate-400 capitalize">{req.sessionType.replace("_", " ")}</span>
+                <span className="text-xs text-slate-500 font-mono">{req.ventureId}</span>
+              </div>
+              {req.preferredDate && (
+                <p className="text-xs text-slate-400">Preferred: {new Date(req.preferredDate).toLocaleString()}</p>
+              )}
+              {req.founderNotes && <p className="text-xs text-slate-300 italic mt-1">"{req.founderNotes}"</p>}
+              {req.confirmedDate && (
+                <p className="text-xs text-green-400 mt-1">Confirmed: {new Date(req.confirmedDate).toLocaleString()}</p>
+              )}
+              {req.meetingLink && (
+                <a href={req.meetingLink} target="_blank" rel="noreferrer" className="text-xs text-blue-400 underline mt-1 block">Meeting link</a>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              {req.status === "pending" && (
+                <>
+                  <Button size="sm" className="bg-green-700 hover:bg-green-600 text-white text-xs h-7 px-2" onClick={() => setConfirmId(req.id)}>Confirm</Button>
+                  <Button size="sm" variant="outline" className="border-blue-600 text-blue-400 text-xs h-7 px-2" onClick={() => setRescheduleId(req.id)}>Reschedule</Button>
+                  <Button size="sm" variant="outline" className="border-red-700 text-red-400 text-xs h-7 px-2" onClick={() => decline.mutate({ requestId: req.id })} disabled={decline.isPending}>Decline</Button>
+                </>
+              )}
+              {req.status === "confirmed" && (
+                <Button size="sm" className="bg-purple-700 hover:bg-purple-600 text-white text-xs h-7 px-2" onClick={() => complete.mutate({ requestId: req.id })} disabled={complete.isPending}>Mark Done</Button>
+              )}
+            </div>
+          </div>
+          {confirmId === req.id && (
+            <div className="mt-3 p-3 rounded bg-green-950/30 border border-green-700 space-y-2">
+              <p className="text-xs font-semibold text-green-300">Confirm Session</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <input type="datetime-local" value={confirmedDate} onChange={(e) => setConfirmedDate(e.target.value)}
+                  className="bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-sm text-white focus:outline-none" />
+                <input type="url" placeholder="Meeting link (optional)" value={meetingLink} onChange={(e) => setMeetingLink(e.target.value)}
+                  className="bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-sm text-white placeholder-slate-500 focus:outline-none" />
+              </div>
+              <input type="text" placeholder="Notes for founder (optional)" value={coachNotes} onChange={(e) => setCoachNotes(e.target.value)}
+                className="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-sm text-white placeholder-slate-500 focus:outline-none" />
+              <div className="flex gap-2">
+                <Button size="sm" className="bg-green-700 hover:bg-green-600 text-white text-xs"
+                  onClick={() => confirm.mutate({ requestId: req.id, confirmedDate: confirmedDate || undefined, meetingLink: meetingLink || undefined, coachNotes: coachNotes || undefined })}
+                  disabled={confirm.isPending}>
+                  {confirm.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3 mr-1" />}
+                  Confirm
+                </Button>
+                <Button size="sm" variant="outline" className="border-slate-600 text-slate-400 text-xs" onClick={() => setConfirmId(null)}>Cancel</Button>
+              </div>
+            </div>
+          )}
+          {rescheduleId === req.id && (
+            <div className="mt-3 p-3 rounded bg-blue-950/30 border border-blue-700 space-y-2">
+              <p className="text-xs font-semibold text-blue-300">Propose New Time</p>
+              <input type="datetime-local" value={rescheduleDate} onChange={(e) => setRescheduleDate(e.target.value)}
+                className="bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-sm text-white focus:outline-none" />
+              <div className="flex gap-2">
+                <Button size="sm" className="bg-blue-700 hover:bg-blue-600 text-white text-xs"
+                  onClick={() => reschedule.mutate({ requestId: req.id, newDate: rescheduleDate })}
+                  disabled={!rescheduleDate || reschedule.isPending}>
+                  {reschedule.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Send"}
+                </Button>
+                <Button size="sm" variant="outline" className="border-slate-600 text-slate-400 text-xs" onClick={() => setRescheduleId(null)}>Cancel</Button>
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Sprint 91: Template Effectiveness Panel ───────────────────────────────────
+
+function TemplateEffectivenessPanel() {
+  const utils = trpc.useUtils();
+  const { data: top5 = [], isLoading } = trpc.coaching.templateEffectiveness.top.useQuery({ limit: 5 });
+  const compute = trpc.coaching.templateEffectiveness.compute.useMutation({
+    onSuccess: (d) => { toast.success(`Effectiveness computed for ${d.templatesAnalysed} templates`); utils.coaching.templateEffectiveness.top.invalidate(); },
+    onError: () => toast.error("Failed to compute effectiveness"),
+  });
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-xs text-slate-400">Composite score = 60% PRL uplift + 40% completion rate</p>
+        <Button size="sm" variant="outline" className="border-purple-600 text-purple-400 text-xs"
+          onClick={() => compute.mutate({})} disabled={compute.isPending}>
+          {compute.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <RefreshCw className="w-3 h-3 mr-1" />}
+          Recompute
+        </Button>
+      </div>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-purple-400" /></div>
+      ) : top5.length === 0 ? (
+        <p className="text-sm text-slate-500 text-center py-6">No effectiveness data yet. Click "Recompute" to analyse templates.</p>
+      ) : (
+        <div className="space-y-3">
+          {top5.map((t, idx) => {
+            const prlUplift = parseFloat(t.avgPrlUplift as unknown as string);
+            const completionRate = parseFloat(t.avgCompletionRate as unknown as string);
+            const composite = parseFloat(t.compositeScore as unknown as string);
+            return (
+              <div key={t.templateId} className="p-3 rounded-lg bg-slate-800 border border-slate-700">
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className={`text-sm font-bold w-6 text-center ${idx === 0 ? "text-yellow-400" : idx === 1 ? "text-slate-300" : idx === 2 ? "text-amber-500" : "text-slate-500"}`}>
+                      #{idx + 1}
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold text-white">{t.templateTitle}</p>
+                      <p className="text-xs text-slate-400">VRL {t.vrlStage} · {t.usageCount} uses · {t.completedCount} completed</p>
+                    </div>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-lg font-bold text-purple-400">{composite.toFixed(1)}</p>
+                    <p className="text-xs text-slate-500">composite</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">PRL Uplift</p>
+                    <div className="w-full h-1.5 rounded-full bg-slate-700 overflow-hidden">
+                      <div className="h-full rounded-full bg-green-500" style={{ width: `${Math.min(100, Math.max(0, prlUplift))}%` }} />
+                    </div>
+                    <p className="text-xs text-green-400 mt-0.5">+{prlUplift.toFixed(1)} pts</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">Completion Rate</p>
+                    <div className="w-full h-1.5 rounded-full bg-slate-700 overflow-hidden">
+                      <div className="h-full rounded-full bg-blue-500" style={{ width: `${completionRate}%` }} />
+                    </div>
+                    <p className="text-xs text-blue-400 mt-0.5">{completionRate.toFixed(1)}%</p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

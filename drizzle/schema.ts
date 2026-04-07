@@ -6713,3 +6713,69 @@ export const commitmentTemplates = mysqlTable("commitment_templates", {
 });
 export type CommitmentTemplate = typeof commitmentTemplates.$inferSelect;
 export type InsertCommitmentTemplate = typeof commitmentTemplates.$inferInsert;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Sprint 89 — Founder Leaderboard
+// ═══════════════════════════════════════════════════════════════════════════════
+export const founderLeaderboardSnapshots = mysqlTable("founder_leaderboard_snapshots", {
+  id:             varchar("id", { length: 64 }).primaryKey(),
+  founderId:      varchar("founderId", { length: 128 }).notNull(),
+  ventureId:      varchar("ventureId", { length: 64 }).notNull(),
+  vrlStage:       int("vrlStage").notNull().default(1),
+  weekOf:         date("weekOf").notNull(),
+  prlScore:       decimal("prlScore", { precision: 5, scale: 2 }),
+  rankInCohort:   int("rankInCohort"),
+  cohortSize:     int("cohortSize"),
+  percentile:     decimal("percentile", { precision: 5, scale: 2 }),
+  deltaFromPrev:  decimal("deltaFromPrev", { precision: 5, scale: 2 }),
+  isOptedIn:      boolean("isOptedIn").notNull().default(false),
+  displayAlias:   varchar("displayAlias", { length: 64 }),   // anonymised name
+  createdAt:      timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:      timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type FounderLeaderboardSnapshot = typeof founderLeaderboardSnapshots.$inferSelect;
+export type InsertFounderLeaderboardSnapshot = typeof founderLeaderboardSnapshots.$inferInsert;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Sprint 90 — Coach Session Scheduler
+// ═══════════════════════════════════════════════════════════════════════════════
+export const coachingSessionRequests = mysqlTable("coaching_session_requests", {
+  id:               varchar("id", { length: 64 }).primaryKey(),
+  founderId:        varchar("founderId", { length: 128 }).notNull(),
+  coachId:          varchar("coachId", { length: 64 }).notNull(),
+  ventureId:        varchar("ventureId", { length: 64 }).notNull(),
+  requestedAt:      timestamp("requestedAt").defaultNow().notNull(),
+  preferredDate:    timestamp("preferredDate"),
+  alternateDate:    timestamp("alternateDate"),
+  sessionType:      mysqlEnum("sessionType", ["prl_review", "commitment_check", "strategy", "wellbeing", "ad_hoc"]).notNull().default("prl_review"),
+  founderNotes:     text("founderNotes"),
+  status:           mysqlEnum("status", ["pending", "confirmed", "rescheduled", "cancelled", "completed"]).notNull().default("pending"),
+  confirmedDate:    timestamp("confirmedDate"),
+  coachNotes:       text("coachNotes"),
+  meetingLink:      varchar("meetingLink", { length: 512 }),
+  sessionId:        varchar("sessionId", { length: 64 }),   // links to coachingSessions once completed
+  createdAt:        timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:        timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CoachingSessionRequest = typeof coachingSessionRequests.$inferSelect;
+export type InsertCoachingSessionRequest = typeof coachingSessionRequests.$inferInsert;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Sprint 91 — Template Effectiveness Analytics
+// ═══════════════════════════════════════════════════════════════════════════════
+export const templateEffectivenessCache = mysqlTable("template_effectiveness_cache", {
+  id:                    varchar("id", { length: 64 }).primaryKey(),
+  templateId:            varchar("templateId", { length: 64 }).notNull(),
+  computedAt:            timestamp("computedAt").defaultNow().notNull(),
+  totalAssigned:         int("totalAssigned").notNull().default(0),
+  totalCompleted:        int("totalCompleted").notNull().default(0),
+  completionRate:        decimal("completionRate", { precision: 5, scale: 2 }),
+  avgPrlUplift:          decimal("avgPrlUplift", { precision: 5, scale: 2 }),  // avg PRL delta in the week after completion
+  avgDaysToComplete:     decimal("avgDaysToComplete", { precision: 5, scale: 2 }),
+  effectivenessScore:    decimal("effectivenessScore", { precision: 5, scale: 2 }),  // composite: 60% completion + 40% PRL uplift
+  rank:                  int("rank"),   // global rank among all templates
+  createdAt:             timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:             timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type TemplateEffectivenessCache = typeof templateEffectivenessCache.$inferSelect;
+export type InsertTemplateEffectivenessCache = typeof templateEffectivenessCache.$inferInsert;

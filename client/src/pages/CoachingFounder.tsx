@@ -17,7 +17,8 @@ import { toast } from "sonner";
 import {
   TrendingUp, TrendingDown, Minus, CheckCircle2, XCircle,
   Clock, AlertTriangle, Brain, Target, ChevronDown, Plus, Loader2,
-  Bell, FileText, X, ClipboardList, BarChart3, Library, Star
+  Bell, FileText, X, ClipboardList, BarChart3, Library, Star,
+  Trophy, CalendarPlus
 } from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -815,6 +816,12 @@ export default function CoachingFounder() {
         </Card>
       )}
 
+      {/* Sprint 89: Founder Leaderboard */}
+      <FounderLeaderboardCard />
+
+      {/* Sprint 90: Session Booking */}
+      <SessionBookingCard />
+
       {/* Onboarding Modal — shown on first login if onboarding not yet complete */}
       <CoachingOnboardingModal
         founderId={String(FOUNDER_ID)}
@@ -826,5 +833,228 @@ export default function CoachingFounder() {
         }}
       />
     </div>
+  );
+}
+
+// ── Sprint 89: Founder Leaderboard Card ───────────────────────────────────────────
+
+function FounderLeaderboardCard() {
+  const [vrlStage, setVrlStage] = useState(1);
+  const [alias, setAlias] = useState("");
+  const [showOptIn, setShowOptIn] = useState(false);
+
+  const { data: leaderboard = [], refetch: refetchBoard } = trpc.coaching.founderLeaderboard.get.useQuery({ vrlStage, limit: 10 });
+  const { data: myRank, refetch: refetchRank } = trpc.coaching.founderLeaderboard.myRank.useQuery({ ventureId: "ecoblend" }, { retry: false });
+  const compute = trpc.coaching.founderLeaderboard.compute.useMutation({
+    onSuccess: (d) => { toast.success(`Leaderboard updated — ${d.cohortSize} founders ranked`); refetchBoard(); refetchRank(); },
+    onError: () => toast.error("Failed to compute leaderboard"),
+  });
+  const optIn = trpc.coaching.founderLeaderboard.optIn.useMutation({
+    onSuccess: (d) => { toast.success(`Opted in as "${d.alias}"`); setShowOptIn(false); refetchRank(); },
+    onError: () => toast.error("Failed to opt in"),
+  });
+  const optOut = trpc.coaching.founderLeaderboard.optOut.useMutation({
+    onSuccess: () => { toast.success("Opted out of leaderboard"); refetchRank(); },
+    onError: () => toast.error("Failed to opt out"),
+  });
+
+  return (
+    <Card className="bg-slate-900 border-yellow-700">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <CardTitle className="text-base text-white flex items-center gap-2">
+            <Trophy className="w-4 h-4 text-yellow-400" />
+            Cohort Leaderboard
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            <select
+              value={vrlStage}
+              onChange={(e) => setVrlStage(Number(e.target.value))}
+              className="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-xs text-white focus:outline-none"
+            >
+              {[1,2,3,4,5,6,7,8,9].map((v) => <option key={v} value={v}>VRL {v}</option>)}
+            </select>
+            <Button size="sm" variant="outline" className="border-slate-600 text-slate-400 text-xs" onClick={() => compute.mutate({ vrlStage })} disabled={compute.isPending}>
+              {compute.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Refresh"}
+            </Button>
+            {myRank?.isOptedIn ? (
+              <Button size="sm" variant="outline" className="border-red-700 text-red-400 text-xs" onClick={() => optOut.mutate({ ventureId: "ecoblend" })} disabled={optOut.isPending}>Opt Out</Button>
+            ) : (
+              <Button size="sm" className="bg-yellow-700 hover:bg-yellow-600 text-white text-xs" onClick={() => setShowOptIn(true)}>Join Leaderboard</Button>
+            )}
+          </div>
+        </div>
+        {showOptIn && (
+          <div className="flex items-center gap-2 mt-2">
+            <input
+              type="text" placeholder="Your display alias (e.g. GreenFounder7)" value={alias}
+              onChange={(e) => setAlias(e.target.value)}
+              className="flex-1 bg-slate-800 border border-yellow-600 rounded px-2 py-1.5 text-sm text-white placeholder-slate-500 focus:outline-none"
+            />
+            <Button size="sm" className="bg-yellow-700 hover:bg-yellow-600 text-white text-xs" onClick={() => optIn.mutate({ ventureId: "ecoblend", displayAlias: alias })} disabled={!alias || optIn.isPending}>Confirm</Button>
+            <Button size="sm" variant="outline" className="border-slate-600 text-slate-400 text-xs" onClick={() => setShowOptIn(false)}>Cancel</Button>
+          </div>
+        )}
+      </CardHeader>
+      <CardContent>
+        {myRank && (
+          <div className="mb-4 p-3 rounded-lg bg-yellow-950/30 border border-yellow-700 flex items-center justify-between">
+            <div>
+              <p className="text-xs text-yellow-400 font-semibold uppercase tracking-wider">Your Rank</p>
+              <p className="text-2xl font-bold text-white">#{myRank.rank} <span className="text-sm text-slate-400">of {myRank.cohortSize}</span></p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-slate-400">Percentile</p>
+              <p className="text-xl font-bold text-yellow-400">{parseFloat(myRank.percentile as unknown as string).toFixed(0)}th</p>
+            </div>
+          </div>
+        )}
+        {leaderboard.length === 0 ? (
+          <p className="text-sm text-slate-500 text-center py-6">No leaderboard data yet. Click "Refresh" to compute rankings.</p>
+        ) : (
+          <div className="space-y-1">
+            {leaderboard.map((entry) => (
+              <div key={entry.rank} className={`flex items-center gap-3 px-3 py-2 rounded-lg ${
+                entry.rank === 1 ? "bg-yellow-950/40 border border-yellow-700" :
+                entry.rank === 2 ? "bg-slate-800/60 border border-slate-600" :
+                entry.rank === 3 ? "bg-amber-950/30 border border-amber-800" :
+                "bg-slate-800/30"
+              }`}>
+                <span className={`text-sm font-bold w-6 text-center ${
+                  entry.rank === 1 ? "text-yellow-400" : entry.rank === 2 ? "text-slate-300" : entry.rank === 3 ? "text-amber-500" : "text-slate-500"
+                }`}>#{entry.rank}</span>
+                <span className="flex-1 text-sm text-white">{entry.displayName}</span>
+                {entry.prlScore !== null && (
+                  <span className="text-sm font-mono text-green-400">{entry.prlScore.toFixed(1)}</span>
+                )}
+                <span className="text-xs text-slate-500">{entry.percentile.toFixed(0)}th pct</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ── Sprint 90: Session Booking Card ──────────────────────────────────────────────
+
+function SessionBookingCard() {
+  const [showForm, setShowForm] = useState(false);
+  const [coachId, setCoachId] = useState("");
+  const [sessionType, setSessionType] = useState<"prl_review" | "commitment_check" | "strategy" | "wellbeing" | "ad_hoc">("prl_review");
+  const [preferredDate, setPreferredDate] = useState("");
+  const [founderNotes, setFounderNotes] = useState("");
+
+  const { data: coaches = [] } = trpc.coaching.coaches.list.useQuery();
+  const { data: myRequests = [], refetch } = trpc.coaching.sessionRequests.list.useQuery({ role: "founder" });
+  const createRequest = trpc.coaching.sessionRequests.create.useMutation({
+    onSuccess: () => {
+      toast.success("Session request sent to your coach");
+      setShowForm(false); setCoachId(""); setPreferredDate(""); setFounderNotes("");
+      refetch();
+    },
+    onError: () => toast.error("Failed to send session request"),
+  });
+  const cancelRequest = trpc.coaching.sessionRequests.cancel.useMutation({
+    onSuccess: () => { toast.success("Request cancelled"); refetch(); },
+    onError: () => toast.error("Failed to cancel"),
+  });
+
+  const statusColors: Record<string, string> = {
+    pending: "bg-amber-900 text-amber-300",
+    confirmed: "bg-green-900 text-green-300",
+    rescheduled: "bg-blue-900 text-blue-300",
+    cancelled: "bg-slate-700 text-slate-400",
+    completed: "bg-purple-900 text-purple-300",
+  };
+
+  return (
+    <Card className="bg-slate-900 border-blue-700">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base text-white flex items-center gap-2">
+            <CalendarPlus className="w-4 h-4 text-blue-400" />
+            Session Scheduler
+          </CardTitle>
+          <Button size="sm" className="bg-blue-700 hover:bg-blue-600 text-white text-xs" onClick={() => setShowForm(!showForm)}>
+            {showForm ? <X className="w-3 h-3 mr-1" /> : <CalendarPlus className="w-3 h-3 mr-1" />}
+            {showForm ? "Cancel" : "Request Session"}
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {showForm && (
+          <div className="mb-4 p-4 rounded-lg bg-blue-950/20 border border-blue-700 space-y-3">
+            <p className="text-xs font-semibold text-blue-300 uppercase tracking-wider">New Session Request</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-slate-400 mb-1 block">Coach</label>
+                <select value={coachId} onChange={(e) => setCoachId(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-sm text-white focus:outline-none">
+                  <option value="">Select coach...</option>
+                  {coaches.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-slate-400 mb-1 block">Session Type</label>
+                <select value={sessionType} onChange={(e) => setSessionType(e.target.value as typeof sessionType)}
+                  className="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-sm text-white focus:outline-none">
+                  {["prl_review","commitment_check","strategy","wellbeing","ad_hoc"].map((t) => (
+                    <option key={t} value={t}>{t.replace("_", " ")}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-slate-400 mb-1 block">Preferred Date</label>
+                <input type="datetime-local" value={preferredDate} onChange={(e) => setPreferredDate(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-sm text-white focus:outline-none" />
+              </div>
+              <div>
+                <label className="text-xs text-slate-400 mb-1 block">Notes</label>
+                <input type="text" value={founderNotes} onChange={(e) => setFounderNotes(e.target.value)}
+                  placeholder="What do you want to focus on?" className="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-sm text-white placeholder-slate-500 focus:outline-none" />
+              </div>
+            </div>
+            <Button size="sm" className="bg-blue-700 hover:bg-blue-600 text-white text-xs"
+              onClick={() => createRequest.mutate({ coachId, ventureId: "ecoblend", sessionType, preferredDate: preferredDate || undefined, founderNotes: founderNotes || undefined })}
+              disabled={!coachId || createRequest.isPending}>
+              {createRequest.isPending ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <CalendarPlus className="w-3 h-3 mr-1" />}
+              Send Request
+            </Button>
+          </div>
+        )}
+        {myRequests.length === 0 ? (
+          <p className="text-sm text-slate-500 text-center py-6">No session requests yet. Click "Request Session" to book time with your coach.</p>
+        ) : (
+          <div className="space-y-2">
+            {myRequests.map((req) => (
+              <div key={req.id} className="flex items-start justify-between gap-3 p-3 rounded-lg bg-slate-800 border border-slate-700">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${statusColors[req.status] ?? "bg-slate-700 text-slate-400"}`}>
+                      {req.status}
+                    </span>
+                    <span className="text-xs text-slate-400 capitalize">{req.sessionType.replace("_", " ")}</span>
+                  </div>
+                  {req.confirmedDate && (
+                    <p className="text-xs text-green-400">Confirmed: {new Date(req.confirmedDate).toLocaleString()}</p>
+                  )}
+                  {req.meetingLink && (
+                    <a href={req.meetingLink} target="_blank" rel="noreferrer" className="text-xs text-blue-400 underline">Join meeting</a>
+                  )}
+                  {req.coachNotes && <p className="text-xs text-slate-400 italic mt-1">{req.coachNotes}</p>}
+                </div>
+                {req.status === "pending" && (
+                  <button onClick={() => cancelRequest.mutate({ requestId: req.id })} className="text-slate-500 hover:text-red-400 transition-colors">
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

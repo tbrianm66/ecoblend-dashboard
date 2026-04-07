@@ -1089,3 +1089,22 @@
 - [ ] Add "Apply Template" button on Founder Coaching Dashboard
 - [ ] Seed default templates by VRL stage
 - [x] Vitest tests for Sprint 88
+
+## Sprint 89 — Founder Leaderboard
+- [ ] Add founder_leaderboard_snapshots DB table
+- [ ] Add tRPC procedures: leaderboard.compute, leaderboard.get, leaderboard.optIn, leaderboard.optOut
+- [ ] Add Leaderboard view on Founder Dashboard
+- [x] Vitest tests for Sprint 89
+
+## Sprint 90 — Coach Session Scheduler
+- [ ] Add coaching_session_requests DB table
+- [ ] Add tRPC procedures: sessionRequests.create, list, confirm, reschedule, cancel
+- [ ] Add Session Booking flow on Founder Dashboard
+- [ ] Add Session Request management panel on Studio Dashboard
+- [x] Vitest tests for Sprint 90
+
+## Sprint 91 — Template Effectiveness Analytics
+- [ ] Add template_effectiveness_cache DB table
+- [ ] Add tRPC procedures: templateEffectiveness.compute, topTemplates
+- [ ] Add Top 5 Most Effective Templates panel on Studio Dashboard
+- [x] Vitest tests for Sprint 91
