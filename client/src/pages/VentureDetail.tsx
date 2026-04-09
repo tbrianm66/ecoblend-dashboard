@@ -9,7 +9,7 @@ import { ventures, VRL_STAGES, TRL_LEVELS } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, CheckCircle2, Circle, AlertTriangle, TrendingUp, FlaskConical, LayoutGrid, Briefcase, GitBranch, Plus, Trash2, RefreshCw, Shield, FileText, Zap, BookOpen, Lock, Palette, ExternalLink, Loader2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Circle, AlertTriangle, TrendingUp, FlaskConical, LayoutGrid, Briefcase, GitBranch, Plus, Trash2, RefreshCw, Shield, FileText, Zap, BookOpen, Lock, Palette, ExternalLink, Loader2, Download, BarChart2 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
@@ -42,6 +42,32 @@ export default function VentureDetail() {
   const brlTotal = brlEntry?.totalCount ?? 100;
   // Computed VRL score from scoring engine
   const { data: vrlComputedScore } = trpc.vrlScoring.getScore.useQuery({ ventureId: venture.id });
+
+  // Sprint 95 — Flower Metrics Export
+  const [showFlowerModal, setShowFlowerModal] = useState(false);
+  const { data: flowerPreview } = trpc.flower.previewExport.useQuery(
+    { ventureId: venture.id },
+    { enabled: showFlowerModal }
+  );
+  const { data: flowerHistory } = trpc.flower.getExportHistory.useQuery(
+    { ventureId: venture.id, limit: 5 },
+    { enabled: showFlowerModal }
+  );
+  const generateCsvMutation = trpc.flower.generateCsv.useMutation({
+    onSuccess: (data) => {
+      const blob = new Blob([data.csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = data.filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success(`Exported ${data.rowCount} KPI rows to ${data.filename}`);
+    },
+    onError: (err) => toast.error(`Export failed: ${err.message}`),
+  });
 
   return (
     <div className="flex-1 overflow-y-auto bg-gray-50">
@@ -79,9 +105,89 @@ export default function VentureDetail() {
             <div className="text-xs text-gray-400 mb-1">Nominated Charity</div>
             <div className="text-sm font-semibold text-gray-700">{venture.nominatedCharity}</div>
             <div className="text-xs text-gray-400">{venture.charityFocus}</div>
+            <div className="mt-3">
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 text-xs"
+                onClick={() => setShowFlowerModal(true)}
+                style={{ borderColor: "#10b981", color: "#10b981" }}
+              >
+                <BarChart2 size={12} /> Export to Flower
+              </Button>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Sprint 95 — Flower Metrics Export Modal */}
+      <Dialog open={showFlowerModal} onOpenChange={setShowFlowerModal}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BarChart2 size={18} style={{ color: "#10b981" }} />
+              Export to Flower Metrics
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-500">
+              Generate a Flower-compatible CSV with {flowerPreview?.rowCount ?? "—"} KPI rows across{" "}
+              {flowerPreview ? Object.keys(flowerPreview.grouped).length : "—"} categories.
+              Upload this file at{" "}
+              <a href="https://www.flowermetrics.xyz" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">flowermetrics.xyz</a>.
+            </p>
+            {flowerPreview && (
+              <div className="space-y-3">
+                {Object.entries(flowerPreview.grouped).map(([category, rows]) => (
+                  <div key={category} className="border rounded-lg p-3" style={{ borderColor: "#e5e7eb" }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">{category}</span>
+                      <span className="text-xs text-gray-400">{(rows as any[]).length} metrics</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1">
+                      {(rows as any[]).map((row: any, i: number) => (
+                        <div key={i} className="flex items-center justify-between text-xs py-0.5">
+                          <span className="text-gray-600 truncate mr-2">{row.metric_name}</span>
+                          <span className="font-mono font-semibold text-gray-900 shrink-0">
+                            {row.metric_value} <span className="text-gray-400 font-normal">{row.metric_unit}</span>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {flowerHistory && flowerHistory.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Previous Exports</p>
+                <div className="space-y-1">
+                  {(flowerHistory as any[]).map((log: any) => (
+                    <div key={log.id} className="flex items-center justify-between text-xs py-1 border-b" style={{ borderColor: "#f3f4f6" }}>
+                      <span className="text-gray-500">{new Date(log.createdAt).toLocaleDateString()}</span>
+                      <span className="text-gray-600">{log.rowCount} rows</span>
+                      <span className="text-gray-400">{log.exportedBy}</span>
+                      <span className="px-1.5 py-0.5 rounded text-xs" style={{ background: log.status === 'Success' ? '#dcfce7' : '#fee2e2', color: log.status === 'Success' ? '#16a34a' : '#dc2626' }}>{log.status}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="flex gap-2 justify-end pt-2">
+              <Button variant="outline" size="sm" onClick={() => setShowFlowerModal(false)}>Cancel</Button>
+              <Button
+                size="sm"
+                disabled={generateCsvMutation.isPending || !flowerPreview}
+                onClick={() => generateCsvMutation.mutate({ ventureId: venture.id })}
+                style={{ background: "#10b981", color: "white" }}
+              >
+                {generateCsvMutation.isPending ? <Loader2 size={13} className="animate-spin mr-1" /> : <Download size={13} className="mr-1" />}
+                Download CSV
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="p-8 space-y-8">
         {/* Triple Readiness Matrix: VRL / TRL / BRL */}

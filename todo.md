@@ -1141,3 +1141,10 @@
 - [ ] Add Progress-to-Goal indicator on Founder Dashboard
 - [x] Add Goal Management panel in Studio Dashboard
 - [x] Vitest tests for Sprint 94
+
+## Sprint 95 — Flower Metrics CSV Export Bridge
+- [x] Add flower_export_log DB table
+- [ ] Add tRPC procedures: generateFlowerCsv, logExport, getExportHistory
+- [ ] Add "Export to Flower" button on Venture Detail page
+- [ ] Add Flower Export History panel in Studio Dashboard
+- [x] Vitest tests for Sprint 95

@@ -19,6 +19,7 @@ import { crlRouter } from "./crl.router";
 import { investmentModuleRouter } from "./investmentModule.router";
 import { ecoraceLab } from "./ecoracelab.router";
 import { coachingRouter } from "./coaching.router";
+import { flowerRouter } from "./flower.router";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -223,6 +224,7 @@ import { portfoliosOfferingsRouter } from "./portfoliosOfferings.router";
 export const appRouter = router({
   system: systemRouter,
   coaching: coachingRouter,
+  flower: flowerRouter,
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

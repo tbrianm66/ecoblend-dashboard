@@ -6833,3 +6833,21 @@ export const prlGoals = mysqlTable("prl_goals", {
 });
 export type PrlGoal = typeof prlGoals.$inferSelect;
 export type InsertPrlGoal = typeof prlGoals.$inferInsert;
+
+// ── Sprint 95 — Flower Metrics Export Log ─────────────────────────────────────
+export const flowerExportLog = mysqlTable("flower_export_log", {
+  id: int("id").autoincrement().primaryKey(),
+  ventureId: varchar("ventureId", { length: 64 }).notNull(),
+  ventureName: varchar("ventureName", { length: 255 }).notNull(),
+  exportedBy: varchar("exportedBy", { length: 255 }).notNull(),
+  rowCount: int("rowCount").notNull().default(0),         // number of KPI rows in the CSV
+  snapshotMonth: varchar("snapshotMonth", { length: 7 }), // "2026-03" — latest month exported
+  includesFinancials: boolean("includesFinancials").default(true),
+  includesReadiness: boolean("includesReadiness").default(true),
+  includesGrowthMetrics: boolean("includesGrowthMetrics").default(true),
+  status: mysqlEnum("status", ["Success", "Partial", "Failed"]).default("Success"),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type FlowerExportLog = typeof flowerExportLog.$inferSelect;
+export type InsertFlowerExportLog = typeof flowerExportLog.$inferInsert;

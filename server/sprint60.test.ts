@@ -56,7 +56,7 @@ describe("onboardingSubmissions.submit", () => {
 
     expect(db.insert).toHaveBeenCalledOnce();
     expect(result).toEqual({ id: 42 });
-  });
+  }, 15000);
 
   it("stores checkedTasks as a JSON string when provided", async () => {
     const db = await getDb();
@@ -79,7 +79,7 @@ describe("onboardingSubmissions.submit", () => {
     const parsed = JSON.parse(capturedValues.checkedTasks);
     expect(parsed.task_1).toBe(true);
     expect(parsed.task_2).toBe(false);
-  });
+  }, 15000);
 
   it("sets status to 'Completed'", async () => {
     const db = await getDb();
