@@ -1148,3 +1148,19 @@
 - [ ] Add "Export to Flower" button on Venture Detail page
 - [ ] Add Flower Export History panel in Studio Dashboard
 - [x] Vitest tests for Sprint 95
+
+## PRL/FRL Architecture Refactor
+- [x] Add product_readiness_levels DB table (PRL = TRL × MRL composite per venture)
+- [x] Update VRL formula in db.ts: replace trlNorm with prlNorm (Product Readiness Level)
+- [x] Update CRL-extended VRL formula in crl.router.ts: replace TRL weight with PRL weight
+- [x] Rename coachingPrl table → coachingFrl in schema.ts
+- [x] Rename all prlScore → frlScore in schema.ts
+- [x] Rename coaching.router.ts: all PRL coaching references → FRL
+- [x] Rename sprint8082, sprint8385, sprint8688, sprint8991, sprint9294 routers: PRL → FRL
+- [x] Rename CoachingFounder.tsx: all PRL UI labels → FRL
+- [x] Rename CoachingStudio.tsx: all PRL UI labels → FRL
+- [x] Add PRL composite display to VentureDetail.tsx
+- [ ] Add MRL → PRL composite procedure to flower.router.ts export
+- [ ] Update literature review: PRL = TRL × MRL, FRL = Founder Readiness Level
+- [ ] Update user manual: PRL and FRL terminology throughout
+- [x] Run Vitest tests and fix any failures (1873 tests passing, 65 test files)

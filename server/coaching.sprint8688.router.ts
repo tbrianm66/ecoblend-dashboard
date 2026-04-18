@@ -27,7 +27,7 @@ import { getDb } from "./db";
 import {
   founderSelfAssessments,
   commitmentTemplates,
-  coachingPrl,
+  coachingFrl,
   coachingCommitments,
   founders,
 } from "../drizzle/schema";
@@ -175,7 +175,7 @@ export const selfAssessmentRouter = router({
         const riskLevel =
           score >= 75 ? "LOW" : score >= 55 ? "MEDIUM" : score >= 40 ? "HIGH" : "CRITICAL";
 
-        await db.insert(coachingPrl).values({
+        await db.insert(coachingFrl).values({
           id: prlRecordId,
           founderId: assessment.founderId,
           week: assessment.weekOf as unknown as Date,
@@ -236,12 +236,12 @@ export const cohortBenchmarkRouter = router({
       // We join via founders table to get vrl_stage
       const allPrlRecords = await db
         .select({
-          founderId: coachingPrl.founderId,
-          weekOf: coachingPrl.weekOf,
-          score: coachingPrl.score,
+          founderId: coachingFrl.founderId,
+          weekOf: coachingFrl.weekOf,
+          score: coachingFrl.score,
         })
-        .from(coachingPrl)
-        .orderBy(desc(coachingPrl.weekOf))
+        .from(coachingFrl)
+        .orderBy(desc(coachingFrl.weekOf))
         .limit(500);
 
       // Get the founder's own PRL history

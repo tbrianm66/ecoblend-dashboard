@@ -240,7 +240,7 @@ export default function CoachingCoach() {
                 >
                   {f.founder?.name || `Founder #${f.founder?.id}`}
                   <span className="ml-2 text-red-400 font-mono text-xs">
-                    PRL {parseFloat(f.latestPrl?.score as unknown as string || "0").toFixed(0)}
+                    PRL {parseFloat(f.latestFrl?.score as unknown as string || "0").toFixed(0)}
                   </span>
                 </button>
               ))}
@@ -342,8 +342,8 @@ export default function CoachingCoach() {
             </div>
           )}
           {dashboard?.assignedFounders.map((f) => {
-            const prlScore = f.latestPrl ? parseFloat(f.latestPrl.score as unknown as string) : null;
-            const ragColor = getRagColor(f.latestPrl?.riskLevel || null);
+            const frlScore = f.latestFrl ? parseFloat(f.latestFrl.score as unknown as string) : null;
+            const ragColor = getRagColor(f.latestFrl?.riskLevel || null);
             const isSelected = selectedFounderId === f.founder?.id;
             return (
               <button
@@ -359,23 +359,23 @@ export default function CoachingCoach() {
                   <span className="text-sm font-medium text-white">
                     {f.founder?.name || `Founder #${f.founder?.id}`}
                   </span>
-                  {prlScore !== null && (
+                  {frlScore !== null && (
                     <span className="text-sm font-bold font-mono" style={{ color: ragColor }}>
-                      {prlScore.toFixed(0)}
+                      {frlScore.toFixed(0)}
                     </span>
                   )}
                 </div>
                 <div className="flex items-center gap-2 mt-1">
-                  {f.latestPrl?.riskLevel && (
+                  {f.latestFrl?.riskLevel && (
                     <span
                       className="text-xs font-semibold px-2 py-0.5 rounded-full"
                       style={{ background: `${ragColor}20`, color: ragColor }}
                     >
-                      {f.latestPrl.riskLevel}
+                      {f.latestFrl.riskLevel}
                     </span>
                   )}
-                  <TrendIcon trend={f.latestPrl?.trend || null} />
-                  <span className="text-xs text-slate-500 capitalize">{f.latestPrl?.trend || "no data"}</span>
+                  <TrendIcon trend={f.latestFrl?.trend || null} />
+                  <span className="text-xs text-slate-500 capitalize">{f.latestFrl?.trend || "no data"}</span>
                 </div>
               </button>
             );

@@ -55,6 +55,7 @@ import {
   evidenceClaims,
   academicPapers,
   taskPaperLinks,
+  mrlAssessments,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -1006,10 +1007,12 @@ export async function computeVrlRiskIndex(ventureId: string): Promise<{
 }
 
 /**
- * Compute the full VRL score for a venture using the formula:
- * VRL = (α × TRL_normalised + β × BRL_normalised) × (1 − Risk Index) × Confidence
+ * Compute the full VRL score for a venture using the updated formula:
+ * VRL = (α × PRL_normalised + β × BRL_normalised) × (1 − Risk Index) × Confidence
  *
- * TRL_normalised = trl (kept on 0–9 scale)
+ * PRL (Product Readiness Level) = (0.5 × TRL_norm) + (0.5 × MRL_norm)
+ *   — TRL and MRL run as parallel tracks; their composite replaces raw TRL.
+ *   — Falls back to raw TRL if no MRL assessment exists for the venture.
  * BRL_normalised = brlScore / 100 × 9  (mapped to 0–9 scale)
  * Result is on 0–9 scale.
  */
@@ -1017,7 +1020,9 @@ export async function computeVrlScore(ventureId: string): Promise<{
   vrlScore: number;
   vrlLevel: number;
   vrlLevelLabel: string;
-  trlNorm: number;
+  prlNorm: number;    // Product Readiness Level composite (TRL × MRL)
+  trlNorm: number;   // raw TRL component
+  mrlNorm: number;   // raw MRL component (0 if no MRL assessment)
   brlNorm: number;
   riskIndex: number;
   riskByCategory: Record<string, number>;
@@ -1028,17 +1033,29 @@ export async function computeVrlScore(ventureId: string): Promise<{
 }> {
   const fallback = {
     vrlScore: 0, vrlLevel: 1, vrlLevelLabel: VRL_LEVEL_LABELS[1],
-    trlNorm: 0, brlNorm: 0, riskIndex: 0, riskByCategory: {},
+    prlNorm: 0, trlNorm: 0, mrlNorm: 0, brlNorm: 0, riskIndex: 0, riskByCategory: {},
     confidenceScore: 0.5, alphaWeight: 0.45, betaWeight: 0.55, baseReadiness: 0,
   };
   const db = await getDb();
   if (!db) return fallback;
 
-  // 1. Get venture TRL
+  // 1. Get venture TRL and MRL to compute PRL (Product Readiness Level)
   const ventureRows = await db.select().from(ventures).where(eq(ventures.id, ventureId)).limit(1);
   if (!ventureRows[0]) return fallback;
   const venture = ventureRows[0];
   const trlNorm = Math.min(9, Math.max(0, venture.trl ?? 1));
+
+  // Get latest MRL assessment for this venture (if available)
+  const mrlRows = await db.select().from(mrlAssessments)
+    .where(eq(mrlAssessments.ventureId, ventureId))
+    .orderBy(desc(mrlAssessments.assessedAt)).limit(1);
+  const mrlRaw = mrlRows[0]?.mrlLevel ?? null;
+  const mrlNorm = mrlRaw !== null ? Math.min(9, Math.max(0, mrlRaw)) : 0;
+
+  // PRL = (0.5 × TRL_norm) + (0.5 × MRL_norm) when MRL exists; else pure TRL
+  const prlNorm = mrlRaw !== null
+    ? (0.5 * trlNorm) + (0.5 * mrlNorm)
+    : trlNorm;
 
   // 2. Get BRL score (0–100) and normalise to 0–9
   const brlResult = await getBrlScoreForVenture(ventureId);
@@ -1053,8 +1070,9 @@ export async function computeVrlScore(ventureId: string): Promise<{
   // 4. Compute risk index
   const { riskIndex, byCategory } = await computeVrlRiskIndex(ventureId);
 
-  // 5. Apply formula: VRL = (α×TRL + β×BRL) × (1 − RiskIndex) × Confidence
-  const baseReadiness = alpha * trlNorm + beta * brlNorm;
+  // 5. Apply updated formula: VRL = (α×PRL + β×BRL) × (1 − RiskIndex) × Confidence
+  //    α now weights the PRL composite (TRL × MRL parallel tracks)
+  const baseReadiness = alpha * prlNorm + beta * brlNorm;
   const vrlScore = Math.min(9, Math.max(0, baseReadiness * (1 - riskIndex) * confidence));
   const vrlLevel = getVrlLevel(vrlScore);
 
@@ -1062,7 +1080,9 @@ export async function computeVrlScore(ventureId: string): Promise<{
     vrlScore: Math.round(vrlScore * 100) / 100,
     vrlLevel,
     vrlLevelLabel: VRL_LEVEL_LABELS[vrlLevel],
+    prlNorm: Math.round(prlNorm * 100) / 100,
     trlNorm,
+    mrlNorm: Math.round(mrlNorm * 100) / 100,
     brlNorm: Math.round(brlNorm * 100) / 100,
     riskIndex,
     riskByCategory: byCategory,

@@ -6434,9 +6434,9 @@ export const coachingBehaviourMetrics = mysqlTable("coaching_behaviour_metrics",
 export type CoachingBehaviourMetric = typeof coachingBehaviourMetrics.$inferSelect;
 export type InsertCoachingBehaviourMetric = typeof coachingBehaviourMetrics.$inferInsert;
 
-// coaching_prl — Personal Readiness Level scores per founder per week
-// PRL = (0.4 × completion_rate) + (0.2 × focus_hours) - (0.2 × delay_time) - (0.2 × missed_commitments)
-export const coachingPrl = mysqlTable("coaching_prl", {
+// coaching_frl — Founder Readiness Level scores per founder per week
+// FRL = (0.4 × completion_rate) + (0.2 × focus_hours) - (0.2 × delay_time) - (0.2 × missed_commitments)
+export const coachingFrl = mysqlTable("coaching_frl", {
   id:           varchar("id", { length: 64 }).primaryKey(),
   founderId:    int("founderId").notNull(),  // FK → founders.id
   ventureId:    varchar("ventureId", { length: 64 }),
@@ -6451,15 +6451,15 @@ export const coachingPrl = mysqlTable("coaching_prl", {
   missedPenalty:        decimal("missedPenalty", { precision: 5, scale: 2 }),
   calculatedAt: timestamp("calculatedAt").defaultNow().notNull(),
 });
-export type CoachingPrl = typeof coachingPrl.$inferSelect;
-export type InsertCoachingPrl = typeof coachingPrl.$inferInsert;
+export type CoachingFrl = typeof coachingFrl.$inferSelect;
+export type InsertCoachingFrl = typeof coachingFrl.$inferInsert;
 
-// coaching_vrl_link — PRL-adjusted VRL execution score per venture
-// execution_score = PRL.score × prl_weight; adjusted_vrl = base_vrl + execution_score (capped at 100)
+// coaching_vrl_link — FRL-adjusted VRL execution score per venture
+// execution_score = FRL.score × frl_weight; adjusted_vrl = base_vrl + execution_score (capped at 100)
 export const coachingVrlLink = mysqlTable("coaching_vrl_link", {
   id:             varchar("id", { length: 64 }).primaryKey(),
   ventureId:      varchar("ventureId", { length: 64 }).notNull().unique(),  // FK → ventures.id
-  prlWeight:      decimal("prlWeight", { precision: 3, scale: 2 }).notNull().default("0.25"),  // configurable per venture, default 0.25
+  frlWeight:      decimal("frlWeight", { precision: 3, scale: 2 }).notNull().default("0.25"),  // configurable per venture, default 0.25
   executionScore: decimal("executionScore", { precision: 5, scale: 2 }).default("0.00"),  // PRL-adjusted execution input
   baseVrl:        decimal("baseVrl", { precision: 5, scale: 2 }).default("0.00"),  // base VRL before PRL adjustment
   adjustedVrl:    decimal("adjustedVrl", { precision: 5, scale: 2 }).default("0.00"),  // resultant VRL score (capped at 100)
@@ -6796,7 +6796,7 @@ export const founderNotifications = mysqlTable("founder_notifications", {
     "self_assessment_rejected",
     "leaderboard_rank_change",
     "commitment_due",
-    "prl_score_updated",
+    "frl_score_updated",
     "goal_updated",
     "general",
   ]).notNull().default("general"),
@@ -6815,7 +6815,7 @@ export type InsertFounderNotification = typeof founderNotifications.$inferInsert
 // ═══════════════════════════════════════════════════════════════════════════════
 // Sprint 94 — PRL Goal Setting
 // ═══════════════════════════════════════════════════════════════════════════════
-export const prlGoals = mysqlTable("prl_goals", {
+export const frlGoals = mysqlTable("frl_goals", {
   id:               varchar("id", { length: 64 }).primaryKey(),
   ventureId:        varchar("ventureId", { length: 64 }).notNull(),
   founderId:        varchar("founderId", { length: 64 }).notNull(),
@@ -6831,8 +6831,8 @@ export const prlGoals = mysqlTable("prl_goals", {
   createdAt:        timestamp("createdAt").defaultNow().notNull(),
   updatedAt:        timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
-export type PrlGoal = typeof prlGoals.$inferSelect;
-export type InsertPrlGoal = typeof prlGoals.$inferInsert;
+export type FrlGoal = typeof frlGoals.$inferSelect;
+export type InsertFrlGoal = typeof frlGoals.$inferInsert;
 
 // ── Sprint 95 — Flower Metrics Export Log ─────────────────────────────────────
 export const flowerExportLog = mysqlTable("flower_export_log", {
@@ -6851,3 +6851,34 @@ export const flowerExportLog = mysqlTable("flower_export_log", {
 });
 export type FlowerExportLog = typeof flowerExportLog.$inferSelect;
 export type InsertFlowerExportLog = typeof flowerExportLog.$inferInsert;
+
+// ── product_readiness_levels — PRL Composite (TRL × MRL) per venture ─────────
+// PRL = (trlWeight × TRL_norm) + (mrlWeight × MRL_norm)
+// Replaces TRL as the technology/product dimension in the VRL formula.
+// Default weights: TRL 50%, MRL 50% (equal parallel tracks).
+// Stage-specific weights can override via trlWeight / mrlWeight fields.
+export const productReadinessLevels = mysqlTable("product_readiness_levels", {
+  id:              varchar("id", { length: 36 }).primaryKey(),
+  ventureId:       varchar("ventureId", { length: 64 }).notNull(),
+  // Source inputs
+  trlLevel:        int("trlLevel").notNull(),            // 1–9 from ventures.trl
+  mrlLevel:        int("mrlLevel").notNull(),            // 1–9 from mrlAssessments.mrlLevel
+  mrlComposite:    int("mrlComposite"),                  // 0–100 from mrlAssessments.compositeScore
+  // Weights (sum must equal 1.0)
+  trlWeight:       float("trlWeight").default(0.5).notNull(),
+  mrlWeight:       float("mrlWeight").default(0.5).notNull(),
+  // PRL output
+  prlScore:        float("prlScore").notNull(),          // 0–9 composite score
+  prlLevel:        int("prlLevel").notNull(),            // 1–9 discrete level (round(prlScore))
+  prlLabel:        varchar("prlLabel", { length: 64 }),  // e.g. "Product-Market Fit"
+  // VRL contribution
+  vrlContribution: float("vrlContribution"),             // PRL × alpha_weight contribution to VRL
+  // Metadata
+  computedAt:      timestamp("computedAt").defaultNow().notNull(),
+  computedBy:      varchar("computedBy", { length: 128 }),
+  notes:           text("notes"),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ProductReadinessLevel = typeof productReadinessLevels.$inferSelect;
+export type InsertProductReadinessLevel = typeof productReadinessLevels.$inferInsert;

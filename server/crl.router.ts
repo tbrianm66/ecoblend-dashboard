@@ -11,8 +11,9 @@
  *   Mode 3 — Conflict Mediation: structured resolution conversations
  *   Mode 4 — Continuous Monitoring: drift detection and health reports
  *
- * VRL Formula (with CRL):
- *   VRL = (α × TRL_norm + β × BRL_norm + γ × CRL_norm) × (1 - RI) × CS
+ * VRL Formula (with CRL) — UPDATED to use PRL composite:
+ *   VRL = (α × PRL_norm + β × BRL_norm + γ × CRL_norm) × (1 - RI) × CS
+ *   PRL (Product Readiness Level) = (0.5 × TRL_norm) + (0.5 × MRL_norm)
  *   Stage weights (H4.1): α=0.225, β=0.325, γ=0.450
  *   Stage weights (H4.2): α=0.300, β=0.350, γ=0.350
  *   Stage weights (H4.3): α=0.400, β=0.350, γ=0.250
@@ -30,6 +31,7 @@ import {
   vrlDynamicWeights,
   founders,
   ventures,
+  mrlAssessments,
 } from "../drizzle/schema";
 import { eq, desc, and } from "drizzle-orm";
 import { invokeLLM } from "./_core/llm";
@@ -226,9 +228,10 @@ function computeCrlScore(
   };
 }
 
-// ── VRL Dynamic Recalculation ─────────────────────────────────────────────────
+// ── VRL Dynamic Recalculation (updated to use PRL composite) ─────────────────
 function computeVrlWithCrl(params: {
   trl: number;
+  mrlLevel?: number | null; // MRL level (1–9), optional — falls back to TRL if absent
   brlScore: number;  // 0–1 normalised BRL
   crlScore: number;  // 0–1 normalised CRL
   h4Stage: keyof typeof STAGE_WEIGHTS;
@@ -237,23 +240,33 @@ function computeVrlWithCrl(params: {
 }) {
   const weights = STAGE_WEIGHTS[params.h4Stage];
   const trlNorm = params.trl / 9;
+  // PRL (Product Readiness Level) = (0.5 × TRL_norm) + (0.5 × MRL_norm)
+  // Falls back to pure TRL when no MRL assessment exists
+  const mrlNorm = params.mrlLevel != null
+    ? Math.min(9, Math.max(0, params.mrlLevel)) / 9
+    : trlNorm;
+  const prlNorm = params.mrlLevel != null
+    ? (0.5 * trlNorm) + (0.5 * mrlNorm)
+    : trlNorm;
   const brlNorm = Math.max(0, Math.min(1, params.brlScore));
   const crlNorm = Math.max(0, Math.min(1, params.crlScore));
 
-  const trlContrib = weights.alpha * trlNorm;
+  const prlContrib = weights.alpha * prlNorm;  // α now weights PRL composite
   const brlContrib = weights.beta * brlNorm;
   const crlContrib = weights.gamma * crlNorm;
 
-  const rawVrl = (trlContrib + brlContrib + crlContrib)
+  const rawVrl = (prlContrib + brlContrib + crlContrib)
     * (1 - params.riskIndex)
     * params.confidenceScore;
 
   return {
     computedVrl: Math.max(0, Math.min(1, rawVrl)),
-    trlContribution: trlContrib,
+    trlContribution: prlContrib,  // kept for backward compat (now represents PRL contrib)
     brlContribution: brlContrib,
     crlContribution: crlContrib,
     trlNormalized: trlNorm,
+    prlNormalized: prlNorm,
+    mrlNormalized: mrlNorm,
     brlNormalized: brlNorm,
     crlNormalized: crlNorm,
   };
@@ -784,8 +797,15 @@ Recent Interventions: ${recentInterventions.length} in history`,
       confidenceScore: z.number().min(0).max(1).default(0.7),
     }))
     .mutation(async ({ input }) => {
+      const db = (await getDb())!;
+      // Look up latest MRL assessment for PRL composite
+      const mrlRows = await db.select().from(mrlAssessments)
+        .where(eq(mrlAssessments.ventureId, input.ventureId))
+        .orderBy(desc(mrlAssessments.assessedAt)).limit(1);
+      const mrlLevel = mrlRows[0]?.mrlLevel ?? null;
       const result = computeVrlWithCrl({
         trl: input.trl,
+        mrlLevel,
         brlScore: input.brlScore,
         crlScore: input.crlScore,
         h4Stage: input.h4Stage,
@@ -794,8 +814,6 @@ Recent Interventions: ${recentInterventions.length} in history`,
       });
 
       const weights = STAGE_WEIGHTS[input.h4Stage];
-      const db = (await getDb())!;
-
       // Upsert VRL dynamic weights record
       const existing = await db
         .select()

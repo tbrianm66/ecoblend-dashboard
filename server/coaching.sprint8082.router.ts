@@ -12,7 +12,7 @@ import {
   coachingCoaches,
   coachingCommitments,
   coachingSessions,
-  coachingPrl,
+  coachingFrl,
   coachingAssignments,
   founders,
 } from "../drizzle/schema";
@@ -35,9 +35,9 @@ export const alertsRouter = router({
       for (const f of allFounders) {
         const prlRows = await db
           .select()
-          .from(coachingPrl)
-          .where(eq(coachingPrl.founderId, f.id))
-          .orderBy(desc(coachingPrl.week))
+          .from(coachingFrl)
+          .where(eq(coachingFrl.founderId, f.id))
+          .orderBy(desc(coachingFrl.week))
           .limit(4);
 
         if (prlRows.length === 0) continue;
@@ -56,7 +56,7 @@ export const alertsRouter = router({
           id: string; founderId: number; ventureId: string | null;
           alertType: "sharp_drop" | "sustained_high" | "first_high_risk" | "recovery";
           severity: "critical" | "warning" | "info";
-          message: string; weekOf: Date; prlScore: string; prlDelta: string | null;
+          message: string; weekOf: Date; frlScore: string; prlDelta: string | null;
         };
         const newAlerts: AlertInsert[] = [];
 
@@ -70,7 +70,7 @@ export const alertsRouter = router({
               alertType: "sharp_drop",
               severity: delta <= -20 ? "critical" : "warning",
               message: `${f.name}'s PRL dropped ${Math.abs(delta).toFixed(1)} points this week (${prevScore.toFixed(0)} → ${latestScore.toFixed(0)}). Immediate coach intervention recommended.`,
-              weekOf: weekOf as unknown as Date, prlScore: latestScore.toFixed(2), prlDelta: delta.toFixed(2),
+              weekOf: weekOf as unknown as Date, frlScore: latestScore.toFixed(2), prlDelta: delta.toFixed(2),
             });
           }
         }
@@ -83,7 +83,7 @@ export const alertsRouter = router({
               id: randomUUID(), founderId: f.id, ventureId: f.ventureId || null,
               alertType: "sustained_high", severity: "critical",
               message: `${f.name} has been in HIGH risk for 3+ consecutive weeks. Escalated coaching review required.`,
-              weekOf: weekOf as unknown as Date, prlScore: latestScore.toFixed(2), prlDelta: null,
+              weekOf: weekOf as unknown as Date, frlScore: latestScore.toFixed(2), prlDelta: null,
             });
           }
         }
@@ -95,7 +95,7 @@ export const alertsRouter = router({
               id: randomUUID(), founderId: f.id, ventureId: f.ventureId || null,
               alertType: "first_high_risk", severity: "warning",
               message: `${f.name} has entered HIGH risk territory for the first time (PRL: ${latestScore.toFixed(0)}). Schedule a check-in session.`,
-              weekOf: weekOf as unknown as Date, prlScore: latestScore.toFixed(2),
+              weekOf: weekOf as unknown as Date, frlScore: latestScore.toFixed(2),
               prlDelta: prev ? (latestScore - parseFloat(prev.score as unknown as string)).toFixed(2) : null,
             });
           }
@@ -108,7 +108,7 @@ export const alertsRouter = router({
               id: randomUUID(), founderId: f.id, ventureId: f.ventureId || null,
               alertType: "recovery", severity: "info",
               message: `${f.name} has recovered from HIGH risk to ${latest.riskLevel} (PRL: ${latestScore.toFixed(0)}). Keep momentum going.`,
-              weekOf: weekOf as unknown as Date, prlScore: latestScore.toFixed(2),
+              weekOf: weekOf as unknown as Date, frlScore: latestScore.toFixed(2),
               prlDelta: prev ? (latestScore - parseFloat(prev.score as unknown as string)).toFixed(2) : null,
             });
           }
@@ -188,9 +188,9 @@ export const progressReportsRouter = router({
       periodStart.setDate(periodStart.getDate() - input.periodWeeks * 7);
 
       const prlHistory = await db
-        .select().from(coachingPrl)
-        .where(eq(coachingPrl.founderId, input.founderId))
-        .orderBy(desc(coachingPrl.week)).limit(input.periodWeeks);
+        .select().from(coachingFrl)
+        .where(eq(coachingFrl.founderId, input.founderId))
+        .orderBy(desc(coachingFrl.week)).limit(input.periodWeeks);
 
       const commitments = await db.select().from(coachingCommitments)
         .where(eq(coachingCommitments.founderId, input.founderId));
@@ -351,9 +351,9 @@ export const leaderboardRouter = router({
         let totalCompleted = 0; let totalCommitmentsCount = 0;
 
         for (const fid of founderIds) {
-          const prlRows = await db.select().from(coachingPrl)
-            .where(eq(coachingPrl.founderId, fid))
-            .orderBy(desc(coachingPrl.week)).limit(2);
+          const prlRows = await db.select().from(coachingFrl)
+            .where(eq(coachingFrl.founderId, fid))
+            .orderBy(desc(coachingFrl.week)).limit(2);
           if (prlRows.length >= 2) {
             totalDelta += parseFloat(prlRows[0].score as unknown as string) - parseFloat(prlRows[1].score as unknown as string);
             deltaCount++;

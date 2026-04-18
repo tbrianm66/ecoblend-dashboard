@@ -123,7 +123,7 @@ export const alertSchedulingRouter = router({
                 severity,
                 message,
                 weekOf,
-                prlScore: current.toFixed(2),
+                frlScore: current.toFixed(2),
                 prlDelta: (-drop).toFixed(2),
                 acknowledged: false,
                 createdAt: new Date(),

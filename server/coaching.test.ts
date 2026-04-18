@@ -43,8 +43,8 @@ function detectTrend(
   return "stable";
 }
 
-function calculateVrlLink(vrlScore: number, prlScore: number): number {
-  const prlMultiplier = 0.8 + (prlScore / 100) * 0.4;
+function calculateVrlLink(vrlScore: number, frlScore: number): number {
+  const prlMultiplier = 0.8 + (frlScore / 100) * 0.4;
   return Math.min(100, Math.max(0, vrlScore * prlMultiplier));
 }
 

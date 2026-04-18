@@ -40,8 +40,13 @@ export default function VentureDetail() {
   const brlScore = brlEntry?.score ?? 0;
   const brlCompleted = brlEntry?.completedCount ?? 0;
   const brlTotal = brlEntry?.totalCount ?? 100;
-  // Computed VRL score from scoring engine
+  // Computed VRL score from scoring engine (now includes PRL composite = TRL × MRL)
   const { data: vrlComputedScore } = trpc.vrlScoring.getScore.useQuery({ ventureId: venture.id });
+  // PRL composite values from VRL score
+  const prlNorm = vrlComputedScore?.prlNorm ?? null;
+  const mrlNormVal = vrlComputedScore?.mrlNorm ?? null;
+  const trlNormVal = vrlComputedScore?.trlNorm ?? null;
+  const hasMrlData = mrlNormVal !== null && mrlNormVal > 0;
 
   // Sprint 95 — Flower Metrics Export
   const [showFlowerModal, setShowFlowerModal] = useState(false);
@@ -293,6 +298,58 @@ export default function VentureDetail() {
             </div>
           </div>
         </div>
+
+        {/* PRL Composite Card (Product Readiness Level = TRL × MRL) */}
+        {vrlComputedScore && (
+          <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb", borderTop: "3px solid #7c3aed" }}>
+            <div className="flex items-center gap-2 mb-4">
+              <Zap size={18} style={{ color: "#7c3aed" }} />
+              <h3 className="font-bold text-gray-900">Product Readiness Level (PRL)</h3>
+              <span className="ml-auto text-xs px-2 py-0.5 rounded font-semibold" style={{ background: "#7c3aed15", color: "#7c3aed" }}>TRL × MRL Composite</span>
+            </div>
+            <div className="flex items-end gap-3 mb-4">
+              <span className="text-5xl font-bold font-mono" style={{ color: "#7c3aed" }}>
+                {prlNorm !== null ? prlNorm.toFixed(1) : "—"}
+              </span>
+              <span className="text-gray-400 mb-2">/ 9</span>
+              {!hasMrlData && (
+                <span className="ml-auto text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded">No MRL data — using TRL only</span>
+              )}
+            </div>
+            <div className="w-full h-3 rounded-full bg-gray-100 overflow-hidden mb-4">
+              <div
+                className="h-full rounded-full transition-all duration-700"
+                style={{ width: `${prlNorm !== null ? (prlNorm / 9) * 100 : 0}%`, background: "#7c3aed" }}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-3 rounded-lg" style={{ background: "#eff6ff" }}>
+                <div className="text-xs font-semibold text-blue-600 mb-1">TRL Component</div>
+                <div className="text-2xl font-bold font-mono text-blue-700">{trlNormVal !== null ? trlNormVal.toFixed(1) : venture.trl}</div>
+                <div className="text-xs text-blue-500">Technology Readiness</div>
+                <div className="mt-2 w-full h-1.5 rounded-full bg-blue-100">
+                  <div className="h-full rounded-full" style={{ width: `${trlNormVal !== null ? (trlNormVal / 9) * 100 : (venture.trl / 9) * 100}%`, background: "#1d4ed8" }} />
+                </div>
+              </div>
+              <div className="p-3 rounded-lg" style={{ background: hasMrlData ? "#f5f3ff" : "#f9fafb" }}>
+                <div className="text-xs font-semibold mb-1" style={{ color: hasMrlData ? "#7c3aed" : "#9ca3af" }}>MRL Component</div>
+                <div className="text-2xl font-bold font-mono" style={{ color: hasMrlData ? "#7c3aed" : "#9ca3af" }}>
+                  {hasMrlData ? (mrlNormVal! * 9).toFixed(1) : "—"}
+                </div>
+                <div className="text-xs" style={{ color: hasMrlData ? "#7c3aed" : "#9ca3af" }}>Manufacturing Readiness</div>
+                {hasMrlData && (
+                  <div className="mt-2 w-full h-1.5 rounded-full bg-purple-100">
+                    <div className="h-full rounded-full" style={{ width: `${(mrlNormVal! * 9 / 9) * 100}%`, background: "#7c3aed" }} />
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="mt-3 p-3 rounded-lg text-xs text-gray-500" style={{ background: "#f9fafb" }}>
+              PRL = (0.5 × TRL) + (0.5 × MRL) — replaces raw TRL in the VRL formula.
+              {!hasMrlData && " Add an MRL assessment to unlock the full composite."}
+            </div>
+          </div>
+        )}
 
         {/* Milestones */}
         <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb" }}>

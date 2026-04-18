@@ -33,12 +33,12 @@ describe("Sprint 89: Founder Leaderboard", () => {
   describe("leaderboard ranking computation", () => {
     it("ranks founders by PRL score descending", () => {
       const founders = [
-        { ventureId: "a", prlScore: 72.5 },
-        { ventureId: "b", prlScore: 88.0 },
-        { ventureId: "c", prlScore: 55.3 },
-        { ventureId: "d", prlScore: 91.2 },
+        { ventureId: "a", frlScore: 72.5 },
+        { ventureId: "b", frlScore: 88.0 },
+        { ventureId: "c", frlScore: 55.3 },
+        { ventureId: "d", frlScore: 91.2 },
       ];
-      const ranked = [...founders].sort((a, b) => b.prlScore - a.prlScore);
+      const ranked = [...founders].sort((a, b) => b.frlScore - a.frlScore);
       expect(ranked[0].ventureId).toBe("d");
       expect(ranked[1].ventureId).toBe("b");
       expect(ranked[2].ventureId).toBe("a");

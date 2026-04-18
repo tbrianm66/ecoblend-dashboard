@@ -9,8 +9,8 @@ import { describe, it, expect, beforeAll } from "vitest";
 
 describe("PRL → VRL Integration", () => {
   it("should apply PRL weight to base VRL score correctly", () => {
-    const applyPrlToVrl = (baseVrl: number, prlScore: number): number => {
-      const adjusted = baseVrl * (0.8 + (prlScore / 100) * 0.4);
+    const applyPrlToVrl = (baseVrl: number, frlScore: number): number => {
+      const adjusted = baseVrl * (0.8 + (frlScore / 100) * 0.4);
       return Math.min(100, Math.round(adjusted * 10) / 10);
     };
 
@@ -42,13 +42,13 @@ describe("PRL → VRL Integration", () => {
   });
 
   it("should detect when low PRL causes a VRL gate downgrade", () => {
-    const detectGateDowngrade = (baseVrl: number, prlScore: number) => {
+    const detectGateDowngrade = (baseVrl: number, frlScore: number) => {
       const applyPrl = (vrl: number, prl: number) =>
         Math.min(100, vrl * (0.8 + (prl / 100) * 0.4));
       const classify = (v: number) => (v >= 70 ? "PASS" : v >= 50 ? "WATCH" : "BLOCK");
 
       const rawGate = classify(baseVrl);
-      const adjustedGate = classify(applyPrl(baseVrl, prlScore));
+      const adjustedGate = classify(applyPrl(baseVrl, frlScore));
       return rawGate !== adjustedGate ? { downgraded: true, from: rawGate, to: adjustedGate } : { downgraded: false };
     };
 

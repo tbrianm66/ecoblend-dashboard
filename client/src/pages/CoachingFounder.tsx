@@ -223,7 +223,7 @@ export default function CoachingFounder() {
   }
 
   const prl = dashboard?.currentPrl;
-  const prlScore = prl ? parseFloat(prl.score as unknown as string) : 0;
+  const frlScore = prl ? parseFloat(prl.score as unknown as string) : 0;
   const ragColor = getRagColor(prl?.riskLevel || null);
 
   const chartData = (dashboard?.prlHistory || [])
@@ -338,7 +338,7 @@ export default function CoachingFounder() {
         {/* PRL Ring */}
         <Card className="bg-slate-900 border-slate-700 lg:col-span-1">
           <CardContent className="pt-6 flex flex-col items-center gap-3">
-            <PrlRingGauge score={prlScore} riskLevel={prl?.riskLevel || null} />
+            <PrlRingGauge score={frlScore} riskLevel={prl?.riskLevel || null} />
             <div className="flex items-center gap-2">
               <TrendIcon trend={prl?.trend || null} />
               <span
@@ -349,7 +349,7 @@ export default function CoachingFounder() {
               </span>
             </div>
             <p className="text-xs text-slate-500 text-center">
-              Personal Readiness Level
+              Founder Readiness Level
             </p>
           </CardContent>
         </Card>
@@ -359,7 +359,7 @@ export default function CoachingFounder() {
           {[
             { label: "This Week", value: `${completedCount}/${totalCount}`, sub: "commitments done", color: "#22c55e" },
             { label: "Completion Rate", value: `${completionRate}%`, sub: "coach-verified", color: "#3b82f6" },
-            { label: "PRL Score", value: prlScore.toFixed(1), sub: prl?.trend || "no data", color: ragColor },
+            { label: "FRL Score", value: frlScore.toFixed(1), sub: prl?.trend || "no data", color: ragColor },
             { label: "Sessions", value: String(dashboard?.recentSessions.length || 0), sub: "recent sessions", color: "#a78bfa" },
           ].map((stat) => (
             <Card key={stat.label} className="bg-slate-900 border-slate-700">
@@ -825,8 +825,8 @@ export default function CoachingFounder() {
       {/* Sprint 92: Notification Centre */}
       <NotificationCentreCard />
 
-      {/* Sprint 94: PRL Goal Progress */}
-      <PrlGoalCard />
+      {/* Sprint 94: FRL Goal Progress */}
+      <FrlGoalCard />
 
       {/* Onboarding Modal — shown on first login if onboarding not yet complete */}
       <CoachingOnboardingModal
@@ -930,8 +930,8 @@ function FounderLeaderboardCard() {
                   entry.rank === 1 ? "text-yellow-400" : entry.rank === 2 ? "text-slate-300" : entry.rank === 3 ? "text-amber-500" : "text-slate-500"
                 }`}>#{entry.rank}</span>
                 <span className="flex-1 text-sm text-white">{entry.displayName}</span>
-                {entry.prlScore !== null && (
-                  <span className="text-sm font-mono text-green-400">{entry.prlScore.toFixed(1)}</span>
+                {entry.frlScore !== null && (
+                  <span className="text-sm font-mono text-green-400">{entry.frlScore.toFixed(1)}</span>
                 )}
                 <span className="text-xs text-slate-500">{entry.percentile.toFixed(0)}th pct</span>
               </div>
@@ -1098,7 +1098,7 @@ function NotificationCentreCard() {
     self_assessment_rejected: "text-rose-400",
     leaderboard_rank_change: "text-purple-400",
     commitment_due: "text-orange-400",
-    prl_score_updated: "text-cyan-400",
+    frl_score_updated: "text-cyan-400",
     goal_updated: "text-indigo-400",
     general: "text-slate-400",
   };
@@ -1163,9 +1163,9 @@ function NotificationCentreCard() {
   );
 }
 
-// ── Sprint 94: PRL Goal Progress Card ────────────────────────────────────────
+// ── Sprint 94: FRL Goal Progress Card ────────────────────────────────────────
 
-function PrlGoalCard() {
+function FrlGoalCard() {
   const VENTURE_ID = "ecoblend";
   const FOUNDER_ID_STR = String(1);
 
@@ -1180,12 +1180,12 @@ function PrlGoalCard() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-semibold text-white flex items-center gap-2">
             <Crosshair className="w-4 h-4 text-indigo-400" />
-            PRL Goal
+            FRL Goal
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-slate-500 text-center py-4">
-            No active PRL goal set. Ask your coach to set a target score and deadline.
+            No active FRL goal set. Ask your coach to set a target score and deadline.
           </p>
         </CardContent>
       </Card>
@@ -1202,7 +1202,7 @@ function PrlGoalCard() {
       <CardHeader className="pb-3">
         <CardTitle className="text-base font-semibold text-white flex items-center gap-2">
           <Crosshair className="w-4 h-4 text-indigo-400" />
-          PRL Goal
+          FRL Goal
           <span className={`text-xs font-normal ml-auto ${statusColor}`}>
             {goal.status === "achieved" ? "✓ Achieved" : isOverdue ? "Overdue" : `${daysLeft}d remaining`}
           </span>

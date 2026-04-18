@@ -31,7 +31,7 @@ import {
   templateEffectivenessCache,
   commitmentTemplates,
   coachingCommitments,
-  coachingPrl,
+  coachingFrl,
   founders,
 } from "../drizzle/schema";
 import { eq, and, desc, asc, sql, gte, lte, isNotNull } from "drizzle-orm";
@@ -87,39 +87,39 @@ export const leaderboardRouter = router({
       // Get all opted-in founders at this VRL stage with a PRL score this week
       const prlData = await db
         .select({
-          founderId: coachingPrl.founderId,
-          ventureId: coachingPrl.ventureId,
-          prlScore:  coachingPrl.compositeScore,
+          founderId: coachingFrl.founderId,
+          ventureId: coachingFrl.ventureId,
+          frlScore:  coachingFrl.compositeScore,
         })
-        .from(coachingPrl)
+        .from(coachingFrl)
         .where(and(
-          eq(coachingPrl.vrlStage, input.vrlStage),
-          isNotNull(coachingPrl.compositeScore),
+          eq(coachingFrl.vrlStage, input.vrlStage),
+          isNotNull(coachingFrl.compositeScore),
         ))
-        .orderBy(desc(coachingPrl.createdAt));
+        .orderBy(desc(coachingFrl.createdAt));
 
       // Deduplicate to latest score per founder
-      const latestByFounder = new Map<string, { founderId: string; ventureId: string; prlScore: number }>();
+      const latestByFounder = new Map<string, { founderId: string; ventureId: string; frlScore: number }>();
       for (const row of prlData) {
         if (!latestByFounder.has(row.founderId)) {
           latestByFounder.set(row.founderId, {
             founderId: row.founderId,
             ventureId: row.ventureId,
-            prlScore:  parseFloat(row.prlScore as unknown as string) || 0,
+            frlScore:  parseFloat(row.frlScore as unknown as string) || 0,
           });
         }
       }
 
-      const ranked = [...latestByFounder.values()].sort((a, b) => b.prlScore - a.prlScore);
+      const ranked = [...latestByFounder.values()].sort((a, b) => b.frlScore - a.frlScore);
       const cohortSize = ranked.length;
 
       // Get previous week snapshots for delta
       const prevWeek = getPrevWeekStart();
       const prevSnaps = await db
-        .select({ founderId: founderLeaderboardSnapshots.founderId, prlScore: founderLeaderboardSnapshots.prlScore })
+        .select({ founderId: founderLeaderboardSnapshots.founderId, frlScore: founderLeaderboardSnapshots.frlScore })
         .from(founderLeaderboardSnapshots)
         .where(eq(founderLeaderboardSnapshots.weekOf, prevWeek));
-      const prevScoreMap = new Map(prevSnaps.map((s) => [s.founderId, parseFloat(s.prlScore as unknown as string) || 0]));
+      const prevScoreMap = new Map(prevSnaps.map((s) => [s.founderId, parseFloat(s.frlScore as unknown as string) || 0]));
 
       // Get opt-in status
       const optIns = await db
@@ -134,7 +134,7 @@ export const leaderboardRouter = router({
         const rank = i + 1;
         const percentile = cohortSize > 1 ? ((cohortSize - rank) / (cohortSize - 1)) * 100 : 100;
         const prevScore = prevScoreMap.get(entry.founderId) ?? null;
-        const delta = prevScore !== null ? entry.prlScore - prevScore : null;
+        const delta = prevScore !== null ? entry.frlScore - prevScore : null;
         const optIn = optInMap.get(entry.founderId);
 
         await db.insert(founderLeaderboardSnapshots).values({
@@ -143,7 +143,7 @@ export const leaderboardRouter = router({
           ventureId:     entry.ventureId,
           vrlStage:      input.vrlStage,
           weekOf:        weekOf as unknown as Date,
-          prlScore:      entry.prlScore as unknown as any,
+          frlScore:      entry.frlScore as unknown as any,
           rankInCohort:  rank,
           cohortSize,
           percentile:    percentile as unknown as any,
@@ -152,7 +152,7 @@ export const leaderboardRouter = router({
           displayAlias:  optIn?.alias ?? null,
         }).onDuplicateKeyUpdate({
           set: {
-            prlScore:     entry.prlScore as unknown as any,
+            frlScore:     entry.frlScore as unknown as any,
             rankInCohort: rank,
             cohortSize,
             percentile:   percentile as unknown as any,
@@ -189,7 +189,7 @@ export const leaderboardRouter = router({
       return rows.map((r) => ({
         rank:         r.rankInCohort,
         displayName:  r.isOptedIn ? (r.displayAlias ?? `Founder #${r.rankInCohort}`) : `Anonymous`,
-        prlScore:     r.isOptedIn ? parseFloat(r.prlScore as unknown as string) : null,
+        frlScore:     r.isOptedIn ? parseFloat(r.frlScore as unknown as string) : null,
         percentile:   parseFloat(r.percentile as unknown as string),
         deltaFromPrev: r.deltaFromPrev !== null ? parseFloat(r.deltaFromPrev as unknown as string) : null,
         isOptedIn:    r.isOptedIn,
@@ -220,7 +220,7 @@ export const leaderboardRouter = router({
         rank:         r.rankInCohort,
         cohortSize:   r.cohortSize,
         percentile:   parseFloat(r.percentile as unknown as string),
-        prlScore:     parseFloat(r.prlScore as unknown as string),
+        frlScore:     parseFloat(r.frlScore as unknown as string),
         deltaFromPrev: r.deltaFromPrev !== null ? parseFloat(r.deltaFromPrev as unknown as string) : null,
         isOptedIn:    r.isOptedIn,
         displayAlias: r.displayAlias,

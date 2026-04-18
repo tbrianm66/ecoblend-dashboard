@@ -137,7 +137,7 @@ describe("Sprint 84 — Progress Report Email Delivery", () => {
   it("should build notification content with all required fields", () => {
     const founderName = "Bob Osei";
     const period = "2026-03-10 to 2026-04-07";
-    const prlScore = 72.5;
+    const frlScore = 72.5;
     const prlTrend = "improving";
     const avgScore = 68.3;
     const weeksTracked = 4;
@@ -149,7 +149,7 @@ describe("Sprint 84 — Progress Report Email Delivery", () => {
     const content = [
       `**Founder:** ${founderName}`,
       `**Period:** ${period}`,
-      `**PRL Score:** ${prlScore.toFixed(1)} (${prlTrend})`,
+      `**PRL Score:** ${frlScore.toFixed(1)} (${prlTrend})`,
       `**Avg PRL:** ${avgScore.toFixed(1)} over ${weeksTracked} weeks`,
       `**Commitment Rate:** ${completionRate.toFixed(0)}% (${completed}/${total} completed)`,
       `**Sessions:** ${sessions}`,

@@ -1154,17 +1154,17 @@ export default function CoachingStudio() {
         </CardContent>
       </Card>
 
-      {/* Sprint 94: PRL Goal Management */}
+      {/* Sprint 94: FRL Goal Management */}
       <Card className="bg-slate-900 border-indigo-700">
         <CardHeader className="pb-3">
           <CardTitle className="text-base text-white flex items-center gap-2">
             <Crosshair className="w-4 h-4 text-indigo-400" />
-            PRL Goal Management
+            FRL Goal Management
           </CardTitle>
           <p className="text-xs text-slate-400">Set and track PRL targets for each founder</p>
         </CardHeader>
         <CardContent>
-          <PrlGoalManagementPanel />
+          <FrlGoalManagementPanel />
         </CardContent>
       </Card>
     </div>
@@ -1635,9 +1635,9 @@ function CoachWorkloadPanel() {
   );
 }
 
-// ── Sprint 94: PRL Goal Management Panel ─────────────────────────────────────
+// ── Sprint 94: FRL Goal Management Panel ─────────────────────────────────────
 
-function PrlGoalManagementPanel() {
+function FrlGoalManagementPanel() {
   const [showSetGoal, setShowSetGoal] = useState(false);
   const [goalForm, setGoalForm] = useState({
     ventureId: "",
@@ -1656,7 +1656,7 @@ function PrlGoalManagementPanel() {
 
   const setGoal = trpc.coaching.goals.set.useMutation({
     onSuccess: () => {
-      toast.success("PRL goal set successfully");
+      toast.success("FRL goal set successfully");
       setShowSetGoal(false);
       setGoalForm({ ventureId: "", founderId: "", coachId: "", targetScore: 70, targetDate: "", startScore: 50, notes: "" });
       refetch();
@@ -1686,7 +1686,7 @@ function PrlGoalManagementPanel() {
 
       {showSetGoal && (
         <div className="bg-slate-800 rounded-lg p-4 border border-indigo-700 space-y-3">
-          <p className="text-sm font-medium text-indigo-300">Set PRL Goal</p>
+          <p className="text-sm font-medium text-indigo-300">Set FRL Goal</p>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-slate-400 mb-1 block">Venture ID</label>

@@ -17,7 +17,7 @@ import {
   coachingCommitments,
   coachingSessions,
   coachingBehaviourMetrics,
-  coachingPrl,
+  coachingFrl,
   coachingVrlLink,
   coachingInsights,
   coachingAssignments,
@@ -167,7 +167,7 @@ async function runPrlPipeline(
   founderId: number,
   ventureId: string | null,
   week: Date
-): Promise<{ prlScore: number; riskLevel: string; trend: string }> {
+): Promise<{ frlScore: number; riskLevel: string; trend: string }> {
   const weekStr = week.toISOString().split("T")[0];
 
   // Step 1: Recalculate behaviour metrics
@@ -220,10 +220,10 @@ async function runPrlPipeline(
 
   // Get prior 3 weeks of PRL scores for trend calculation
   const priorPrls = await db
-    .select({ score: coachingPrl.score })
-    .from(coachingPrl)
-    .where(eq(coachingPrl.founderId, founderId))
-    .orderBy(desc(coachingPrl.week))
+    .select({ score: coachingFrl.score })
+    .from(coachingFrl)
+    .where(eq(coachingFrl.founderId, founderId))
+    .orderBy(desc(coachingFrl.week))
     .limit(3);
 
   const priorScores = priorPrls.map((p) => parseFloat(p.score as unknown as string));
@@ -232,11 +232,11 @@ async function runPrlPipeline(
   // Upsert PRL record
   const existingPrl = await db
     .select()
-    .from(coachingPrl)
+    .from(coachingFrl)
     .where(
       and(
-        eq(coachingPrl.founderId, founderId),
-        eq(coachingPrl.week, weekStr as unknown as Date)
+        eq(coachingFrl.founderId, founderId),
+        eq(coachingFrl.week, weekStr as unknown as Date)
       )
     )
     .limit(1);
@@ -244,7 +244,7 @@ async function runPrlPipeline(
   const prlId = existingPrl[0]?.id || randomUUID();
   if (existingPrl.length > 0) {
     await db
-      .update(coachingPrl)
+      .update(coachingFrl)
       .set({
         score: prlResult.score.toString(),
         trend,
@@ -255,9 +255,9 @@ async function runPrlPipeline(
         missedPenalty: prlResult.missedPenalty.toString(),
         calculatedAt: new Date(),
       })
-      .where(eq(coachingPrl.id, existingPrl[0].id));
+      .where(eq(coachingFrl.id, existingPrl[0].id));
   } else {
-    await db.insert(coachingPrl).values({
+    await db.insert(coachingFrl).values({
       id: prlId,
       founderId,
       ventureId,
@@ -281,11 +281,11 @@ async function runPrlPipeline(
       .where(eq(coachingVrlLink.ventureId, ventureId))
       .limit(1);
 
-    const prlWeight = existingLink[0]?.prlWeight
-      ? parseFloat(existingLink[0].prlWeight as unknown as string)
+    const frlWeight = existingLink[0]?.frlWeight
+      ? parseFloat(existingLink[0].frlWeight as unknown as string)
       : 0.25;
 
-    const executionScore = prlResult.score * prlWeight;
+    const executionScore = prlResult.score * frlWeight;
     const baseVrl = existingLink[0]?.baseVrl
       ? parseFloat(existingLink[0].baseVrl as unknown as string)
       : 50;
@@ -306,7 +306,7 @@ async function runPrlPipeline(
       await db.insert(coachingVrlLink).values({
         id: randomUUID(),
         ventureId,
-        prlWeight: prlWeight.toString(),
+        frlWeight: frlWeight.toString(),
         executionScore: executionScore.toString(),
         baseVrl: baseVrl.toString(),
         adjustedVrl: adjustedVrl.toString(),
@@ -316,7 +316,7 @@ async function runPrlPipeline(
     }
   }
 
-  return { prlScore: prlResult.score, riskLevel: prlResult.riskLevel, trend };
+  return { frlScore: prlResult.score, riskLevel: prlResult.riskLevel, trend };
 }
 
 // ── AI Coaching Insights ──────────────────────────────────────────────────────
@@ -353,20 +353,20 @@ async function generateCoachingInsights(
 
   const currentPrl = await db
     .select()
-    .from(coachingPrl)
+    .from(coachingFrl)
     .where(
       and(
-        eq(coachingPrl.founderId, founderId),
-        eq(coachingPrl.week, weekStr as unknown as Date)
+        eq(coachingFrl.founderId, founderId),
+        eq(coachingFrl.week, weekStr as unknown as Date)
       )
     )
     .limit(1);
 
   const prlHistory = await db
-    .select({ week: coachingPrl.week, score: coachingPrl.score })
-    .from(coachingPrl)
-    .where(eq(coachingPrl.founderId, founderId))
-    .orderBy(desc(coachingPrl.week))
+    .select({ week: coachingFrl.week, score: coachingFrl.score })
+    .from(coachingFrl)
+    .where(eq(coachingFrl.founderId, founderId))
+    .orderBy(desc(coachingFrl.week))
     .limit(12);
 
   const insightId = randomUUID();
@@ -401,7 +401,7 @@ async function generateCoachingInsights(
     founderId,
     ventureId,
     week: weekStr as unknown as Date,
-    prlScoreAtTime: payload.prl_score.toString(),
+    frlScoreAtTime: payload.prl_score.toString(),
     prlTrendAtTime: payload.prl_trend,
     rawPayload: payload,
     status: "pending",
@@ -705,9 +705,9 @@ const prlRouter = router({
       const db = getDb();
       const [latest] = await db
         .select()
-        .from(coachingPrl)
-        .where(eq(coachingPrl.founderId, input.founderId))
-        .orderBy(desc(coachingPrl.week))
+        .from(coachingFrl)
+        .where(eq(coachingFrl.founderId, input.founderId))
+        .orderBy(desc(coachingFrl.week))
         .limit(1);
       return latest || null;
     }),
@@ -718,9 +718,9 @@ const prlRouter = router({
       const db = getDb();
       return db
         .select()
-        .from(coachingPrl)
-        .where(eq(coachingPrl.founderId, input.founderId))
-        .orderBy(desc(coachingPrl.week))
+        .from(coachingFrl)
+        .where(eq(coachingFrl.founderId, input.founderId))
+        .orderBy(desc(coachingFrl.week))
         .limit(input.weeks);
     }),
 
@@ -745,22 +745,22 @@ const prlRouter = router({
       allFounders.map(async (f) => {
         const [latest] = await db
           .select()
-          .from(coachingPrl)
-          .where(eq(coachingPrl.founderId, f.id))
-          .orderBy(desc(coachingPrl.week))
+          .from(coachingFrl)
+          .where(eq(coachingFrl.founderId, f.id))
+          .orderBy(desc(coachingFrl.week))
           .limit(1);
         return {
           founderId: f.id,
           founderName: f.name,
           ventureId: f.ventureId,
-          prlScore: latest ? parseFloat(latest.score as unknown as string) : null,
+          frlScore: latest ? parseFloat(latest.score as unknown as string) : null,
           riskLevel: latest?.riskLevel || null,
           trend: latest?.trend || null,
         };
       })
     );
-    const scored = results.filter((r) => r.prlScore !== null);
-    const avgPrl = scored.length > 0 ? scored.reduce((a, b) => a + (b.prlScore || 0), 0) / scored.length : 0;
+    const scored = results.filter((r) => r.frlScore !== null);
+    const avgPrl = scored.length > 0 ? scored.reduce((a, b) => a + (b.frlScore || 0), 0) / scored.length : 0;
     const highRisk = scored.filter((r) => r.riskLevel === "HIGH").length;
     const mediumRisk = scored.filter((r) => r.riskLevel === "MEDIUM").length;
     const lowRisk = scored.filter((r) => r.riskLevel === "LOW").length;
@@ -782,7 +782,7 @@ const vrlLinkRouter = router({
     }),
 
   updateWeight: protectedProcedure
-    .input(z.object({ ventureId: z.string(), prlWeight: z.number().min(0).max(1) }))
+    .input(z.object({ ventureId: z.string(), frlWeight: z.number().min(0).max(1) }))
     .mutation(async ({ input }) => {
       const db = getDb();
       const existing = await db
@@ -794,13 +794,13 @@ const vrlLinkRouter = router({
       if (existing.length > 0) {
         await db
           .update(coachingVrlLink)
-          .set({ prlWeight: input.prlWeight.toString(), updatedAt: new Date() })
+          .set({ frlWeight: input.frlWeight.toString(), updatedAt: new Date() })
           .where(eq(coachingVrlLink.ventureId, input.ventureId));
       } else {
         await db.insert(coachingVrlLink).values({
           id: randomUUID(),
           ventureId: input.ventureId,
-          prlWeight: input.prlWeight.toString(),
+          frlWeight: input.frlWeight.toString(),
           executionScore: "0",
           baseVrl: "50",
           adjustedVrl: "50",
@@ -824,7 +824,7 @@ const vrlLinkRouter = router({
         adjustedVrl: link ? parseFloat(link.adjustedVrl as unknown as string) : null,
         executionScore: link ? parseFloat(link.executionScore as unknown as string) : null,
         riskFlagged: link?.riskFlagged || false,
-        prlWeight: link ? parseFloat(link.prlWeight as unknown as string) : 0.25,
+        frlWeight: link ? parseFloat(link.frlWeight as unknown as string) : 0.25,
       };
     });
   }),
@@ -868,9 +868,9 @@ const dashboardRouter = router({
 
       const [currentPrl] = await db
         .select()
-        .from(coachingPrl)
-        .where(eq(coachingPrl.founderId, input.founderId))
-        .orderBy(desc(coachingPrl.week))
+        .from(coachingFrl)
+        .where(eq(coachingFrl.founderId, input.founderId))
+        .orderBy(desc(coachingFrl.week))
         .limit(1);
 
       const weekCommitments = await db
@@ -893,9 +893,9 @@ const dashboardRouter = router({
 
       const prlHistory = await db
         .select()
-        .from(coachingPrl)
-        .where(eq(coachingPrl.founderId, input.founderId))
-        .orderBy(asc(coachingPrl.week))
+        .from(coachingFrl)
+        .where(eq(coachingFrl.founderId, input.founderId))
+        .orderBy(asc(coachingFrl.week))
         .limit(12);
 
       const latestInsight = await db
@@ -937,22 +937,22 @@ const dashboardRouter = router({
             .where(eq(founders.id, founderId))
             .limit(1);
 
-          const [latestPrl] = await db
+          const [latestFrl] = await db
             .select()
-            .from(coachingPrl)
-            .where(eq(coachingPrl.founderId, founderId))
-            .orderBy(desc(coachingPrl.week))
+            .from(coachingFrl)
+            .where(eq(coachingFrl.founderId, founderId))
+            .orderBy(desc(coachingFrl.week))
             .limit(1);
 
           return {
             founder: founder || null,
-            latestPrl: latestPrl || null,
+            latestFrl: latestFrl || null,
           };
         })
       );
 
       const highRiskFounders = assignedFounders.filter(
-        (f) => f.latestPrl?.riskLevel === "HIGH"
+        (f) => f.latestFrl?.riskLevel === "HIGH"
       );
 
       const upcomingSessions = await db
@@ -982,9 +982,9 @@ const dashboardRouter = router({
       allFounders.map(async (f) => {
         const [latest] = await db
           .select()
-          .from(coachingPrl)
-          .where(eq(coachingPrl.founderId, f.id))
-          .orderBy(desc(coachingPrl.week))
+          .from(coachingFrl)
+          .where(eq(coachingFrl.founderId, f.id))
+          .orderBy(desc(coachingFrl.week))
           .limit(1);
         return { founder: f, prl: latest || null };
       })
@@ -1224,13 +1224,13 @@ const templatesRouter = router({
       if (vrlLinks[0]) {
         const prlRows = await db
           .select()
-          .from(coachingPrl)
-          .where(eq(coachingPrl.founderId, vrlLinks[0].founderId))
-          .orderBy(desc(coachingPrl.week))
+          .from(coachingFrl)
+          .where(eq(coachingFrl.founderId, vrlLinks[0].founderId))
+          .orderBy(desc(coachingFrl.week))
           .limit(1);
         if (prlRows[0]) {
           return {
-            prlScore: parseFloat(prlRows[0].score as unknown as string),
+            frlScore: parseFloat(prlRows[0].score as unknown as string),
             riskLevel: prlRows[0].riskLevel,
             trend: prlRows[0].trend,
             week: prlRows[0].week,
@@ -1332,9 +1332,9 @@ const digestRouter = router({
       for (const f of allFounders) {
         const prlRows = await db
           .select()
-          .from(coachingPrl)
-          .where(eq(coachingPrl.founderId, f.id))
-          .orderBy(desc(coachingPrl.week))
+          .from(coachingFrl)
+          .where(eq(coachingFrl.founderId, f.id))
+          .orderBy(desc(coachingFrl.week))
           .limit(2);
         if (prlRows.length === 0) continue;
         const latest = prlRows[0];

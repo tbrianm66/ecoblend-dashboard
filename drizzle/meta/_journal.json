@@ -442,6 +442,13 @@
       "when": 1775735574017,
       "tag": "0062_dusty_starfox",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "5",
+      "when": 1776522053438,
+      "tag": "0063_wooden_sentinels",
+      "breakpoints": true
     }
   ]
 }

@@ -27,10 +27,10 @@ import { router, protectedProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import {
   founderNotifications,
-  prlGoals,
+  frlGoals,
   coachingAssignments,
   coachingCoaches,
-  coachingPrl,
+  coachingFrl,
   coachingCommitments,
   coachingSessions,
   coachingSessionRequests,
@@ -135,7 +135,7 @@ export const notificationsRouter = router({
         "self_assessment_rejected",
         "leaderboard_rank_change",
         "commitment_due",
-        "prl_score_updated",
+        "frl_score_updated",
         "goal_updated",
         "general",
       ]).optional().default("general"),
@@ -207,14 +207,14 @@ export const workloadRouter = router({
         .groupBy(founderSelfAssessments.ventureId);
 
       // Get latest PRL per venture
-      const latestPrl = await db
+      const latestFrl = await db
         .select({
-          ventureId: coachingPrl.ventureId,
-          score:     coachingPrl.score,
-          riskLevel: coachingPrl.riskLevel,
+          ventureId: coachingFrl.ventureId,
+          score:     coachingFrl.score,
+          riskLevel: coachingFrl.riskLevel,
         })
-        .from(coachingPrl)
-        .orderBy(desc(coachingPrl.week));
+        .from(coachingFrl)
+        .orderBy(desc(coachingFrl.week));
 
       // Build per-coach summary
       const coachMap = new Map<string, {
@@ -267,17 +267,17 @@ export const workloadRouter = router({
 
       // Attach PRL stats
       const ventureLatestPrl = new Map<string, { score: number; riskLevel: string }>();
-      for (const p of latestPrl) {
+      for (const p of latestFrl) {
         if (!ventureLatestPrl.has(p.ventureId)) {
           ventureLatestPrl.set(p.ventureId, { score: p.score, riskLevel: p.riskLevel ?? "UNKNOWN" });
         }
       }
       for (const [coachId, entry] of coachMap) {
-        const prlScores = entry.ventureIds
+        const frlScores = entry.ventureIds
           .map(vid => ventureLatestPrl.get(vid)?.score ?? 0)
           .filter(s => s > 0);
-        entry.avgPrl = prlScores.length > 0
-          ? Math.round(prlScores.reduce((a, b) => a + b, 0) / prlScores.length)
+        entry.avgPrl = frlScores.length > 0
+          ? Math.round(frlScores.reduce((a, b) => a + b, 0) / frlScores.length)
           : 0;
         entry.highRiskFounders = entry.ventureIds.filter(vid => {
           const prl = ventureLatestPrl.get(vid);
@@ -349,20 +349,20 @@ export const goalsRouter = router({
       const db = await getDb();
       // Cancel any existing active goal
       await db
-        .update(prlGoals)
+        .update(frlGoals)
         .set({ status: "cancelled" })
         .where(
           and(
-            eq(prlGoals.ventureId, input.ventureId),
-            eq(prlGoals.founderId, input.founderId),
-            eq(prlGoals.status, "active"),
+            eq(frlGoals.ventureId, input.ventureId),
+            eq(frlGoals.founderId, input.founderId),
+            eq(frlGoals.status, "active"),
           )
         );
       const id = randomUUID();
       const progressPercent = input.targetScore > input.startScore
         ? "0.00"
         : "100.00";
-      await db.insert(prlGoals).values({
+      await db.insert(frlGoals).values({
         id,
         ventureId:       input.ventureId,
         founderId:       input.founderId,
@@ -375,7 +375,7 @@ export const goalsRouter = router({
         notes:           input.notes,
         progressPercent: progressPercent as unknown as string,
       });
-      const [created] = await db.select().from(prlGoals).where(eq(prlGoals.id, id));
+      const [created] = await db.select().from(frlGoals).where(eq(frlGoals.id, id));
       return created;
     }),
 
@@ -389,15 +389,15 @@ export const goalsRouter = router({
       const db = await getDb();
       const [goal] = await db
         .select()
-        .from(prlGoals)
+        .from(frlGoals)
         .where(
           and(
-            eq(prlGoals.ventureId, input.ventureId),
-            eq(prlGoals.founderId, input.founderId),
-            eq(prlGoals.status, "active"),
+            eq(frlGoals.ventureId, input.ventureId),
+            eq(frlGoals.founderId, input.founderId),
+            eq(frlGoals.status, "active"),
           )
         )
-        .orderBy(desc(prlGoals.createdAt))
+        .orderBy(desc(frlGoals.createdAt))
         .limit(1);
       return goal ?? null;
     }),
@@ -413,15 +413,15 @@ export const goalsRouter = router({
     .query(async ({ input }) => {
       const db = await getDb();
       const conditions = [];
-      if (input.status !== "all") conditions.push(eq(prlGoals.status, input.status));
-      if (input.coachId)   conditions.push(eq(prlGoals.coachId, input.coachId));
-      if (input.ventureId) conditions.push(eq(prlGoals.ventureId, input.ventureId));
+      if (input.status !== "all") conditions.push(eq(frlGoals.status, input.status));
+      if (input.coachId)   conditions.push(eq(frlGoals.coachId, input.coachId));
+      if (input.ventureId) conditions.push(eq(frlGoals.ventureId, input.ventureId));
 
       const rows = await db
         .select()
-        .from(prlGoals)
+        .from(frlGoals)
         .where(conditions.length > 0 ? and(...conditions) : undefined)
-        .orderBy(desc(prlGoals.createdAt))
+        .orderBy(desc(frlGoals.createdAt))
         .limit(input.limit);
       return rows;
     }),
@@ -440,8 +440,8 @@ export const goalsRouter = router({
       if (input.targetScore !== undefined) updates.targetScore = input.targetScore;
       if (input.targetDate  !== undefined) updates.targetDate  = input.targetDate;
       if (input.notes       !== undefined) updates.notes       = input.notes;
-      await db.update(prlGoals).set(updates).where(eq(prlGoals.id, input.id));
-      const [updated] = await db.select().from(prlGoals).where(eq(prlGoals.id, input.id));
+      await db.update(frlGoals).set(updates).where(eq(frlGoals.id, input.id));
+      const [updated] = await db.select().from(frlGoals).where(eq(frlGoals.id, input.id));
       return updated;
     }),
 
@@ -453,7 +453,7 @@ export const goalsRouter = router({
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
-      const [goal] = await db.select().from(prlGoals).where(eq(prlGoals.id, input.id));
+      const [goal] = await db.select().from(frlGoals).where(eq(frlGoals.id, input.id));
       if (!goal) throw new Error("Goal not found");
 
       const range = goal.targetScore - goal.startScore;
@@ -470,8 +470,8 @@ export const goalsRouter = router({
         updates.status    = "achieved";
         updates.achievedAt = new Date();
       }
-      await db.update(prlGoals).set(updates).where(eq(prlGoals.id, input.id));
-      const [updated] = await db.select().from(prlGoals).where(eq(prlGoals.id, input.id));
+      await db.update(frlGoals).set(updates).where(eq(frlGoals.id, input.id));
+      const [updated] = await db.select().from(frlGoals).where(eq(frlGoals.id, input.id));
       return updated;
     }),
 
@@ -481,9 +481,9 @@ export const goalsRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       await db
-        .update(prlGoals)
+        .update(frlGoals)
         .set({ status: "cancelled" })
-        .where(eq(prlGoals.id, input.id));
+        .where(eq(frlGoals.id, input.id));
       return { success: true };
     }),
 
@@ -495,13 +495,13 @@ export const goalsRouter = router({
     }))
     .query(async ({ input }) => {
       const db = await getDb();
-      const conditions = [eq(prlGoals.coachId, input.coachId)];
-      if (input.status !== "all") conditions.push(eq(prlGoals.status, input.status));
+      const conditions = [eq(frlGoals.coachId, input.coachId)];
+      if (input.status !== "all") conditions.push(eq(frlGoals.status, input.status));
       const rows = await db
         .select()
-        .from(prlGoals)
+        .from(frlGoals)
         .where(and(...conditions))
-        .orderBy(asc(prlGoals.targetDate));
+        .orderBy(asc(frlGoals.targetDate));
       return rows;
     }),
 });

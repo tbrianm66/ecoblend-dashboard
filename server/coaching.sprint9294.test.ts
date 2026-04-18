@@ -26,7 +26,7 @@ describe("Sprint 92: Founder Notification Centre", () => {
         "self_assessment_rejected",
         "leaderboard_rank_change",
         "commitment_due",
-        "prl_score_updated",
+        "frl_score_updated",
         "goal_updated",
         "general",
       ];
@@ -184,10 +184,10 @@ describe("Sprint 93: Coach Workload Dashboard", () => {
   describe("high-risk founder detection", () => {
     it("identifies high-risk founders with PRL below 40", () => {
       const founders = [
-        { id: "1", prlScore: 35, riskLevel: "HIGH" },
-        { id: "2", prlScore: 72, riskLevel: "LOW" },
-        { id: "3", prlScore: 38, riskLevel: "HIGH" },
-        { id: "4", prlScore: 55, riskLevel: "MEDIUM" },
+        { id: "1", frlScore: 35, riskLevel: "HIGH" },
+        { id: "2", frlScore: 72, riskLevel: "LOW" },
+        { id: "3", frlScore: 38, riskLevel: "HIGH" },
+        { id: "4", frlScore: 55, riskLevel: "MEDIUM" },
       ];
       const highRisk = founders.filter((f) => f.riskLevel === "HIGH");
       expect(highRisk.length).toBe(2);
@@ -195,8 +195,8 @@ describe("Sprint 93: Coach Workload Dashboard", () => {
 
     it("returns 0 high-risk founders when all are on track", () => {
       const founders = [
-        { id: "1", prlScore: 75, riskLevel: "LOW" },
-        { id: "2", prlScore: 82, riskLevel: "LOW" },
+        { id: "1", frlScore: 75, riskLevel: "LOW" },
+        { id: "2", frlScore: 82, riskLevel: "LOW" },
       ];
       const highRisk = founders.filter((f) => f.riskLevel === "HIGH");
       expect(highRisk.length).toBe(0);
@@ -205,14 +205,14 @@ describe("Sprint 93: Coach Workload Dashboard", () => {
 
   describe("average PRL per coach", () => {
     it("computes average PRL for a coach's founders", () => {
-      const prlScores = [72.5, 55.0, 88.0, 41.0];
-      const avg = prlScores.reduce((sum, s) => sum + s, 0) / prlScores.length;
+      const frlScores = [72.5, 55.0, 88.0, 41.0];
+      const avg = frlScores.reduce((sum, s) => sum + s, 0) / frlScores.length;
       expect(avg).toBeCloseTo(64.125, 2);
     });
 
     it("returns 0 when coach has no founders", () => {
-      const prlScores: number[] = [];
-      const avg = prlScores.length > 0 ? prlScores.reduce((sum, s) => sum + s, 0) / prlScores.length : 0;
+      const frlScores: number[] = [];
+      const avg = frlScores.length > 0 ? frlScores.reduce((sum, s) => sum + s, 0) / frlScores.length : 0;
       expect(avg).toBe(0);
     });
   });
