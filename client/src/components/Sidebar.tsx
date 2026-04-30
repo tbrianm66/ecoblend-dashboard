@@ -1,32 +1,46 @@
 // ============================================================
-// VENTURE OS SIDEBAR — Grouped Navigation
-// Design: Apple-style clarity · Grouped sections per blueprint
-// Groups: Dashboard · Ventures · Research · Analytics ·
-//         Collaboration · Governance
+// ECOBLEND OS SIDEBAR — 16-Module Workflow Architecture
+// Design: Apple-style clarity · Strict validation sequence
+// Source: Platform Architecture v2.0
 // ============================================================
 
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import {
-  LayoutDashboard, TrendingUp, FlaskConical, ShieldAlert,
-  DollarSign, Layers, Lock, Users, Megaphone, BarChart2,
-  Award, Heart, ChevronRight, Rocket, MessageSquare, BookOpen,
-  Bell, X, AlertTriangle, FileText, Newspaper, Briefcase,
-  Lightbulb, TestTube2, UserCircle2, FolderOpen, Globe,
-   Building2, ChevronDown, GraduationCap, Search, PieChart, Leaf, Database, UserCheck, Package, ClipboardList, Zap, Shuffle, GitBranch, Users2, Truck, Factory, BookMarked, HandCoins, ShieldCheck, BarChart3, FolderLock, Brain, Sparkles, History as HistoryIcon, Cog,
-  BookOpenCheck, LayoutTemplate, Settings2, Plug, Code2, SlidersHorizontal
+  Zap, LayoutDashboard, Layers, Lightbulb, Rocket,
+  Search, MessageSquare, Users, TrendingUp, BarChart2,
+  FlaskConical, TestTube2, Briefcase, BookOpen,
+  Factory, Truck, Cog, Package,
+  Megaphone, Newspaper, Globe, Sparkles,
+  Leaf, Heart, Award,
+  ShieldAlert, AlertTriangle,
+  PieChart, BarChart3, ClipboardList,
+  DollarSign, FolderLock, FileText,
+  GraduationCap, UserCircle2,
+  Lock, Database, Settings2,
+  BookOpenCheck, LayoutTemplate, Plug, Code2, SlidersHorizontal,
+  ChevronDown, ChevronRight, Bell, X,
+  Target, Compass, Building2, Shield, Map, HandCoins,
+  UserCheck, Brain, GitBranch,
 } from "lucide-react";
 import { useVentures } from "@/contexts/VentureContext";
 
 type IconName = string;
 const iconMap: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
-  LayoutDashboard, TrendingUp, FlaskConical, ShieldAlert,
-  DollarSign, Layers, Lock, Users, Megaphone, BarChart2,
-  Award, Heart, Rocket, MessageSquare, BookOpen, FileText,
-  Newspaper, Briefcase, Lightbulb, TestTube2, UserCircle2,
-  FolderOpen, Globe, Building2, GraduationCap, Search, PieChart, Leaf, Database, UserCheck, Package, ClipboardList, Zap, Shuffle, GitBranch, Users2, Truck, Factory, BookMarked, HandCoins, ShieldCheck, BarChart3, FolderLock,
-  Brain, Sparkles, History: HistoryIcon, Cog,
-  BookOpenCheck, LayoutTemplate, Settings2, Plug, Code2, SlidersHorizontal,
+  Zap, LayoutDashboard, Layers, Lightbulb, Rocket,
+  Search, MessageSquare, Users, TrendingUp, BarChart2,
+  FlaskConical, TestTube2, Briefcase, BookOpen,
+  Factory, Truck, Cog, Package,
+  Megaphone, Newspaper, Globe, Sparkles,
+  Leaf, Heart, Award,
+  ShieldAlert, AlertTriangle,
+  PieChart, BarChart3, ClipboardList,
+  DollarSign, FolderLock, FileText,
+  GraduationCap, UserCircle2,
+  Lock, Database, Settings2,
+  BookOpenCheck, LayoutTemplate, Plug, Code2, SlidersHorizontal,
+  Target, Compass, Building2, Shield, Map, HandCoins,
+  UserCheck, Brain, GitBranch,
 };
 
 interface NavItem {
@@ -43,129 +57,196 @@ interface NavGroup {
   defaultOpen?: boolean;
 }
 
+// ── 16-Module Architecture (Strict Validation Sequence) ──
+// Modules 1-15 follow the venture validation workflow.
+// Module 16 (Admin) is always last.
 const NAV_GROUPS: NavGroup[] = [
   {
-    id: "dashboard",
-    label: "Dashboard",
+    id: "command-centre",
+    label: "1. Command Centre",
     defaultOpen: true,
     items: [
-      { id: "command-centre", label: "Command Centre",      icon: "Zap",             href: "/command-centre" },
-      { id: "portfolio",   label: "Portfolio Overview",   icon: "LayoutDashboard", href: "/" },
-      { id: "portfolio-manager", label: "Portfolio Manager",  icon: "Layers",          href: "/portfolio-manager" },
-      { id: "pipeline",    label: "Opportunity Pipeline", icon: "Lightbulb",       href: "/pipeline" },
-      { id: "onboarding",  label: "Onboard Founder",      icon: "Rocket",          href: "/onboarding" },
+      { id: "cc-overview",  label: "Portfolio Overview",    icon: "LayoutDashboard", href: "/" },
+      { id: "cc-command",   label: "Command Centre",       icon: "Zap",             href: "/command-centre" },
+      { id: "cc-pipeline",  label: "Opportunity Pipeline", icon: "Lightbulb",       href: "/pipeline" },
+      { id: "cc-status",    label: "Venture Status",       icon: "Target",          href: "/venture-status" },
+      { id: "cc-alerts",    label: "Alerts & Approvals",   icon: "AlertTriangle",   href: "/alerts" },
     ],
   },
   {
-    id: "ventures",
-    label: "Ventures",
-    defaultOpen: true,
-    items: [
-      { id: "vrl",         label: "VRL Analytics",        icon: "TrendingUp",      href: "/vrl" },
-      { id: "trl",         label: "TRL Analytics",        icon: "FlaskConical",    href: "/trl" },
-      { id: "brl",         label: "BRL Analytics",        icon: "Briefcase",       href: "/brl" },
-      { id: "experiments", label: "Experiment Log",        icon: "TestTube2",       href: "/experiments" },
-      { id: "playbook",    label: "EcoBlend Playbook",    icon: "BookOpen",        href: "/playbook" },
-      { id: "founders",    label: "Founder Profiles",     icon: "UserCircle2",     href: "/founders" },
-    ],
-  },
-  {
-    id: "research",
-    label: "Research",
+    id: "venture-intake",
+    label: "2. Venture Intake",
     defaultOpen: false,
     items: [
-      { id: "academic",    label: "Academic Research",    icon: "GraduationCap",   href: "/academic" },
-      { id: "university-playbook", label: "University Playbook", icon: "BookMarked",  href: "/university-playbook" },
-      { id: "interviews",  label: "Interview Tracker",    icon: "MessageSquare",   href: "/interviews" },
-      { id: "brand",       label: "Brand Readiness",      icon: "Layers",          href: "/brand" },
-      { id: "marketing",   label: "Marketing Strategy",   icon: "Megaphone",       href: "/marketing" },
-      { id: "pr",          label: "Brand PR & Newsletter",icon: "Newspaper",       href: "/pr" },
+      { id: "intake-form",       label: "New Venture Intake",   icon: "Rocket",          href: "/intake" },
+      { id: "intake-founder",    label: "Founder Profile",      icon: "UserCircle2",     href: "/intake/founder" },
+      { id: "intake-strategic",  label: "Strategic Fit",        icon: "Compass",         href: "/intake/strategic-fit" },
+      { id: "intake-problem",    label: "Problem Statement",    icon: "Target",          href: "/intake/problem" },
+      { id: "intake-hypotheses", label: "Hypothesis Register",  icon: "FlaskConical",    href: "/intake/hypotheses" },
     ],
   },
   {
-    id: "analytics",
-    label: "Analytics",
+    id: "discovery",
+    label: "3. Discovery & Market",
     defaultOpen: false,
     items: [
-      { id: "investment",  label: "Investment Readiness", icon: "DollarSign",      href: "/investment" },
-      { id: "investment-module", label: "Investment Module",   icon: "TrendingUp",     href: "/investment-module" },
-      { id: "ecorace-lab",      label: "EcoRace Lab",        icon: "FlaskConical",   href: "/ecorace-lab" },
-      { id: "financial",   label: "Financial Analytics",  icon: "BarChart2",       href: "/financial" },
-      { id: "market",      label: "Market Intelligence",  icon: "PieChart",        href: "/market-intelligence" },
-      { id: "risk",        label: "Risk Management",      icon: "ShieldAlert",     href: "/risk" },
-      { id: "dual-risk",   label: "Dual Risk Engine",     icon: "Zap",             href: "/dual-risk" },
-      { id: "supply-chain", label: "Supply Chain",          icon: "Truck",           href: "/supply-chain" },
-      { id: "china-manufacturing", label: "China Mfg Playbook", icon: "Factory",       href: "/china-manufacturing" },
-      { id: "workflow-engine",      label: "Workflow Engine",    icon: "Zap",             href: "/workflow-engine" },
-      { id: "data-management",      label: "Data Management",   icon: "Database",          href: "/data-management" },
-      { id: "commercial-crm",        label: "Commercial CRM",     icon: "Briefcase",          href: "/commercial-crm" },
-      { id: "investor-crm",          label: "Investor CRM",       icon: "HandCoins",          href: "/investor-crm" },
-      { id: "investor-data-room",    label: "Investor Data Room",  icon: "FolderLock",         href: "/investor-data-room" },
-      { id: "ip-intelligence",       label: "IP Intelligence",      icon: "ShieldCheck",        href: "/ip-intelligence" },
-      { id: "learning-engine",      label: "Learning Engine",      icon: "Brain",              href: "/learning-engine" },
-      { id: "playbook-portal",     label: "Playbook Portal",      icon: "BookMarked",          href: "/playbook-portal" },
-      { id: "financial-model-builder", label: "Financial Model Builder", icon: "BarChart3",   href: "/financial-model-builder" },
-      { id: "gdrive-workspace",    label: "G Drive Workspace",    icon: "FolderOpen",          href: "/gdrive-workspace" },
-      { id: "vrl-dashboard-v4",   label: "VRL Dashboard V4",     icon: "TrendingUp",          href: "/vrl-dashboard-v4" },
-      { id: "vrl-assessment",     label: "VRL Assessment Form",  icon: "ClipboardList",       href: "/vrl-assessment" },
-      { id: "vrl-results",        label: "VRL Results",          icon: "BarChart3",           href: "/vrl-results" },
-      { id: "spinoff-sequence",   label: "Spin-Off Sequence",    icon: "Rocket",              href: "/spinoff-sequence" },
-      { id: "brand-pipeline",     label: "Brand Pipeline",       icon: "Sparkles",            href: "/brand-pipeline" },
-      { id: "insight-automation", label: "Interview Insights",   icon: "Lightbulb",           href: "/insight-automation" },
-      { id: "srl-portfolio",  label: "SRL Portfolio",        icon: "Leaf",            href: "/srl-portfolio" },
-      { id: "srl-history",    label: "SRL History & Audit", icon: "History",         href: "/srl-history" },
-      { id: "mrl-portfolio",  label: "MRL Portfolio",        icon: "Factory",         href: "/mrl-portfolio" },
-      { id: "mrl-venture",    label: "MRL Venture Detail",   icon: "Cog",             href: "/mrl-venture" },
-      { id: "mrl-scoring",    label: "MRL Scoring System",   icon: "FlaskConical",    href: "/mrl-scoring" },
-      { id: "mrl-command",    label: "MRL Command Dashboard", icon: "LayoutDashboard", href: "/mrl-command" },
-      { id: "sync",           label: "TRL/MRL Sync Engine",  icon: "Zap",             href: "/sync" },
+      { id: "disc-interviews",  label: "Customer Discovery",   icon: "MessageSquare",   href: "/discovery" },
+      { id: "disc-competitors", label: "Competitor Mapping",    icon: "Search",          href: "/discovery/competitors" },
+      { id: "disc-demand",      label: "Demand Signals",       icon: "TrendingUp",      href: "/discovery/demand" },
+      { id: "disc-wtp",         label: "WTP Assessment",       icon: "DollarSign",      href: "/discovery/wtp" },
+      { id: "disc-market-risk", label: "Market Risk Log",      icon: "ShieldAlert",     href: "/discovery/market-risk" },
+    ],
+  },
+  {
+    id: "proposition",
+    label: "4. Proposition & Model",
+    defaultOpen: false,
+    items: [
+      { id: "prop-value",    label: "Value Proposition",    icon: "Sparkles",        href: "/proposition" },
+      { id: "prop-bmc",      label: "Business Model Canvas",icon: "Layers",          href: "/proposition/bmc" },
+      { id: "prop-revenue",  label: "Revenue Modelling",    icon: "BarChart2",       href: "/proposition/revenue" },
+      { id: "prop-economics",label: "Unit Economics",       icon: "PieChart",        href: "/proposition/economics" },
+      { id: "prop-channels", label: "Channel Strategy",     icon: "Globe",           href: "/proposition/channels" },
+    ],
+  },
+  {
+    id: "rnd",
+    label: "5. R&D Hub",
+    defaultOpen: false,
+    items: [
+      { id: "rnd-hub",         label: "R&D Hub",             icon: "FlaskConical",    href: "/rnd" },
+      { id: "rnd-experiments", label: "Validation Experiments",icon: "TestTube2",      href: "/rnd/experiments" },
+      { id: "rnd-kpis",        label: "Technical KPIs",      icon: "BarChart3",       href: "/rnd/kpis" },
+      { id: "rnd-prototypes",  label: "Prototype Testing",   icon: "Cog",            href: "/rnd/prototypes" },
+      { id: "rnd-ip",          label: "IP Tracker",          icon: "Lock",           href: "/rnd/ip" },
+    ],
+  },
+  {
+    id: "operations",
+    label: "6. Operations & Mfg",
+    defaultOpen: false,
+    items: [
+      { id: "ops-model",     label: "Operating Model",       icon: "Building2",       href: "/operations" },
+      { id: "ops-suppliers", label: "Supplier Assessment",   icon: "Truck",           href: "/operations/suppliers" },
+      { id: "ops-mfg",      label: "Manufacturing Plan",    icon: "Factory",         href: "/operations/manufacturing" },
+      { id: "ops-compliance",label: "Quality & Compliance",  icon: "ClipboardList",   href: "/operations/compliance" },
+      { id: "ops-mrl",      label: "MRL Evidence",          icon: "BarChart3",       href: "/operations/mrl" },
+    ],
+  },
+  {
+    id: "gtm",
+    label: "7. Brand & GTM",
+    defaultOpen: false,
+    items: [
+      { id: "gtm-brand",     label: "Brand Readiness",      icon: "Sparkles",        href: "/gtm" },
+      { id: "gtm-messaging", label: "Messaging Tests",      icon: "MessageSquare",   href: "/gtm/messaging" },
+      { id: "gtm-marketing", label: "Marketing Strategy",   icon: "Megaphone",       href: "/gtm/strategy" },
+      { id: "gtm-campaigns", label: "Campaign Experiments", icon: "Newspaper",       href: "/gtm/campaigns" },
+      { id: "gtm-sales",     label: "Sales Pipeline",       icon: "HandCoins",       href: "/gtm/sales" },
+    ],
+  },
+  {
+    id: "sustainability",
+    label: "8. Sustainability & Impact",
+    defaultOpen: false,
+    items: [
+      { id: "sus-hub",        label: "Sustainability Hub",   icon: "Leaf",            href: "/sustainability" },
+      { id: "sus-impact",     label: "Impact Metrics (IRL)", icon: "Heart",           href: "/sustainability/impact" },
+      { id: "sus-lca",        label: "LCA / Carbon",         icon: "Globe",           href: "/sustainability/lca" },
+      { id: "sus-circularity",label: "Circularity",          icon: "GitBranch",       href: "/sustainability/circularity" },
+      { id: "sus-bcorp",      label: "B Corp & ESG",         icon: "Award",           href: "/sustainability/bcorp" },
+    ],
+  },
+  {
+    id: "risk",
+    label: "9. Risk Intelligence",
+    defaultOpen: false,
+    items: [
+      { id: "risk-register", label: "Central Risk Register", icon: "ShieldAlert",     href: "/risk" },
+      { id: "risk-heatmap",  label: "Risk Heatmap",          icon: "Map",             href: "/risk/heatmap" },
+      { id: "risk-mitigation",label: "Mitigation Plans",     icon: "Shield",          href: "/risk/mitigation" },
+    ],
+  },
+  {
+    id: "scoring",
+    label: "10. Readiness Scoring",
+    defaultOpen: false,
+    items: [
+      { id: "score-composite",label: "Composite Score",      icon: "PieChart",        href: "/scoring" },
+      { id: "score-vrl",     label: "VRL Analytics",         icon: "TrendingUp",      href: "/scoring/vrl" },
+      { id: "score-trl",     label: "TRL Analytics",         icon: "FlaskConical",    href: "/scoring/trl" },
+      { id: "score-brl",     label: "BRL Analytics",         icon: "Briefcase",       href: "/scoring/brl" },
+      { id: "score-mrl",     label: "MRL Analytics",         icon: "Factory",         href: "/scoring/mrl" },
+      { id: "score-srl",     label: "SRL Analytics",         icon: "Leaf",            href: "/scoring/srl" },
+      { id: "score-irl",     label: "IRL Analytics",         icon: "Heart",           href: "/scoring/irl" },
+      { id: "score-prl",     label: "PRL Analytics",         icon: "Users",           href: "/scoring/prl" },
+    ],
+  },
+  {
+    id: "investment",
+    label: "11. Investment Readiness",
+    defaultOpen: false,
+    items: [
+      { id: "inv-hub",       label: "Investment Hub",        icon: "DollarSign",      href: "/investment" },
+      { id: "inv-thesis",    label: "Investment Thesis",     icon: "BookOpen",        href: "/investment/thesis" },
+      { id: "inv-financial", label: "Financial Model",       icon: "BarChart2",       href: "/investment/financial" },
+      { id: "inv-dataroom",  label: "Investor Data Room",    icon: "FolderLock",      href: "/investment/dataroom" },
+      { id: "inv-pack",      label: "Investor Pack Export",  icon: "FileText",        href: "/investment/pack" },
+    ],
+  },
+  {
+    id: "execution",
+    label: "12. Execution Planning",
+    defaultOpen: false,
+    items: [
+      { id: "exec-roadmap",    label: "Execution Roadmap",   icon: "Map",             href: "/execution" },
+      { id: "exec-milestones", label: "Milestone Tracker",   icon: "Target",          href: "/execution/milestones" },
+      { id: "exec-budget",     label: "Budget Plan",         icon: "DollarSign",      href: "/execution/budget" },
+      { id: "exec-hiring",     label: "Hiring Plan",         icon: "Users",           href: "/execution/hiring" },
+    ],
+  },
+  {
+    id: "coaching",
+    label: "13. Coaching",
+    defaultOpen: false,
+    items: [
+      { id: "coach-founder", label: "Founder Dashboard",    icon: "UserCircle2",     href: "/coaching/founder" },
+      { id: "coach-studio",  label: "Studio Dashboard",     icon: "LayoutDashboard", href: "/coaching/studio" },
+      { id: "coach-manage",  label: "Coach Management",     icon: "UserCheck",       href: "/coaching/coach" },
     ],
   },
   {
     id: "collaboration",
-    label: "Collaboration",
+    label: "14. Collaboration",
     defaultOpen: false,
     items: [
-      { id: "specialists", label: "Specialist Services",  icon: "Briefcase",       href: "/specialists" },
-      { id: "people",      label: "People & ESOP",        icon: "Users",           href: "/people" },
+      { id: "collab-team",      label: "Team Workspace",      icon: "Users",           href: "/collaboration" },
+      { id: "collab-advisors",  label: "Advisor Directory",   icon: "GraduationCap",   href: "/collaboration/advisors" },
+      { id: "collab-academics", label: "Academic Partners",   icon: "BookOpen",        href: "/collaboration/academics" },
+      { id: "collab-specialists",label: "Specialist Services",icon: "Briefcase",       href: "/collaboration/specialists" },
     ],
   },
   {
     id: "governance",
-    label: "Governance",
+    label: "15. Governance",
     defaultOpen: false,
     items: [
-      { id: "legal",       label: "Legal Contracts",      icon: "FileText",        href: "/legal" },
-      { id: "ip",          label: "IP Management",        icon: "Lock",            href: "/ip" },
-      { id: "bcorp",       label: "B Corp & ISO",         icon: "Award",           href: "/bcorp" },
-      { id: "foundation",  label: "Foundation Impact",    icon: "Heart",           href: "/foundation" },
-      { id: "impact",      label: "Impact Governance",    icon: "Leaf",            href: "/impact" },
-    ],
-  },
-  {
-    id: "intelligence",
-    label: "Intelligence",
-    defaultOpen: false,
-    items: [
-      { id: "knowledge",   label: "Knowledge Base",       icon: "Database",        href: "/knowledge" },
-      { id: "people-intel", label: "People Intelligence",  icon: "UserCheck",       href: "/people-intelligence" },
-      { id: "poi",         label: "Product Opportunity",  icon: "Package",         href: "/poi" },
-      { id: "pm",          label: "Project Management",   icon: "ClipboardList",   href: "/project-management" },
-      { id: "matching",    label: "Matching Engine",       icon: "Shuffle",         href: "/matching" },
-      { id: "spinoff",     label: "Spin-Off OS",           icon: "GitBranch",       href: "/spinoff" },
-      { id: "spinout-blueprint", label: "Spin-Out Blueprint", icon: "Rocket",         href: "/spinout-blueprint" },
-      { id: "cultural-readiness", label: "Cultural Readiness",  icon: "Users",          href: "/cultural-readiness" },
-      { id: "co-founder",  label: "Co-Founder Matrix",    icon: "Users2",          href: "/co-founder-matrix" },
+      { id: "gov-dashboard",  label: "Governance Dashboard", icon: "Building2",       href: "/governance" },
+      { id: "gov-gates",      label: "Stage-Gate Approvals", icon: "Shield",          href: "/governance/gates" },
+      { id: "gov-board",      label: "Board Reporting",      icon: "FileText",        href: "/governance/board" },
+      { id: "gov-audit",      label: "Audit Trail",          icon: "ClipboardList",   href: "/governance/audit" },
+      { id: "gov-ip",         label: "IP Register",          icon: "Lock",            href: "/governance/ip" },
+      { id: "gov-legal",      label: "Legal Repository",     icon: "FileText",        href: "/governance/legal" },
     ],
   },
   {
     id: "admin",
-    label: "Admin",
+    label: "16. Admin",
     defaultOpen: false,
     items: [
       { id: "admin-playbooks",    label: "Playbook Library",     icon: "BookOpenCheck",    href: "/admin/playbooks" },
       { id: "admin-users",        label: "Users & Roles",        icon: "Users",            href: "/admin/users" },
-      { id: "admin-permissions",  label: "Permissions",          icon: "ShieldCheck",      href: "/admin/permissions" },
+      { id: "admin-permissions",  label: "Permissions",          icon: "Shield",           href: "/admin/permissions" },
       { id: "admin-templates",    label: "Templates",            icon: "LayoutTemplate",   href: "/admin/templates" },
       { id: "admin-data-fields",  label: "Data Fields",          icon: "Database",         href: "/admin/data-fields" },
       { id: "admin-modules",      label: "Module Settings",      icon: "Settings2",        href: "/admin/modules" },
@@ -225,11 +306,11 @@ function NavGroupSection({ group, location }: { group: NavGroup; location: strin
       <button
         onClick={() => setOpen(o => !o)}
         className="w-full flex items-center justify-between px-3 py-1.5 rounded-md transition-colors duration-100"
-        style={{ color: "rgba(255,255,255,0.35)" }}
+        style={{ color: isGroupActive ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.35)" }}
       >
         <span
           className="text-xs font-bold uppercase tracking-widest"
-          style={{ fontFamily: "'Inter', sans-serif", letterSpacing: "0.09em" }}
+          style={{ fontFamily: "'Inter', sans-serif", letterSpacing: "0.07em", fontSize: "0.6rem" }}
         >
           {group.label}
         </span>
@@ -295,12 +376,12 @@ export default function Sidebar() {
       className="w-60 min-h-screen flex flex-col shrink-0"
       style={{ background: "#1a2332", borderRight: "1px solid rgba(255,255,255,0.05)" }}
     >
-      {/* ── Logo ── */}
+      {/* Logo */}
       <div className="px-4 py-5 border-b" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
         <div className="flex flex-col items-center gap-1.5">
           <img
             src={ECOBLEND_LOGO_URL}
-            alt="EcoComp"
+            alt="EcoBlend OS"
             className="w-24 object-contain"
             style={{ filter: "brightness(0) invert(1)" }}
           />
@@ -308,12 +389,12 @@ export default function Sidebar() {
             className="text-xs font-semibold tracking-widest uppercase"
             style={{ color: "rgba(255,255,255,0.28)", fontFamily: "'Inter', sans-serif", fontSize: "0.6rem" }}
           >
-            Venture Intelligence Platform
+            Venture Validation OS
           </div>
         </div>
       </div>
 
-      {/* ── Sync alert banner ── */}
+      {/* Sync alert banner */}
       <div className="px-3 pt-3 pb-1">
         <button
           onClick={() => setAlertsOpen(o => !o)}
@@ -376,14 +457,14 @@ export default function Sidebar() {
         )}
       </div>
 
-      {/* ── Grouped navigation ── */}
+      {/* Grouped navigation */}
       <nav className="flex-1 px-2 py-3 overflow-y-auto">
         {NAV_GROUPS.map(group => (
           <NavGroupSection key={group.id} group={group} location={location} />
         ))}
       </nav>
 
-      {/* ── Footer ── */}
+      {/* Footer */}
       <div className="px-4 py-3 border-t" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
         <div className="flex items-center gap-2">
           <div
@@ -394,10 +475,10 @@ export default function Sidebar() {
           </div>
           <div>
             <div className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.5)", fontFamily: "'Inter', sans-serif", fontSize: "0.7rem" }}>
-              EcoRace Studio
+              EcoBlend OS
             </div>
             <div className="text-xs" style={{ color: "rgba(255,255,255,0.22)", fontFamily: "'Inter', sans-serif", fontSize: "0.65rem" }}>
-              VIP v1.0 · © 2026 EcoRace Studio
+              Platform v2.0 | EcoRace Studio
             </div>
           </div>
         </div>

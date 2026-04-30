@@ -1177,3 +1177,25 @@
 - [x] Build PlaybookPanel contextual component for embedding in workflow modules
 - [x] Register all Admin routes in App.tsx
 - [x] All 1873 Vitest tests passing after Admin build
+
+## Architecture v2 Restructure (Build Pack Execution)
+- [x] Read architecture document and produce implementation-ready build pack
+- [x] Restructure sidebar to 16-module workflow-ordered hierarchy
+- [x] Create 31 new database tables (venture intake, discovery, proposition, R&D, operations, GTM, sustainability, risk, scoring, investment, execution, coaching, collaboration, governance, command centre)
+- [x] Add 7 new venture columns (venture_stage, problem_statement, hypothesis, customer_segment, market_size_gbp, business_model_type, sustainability_classification)
+- [x] Build Venture Intake page (problem statement + hypothesis forms)
+- [x] Build Readiness Scoring composite dashboard (VRL, TRL, BRL, MRL, SRL, PRL, IRL, FRL)
+- [x] Build R&D Hub page (4-stage lifecycle pipeline: Concept → Simulation → Prototyping → Integration)
+- [x] Build Risk Intelligence page (FMEA-based risk register with RPN scoring + heatmap)
+- [x] Build Investment Pack page (stage-gate validation + data room + investment thesis)
+- [x] Build Governance Hub page (stage-gate approvals + audit trail + board reporting)
+- [x] Build Execution Planning page (roadmap phases + budget tracking + hiring plan)
+- [x] Wire all new routes in App.tsx (60+ routes, 7 real pages + ModulePlaceholder for future)
+- [x] All 1,873 Vitest tests passing (65 test files)
+- [ ] Build Discovery module pages (competitors, demand, WTP, market risk)
+- [ ] Build Proposition module pages (BMC, revenue model, unit economics, channels)
+- [ ] Build Operations module pages (suppliers, manufacturing, compliance, MRL)
+- [ ] Build GTM module pages (messaging, strategy, campaigns, sales)
+- [ ] Build Sustainability module pages (impact, LCA, circularity, B Corp)
+- [ ] Build Collaboration module pages (advisors, academics, specialists)
+- [ ] Build Command Centre dashboard (venture status, alerts, portfolio view)

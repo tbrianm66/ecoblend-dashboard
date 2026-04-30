@@ -81,6 +81,14 @@ import MrlCommandDashboard from "./pages/MrlCommandDashboard";
 import AdminHub from "./pages/AdminHub";
 import AdminPlaybooks from "./pages/AdminPlaybooks";
 import AdminPlaceholder from "./pages/AdminPlaceholder";
+import ModulePlaceholder from "./pages/ModulePlaceholder";
+import VentureIntake from "./pages/VentureIntake";
+import ReadinessScoring from "./pages/ReadinessScoring";
+import RDHub from "./pages/RDHub";
+import RiskIntelligence from "./pages/RiskIntelligence";
+import InvestmentPack from "./pages/InvestmentPack";
+import GovernanceHub from "./pages/GovernanceHub";
+import ExecutionPlanning from "./pages/ExecutionPlanning";
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
@@ -169,6 +177,90 @@ function Router() {
       <Route path="/admin/api" component={AdminPlaceholder} />
       <Route path="/admin/audit" component={AdminPlaceholder} />
       <Route path="/admin/config" component={AdminPlaceholder} />
+      {/* ── New Architecture Routes (Modules 2-15) ── */}
+      {/* Module 2: Venture Intake */}
+      <Route path="/intake" component={VentureIntake} />
+      <Route path="/intake/founder" component={ModulePlaceholder} />
+      <Route path="/intake/strategic-fit" component={ModulePlaceholder} />
+      <Route path="/intake/problem" component={ModulePlaceholder} />
+      <Route path="/intake/hypotheses" component={ModulePlaceholder} />
+      {/* Module 3: Discovery & Market Validation */}
+      <Route path="/discovery" component={ModulePlaceholder} />
+      <Route path="/discovery/competitors" component={ModulePlaceholder} />
+      <Route path="/discovery/demand" component={ModulePlaceholder} />
+      <Route path="/discovery/wtp" component={ModulePlaceholder} />
+      <Route path="/discovery/market-risk" component={ModulePlaceholder} />
+      {/* Module 4: Proposition & Business Model */}
+      <Route path="/proposition" component={ModulePlaceholder} />
+      <Route path="/proposition/bmc" component={ModulePlaceholder} />
+      <Route path="/proposition/revenue" component={ModulePlaceholder} />
+      <Route path="/proposition/economics" component={ModulePlaceholder} />
+      <Route path="/proposition/channels" component={ModulePlaceholder} />
+      {/* Module 5: R&D Hub */}
+      <Route path="/rnd" component={RDHub} />
+      <Route path="/rnd/experiments" component={ModulePlaceholder} />
+      <Route path="/rnd/kpis" component={ModulePlaceholder} />
+      <Route path="/rnd/prototypes" component={ModulePlaceholder} />
+      <Route path="/rnd/ip" component={ModulePlaceholder} />
+      {/* Module 6: Operations & Manufacturing */}
+      <Route path="/operations" component={ModulePlaceholder} />
+      <Route path="/operations/suppliers" component={ModulePlaceholder} />
+      <Route path="/operations/manufacturing" component={ModulePlaceholder} />
+      <Route path="/operations/compliance" component={ModulePlaceholder} />
+      <Route path="/operations/mrl" component={ModulePlaceholder} />
+      {/* Module 7: Brand & GTM */}
+      <Route path="/gtm" component={ModulePlaceholder} />
+      <Route path="/gtm/messaging" component={ModulePlaceholder} />
+      <Route path="/gtm/strategy" component={ModulePlaceholder} />
+      <Route path="/gtm/campaigns" component={ModulePlaceholder} />
+      <Route path="/gtm/sales" component={ModulePlaceholder} />
+      {/* Module 8: Sustainability & Impact */}
+      <Route path="/sustainability" component={ModulePlaceholder} />
+      <Route path="/sustainability/impact" component={ModulePlaceholder} />
+      <Route path="/sustainability/lca" component={ModulePlaceholder} />
+      <Route path="/sustainability/circularity" component={ModulePlaceholder} />
+      <Route path="/sustainability/bcorp" component={ModulePlaceholder} />
+      {/* Module 9: Risk Intelligence (existing pages + new) */}
+      <Route path="/risk/heatmap" component={RiskIntelligence} />
+      <Route path="/risk/mitigation" component={ModulePlaceholder} />
+      {/* Module 10: Readiness Scoring */}
+      <Route path="/scoring" component={ReadinessScoring} />
+      <Route path="/scoring/vrl" component={VrlAnalytics} />
+      <Route path="/scoring/trl" component={TrlAnalytics} />
+      <Route path="/scoring/brl" component={BrlAnalytics} />
+      <Route path="/scoring/mrl" component={MrlPortfolio} />
+      <Route path="/scoring/srl" component={SrlPortfolio} />
+      <Route path="/scoring/irl" component={ModulePlaceholder} />
+      <Route path="/scoring/prl" component={ModulePlaceholder} />
+      {/* Module 11: Investment Readiness */}
+      <Route path="/investment/thesis" component={InvestmentPack} />
+      <Route path="/investment/financial" component={FinancialModelBuilder} />
+      <Route path="/investment/dataroom" component={InvestorDataRoom} />
+      <Route path="/investment/pack" component={InvestmentPack} />
+      {/* Module 12: Execution Planning */}
+      <Route path="/execution" component={ExecutionPlanning} />
+      <Route path="/execution/milestones" component={ModulePlaceholder} />
+      <Route path="/execution/budget" component={ModulePlaceholder} />
+      <Route path="/execution/hiring" component={ModulePlaceholder} />
+      {/* Module 13: Coaching (existing) */}
+      <Route path="/coaching/founder" component={CoachingFounder} />
+      <Route path="/coaching/studio" component={CoachingStudio} />
+      <Route path="/coaching/coach" component={CoachingCoach} />
+      {/* Module 14: Collaboration */}
+      <Route path="/collaboration" component={ModulePlaceholder} />
+      <Route path="/collaboration/advisors" component={ModulePlaceholder} />
+      <Route path="/collaboration/academics" component={AcademicResearch} />
+      <Route path="/collaboration/specialists" component={SpecialistServices} />
+      {/* Module 15: Governance */}
+      <Route path="/governance" component={GovernanceHub} />
+      <Route path="/governance/gates" component={GovernanceHub} />
+      <Route path="/governance/board" component={GovernanceHub} />
+      <Route path="/governance/audit" component={GovernanceHub} />
+      <Route path="/governance/ip" component={IpManagement} />
+      <Route path="/governance/legal" component={LegalContracts} />
+      {/* Command Centre extras */}
+      <Route path="/venture-status" component={ModulePlaceholder} />
+      <Route path="/alerts" component={ModulePlaceholder} />
       <Route component={Home} />
     </Switch>
   );
