@@ -13,7 +13,8 @@ import {
   Award, Heart, ChevronRight, Rocket, MessageSquare, BookOpen,
   Bell, X, AlertTriangle, FileText, Newspaper, Briefcase,
   Lightbulb, TestTube2, UserCircle2, FolderOpen, Globe,
-   Building2, ChevronDown, GraduationCap, Search, PieChart, Leaf, Database, UserCheck, Package, ClipboardList, Zap, Shuffle, GitBranch, Users2, Truck, Factory, BookMarked, HandCoins, ShieldCheck, BarChart3, FolderLock, Brain, Sparkles, History as HistoryIcon, Cog
+   Building2, ChevronDown, GraduationCap, Search, PieChart, Leaf, Database, UserCheck, Package, ClipboardList, Zap, Shuffle, GitBranch, Users2, Truck, Factory, BookMarked, HandCoins, ShieldCheck, BarChart3, FolderLock, Brain, Sparkles, History as HistoryIcon, Cog,
+  BookOpenCheck, LayoutTemplate, Settings2, Plug, Code2, SlidersHorizontal
 } from "lucide-react";
 import { useVentures } from "@/contexts/VentureContext";
 
@@ -25,6 +26,7 @@ const iconMap: Record<string, React.ComponentType<{ size?: number; className?: s
   Newspaper, Briefcase, Lightbulb, TestTube2, UserCircle2,
   FolderOpen, Globe, Building2, GraduationCap, Search, PieChart, Leaf, Database, UserCheck, Package, ClipboardList, Zap, Shuffle, GitBranch, Users2, Truck, Factory, BookMarked, HandCoins, ShieldCheck, BarChart3, FolderLock,
   Brain, Sparkles, History: HistoryIcon, Cog,
+  BookOpenCheck, LayoutTemplate, Settings2, Plug, Code2, SlidersHorizontal,
 };
 
 interface NavItem {
@@ -154,6 +156,23 @@ const NAV_GROUPS: NavGroup[] = [
       { id: "spinout-blueprint", label: "Spin-Out Blueprint", icon: "Rocket",         href: "/spinout-blueprint" },
       { id: "cultural-readiness", label: "Cultural Readiness",  icon: "Users",          href: "/cultural-readiness" },
       { id: "co-founder",  label: "Co-Founder Matrix",    icon: "Users2",          href: "/co-founder-matrix" },
+    ],
+  },
+  {
+    id: "admin",
+    label: "Admin",
+    defaultOpen: false,
+    items: [
+      { id: "admin-playbooks",    label: "Playbook Library",     icon: "BookOpenCheck",    href: "/admin/playbooks" },
+      { id: "admin-users",        label: "Users & Roles",        icon: "Users",            href: "/admin/users" },
+      { id: "admin-permissions",  label: "Permissions",          icon: "ShieldCheck",      href: "/admin/permissions" },
+      { id: "admin-templates",    label: "Templates",            icon: "LayoutTemplate",   href: "/admin/templates" },
+      { id: "admin-data-fields",  label: "Data Fields",          icon: "Database",         href: "/admin/data-fields" },
+      { id: "admin-modules",      label: "Module Settings",      icon: "Settings2",        href: "/admin/modules" },
+      { id: "admin-integrations", label: "Integrations",         icon: "Plug",             href: "/admin/integrations" },
+      { id: "admin-api",          label: "API Settings",         icon: "Code2",            href: "/admin/api" },
+      { id: "admin-audit",        label: "Audit Logs",           icon: "ClipboardList",    href: "/admin/audit" },
+      { id: "admin-config",       label: "System Configuration", icon: "SlidersHorizontal",href: "/admin/config" },
     ],
   },
 ];

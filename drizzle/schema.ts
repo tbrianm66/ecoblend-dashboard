@@ -15,7 +15,7 @@ import {
   varchar,
 } from "drizzle-orm/mysql-core";
 
-// ── Users ─────────────────────────────────────────────────────────────────────
+// -- Users ---------------------------------------------------------------------
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
   openId: varchar("openId", { length: 64 }).notNull().unique(),
@@ -31,7 +31,7 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// ── Ventures ──────────────────────────────────────────────────────────────────
+// -- Ventures ------------------------------------------------------------------
 export const ventures = mysqlTable("ventures", {
   id: varchar("id", { length: 64 }).primaryKey(), // e.g. "ecoblend", "tone"
   name: varchar("name", { length: 128 }).notNull(),
@@ -39,9 +39,9 @@ export const ventures = mysqlTable("ventures", {
   sector: varchar("sector", { length: 128 }),
   channel: mysqlEnum("channel", ["B2B", "D2C", "B2B2C"]).default("B2B"),
   status: mysqlEnum("status", ["Active", "Pre-Launch", "Scaling", "Paused"]).default("Pre-Launch"),
-  vrl: int("vrl").default(1).notNull(),           // 1–4
+  vrl: int("vrl").default(1).notNull(),           // 1-4
   vrlPercent: int("vrlPercent").default(0),        // % through current VRL stage
-  trl: int("trl").default(1).notNull(),            // 1–9
+  trl: int("trl").default(1).notNull(),            // 1-9
   trlPercent: int("trlPercent").default(0),        // % through current TRL level
   nominatedCharity: varchar("nominatedCharity", { length: 255 }),
   charityFocus: text("charityFocus"),
@@ -53,28 +53,28 @@ export const ventures = mysqlTable("ventures", {
   bmc: text("bmc"),
   mmc: text("mmc"),
   lifecycleStage: mysqlEnum("lifecycleStage", ["Opportunity", "Validation", "Build", "Launch", "Scale"]).default("Opportunity"),
-  // ── Literature Audit: Innovator's Dilemma — Rec. 5 ──────────────────────────
+  // -- Literature Audit: Innovator's Dilemma - Rec. 5 --------------------------
   // Classifies each venture as sustaining or disruptive per Christensen's framework
   strategicClassification: mysqlEnum("strategicClassification", [
     "Sustaining",           // Improves performance on dimensions valued by current customers
     "Disruptive-NewMarket", // Creates new market by targeting non-consumers
     "Disruptive-LowEnd",    // Targets overserved customers with simpler/cheaper offering
   ]).default("Sustaining"),
-  // ── Literature Audit: Lean Startup — Rec. 7 ─────────────────────────────────
+  // -- Literature Audit: Lean Startup - Rec. 7 ---------------------------------
   // Identifies which self-reinforcing growth mechanism the venture is pursuing
   engineOfGrowth: mysqlEnum("engineOfGrowth", [
     "Sticky",  // Retention-driven; primary metric: churn rate
     "Viral",   // Referral-driven; primary metric: viral coefficient
     "Paid",    // Acquisition-driven; primary metric: LTV/CAC ratio
   ]),
-  // ── Literature Audit: Lean Startup — Rec. 8 ─────────────────────────────────
+  // -- Literature Audit: Lean Startup - Rec. 8 ---------------------------------
   // Product/market fit signal: whether the engine of growth is self-sustaining
   productMarketFitSignal: mysqlEnum("productMarketFitSignal", [
     "Not Yet",    // Engine not yet identified or not self-sustaining
     "Emerging",   // Early positive signals but not yet reliable
     "Achieved",   // Engine is reliably self-sustaining
   ]).default("Not Yet"),
-  // ── Literature Audit: Lean Startup — Rec. 3 (Innovation Accounting) ─────────
+  // -- Literature Audit: Lean Startup - Rec. 3 (Innovation Accounting) ---------
   // Cached innovation accounting metrics (recomputed from experiments/interviews)
   experimentPassRate: float("experimentPassRate"),    // passing / completed experiments (%)
   learningVelocity: int("learningVelocity"),           // validated learning cycles last 30 days
@@ -86,7 +86,7 @@ export const ventures = mysqlTable("ventures", {
 export type Venture = typeof ventures.$inferSelect;
 export type InsertVenture = typeof ventures.$inferInsert;
 
-// ── Milestones ────────────────────────────────────────────────────────────────
+// -- Milestones ----------------------------------------------------------------
 export const milestones = mysqlTable("milestones", {
   id: int("id").autoincrement().primaryKey(),
   ventureId: varchar("ventureId", { length: 64 }).notNull(),
@@ -101,7 +101,7 @@ export const milestones = mysqlTable("milestones", {
 export type Milestone = typeof milestones.$inferSelect;
 export type InsertMilestone = typeof milestones.$inferInsert;
 
-// ── Risks ─────────────────────────────────────────────────────────────────────
+// -- Risks ---------------------------------------------------------------------
 export const risks = mysqlTable("risks", {
   id: int("id").autoincrement().primaryKey(),
   ventureId: varchar("ventureId", { length: 64 }).notNull(),
@@ -115,7 +115,7 @@ export const risks = mysqlTable("risks", {
 export type Risk = typeof risks.$inferSelect;
 export type InsertRisk = typeof risks.$inferInsert;
 
-// ── Venture Scores (history) ──────────────────────────────────────────────────
+// -- Venture Scores (history) --------------------------------------------------
 export const ventureScores = mysqlTable("venture_scores", {
   id: int("id").autoincrement().primaryKey(),
   ventureId: varchar("ventureId", { length: 64 }).notNull(),
@@ -130,16 +130,16 @@ export const ventureScores = mysqlTable("venture_scores", {
 export type VentureScore = typeof ventureScores.$inferSelect;
 export type InsertVentureScore = typeof ventureScores.$inferInsert;
 
-// ── Founders ──────────────────────────────────────────────────────────────────
+// -- Founders ------------------------------------------------------------------
 export const founders = mysqlTable("founders", {
   id: int("id").autoincrement().primaryKey(),
   ventureId: varchar("ventureId", { length: 64 }).notNull(),
   name: varchar("name", { length: 128 }).notNull(),
   role: varchar("role", { length: 128 }),
   background: text("background"),
-  domainExpertiseScore: int("domainExpertiseScore").default(0), // 0–10
-  experienceScore: int("experienceScore").default(0),           // 0–10
-  commitmentScore: int("commitmentScore").default(0),           // 0–10
+  domainExpertiseScore: int("domainExpertiseScore").default(0), // 0-10
+  experienceScore: int("experienceScore").default(0),           // 0-10
+  commitmentScore: int("commitmentScore").default(0),           // 0-10
   equityPct: float("equityPct").default(0),
   esopAllocated: boolean("esopAllocated").default(false),
   linkedIn: varchar("linkedIn", { length: 255 }),
@@ -150,16 +150,16 @@ export const founders = mysqlTable("founders", {
 export type Founder = typeof founders.$inferSelect;
 export type InsertFounder = typeof founders.$inferInsert;
 
-// ── Opportunities (pipeline) ──────────────────────────────────────────────────
+// -- Opportunities (pipeline) --------------------------------------------------
 export const opportunities = mysqlTable("opportunities", {
   id: int("id").autoincrement().primaryKey(),
   title: varchar("title", { length: 255 }).notNull(),
   problemStatement: text("problemStatement"),
   sector: varchar("sector", { length: 128 }),
-  marketSizeScore: int("marketSizeScore").default(0),     // 0–10
-  strategicFitScore: int("strategicFitScore").default(0), // 0–10
-  esgAlignmentScore: int("esgAlignmentScore").default(0), // 0–10
-  founderAvailScore: int("founderAvailScore").default(0), // 0–10
+  marketSizeScore: int("marketSizeScore").default(0),     // 0-10
+  strategicFitScore: int("strategicFitScore").default(0), // 0-10
+  esgAlignmentScore: int("esgAlignmentScore").default(0), // 0-10
+  founderAvailScore: int("founderAvailScore").default(0), // 0-10
   totalScore: int("totalScore").default(0),               // computed sum
   status: mysqlEnum("status", ["Identified", "Scoring", "Approved", "Rejected", "Converted"]).default("Identified"),
   convertedToVentureId: varchar("convertedToVentureId", { length: 64 }),
@@ -172,7 +172,7 @@ export const opportunities = mysqlTable("opportunities", {
 export type Opportunity = typeof opportunities.$inferSelect;
 export type InsertOpportunity = typeof opportunities.$inferInsert;
 
-// ── Experiments (TRL evidence log) ───────────────────────────────────────────
+// -- Experiments (TRL evidence log) -------------------------------------------
 export const experiments = mysqlTable("experiments", {
   id: int("id").autoincrement().primaryKey(),
   ventureId: varchar("ventureId", { length: 64 }).notNull(),
@@ -190,7 +190,7 @@ export const experiments = mysqlTable("experiments", {
 export type Experiment = typeof experiments.$inferSelect;;
 export type InsertExperiment = typeof experiments.$inferInsert;
 
-// ── Customer Interviews ───────────────────────────────────────────────────────
+// -- Customer Interviews -------------------------------------------------------
 export const interviews = mysqlTable("interviews", {
   id: int("id").autoincrement().primaryKey(),
   ventureId: varchar("ventureId", { length: 64 }).notNull(),
@@ -212,7 +212,7 @@ export const interviews = mysqlTable("interviews", {
 export type Interview = typeof interviews.$inferSelect;
 export type InsertInterview = typeof interviews.$inferInsert;
 
-// ── Financial Snapshots ───────────────────────────────────────────────────────
+// -- Financial Snapshots -------------------------------------------------------
 export const financialSnapshots = mysqlTable("financial_snapshots", {
   id: int("id").autoincrement().primaryKey(),
   ventureId: varchar("ventureId", { length: 64 }).notNull(),
@@ -224,7 +224,7 @@ export const financialSnapshots = mysqlTable("financial_snapshots", {
   investmentRaised: int("investmentRaised").default(0),
   investmentTarget: int("investmentTarget").default(0),
   notes: text("notes"),
-  // ── Literature Audit: Lean Startup — Rec. 7 & 9 (Engine of Growth + Innovation Accounting) ──
+  // -- Literature Audit: Lean Startup - Rec. 7 & 9 (Engine of Growth + Innovation Accounting) --
   // Sticky engine metrics
   churnRate: float("churnRate"),              // % of customers lost per month
   retentionRate: float("retentionRate"),       // % of customers retained per month
@@ -244,7 +244,7 @@ export const financialSnapshots = mysqlTable("financial_snapshots", {
 export type FinancialSnapshot = typeof financialSnapshots.$inferSelect;
 export type InsertFinancialSnapshot = typeof financialSnapshots.$inferInsert;
 
-// ── Contract Documents ────────────────────────────────────────────────────────
+// -- Contract Documents --------------------------------------------------------
 export const contractDocuments = mysqlTable("contract_documents", {
   id: int("id").autoincrement().primaryKey(),
   contractId: varchar("contractId", { length: 64 }).notNull(),
@@ -261,7 +261,7 @@ export const contractDocuments = mysqlTable("contract_documents", {
 export type ContractDocument = typeof contractDocuments.$inferSelect;
 export type InsertContractDocument = typeof contractDocuments.$inferInsert;
 
-// ── Research Papers ───────────────────────────────────────────────────────────
+// -- Research Papers -----------------------------------------------------------
 export const researchPapers = mysqlTable("research_papers", {
   id: int("id").autoincrement().primaryKey(),
   title: varchar("title", { length: 512 }).notNull(),
@@ -281,7 +281,7 @@ export const researchPapers = mysqlTable("research_papers", {
     "Peer Reviewed", "Conference Paper", "Thesis", "Industry Report",
     "Government Report", "Book Chapter", "Working Paper"
   ]).default("Peer Reviewed"),
-  relevanceScore: int("relevanceScore").default(5),  // 1–10
+  relevanceScore: int("relevanceScore").default(5),  // 1-10
   ventureIds: text("ventureIds"),                    // comma-separated venture IDs this paper supports
   trlLevelsSupported: text("trlLevelsSupported"),    // comma-separated TRL levels e.g. "3,4,5"
   vrlStagesSupported: text("vrlStagesSupported"),    // comma-separated VRL stages e.g. "1,2"
@@ -294,7 +294,7 @@ export const researchPapers = mysqlTable("research_papers", {
 export type ResearchPaper = typeof researchPapers.$inferSelect;
 export type InsertResearchPaper = typeof researchPapers.$inferInsert;
 
-// ── Fellow Researchers ────────────────────────────────────────────────────────
+// -- Fellow Researchers --------------------------------------------------------
 export const fellowResearchers = mysqlTable("fellow_researchers", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 128 }).notNull(),
@@ -320,7 +320,7 @@ export const fellowResearchers = mysqlTable("fellow_researchers", {
 export type FellowResearcher = typeof fellowResearchers.$inferSelect;
 export type InsertFellowResearcher = typeof fellowResearchers.$inferInsert;
 
-// ── University Partnerships ───────────────────────────────────────────────────
+// -- University Partnerships ---------------------------------------------------
 export const universityPartnerships = mysqlTable("university_partnerships", {
   id: int("id").autoincrement().primaryKey(),
   universityName: varchar("universityName", { length: 255 }).notNull(),
@@ -346,7 +346,7 @@ export const universityPartnerships = mysqlTable("university_partnerships", {
 export type UniversityPartnership = typeof universityPartnerships.$inferSelect;
 export type InsertUniversityPartnership = typeof universityPartnerships.$inferInsert;
 
-// ── Evidence Claims ───────────────────────────────────────────────────────────
+// -- Evidence Claims -----------------------------------------------------------
 // Links research papers to specific VRL/TRL claims for a venture
 export const evidenceClaims = mysqlTable("evidence_claims", {
   id: int("id").autoincrement().primaryKey(),
@@ -368,17 +368,17 @@ export const evidenceClaims = mysqlTable("evidence_claims", {
 export type EvidenceClaim = typeof evidenceClaims.$inferSelect;
 export type InsertEvidenceClaim = typeof evidenceClaims.$inferInsert;
 
-// ── Market Analysis ───────────────────────────────────────────────────────────
+// -- Market Analysis -----------------------------------------------------------
 // Stores market size estimates and TAM/SAM/SOM data per venture
 export const marketAnalysis = mysqlTable("market_analysis", {
   id: int("id").autoincrement().primaryKey(),
   ventureId: varchar("ventureId", { length: 64 }).notNull(),
   marketName: varchar("marketName", { length: 255 }).notNull(),   // e.g. "Global Eco-Materials Market"
   geography: varchar("geography", { length: 128 }).default("Global"),
-  tamValue: int("tamValue").default(0),           // Total Addressable Market (£M)
-  samValue: int("samValue").default(0),           // Serviceable Addressable Market (£M)
-  somValue: int("somValue").default(0),           // Serviceable Obtainable Market (£M)
-  tamUnit: varchar("tamUnit", { length: 32 }).default("£M"),
+  tamValue: int("tamValue").default(0),           // Total Addressable Market (-M)
+  samValue: int("samValue").default(0),           // Serviceable Addressable Market (-M)
+  somValue: int("somValue").default(0),           // Serviceable Obtainable Market (-M)
+  tamUnit: varchar("tamUnit", { length: 32 }).default("-M"),
   cagr: float("cagr").default(0),                 // Compound Annual Growth Rate (%)
   marketYear: int("marketYear").default(2025),    // base year for the estimate
   forecastYear: int("forecastYear").default(2030),
@@ -395,7 +395,7 @@ export const marketAnalysis = mysqlTable("market_analysis", {
 export type MarketAnalysis = typeof marketAnalysis.$inferSelect;
 export type InsertMarketAnalysis = typeof marketAnalysis.$inferInsert;
 
-// ── Competitors ───────────────────────────────────────────────────────────────
+// -- Competitors ---------------------------------------------------------------
 export const competitors = mysqlTable("competitors", {
   id: int("id").autoincrement().primaryKey(),
   ventureId: varchar("ventureId", { length: 64 }).notNull(),
@@ -413,7 +413,7 @@ export const competitors = mysqlTable("competitors", {
   strengths: text("strengths"),
   weaknesses: text("weaknesses"),
   differentiator: text("differentiator"),          // how our venture differs
-  revenueEstimate: varchar("revenueEstimate", { length: 64 }), // e.g. "£5M–£20M"
+  revenueEstimate: varchar("revenueEstimate", { length: 64 }), // e.g. "-5M--20M"
   fundingRaised: varchar("fundingRaised", { length: 64 }),
   threatLevel: mysqlEnum("threatLevel", ["Low", "Medium", "High"]).default("Medium"),
   notes: text("notes"),
@@ -425,7 +425,7 @@ export const competitors = mysqlTable("competitors", {
 export type Competitor = typeof competitors.$inferSelect;
 export type InsertCompetitor = typeof competitors.$inferInsert;
 
-// ── Opportunity Research Reports ──────────────────────────────────────────────
+// -- Opportunity Research Reports ----------------------------------------------
 // AI-generated research reports triggered from an opportunity's problem statement
 export const opportunityReports = mysqlTable("opportunity_reports", {
   id: int("id").autoincrement().primaryKey(),
@@ -439,7 +439,7 @@ export const opportunityReports = mysqlTable("opportunity_reports", {
   recommendedAction: mysqlEnum("recommendedAction", [
     "Pursue", "Investigate Further", "Park", "Reject"
   ]).default("Investigate Further"),
-  confidenceScore: int("confidenceScore").default(5), // 1–10 AI confidence
+  confidenceScore: int("confidenceScore").default(5), // 1-10 AI confidence
   generatedAt: timestamp("generatedAt").defaultNow().notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
@@ -447,18 +447,18 @@ export const opportunityReports = mysqlTable("opportunity_reports", {
 export type OpportunityReport = typeof opportunityReports.$inferSelect;
 export type InsertOpportunityReport = typeof opportunityReports.$inferInsert;
 
-// ── FMEA Engineering Risk Register ────────────────────────────────────────────
+// -- FMEA Engineering Risk Register --------------------------------------------
 // Failure Mode & Effects Analysis risks linked to a venture and optional TRL stage
 export const engineeringRisks = mysqlTable("engineering_risks", {
   id: int("id").autoincrement().primaryKey(),
   ventureId: varchar("ventureId", { length: 64 }).notNull(),
-  relatedTrlStage: int("relatedTrlStage"),                      // Optional: TRL level 1–9
+  relatedTrlStage: int("relatedTrlStage"),                      // Optional: TRL level 1-9
   componentName: varchar("componentName", { length: 255 }).notNull(),
   failureMode: text("failureMode").notNull(),
   failureEffect: text("failureEffect").notNull(),
-  severity: int("severity").notNull().default(5),               // 1–10
-  occurrence: int("occurrence").notNull().default(5),           // 1–10
-  detection: int("detection").notNull().default(5),             // 1–10
+  severity: int("severity").notNull().default(5),               // 1-10
+  occurrence: int("occurrence").notNull().default(5),           // 1-10
+  detection: int("detection").notNull().default(5),             // 1-10
   initialRpn: int("initialRpn").notNull().default(125),         // Auto: S * O * D
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -467,7 +467,7 @@ export const engineeringRisks = mysqlTable("engineering_risks", {
 export type EngineeringRisk = typeof engineeringRisks.$inferSelect;
 export type InsertEngineeringRisk = typeof engineeringRisks.$inferInsert;
 
-// ── FMEA Mitigation Actions ────────────────────────────────────────────────────
+// -- FMEA Mitigation Actions ----------------------------------------------------
 // Mitigation actions linked to an engineering risk with revised RPN scores
 export const mitigationActions = mysqlTable("mitigation_actions", {
   id: int("id").autoincrement().primaryKey(),
@@ -477,9 +477,9 @@ export const mitigationActions = mysqlTable("mitigation_actions", {
   status: mysqlEnum("status", [
     "Identified", "In Progress", "Implemented", "Verified"
   ]).default("Identified").notNull(),
-  revisedSeverity: int("revisedSeverity").default(5),           // 1–10
-  revisedOccurrence: int("revisedOccurrence").default(5),       // 1–10
-  revisedDetection: int("revisedDetection").default(5),         // 1–10
+  revisedSeverity: int("revisedSeverity").default(5),           // 1-10
+  revisedOccurrence: int("revisedOccurrence").default(5),       // 1-10
+  revisedDetection: int("revisedDetection").default(5),         // 1-10
   revisedRpn: int("revisedRpn").default(125),                   // Auto: rS * rO * rD
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -487,7 +487,7 @@ export const mitigationActions = mysqlTable("mitigation_actions", {
 export type MitigationAction = typeof mitigationActions.$inferSelect;
 export type InsertMitigationAction = typeof mitigationActions.$inferInsert;
 
-// ── Academic Papers ────────────────────────────────────────────────────────────
+// -- Academic Papers ------------------------------------------------------------
 // Stores peer-reviewed papers retrieved from Semantic Scholar / Crossref
 export const academicPapers = mysqlTable("academic_papers", {
   id: int("id").autoincrement().primaryKey(),
@@ -504,7 +504,7 @@ export const academicPapers = mysqlTable("academic_papers", {
 export type AcademicPaper = typeof academicPapers.$inferSelect;
 export type InsertAcademicPaper = typeof academicPapers.$inferInsert;
 
-// ── Task Paper Links (join table) ─────────────────────────────────────────────
+// -- Task Paper Links (join table) ---------------------------------------------
 // Links an engineering task (experiment) to an academic paper
 export const taskPaperLinks = mysqlTable("task_paper_links", {
   id: int("id").autoincrement().primaryKey(),
@@ -517,8 +517,8 @@ export const taskPaperLinks = mysqlTable("task_paper_links", {
 export type TaskPaperLink = typeof taskPaperLinks.$inferSelect;
 export type InsertTaskPaperLink = typeof taskPaperLinks.$inferInsert;
 
-// ── Venture Risks (Business & Technical Risk Register) ────────────────────────
-// Tracks 6-category risk register with Likelihood × Impact scoring and VRL linkage
+// -- Venture Risks (Business & Technical Risk Register) ------------------------
+// Tracks 6-category risk register with Likelihood - Impact scoring and VRL linkage
 export const ventureRisks = mysqlTable("venture_risks", {
   id: int("id").autoincrement().primaryKey(),
   ventureId: varchar("ventureId", { length: 64 }).notNull(),
@@ -527,11 +527,11 @@ export const ventureRisks = mysqlTable("venture_risks", {
   ]).notNull(),
   riskTitle: varchar("riskTitle", { length: 255 }).notNull(),
   riskDescription: text("riskDescription"),
-  likelihood: int("likelihood").notNull().default(3),   // 1–5
-  impact: int("impact").notNull().default(3),           // 1–5
-  riskScore: int("riskScore").notNull().default(9),     // likelihood × impact (auto-calculated)
+  likelihood: int("likelihood").notNull().default(3),   // 1-5
+  impact: int("impact").notNull().default(3),           // 1-5
+  riskScore: int("riskScore").notNull().default(9),     // likelihood - impact (auto-calculated)
   riskLevel: mysqlEnum("riskLevel", ["Low", "Medium", "High", "Critical"]).notNull().default("Medium"),
-  vrlStageImpacted: int("vrlStageImpacted"),            // 1–6 VRL stage this risk blocks
+  vrlStageImpacted: int("vrlStageImpacted"),            // 1-6 VRL stage this risk blocks
   mitigationPlan: text("mitigationPlan"),
   riskOwner: varchar("riskOwner", { length: 128 }),
   status: mysqlEnum("status", ["Open", "In Progress", "Mitigated", "Accepted", "Closed"]).default("Open"),
@@ -542,11 +542,11 @@ export const ventureRisks = mysqlTable("venture_risks", {
 export type VentureRisk = typeof ventureRisks.$inferSelect;
 export type InsertVentureRisk = typeof ventureRisks.$inferInsert;
 
-// ── BRL Tasks (Business Readiness Level — 100 Tasks Method) ───────────────────
+// -- BRL Tasks (Business Readiness Level - 100 Tasks Method) -------------------
 // Seed table: defines all 100 BRL tasks. Completions are per-venture.
 export const brlTasks = mysqlTable("brl_tasks", {
   id: int("id").autoincrement().primaryKey(),
-  taskNumber: int("taskNumber").notNull().unique(), // 1–100
+  taskNumber: int("taskNumber").notNull().unique(), // 1-100
   title: varchar("title", { length: 256 }).notNull(),
   description: text("description"),
   category: mysqlEnum("category", [
@@ -575,7 +575,7 @@ export const brlTasks = mysqlTable("brl_tasks", {
 export type BrlTask = typeof brlTasks.$inferSelect;
 export type InsertBrlTask = typeof brlTasks.$inferInsert;
 
-// ── BRL Task Completions (per-venture progress) ───────────────────────────────
+// -- BRL Task Completions (per-venture progress) -------------------------------
 export const brlTaskCompletions = mysqlTable("brl_task_completions", {
   id: int("id").autoincrement().primaryKey(),
   ventureId: varchar("ventureId", { length: 64 }).notNull(),
@@ -591,21 +591,21 @@ export const brlTaskCompletions = mysqlTable("brl_task_completions", {
 export type BrlTaskCompletion = typeof brlTaskCompletions.$inferSelect;
 export type InsertBrlTaskCompletion = typeof brlTaskCompletions.$inferInsert;
 
-// ── VRL Scoring Parameters (per-venture formula inputs) ──────────────────────
+// -- VRL Scoring Parameters (per-venture formula inputs) ----------------------
 // Stores the configurable inputs for the VRL formula:
-// VRL = (α × TRL + β × BRL) × (1 − Risk Index) × Confidence Score
+// VRL = (- - TRL + - - BRL) - (1 - Risk Index) - Confidence Score
 export const vrlScoringParams = mysqlTable("vrl_scoring_params", {
   id: int("id").autoincrement().primaryKey(),
   ventureId: varchar("ventureId", { length: 64 }).notNull().unique(),
   // Weighting factors (must sum to 1.0)
   alphaWeight: float("alphaWeight").notNull().default(0.45), // TRL weight
   betaWeight: float("betaWeight").notNull().default(0.55),   // BRL weight
-  // Confidence Score (0.2–1.0) based on validation evidence strength
+  // Confidence Score (0.2-1.0) based on validation evidence strength
   confidenceScore: float("confidenceScore").notNull().default(0.5),
   confidenceRationale: text("confidenceRationale"),
   // Computed outputs (cached, recalculated on demand)
-  computedVrlScore: float("computedVrlScore"),       // raw VRL score (0–9)
-  computedVrlLevel: int("computedVrlLevel"),         // rounded VRL level (1–9)
+  computedVrlScore: float("computedVrlScore"),       // raw VRL score (0-9)
+  computedVrlLevel: int("computedVrlLevel"),         // rounded VRL level (1-9)
   lastCalculatedAt: timestamp("lastCalculatedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -613,12 +613,12 @@ export const vrlScoringParams = mysqlTable("vrl_scoring_params", {
 export type VrlScoringParams = typeof vrlScoringParams.$inferSelect;
 export type InsertVrlScoringParams = typeof vrlScoringParams.$inferInsert;
 
-// ╔══════════════════════════════════════════════════════════════════════════════╗
-// ║  LITERATURE AUDIT ADDITIONS — TIER 2                                        ║
-// ║  The Lean Startup (Ries, 2011) + The Innovator's Dilemma (Christensen, 1997)║
-// ╚══════════════════════════════════════════════════════════════════════════════╝
+// --------------------------------------------------------------------------------
+// -  LITERATURE AUDIT ADDITIONS - TIER 2                                        -
+// -  The Lean Startup (Ries, 2011) + The Innovator's Dilemma (Christensen, 1997)-
+// --------------------------------------------------------------------------------
 
-// ── Pivot Decision Log (Lean Startup — Rec. 1) ───────────────────────────────
+// -- Pivot Decision Log (Lean Startup - Rec. 1) -------------------------------
 // Records every structured pivot-or-persevere decision with full evidence trail.
 // Ries: "A pivot is a structured course correction designed to test a new
 // fundamental hypothesis about the product, business model, and engine of growth."
@@ -635,9 +635,9 @@ export const pivotDecisions = mysqlTable("pivot_decisions", {
     "Customer-Segment",   // Same problem, different customer
     "Customer-Need",      // Same customer, different problem
     "Platform",           // App to platform or vice versa
-    "Business-Architecture", // High-margin/low-volume ↔ low-margin/high-volume
+    "Business-Architecture", // High-margin/low-volume - low-margin/high-volume
     "Value-Capture",      // Monetisation model change
-    "Engine-of-Growth",   // Sticky → Viral → Paid switch
+    "Engine-of-Growth",   // Sticky - Viral - Paid switch
     "Channel",            // Distribution channel change
     "Technology",         // Same outcome, different technology
   ]),
@@ -660,13 +660,13 @@ export const pivotDecisions = mysqlTable("pivot_decisions", {
 export type PivotDecision = typeof pivotDecisions.$inferSelect;
 export type InsertPivotDecision = typeof pivotDecisions.$inferInsert;
 
-// ── Pivot Trigger Configuration (Lean Startup — Rec. 2) ──────────────────────
+// -- Pivot Trigger Configuration (Lean Startup - Rec. 2) ----------------------
 // Per-venture thresholds that generate a "pivot signal" alert when crossed.
 // Operationalises Ries's "runway is the number of pivots it can still make."
 export const pivotTriggerConfig = mysqlTable("pivot_trigger_config", {
   id: int("id").autoincrement().primaryKey(),
   ventureId: varchar("ventureId", { length: 64 }).notNull().unique(),
-  // Thresholds — alert fires when ALL active conditions are met
+  // Thresholds - alert fires when ALL active conditions are met
   minExperimentPassRatePct: float("minExperimentPassRatePct").default(30), // alert if pass rate < this
   maxRiskIndexPct: float("maxRiskIndexPct").default(60),                   // alert if risk index > this
   minVrlScore: float("minVrlScore").default(2.0),                          // alert if VRL score < this
@@ -681,7 +681,7 @@ export const pivotTriggerConfig = mysqlTable("pivot_trigger_config", {
 export type PivotTriggerConfig = typeof pivotTriggerConfig.$inferSelect;
 export type InsertPivotTriggerConfig = typeof pivotTriggerConfig.$inferInsert;
 
-// ── Value Network Mapping (Innovator's Dilemma — Rec. 6) ─────────────────────
+// -- Value Network Mapping (Innovator's Dilemma - Rec. 6) ---------------------
 // Captures the value network context for each venture per Christensen's framework.
 // "A value network is the context within which a firm identifies and responds to
 // customers' needs, solves problems, procures input, reacts to competitors,
@@ -713,7 +713,7 @@ export const valueNetworks = mysqlTable("value_networks", {
 export type ValueNetwork = typeof valueNetworks.$inferSelect;
 export type InsertValueNetwork = typeof valueNetworks.$inferInsert;
 
-// ── Hypothesis-Linked Onboarding Tasks (Lean Startup — Rec. 13) ──────────────
+// -- Hypothesis-Linked Onboarding Tasks (Lean Startup - Rec. 13) --------------
 // Extends the onboarding wizard so each task is linked to a specific hypothesis
 // and a validation criterion, transforming the checklist into a validated
 // learning record. Ries: "the number of interviews is a vanity metric; what
@@ -722,7 +722,7 @@ export const onboardingHypotheses = mysqlTable("onboarding_hypotheses", {
   id: int("id").autoincrement().primaryKey(),
   ventureId: varchar("ventureId", { length: 64 }).notNull(),
   // Onboarding task reference (maps to the wizard step)
-  onboardingStep: int("onboardingStep").notNull(),  // 1–4 (wizard steps)
+  onboardingStep: int("onboardingStep").notNull(),  // 1-4 (wizard steps)
   taskLabel: varchar("taskLabel", { length: 255 }).notNull(),
   // Hypothesis structure (Lean Startup scientific method)
   hypothesis: text("hypothesis").notNull(),          // "We believe that X..."
@@ -741,19 +741,19 @@ export const onboardingHypotheses = mysqlTable("onboarding_hypotheses", {
 export type OnboardingHypothesis = typeof onboardingHypotheses.$inferSelect;
 export type InsertOnboardingHypothesis = typeof onboardingHypotheses.$inferInsert;
 
-// ╔══════════════════════════════════════════════════════════════════════════════╗
-// ║  LITERATURE AUDIT ADDITIONS — TIER 3                                        ║
-// ╚══════════════════════════════════════════════════════════════════════════════╝
+// --------------------------------------------------------------------------------
+// -  LITERATURE AUDIT ADDITIONS - TIER 3                                        -
+// --------------------------------------------------------------------------------
 
-// ── Disruptive Opportunity Scoring (Innovator's Dilemma — Rec. 11 & 12) ───────
+// -- Disruptive Opportunity Scoring (Innovator's Dilemma - Rec. 11 & 12) -------
 // Extends the Opportunity Pipeline with a Disruption Potential score that
 // inverts standard criteria. Christensen: "the most dangerous competitive threats
 // come from opportunities that score poorly on standard criteria."
 export const opportunityDisruptionScores = mysqlTable("opportunity_disruption_scores", {
   id: int("id").autoincrement().primaryKey(),
   opportunityId: int("opportunityId").notNull().unique(),
-  // Disruption Potential scoring (inverted criteria — high score = more disruptive)
-  // Each dimension scored 0–10
+  // Disruption Potential scoring (inverted criteria - high score = more disruptive)
+  // Each dimension scored 0-10
   initialMarketSmallness: int("initialMarketSmallness").default(0),
     // 10 = very small/niche market (disruptive signal); 0 = large established market
   nonConsumerTargeting: int("nonConsumerTargeting").default(0),
@@ -780,7 +780,7 @@ export const opportunityDisruptionScores = mysqlTable("opportunity_disruption_sc
 export type OpportunityDisruptionScore = typeof opportunityDisruptionScores.$inferSelect;
 export type InsertOpportunityDisruptionScore = typeof opportunityDisruptionScores.$inferInsert;
 
-// ── Organisational Autonomy Health Check (Innovator's Dilemma — Rec. 14) ─────
+// -- Organisational Autonomy Health Check (Innovator's Dilemma - Rec. 14) -----
 // Assesses whether disruptive ventures have the organisational autonomy required
 // to succeed. Christensen: "disruptive ventures fail when managed within the same
 // organisational structure as sustaining ventures."
@@ -789,7 +789,7 @@ export const autonomyHealthChecks = mysqlTable("autonomy_health_checks", {
   id: int("id").autoincrement().primaryKey(),
   ventureId: varchar("ventureId", { length: 64 }).notNull(),
   assessmentDate: timestamp("assessmentDate").notNull(),
-  // Four autonomy dimensions (each scored 0–10)
+  // Four autonomy dimensions (each scored 0-10)
   budgetProtectionScore: int("budgetProtectionScore").default(0),
     // 10 = budget fully ring-fenced; 0 = subject to portfolio reallocation
   decisionAutonomyScore: int("decisionAutonomyScore").default(0),
@@ -802,10 +802,10 @@ export const autonomyHealthChecks = mysqlTable("autonomy_health_checks", {
   totalAutonomyScore: int("totalAutonomyScore").default(0),
   // Autonomy level classification
   autonomyLevel: mysqlEnum("autonomyLevel", [
-    "Critical",  // 0–10: Severely constrained, high failure risk
-    "Low",       // 11–20: Insufficient autonomy
-    "Moderate",  // 21–30: Some autonomy but gaps remain
-    "High",      // 31–40: Well-protected disruptive unit
+    "Critical",  // 0-10: Severely constrained, high failure risk
+    "Low",       // 11-20: Insufficient autonomy
+    "Moderate",  // 21-30: Some autonomy but gaps remain
+    "High",      // 31-40: Well-protected disruptive unit
   ]).default("Critical"),
   // Narrative assessment
   budgetNotes: text("budgetNotes"),
@@ -820,7 +820,7 @@ export const autonomyHealthChecks = mysqlTable("autonomy_health_checks", {
 export type AutonomyHealthCheck = typeof autonomyHealthChecks.$inferSelect;
 export type InsertAutonomyHealthCheck = typeof autonomyHealthChecks.$inferInsert;
 
-// ── Technology Trajectory Snapshots (Innovator's Dilemma — Rec. 15) ──────────
+// -- Technology Trajectory Snapshots (Innovator's Dilemma - Rec. 15) ----------
 // Records periodic TRL trajectory data points for plotting against market
 // performance thresholds. Christensen: reveals when a disruptive technology is
 // about to intersect with mainstream market requirements.
@@ -850,7 +850,7 @@ export const technologyTrajectories = mysqlTable("technology_trajectories", {
 export type TechnologyTrajectory = typeof technologyTrajectories.$inferSelect;
 export type InsertTechnologyTrajectory = typeof technologyTrajectories.$inferInsert;
 
-// ── Cohort Analysis Snapshots (Lean Startup — Rec. 4) ────────────────────────
+// -- Cohort Analysis Snapshots (Lean Startup - Rec. 4) ------------------------
 // Groups ventures by founding quarter and tracks VRL progression over time.
 // Ries: "use cohort analysis rather than cumulative totals to reveal whether
 // the portfolio's readiness methodology is improving across successive cohorts."
@@ -872,7 +872,7 @@ export const cohortSnapshots = mysqlTable("cohort_snapshots", {
 export type CohortSnapshot = typeof cohortSnapshots.$inferSelect;
 export type InsertCohortSnapshot = typeof cohortSnapshots.$inferInsert;
 
-// ── Pivot Runway Calculator Inputs (Lean Startup — Rec. 10) ──────────────────
+// -- Pivot Runway Calculator Inputs (Lean Startup - Rec. 10) ------------------
 // Stores the inputs needed to estimate how many pivots a venture can still afford.
 // Ries: "a startup's runway is the number of pivots it can still make."
 export const pivotRunwayInputs = mysqlTable("pivot_runway_inputs", {
@@ -896,37 +896,37 @@ export const pivotRunwayInputs = mysqlTable("pivot_runway_inputs", {
 export type PivotRunwayInputs = typeof pivotRunwayInputs.$inferSelect;
 export type InsertPivotRunwayInputs = typeof pivotRunwayInputs.$inferInsert;
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// IMPACT GOVERNANCE ENGINE — IRL (Impact Readiness Level) Schema
+// -------------------------------------------------------------------------------
+// IMPACT GOVERNANCE ENGINE - IRL (Impact Readiness Level) Schema
 // IRL = (ESG + LCA + PCF + CSR + Certification) / 5
 // Total Venture Intelligence Score = VRL + IRL
 // Brief: venture_intelligence_dashboard_update_prompt_brief.docx
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
 
-// ── ESG Analytics ─────────────────────────────────────────────────────────────
+// -- ESG Analytics -------------------------------------------------------------
 export const esgMetrics = mysqlTable("esg_metrics", {
   id: int("id").autoincrement().primaryKey(),
   ventureId: varchar("ventureId", { length: 64 }).notNull().unique(),
-  // Environmental pillar (0–10 each)
+  // Environmental pillar (0-10 each)
   carbonEmissionsScore:       float("carbonEmissionsScore").default(0),
   energyEfficiencyScore:      float("energyEfficiencyScore").default(0),
   waterManagementScore:       float("waterManagementScore").default(0),
   wasteCircularityScore:      float("wasteCircularityScore").default(0),
   biodiversityScore:          float("biodiversityScore").default(0),
   environmentalScore:         float("environmentalScore").default(0),
-  // Social pillar (0–10 each)
+  // Social pillar (0-10 each)
   workerWellbeingScore:       float("workerWellbeingScore").default(0),
   diversityInclusionScore:    float("diversityInclusionScore").default(0),
   communityEngagementScore:   float("communityEngagementScore").default(0),
   supplyChainEthicsScore:     float("supplyChainEthicsScore").default(0),
   socialScore:                float("socialScore").default(0),
-  // Governance pillar (0–10 each)
+  // Governance pillar (0-10 each)
   boardTransparencyScore:     float("boardTransparencyScore").default(0),
   ethicsAntiCorruptionScore:  float("ethicsAntiCorruptionScore").default(0),
   stakeholderEngagementScore: float("stakeholderEngagementScore").default(0),
   dataPrivacyScore:           float("dataPrivacyScore").default(0),
   governanceScore:            float("governanceScore").default(0),
-  // Overall ESG score (0–10) — computed: (E + S + G) / 3
+  // Overall ESG score (0-10) - computed: (E + S + G) / 3
   esgScore:                   float("esgScore").default(0),
   esgFrameworkUsed:           varchar("esgFrameworkUsed", { length: 128 }),
   lastReviewedAt:             timestamp("lastReviewedAt"),
@@ -937,7 +937,7 @@ export const esgMetrics = mysqlTable("esg_metrics", {
 export type EsgMetrics = typeof esgMetrics.$inferSelect;
 export type InsertEsgMetrics = typeof esgMetrics.$inferInsert;
 
-// ── Life Cycle Assessment (LCA) ───────────────────────────────────────────────
+// -- Life Cycle Assessment (LCA) -----------------------------------------------
 export const lcaAssessments = mysqlTable("lca_assessments", {
   id: int("id").autoincrement().primaryKey(),
   ventureId: varchar("ventureId", { length: 64 }).notNull(),
@@ -966,7 +966,7 @@ export const lcaAssessments = mysqlTable("lca_assessments", {
 export type LcaAssessment = typeof lcaAssessments.$inferSelect;
 export type InsertLcaAssessment = typeof lcaAssessments.$inferInsert;
 
-// ── Product Carbon Footprint (PCF) ────────────────────────────────────────────
+// -- Product Carbon Footprint (PCF) --------------------------------------------
 export const pcfRecords = mysqlTable("pcf_records", {
   id: int("id").autoincrement().primaryKey(),
   ventureId: varchar("ventureId", { length: 64 }).notNull().unique(),
@@ -993,7 +993,7 @@ export const pcfRecords = mysqlTable("pcf_records", {
 export type PcfRecord = typeof pcfRecords.$inferSelect;
 export type InsertPcfRecord = typeof pcfRecords.$inferInsert;
 
-// ── CSR Metrics ───────────────────────────────────────────────────────────────
+// -- CSR Metrics ---------------------------------------------------------------
 export const csrMetrics = mysqlTable("csr_metrics", {
   id: int("id").autoincrement().primaryKey(),
   ventureId: varchar("ventureId", { length: 64 }).notNull().unique(),
@@ -1014,7 +1014,7 @@ export const csrMetrics = mysqlTable("csr_metrics", {
 export type CsrMetrics = typeof csrMetrics.$inferSelect;
 export type InsertCsrMetrics = typeof csrMetrics.$inferInsert;
 
-// ── Certification & Compliance Tracking ──────────────────────────────────────
+// -- Certification & Compliance Tracking --------------------------------------
 export const certificationTracking = mysqlTable("certification_tracking", {
   id: int("id").autoincrement().primaryKey(),
   ventureId: varchar("ventureId", { length: 64 }).notNull(),
@@ -1060,7 +1060,7 @@ export const certificationTracking = mysqlTable("certification_tracking", {
 export type CertificationTracking = typeof certificationTracking.$inferSelect;
 export type InsertCertificationTracking = typeof certificationTracking.$inferInsert;
 
-// ── IRL Score Cache ───────────────────────────────────────────────────────────
+// -- IRL Score Cache -----------------------------------------------------------
 // IRL = (ESG + LCA + PCF + CSR + Certification) / 5
 // Total Venture Intelligence Score = VRL + IRL (raw sum; normalise for display)
 export const irlScores = mysqlTable("irl_scores", {
@@ -1080,7 +1080,7 @@ export const irlScores = mysqlTable("irl_scores", {
 export type IrlScore = typeof irlScores.$inferSelect;
 export type InsertIrlScore = typeof irlScores.$inferInsert;
 
-// ── Knowledge Base ────────────────────────────────────────────────────────────
+// -- Knowledge Base ------------------------------------------------------------
 // Stores ingested documents (PDFs, transcripts, URLs) for RAG-style retrieval
 // Uses MySQL FULLTEXT index for BM25-style keyword search
 export const knowledgeDocuments = mysqlTable("knowledge_documents", {
@@ -1121,12 +1121,12 @@ export const knowledgeChunks = mysqlTable("knowledge_chunks", {
 export type KnowledgeChunk = typeof knowledgeChunks.$inferSelect;
 export type InsertKnowledgeChunk = typeof knowledgeChunks.$inferInsert;
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ---------------------------------------------------------------------------
 // PEOPLE INTELLIGENCE MODULE
-// Sprint 20 — Talent profiles, PVF scoring, team composition, gap analysis
-// ═══════════════════════════════════════════════════════════════════════════
+// Sprint 20 - Talent profiles, PVF scoring, team composition, gap analysis
+// ---------------------------------------------------------------------------
 
-// ── Talent Profiles ──────────────────────────────────────────────────────────
+// -- Talent Profiles ----------------------------------------------------------
 export const talentProfiles = mysqlTable("talent_profiles", {
   id:                   int("id").autoincrement().primaryKey(),
   // Identity
@@ -1152,12 +1152,12 @@ export const talentProfiles = mysqlTable("talent_profiles", {
   previousVentures:     int("previousVentures").default(0),
   previousExits:        int("previousExits").default(0),
   previousLeadershipRoles: int("previousLeadershipRoles").default(0),
-  // Startup stage experience (0–10 each)
+  // Startup stage experience (0-10 each)
   stageIdea:            int("stageIdea").default(0),
   stageValidation:      int("stageValidation").default(0),
   stageBuild:           int("stageBuild").default(0),
   stageScale:           int("stageScale").default(0),
-  // Functional capabilities (0–10 each)
+  // Functional capabilities (0-10 each)
   capTechnical:         int("capTechnical").default(0),
   capCommercial:        int("capCommercial").default(0),
   capOperational:       int("capOperational").default(0),
@@ -1166,13 +1166,13 @@ export const talentProfiles = mysqlTable("talent_profiles", {
   capSupplyChain:       int("capSupplyChain").default(0),
   capFinancial:         int("capFinancial").default(0),
   capMarketing:         int("capMarketing").default(0),
-  // Network strength (0–10 each)
+  // Network strength (0-10 each)
   networkInvestors:     int("networkInvestors").default(0),
   networkCustomers:     int("networkCustomers").default(0),
   networkSuppliers:     int("networkSuppliers").default(0),
   networkRegulators:    int("networkRegulators").default(0),
   networkIndustry:      int("networkIndustry").default(0),
-  // Behavioural attributes (0–10 each)
+  // Behavioural attributes (0-10 each)
   attrLeadership:       int("attrLeadership").default(0),
   attrExecution:        int("attrExecution").default(0),
   attrCollaboration:    int("attrCollaboration").default(0),
@@ -1188,7 +1188,7 @@ export const talentProfiles = mysqlTable("talent_profiles", {
 export type TalentProfile = typeof talentProfiles.$inferSelect;
 export type InsertTalentProfile = typeof talentProfiles.$inferInsert;
 
-// ── Venture Role Requirements ─────────────────────────────────────────────────
+// -- Venture Role Requirements -------------------------------------------------
 export const ventureRoleRequirements = mysqlTable("venture_role_requirements", {
   id:                   int("id").autoincrement().primaryKey(),
   ventureId:            varchar("ventureId", { length: 64 }).notNull(),
@@ -1200,7 +1200,7 @@ export const ventureRoleRequirements = mysqlTable("venture_role_requirements", {
                         ]).notNull(),
   priority:             mysqlEnum("priority", ["Critical", "High", "Medium", "Low"]).default("High"),
   status:               mysqlEnum("status", ["Open", "Filled", "On Hold"]).default("Open"),
-  // Requirements (0–10 minimum thresholds)
+  // Requirements (0-10 minimum thresholds)
   minYearsExperience:   int("minYearsExperience").default(0),
   minCapScore:          int("minCapScore").default(5),
   minNetworkScore:      int("minNetworkScore").default(3),
@@ -1215,20 +1215,20 @@ export const ventureRoleRequirements = mysqlTable("venture_role_requirements", {
 export type VentureRoleRequirement = typeof ventureRoleRequirements.$inferSelect;
 export type InsertVentureRoleRequirement = typeof ventureRoleRequirements.$inferInsert;
 
-// ── People–Venture Fit Scores (PVF cache) ─────────────────────────────────────
+// -- People-Venture Fit Scores (PVF cache) -------------------------------------
 export const peopleVentureFit = mysqlTable("people_venture_fit", {
   id:                   int("id").autoincrement().primaryKey(),
   talentProfileId:      int("talentProfileId").notNull(),
   ventureId:            varchar("ventureId", { length: 64 }).notNull(),
-  roleRequirementId:    int("roleRequirementId"),        // optional — fit against specific role
-  // PVF component scores (0–10 each)
+  roleRequirementId:    int("roleRequirementId"),        // optional - fit against specific role
+  // PVF component scores (0-10 each)
   skillsMatch:          float("skillsMatch").default(0),
   industryMatch:        float("industryMatch").default(0),
   stageMatch:           float("stageMatch").default(0),
   networkValue:         float("networkValue").default(0),
   availabilityFit:      float("availabilityFit").default(0),
   // Computed PVF = (skillsMatch + industryMatch + stageMatch + networkValue + availabilityFit) / 5
-  pvfScore:             float("pvfScore").default(0),    // 0–10
+  pvfScore:             float("pvfScore").default(0),    // 0-10
   // Recommendation
   recommendation:       mysqlEnum("recommendation", ["Highly Recommended", "Recommended", "Possible", "Not Recommended"]).default("Possible"),
   notes:                text("notes"),
@@ -1238,7 +1238,7 @@ export const peopleVentureFit = mysqlTable("people_venture_fit", {
 export type PeopleVentureFit = typeof peopleVentureFit.$inferSelect;
 export type InsertPeopleVentureFit = typeof peopleVentureFit.$inferInsert;
 
-// ── Team Compositions ─────────────────────────────────────────────────────────
+// -- Team Compositions ---------------------------------------------------------
 export const teamCompositions = mysqlTable("team_compositions", {
   id:                   int("id").autoincrement().primaryKey(),
   ventureId:            varchar("ventureId", { length: 64 }).notNull(),
@@ -1257,7 +1257,7 @@ export const teamCompositions = mysqlTable("team_compositions", {
 export type TeamComposition = typeof teamCompositions.$inferSelect;
 export type InsertTeamComposition = typeof teamCompositions.$inferInsert;
 
-// ── Team Gap Analysis ─────────────────────────────────────────────────────────
+// -- Team Gap Analysis ---------------------------------------------------------
 export const teamGapAnalysis = mysqlTable("team_gap_analysis", {
   id:                   int("id").autoincrement().primaryKey(),
   ventureId:            varchar("ventureId", { length: 64 }).notNull(),
@@ -1270,8 +1270,8 @@ export const teamGapAnalysis = mysqlTable("team_gap_analysis", {
   severity:             mysqlEnum("severity", ["Critical", "High", "Medium", "Low"]).default("Medium"),
   description:          text("description"),
   // Current vs required
-  currentScore:         float("currentScore").default(0),   // 0–10 team average
-  requiredScore:        float("requiredScore").default(7),   // 0–10 threshold
+  currentScore:         float("currentScore").default(0),   // 0-10 team average
+  requiredScore:        float("requiredScore").default(7),   // 0-10 threshold
   gapScore:             float("gapScore").default(0),        // requiredScore - currentScore
   // Resolution
   status:               mysqlEnum("status", ["Open", "In Progress", "Resolved"]).default("Open"),
@@ -1282,12 +1282,12 @@ export const teamGapAnalysis = mysqlTable("team_gap_analysis", {
 export type TeamGapAnalysis = typeof teamGapAnalysis.$inferSelect;
 export type InsertTeamGapAnalysis = typeof teamGapAnalysis.$inferInsert;
 
-// ── Founder Suitability Assessments ──────────────────────────────────────────
+// -- Founder Suitability Assessments ------------------------------------------
 export const founderSuitabilityAssessments = mysqlTable("founder_suitability_assessments", {
   id:                   int("id").autoincrement().primaryKey(),
   talentProfileId:      int("talentProfileId").notNull(),
   ventureId:            varchar("ventureId", { length: 64 }).notNull(),
-  // Suitability dimensions (0–10 each)
+  // Suitability dimensions (0-10 each)
   domainKnowledge:      int("domainKnowledge").default(0),
   executionCapability:  int("executionCapability").default(0),
   leadershipStrength:   int("leadershipStrength").default(0),
@@ -1295,7 +1295,7 @@ export const founderSuitabilityAssessments = mysqlTable("founder_suitability_ass
   stageReadiness:       int("stageReadiness").default(0),
   riskProfile:          int("riskProfile").default(0),
   commitmentLevel:      int("commitmentLevel").default(0),
-  // Computed overall suitability score (0–10)
+  // Computed overall suitability score (0-10)
   overallScore:         float("overallScore").default(0),
   // Recommendation
   recommendation:       mysqlEnum("recommendation", [
@@ -1312,13 +1312,13 @@ export type FounderSuitabilityAssessment = typeof founderSuitabilityAssessments.
 export type InsertFounderSuitabilityAssessment = typeof founderSuitabilityAssessments.$inferInsert;
 
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
 // PRODUCT OPPORTUNITY INTELLIGENCE (POI) MODULE
 // Brief: POI_module_prompt_brief.docx
-// POS = (Cost + Performance + Quality + Sustainability) / 4  (each 1–5)
-// ═══════════════════════════════════════════════════════════════════════════════
+// POS = (Cost + Performance + Quality + Sustainability) / 4  (each 1-5)
+// -------------------------------------------------------------------------------
 
-// ── Product Categories ────────────────────────────────────────────────────────
+// -- Product Categories --------------------------------------------------------
 export const productCategories = mysqlTable("product_categories", {
   id:          int("id").autoincrement().primaryKey(),
   name:        varchar("name", { length: 128 }).notNull(),
@@ -1330,13 +1330,13 @@ export const productCategories = mysqlTable("product_categories", {
 export type ProductCategory = typeof productCategories.$inferSelect;
 export type InsertProductCategory = typeof productCategories.$inferInsert;
 
-// ── Product Opportunities ─────────────────────────────────────────────────────
+// -- Product Opportunities -----------------------------------------------------
 // Core entity: a product/technology/system being evaluated before entering VRL
 export const productOpportunities = mysqlTable("product_opportunities", {
   id:                  int("id").autoincrement().primaryKey(),
   name:                varchar("name", { length: 255 }).notNull(),
   description:         text("description"),
-  categoryId:          int("categoryId"),               // FK → product_categories
+  categoryId:          int("categoryId"),               // FK - product_categories
   sector:              varchar("sector", { length: 128 }),
   targetMarket:        varchar("targetMarket", { length: 255 }),
   // Lifecycle stage of the product being evaluated
@@ -1358,27 +1358,27 @@ export const productOpportunities = mysqlTable("product_opportunities", {
 export type ProductOpportunity = typeof productOpportunities.$inferSelect;
 export type InsertProductOpportunity = typeof productOpportunities.$inferInsert;
 
-// ── Product Baselines ─────────────────────────────────────────────────────────
+// -- Product Baselines ---------------------------------------------------------
 // Captures the current-state benchmark for a product before gap analysis
 export const productBaselines = mysqlTable("product_baselines", {
   id:                    int("id").autoincrement().primaryKey(),
   productOpportunityId:  int("productOpportunityId").notNull(),
   // Cost baseline
-  manufacturingCost:     float("manufacturingCost"),       // £ per unit
+  manufacturingCost:     float("manufacturingCost"),       // - per unit
   supplyChainCost:       float("supplyChainCost"),
   lifecycleCost:         float("lifecycleCost"),
   // Performance baseline
   technicalCapability:   text("technicalCapability"),
   efficiencyRating:      float("efficiencyRating"),        // % or index
   // Quality baseline
-  reliabilityScore:      float("reliabilityScore"),        // 0–10
+  reliabilityScore:      float("reliabilityScore"),        // 0-10
   durabilityYears:       float("durabilityYears"),
   // Sustainability baseline
-  carbonFootprintKg:     float("carbonFootprintKg"),       // kg CO₂e per unit
+  carbonFootprintKg:     float("carbonFootprintKg"),       // kg CO-e per unit
   esgComplianceLevel:    mysqlEnum("esgComplianceLevel", [
                            "None", "Partial", "Compliant", "Certified"
                          ]).default("None"),
-  circularityScore:      float("circularityScore"),        // 0–10
+  circularityScore:      float("circularityScore"),        // 0-10
   // Meta
   baselineSource:        varchar("baselineSource", { length: 255 }),
   baselineDate:          varchar("baselineDate", { length: 32 }),
@@ -1389,15 +1389,15 @@ export const productBaselines = mysqlTable("product_baselines", {
 export type ProductBaseline = typeof productBaselines.$inferSelect;
 export type InsertProductBaseline = typeof productBaselines.$inferInsert;
 
-// ── Cost Assessments ──────────────────────────────────────────────────────────
+// -- Cost Assessments ----------------------------------------------------------
 export const costAssessments = mysqlTable("cost_assessments", {
   id:                    int("id").autoincrement().primaryKey(),
   productOpportunityId:  int("productOpportunityId").notNull(),
-  // Dimension scores (1–5 per POI spec)
+  // Dimension scores (1-5 per POI spec)
   manufacturingCostScore: int("manufacturingCostScore").default(1),   // 1=very high cost gap, 5=minimal gap
   supplyChainCostScore:   int("supplyChainCostScore").default(1),
   lifecycleCostScore:     int("lifecycleCostScore").default(1),
-  // Computed average (1–5)
+  // Computed average (1-5)
   costScore:             float("costScore").default(0),
   // Qualitative detail
   currentCostEstimate:   float("currentCostEstimate"),
@@ -1412,15 +1412,15 @@ export const costAssessments = mysqlTable("cost_assessments", {
 export type CostAssessment = typeof costAssessments.$inferSelect;
 export type InsertCostAssessment = typeof costAssessments.$inferInsert;
 
-// ── Performance Assessments ───────────────────────────────────────────────────
+// -- Performance Assessments ---------------------------------------------------
 export const performanceAssessments = mysqlTable("performance_assessments", {
   id:                    int("id").autoincrement().primaryKey(),
   productOpportunityId:  int("productOpportunityId").notNull(),
-  // Dimension scores (1–5)
+  // Dimension scores (1-5)
   technicalCapabilityScore: int("technicalCapabilityScore").default(1),
   efficiencyScore:          int("efficiencyScore").default(1),
   functionalityScore:       int("functionalityScore").default(1),
-  // Computed average (1–5)
+  // Computed average (1-5)
   performanceScore:      float("performanceScore").default(0),
   // Qualitative detail
   performanceGapDescription: text("performanceGapDescription"),
@@ -1434,15 +1434,15 @@ export const performanceAssessments = mysqlTable("performance_assessments", {
 export type PerformanceAssessment = typeof performanceAssessments.$inferSelect;
 export type InsertPerformanceAssessment = typeof performanceAssessments.$inferInsert;
 
-// ── Quality Assessments ───────────────────────────────────────────────────────
+// -- Quality Assessments -------------------------------------------------------
 export const qualityAssessments = mysqlTable("quality_assessments", {
   id:                    int("id").autoincrement().primaryKey(),
   productOpportunityId:  int("productOpportunityId").notNull(),
-  // Dimension scores (1–5)
+  // Dimension scores (1-5)
   reliabilityScore:      int("reliabilityScore").default(1),
   durabilityScore:       int("durabilityScore").default(1),
   userExperienceScore:   int("userExperienceScore").default(1),
-  // Computed average (1–5)
+  // Computed average (1-5)
   qualityScore:          float("qualityScore").default(0),
   // Qualitative detail
   qualityGapDescription: text("qualityGapDescription"),
@@ -1456,15 +1456,15 @@ export const qualityAssessments = mysqlTable("quality_assessments", {
 export type QualityAssessment = typeof qualityAssessments.$inferSelect;
 export type InsertQualityAssessment = typeof qualityAssessments.$inferInsert;
 
-// ── Sustainability Assessments ────────────────────────────────────────────────
+// -- Sustainability Assessments ------------------------------------------------
 export const sustainabilityAssessments = mysqlTable("sustainability_assessments", {
   id:                    int("id").autoincrement().primaryKey(),
   productOpportunityId:  int("productOpportunityId").notNull(),
-  // Dimension scores (1–5)
+  // Dimension scores (1-5)
   carbonFootprintScore:  int("carbonFootprintScore").default(1),
   esgComplianceScore:    int("esgComplianceScore").default(1),
   circularityScore:      int("circularityScore").default(1),
-  // Computed average (1–5)
+  // Computed average (1-5)
   sustainabilityScore:   float("sustainabilityScore").default(0),
   // Qualitative detail
   sustainabilityGapDescription: text("sustainabilityGapDescription"),
@@ -1478,23 +1478,23 @@ export const sustainabilityAssessments = mysqlTable("sustainability_assessments"
 export type SustainabilityAssessment = typeof sustainabilityAssessments.$inferSelect;
 export type InsertSustainabilityAssessment = typeof sustainabilityAssessments.$inferInsert;
 
-// ── Product Opportunity Scores (POS cache) ────────────────────────────────────
+// -- Product Opportunity Scores (POS cache) ------------------------------------
 // POS = (Cost + Performance + Quality + Sustainability) / 4
 export const productOpportunityScores = mysqlTable("product_opportunity_scores", {
   id:                    int("id").autoincrement().primaryKey(),
   productOpportunityId:  int("productOpportunityId").notNull().unique(),
-  costScore:             float("costScore").default(0),           // 1–5
-  performanceScore:      float("performanceScore").default(0),    // 1–5
-  qualityScore:          float("qualityScore").default(0),        // 1–5
-  sustainabilityScore:   float("sustainabilityScore").default(0), // 1–5
-  // POS = average of above four (1–5)
+  costScore:             float("costScore").default(0),           // 1-5
+  performanceScore:      float("performanceScore").default(0),    // 1-5
+  qualityScore:          float("qualityScore").default(0),        // 1-5
+  sustainabilityScore:   float("sustainabilityScore").default(0), // 1-5
+  // POS = average of above four (1-5)
   posScore:              float("posScore").default(0),
   // Classification band
   posClassification:     mysqlEnum("posClassification", [
-                           "Low Opportunity",       // 1.0–2.0
-                           "Moderate Opportunity",  // 2.1–3.0
-                           "High Opportunity",      // 3.1–4.0
-                           "Exceptional Opportunity" // 4.1–5.0
+                           "Low Opportunity",       // 1.0-2.0
+                           "Moderate Opportunity",  // 2.1-3.0
+                           "High Opportunity",      // 3.1-4.0
+                           "Exceptional Opportunity" // 4.1-5.0
                          ]).default("Low Opportunity"),
   computedAt:            timestamp("computedAt").defaultNow().notNull(),
   updatedAt:             timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -1502,7 +1502,7 @@ export const productOpportunityScores = mysqlTable("product_opportunity_scores",
 export type ProductOpportunityScore = typeof productOpportunityScores.$inferSelect;
 export type InsertProductOpportunityScore = typeof productOpportunityScores.$inferInsert;
 
-// ── Opportunity Reviews ───────────────────────────────────────────────────────
+// -- Opportunity Reviews -------------------------------------------------------
 // Panel review decisions on scored product opportunities
 export const opportunityReviews = mysqlTable("opportunity_reviews", {
   id:                    int("id").autoincrement().primaryKey(),
@@ -1520,13 +1520,13 @@ export const opportunityReviews = mysqlTable("opportunity_reviews", {
 export type OpportunityReview = typeof opportunityReviews.$inferSelect;
 export type InsertOpportunityReview = typeof opportunityReviews.$inferInsert;
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
 // VENTURE PROJECT MANAGEMENT MODULE
 // Brief: project_management_module_prompt_brief.docx
-// Hierarchy: Venture → Program → Phase (VRL Stage) → Workstream → Milestone → Task
-// ═══════════════════════════════════════════════════════════════════════════════
+// Hierarchy: Venture - Program - Phase (VRL Stage) - Workstream - Milestone - Task
+// -------------------------------------------------------------------------------
 
-// ── Venture Programs ──────────────────────────────────────────────────────────
+// -- Venture Programs ----------------------------------------------------------
 // Top-level execution container for a venture (one or more programs per venture)
 export const venturePrograms = mysqlTable("venture_programs", {
   id:           int("id").autoincrement().primaryKey(),
@@ -1540,7 +1540,7 @@ export const venturePrograms = mysqlTable("venture_programs", {
   targetEndDate: varchar("targetEndDate", { length: 32 }),
   actualEndDate: varchar("actualEndDate", { length: 32 }),
   programManager: varchar("programManager", { length: 128 }),
-  budget:       int("budget").default(0),                // £
+  budget:       int("budget").default(0),                // -
   budgetSpent:  int("budgetSpent").default(0),
   notes:        text("notes"),
   createdAt:    timestamp("createdAt").defaultNow().notNull(),
@@ -1549,14 +1549,14 @@ export const venturePrograms = mysqlTable("venture_programs", {
 export type VentureProgram = typeof venturePrograms.$inferSelect;
 export type InsertVentureProgram = typeof venturePrograms.$inferInsert;
 
-// ── Venture Phases ────────────────────────────────────────────────────────────
+// -- Venture Phases ------------------------------------------------------------
 // Maps to a VRL stage within a program (e.g., Phase 1 = VRL Stage 1: Opportunity)
 export const venturePhases = mysqlTable("venture_phases", {
   id:           int("id").autoincrement().primaryKey(),
-  programId:    int("programId").notNull(),              // FK → venture_programs
+  programId:    int("programId").notNull(),              // FK - venture_programs
   ventureId:    varchar("ventureId", { length: 64 }).notNull(),
   name:         varchar("name", { length: 255 }).notNull(),
-  vrlStage:     int("vrlStage"),                         // 1–4 VRL stage this phase maps to
+  vrlStage:     int("vrlStage"),                         // 1-4 VRL stage this phase maps to
   phaseNumber:  int("phaseNumber").notNull(),             // sequence within program
   status:       mysqlEnum("status", [
                   "Not Started", "In Progress", "On Hold", "Completed", "Cancelled"
@@ -1564,7 +1564,7 @@ export const venturePhases = mysqlTable("venture_phases", {
   startDate:    varchar("startDate", { length: 32 }),
   targetEndDate: varchar("targetEndDate", { length: 32 }),
   actualEndDate: varchar("actualEndDate", { length: 32 }),
-  completionPercent: int("completionPercent").default(0), // 0–100
+  completionPercent: int("completionPercent").default(0), // 0-100
   gateReviewPassed: boolean("gateReviewPassed").default(false),
   gateReviewDate:   varchar("gateReviewDate", { length: 32 }),
   gateReviewNotes:  text("gateReviewNotes"),
@@ -1575,11 +1575,11 @@ export const venturePhases = mysqlTable("venture_phases", {
 export type VenturePhase = typeof venturePhases.$inferSelect;
 export type InsertVenturePhase = typeof venturePhases.$inferInsert;
 
-// ── Venture Workstreams ───────────────────────────────────────────────────────
+// -- Venture Workstreams -------------------------------------------------------
 // Parallel workstreams within a phase (e.g., Technical, Commercial, Legal)
 export const ventureWorkstreams = mysqlTable("venture_workstreams", {
   id:           int("id").autoincrement().primaryKey(),
-  phaseId:      int("phaseId").notNull(),                // FK → venture_phases
+  phaseId:      int("phaseId").notNull(),                // FK - venture_phases
   ventureId:    varchar("ventureId", { length: 64 }).notNull(),
   name:         varchar("name", { length: 255 }).notNull(),
   functionalArea: mysqlEnum("functionalArea", [
@@ -1600,12 +1600,12 @@ export const ventureWorkstreams = mysqlTable("venture_workstreams", {
 export type VentureWorkstream = typeof ventureWorkstreams.$inferSelect;
 export type InsertVentureWorkstream = typeof ventureWorkstreams.$inferInsert;
 
-// ── Venture Milestones (PM module) ────────────────────────────────────────────
+// -- Venture Milestones (PM module) --------------------------------------------
 // Formal gate milestones within a workstream (distinct from the simpler
 // `milestones` table which is used for the portfolio overview cards)
 export const ventureMilestones = mysqlTable("venture_milestones", {
   id:              int("id").autoincrement().primaryKey(),
-  workstreamId:    int("workstreamId").notNull(),         // FK → venture_workstreams
+  workstreamId:    int("workstreamId").notNull(),         // FK - venture_workstreams
   phaseId:         int("phaseId").notNull(),
   ventureId:       varchar("ventureId", { length: 64 }).notNull(),
   title:           varchar("title", { length: 255 }).notNull(),
@@ -1627,12 +1627,12 @@ export const ventureMilestones = mysqlTable("venture_milestones", {
 export type VentureMilestone = typeof ventureMilestones.$inferSelect;
 export type InsertVentureMilestone = typeof ventureMilestones.$inferInsert;
 
-// ── Venture Tasks ─────────────────────────────────────────────────────────────
+// -- Venture Tasks -------------------------------------------------------------
 // Granular tasks within a workstream (supports Kanban and Gantt views)
 export const ventureTasks = mysqlTable("venture_tasks", {
   id:              int("id").autoincrement().primaryKey(),
-  workstreamId:    int("workstreamId").notNull(),         // FK → venture_workstreams
-  milestoneId:     int("milestoneId"),                    // optional FK → venture_milestones
+  workstreamId:    int("workstreamId").notNull(),         // FK - venture_workstreams
+  milestoneId:     int("milestoneId"),                    // optional FK - venture_milestones
   ventureId:       varchar("ventureId", { length: 64 }).notNull(),
   title:           varchar("title", { length: 255 }).notNull(),
   description:     text("description"),
@@ -1658,13 +1658,13 @@ export const ventureTasks = mysqlTable("venture_tasks", {
 export type VentureTask = typeof ventureTasks.$inferSelect;
 export type InsertVentureTask = typeof ventureTasks.$inferInsert;
 
-// ── Venture Resources ─────────────────────────────────────────────────────────
+// -- Venture Resources ---------------------------------------------------------
 // People and budget resources allocated to programs/phases
 export const ventureResources = mysqlTable("venture_resources", {
   id:              int("id").autoincrement().primaryKey(),
   ventureId:       varchar("ventureId", { length: 64 }).notNull(),
-  programId:       int("programId"),                     // FK → venture_programs
-  phaseId:         int("phaseId"),                       // FK → venture_phases (optional)
+  programId:       int("programId"),                     // FK - venture_programs
+  phaseId:         int("phaseId"),                       // FK - venture_phases (optional)
   resourceType:    mysqlEnum("resourceType", [
                      "Person", "Budget", "Equipment", "External Service"
                    ]).default("Person"),
@@ -1676,7 +1676,7 @@ export const ventureResources = mysqlTable("venture_resources", {
   startDate:       varchar("startDate", { length: 32 }),
   endDate:         varchar("endDate", { length: 32 }),
   // Cost
-  dayRate:         int("dayRate").default(0),             // £ per day
+  dayRate:         int("dayRate").default(0),             // - per day
   totalBudgeted:   int("totalBudgeted").default(0),
   totalActual:     int("totalActual").default(0),
   notes:           text("notes"),
@@ -1686,7 +1686,7 @@ export const ventureResources = mysqlTable("venture_resources", {
 export type VentureResource = typeof ventureResources.$inferSelect;
 export type InsertVentureResource = typeof ventureResources.$inferInsert;
 
-// ── Venture Dependencies ──────────────────────────────────────────────────────
+// -- Venture Dependencies ------------------------------------------------------
 // Explicit dependency links between tasks, milestones, or phases
 export const ventureDependencies = mysqlTable("venture_dependencies", {
   id:              int("id").autoincrement().primaryKey(),
@@ -1710,7 +1710,7 @@ export const ventureDependencies = mysqlTable("venture_dependencies", {
 export type VentureDependency = typeof ventureDependencies.$inferSelect;
 export type InsertVentureDependency = typeof ventureDependencies.$inferInsert;
 
-// ── Venture Documents ─────────────────────────────────────────────────────────
+// -- Venture Documents ---------------------------------------------------------
 // Document repository linked to programs, phases, workstreams, or tasks
 export const ventureDocuments = mysqlTable("venture_documents", {
   id:              int("id").autoincrement().primaryKey(),
@@ -1749,7 +1749,7 @@ export const ventureDocuments = mysqlTable("venture_documents", {
 export type VentureDocument = typeof ventureDocuments.$inferSelect;
 export type InsertVentureDocument = typeof ventureDocuments.$inferInsert;
 
-// ── Execution Risk Register (PM module) ──────────────────────────────────────
+// -- Execution Risk Register (PM module) --------------------------------------
 // Execution-level risks tied to specific programs, phases, or workstreams
 // (Distinct from the portfolio-level `risks` table which tracks venture-wide risks)
 export const executionRisks = mysqlTable("execution_risks", {
@@ -1766,7 +1766,7 @@ export const executionRisks = mysqlTable("execution_risks", {
                    ]).default("Schedule"),
   likelihood:      mysqlEnum("likelihood", ["Very Low", "Low", "Medium", "High", "Very High"]).default("Medium"),
   impact:          mysqlEnum("impact", ["Negligible", "Minor", "Moderate", "Major", "Critical"]).default("Moderate"),
-  riskScore:       int("riskScore").default(0),            // likelihood × impact (1–25)
+  riskScore:       int("riskScore").default(0),            // likelihood - impact (1-25)
   riskLevel:       mysqlEnum("riskLevel", ["Low", "Medium", "High", "Critical"]).default("Medium"),
   mitigationPlan:  text("mitigationPlan"),
   contingencyPlan: text("contingencyPlan"),
@@ -1781,14 +1781,14 @@ export const executionRisks = mysqlTable("execution_risks", {
 export type ExecutionRisk = typeof executionRisks.$inferSelect;
 export type InsertExecutionRisk = typeof executionRisks.$inferInsert;
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// COMMAND CENTRE DASHBOARD — AGGREGATION SUPPORT
+// -------------------------------------------------------------------------------
+// COMMAND CENTRE DASHBOARD - AGGREGATION SUPPORT
 // Brief: command_centre_dashboard_prompt_brief.docx
 // Provides pre-computed summary rows for dashboard widgets to avoid
 // expensive real-time aggregations across large venture portfolios.
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
 
-// ── Dashboard KPI Snapshots ───────────────────────────────────────────────────
+// -- Dashboard KPI Snapshots ---------------------------------------------------
 // Cached portfolio-level KPIs refreshed on a scheduled basis
 export const dashboardKpiSnapshots = mysqlTable("dashboard_kpi_snapshots", {
   id:                       int("id").autoincrement().primaryKey(),
@@ -1817,8 +1817,8 @@ export const dashboardKpiSnapshots = mysqlTable("dashboard_kpi_snapshots", {
   opportunitiesApproved:    int("opportunitiesApproved").default(0),
   avgPosScore:              float("avgPosScore").default(0),
   // Financial metrics
-  totalRevenueActual:       int("totalRevenueActual").default(0),    // £ across portfolio
-  totalInvestmentRaised:    int("totalInvestmentRaised").default(0), // £ across portfolio
+  totalRevenueActual:       int("totalRevenueActual").default(0),    // - across portfolio
+  totalInvestmentRaised:    int("totalInvestmentRaised").default(0), // - across portfolio
   portfolioRoi:             float("portfolioRoi").default(0),        // %
   // Impact / ESG metrics
   avgIrlScore:              float("avgIrlScore").default(0),
@@ -1829,12 +1829,12 @@ export const dashboardKpiSnapshots = mysqlTable("dashboard_kpi_snapshots", {
 export type DashboardKpiSnapshot = typeof dashboardKpiSnapshots.$inferSelect;
 export type InsertDashboardKpiSnapshot = typeof dashboardKpiSnapshots.$inferInsert;
 
-// ── Venture Ecosystem Map Nodes ───────────────────────────────────────────────
+// -- Venture Ecosystem Map Nodes -----------------------------------------------
 // Stores positioning and metadata for the venture ecosystem map widget
 export const ecosystemMapNodes = mysqlTable("ecosystem_map_nodes", {
   id:              int("id").autoincrement().primaryKey(),
   ventureId:       varchar("ventureId", { length: 64 }).notNull().unique(),
-  // Visual positioning (relative coordinates 0–100)
+  // Visual positioning (relative coordinates 0-100)
   posX:            float("posX").default(50),
   posY:            float("posY").default(50),
   // Node metadata for the map
@@ -1855,11 +1855,11 @@ export const ecosystemMapNodes = mysqlTable("ecosystem_map_nodes", {
 export type EcosystemMapNode = typeof ecosystemMapNodes.$inferSelect;
 export type InsertEcosystemMapNode = typeof ecosystemMapNodes.$inferInsert;
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
 // MATCHING ENGINE & SPIN-OFF OS
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
 
-// ── Founder Match Scores ──────────────────────────────────────────────────────
+// -- Founder Match Scores ------------------------------------------------------
 // Stores computed compatibility scores between a founder (talent_profile) and
 // a product opportunity (product_opportunities). Recomputed on demand or on
 // new founder onboarding.
@@ -1869,14 +1869,14 @@ export const founderMatchScores = mysqlTable("founder_match_scores", {
   talentProfileId:      int("talentProfileId").notNull(),
   // The opportunity being matched against (references product_opportunities.id)
   productOpportunityId: int("productOpportunityId").notNull(),
-  // Dimension scores (0–100 each)
+  // Dimension scores (0-100 each)
   sectorAlignmentScore:     int("sectorAlignmentScore").default(0),   // sector tag overlap
   capabilityFitScore:       int("capabilityFitScore").default(0),     // capability vs opportunity requirements
   availabilityScore:        int("availabilityScore").default(0),      // hours/week vs estimated demand
   pvfScore:                 int("pvfScore").default(0),               // personal values fit (ESG/mission)
   experienceScore:          int("experienceScore").default(0),        // years + previous ventures
   networkScore:             int("networkScore").default(0),           // investor/customer/supplier network
-  // Composite match score (weighted average, 0–100)
+  // Composite match score (weighted average, 0-100)
   overallMatchScore:        int("overallMatchScore").default(0),
   // Recommended role for this founder on this opportunity
   recommendedRole:          varchar("recommendedRole", { length: 128 }),
@@ -1896,15 +1896,15 @@ export const founderMatchScores = mysqlTable("founder_match_scores", {
 export type FounderMatchScore = typeof founderMatchScores.$inferSelect;
 export type InsertFounderMatchScore = typeof founderMatchScores.$inferInsert;
 
-// ── Co-Founder Compatibility Scores ──────────────────────────────────────────
+// -- Co-Founder Compatibility Scores ------------------------------------------
 // Pairwise compatibility between two talent profiles for a given opportunity.
 // Captures complementarity (different strengths) rather than similarity.
 export const coFounderCompatibility = mysqlTable("co_founder_compatibility", {
   id:                   int("id").autoincrement().primaryKey(),
   talentProfileIdA:     int("talentProfileIdA").notNull(),
   talentProfileIdB:     int("talentProfileIdB").notNull(),
-  productOpportunityId: int("productOpportunityId"),    // optional — context-specific
-  // Complementarity dimensions (0–100)
+  productOpportunityId: int("productOpportunityId"),    // optional - context-specific
+  // Complementarity dimensions (0-100)
   capabilityComplementScore: int("capabilityComplementScore").default(0), // different strengths
   valueAlignmentScore:       int("valueAlignmentScore").default(0),       // shared mission/values
   workingStyleScore:         int("workingStyleScore").default(0),         // collaboration fit
@@ -1917,7 +1917,7 @@ export const coFounderCompatibility = mysqlTable("co_founder_compatibility", {
 export type CoFounderCompatibility = typeof coFounderCompatibility.$inferSelect;
 export type InsertCoFounderCompatibility = typeof coFounderCompatibility.$inferInsert;
 
-// ── Spin-Off Configurations ───────────────────────────────────────────────────
+// -- Spin-Off Configurations ---------------------------------------------------
 // The "operating system" record for a new spin-off. Aggregates all inputs:
 // the opportunity, the founding team, the resource plan, and the VBS support
 // structure. This is the single source of truth before a venture is created.
@@ -1939,9 +1939,9 @@ export const spinoffConfigurations = mysqlTable("spinoff_configurations", {
   ]).default("Sustaining"),
   engineOfGrowth:       mysqlEnum("engineOfGrowth", ["Sticky", "Viral", "Paid"]),
   // Resource plan
-  estimatedBurnRateMonthly: int("estimatedBurnRateMonthly").default(0),  // £/month
+  estimatedBurnRateMonthly: int("estimatedBurnRateMonthly").default(0),  // -/month
   estimatedRunwayMonths:    int("estimatedRunwayMonths").default(12),
-  fundingAskAmount:         int("fundingAskAmount").default(0),           // £
+  fundingAskAmount:         int("fundingAskAmount").default(0),           // -
   nominatedCharity:         varchar("nominatedCharity", { length: 255 }),
   // VBS support
   assignedMentor:           varchar("assignedMentor", { length: 128 }),
@@ -1966,7 +1966,7 @@ export const spinoffConfigurations = mysqlTable("spinoff_configurations", {
 export type SpinoffConfiguration = typeof spinoffConfigurations.$inferSelect;
 export type InsertSpinoffConfiguration = typeof spinoffConfigurations.$inferInsert;
 
-// ── Spin-Off Execution Plans ──────────────────────────────────────────────────
+// -- Spin-Off Execution Plans --------------------------------------------------
 // The auto-generated 90-day execution plan for a spin-off. Contains structured
 // milestones, resource assignments, and risk flags. Generated by the LLM from
 // the spinoff_configuration inputs.
@@ -2002,7 +2002,7 @@ export const spinoffExecutionPlans = mysqlTable("spinoff_execution_plans", {
 export type SpinoffExecutionPlan = typeof spinoffExecutionPlans.$inferSelect;
 export type InsertSpinoffExecutionPlan = typeof spinoffExecutionPlans.$inferInsert;
 
-// ── Spin-Off Status History ───────────────────────────────────────────────────────────────────────────────
+// -- Spin-Off Status History -------------------------------------------------------------------------------
 // Audit trail of every status transition on a spinoff_configuration.
 // Written automatically by the advanceSpinoffStatus procedure.
 export const spinoffStatusHistory = mysqlTable("spinoff_status_history", {
@@ -2017,7 +2017,7 @@ export const spinoffStatusHistory = mysqlTable("spinoff_status_history", {
 export type SpinoffStatusHistory = typeof spinoffStatusHistory.$inferSelect;
 export type InsertSpinoffStatusHistory = typeof spinoffStatusHistory.$inferInsert;
 
-// ── Contract Architecture Layers ─────────────────────────────────────────────
+// -- Contract Architecture Layers ---------------------------------------------
 // Four-layer contract architecture from the Contract Architecture Map document.
 export const contractLayers = mysqlTable("contract_layers", {
   id:          int("id").autoincrement().primaryKey(),
@@ -2031,7 +2031,7 @@ export const contractLayers = mysqlTable("contract_layers", {
 export type ContractLayer = typeof contractLayers.$inferSelect;
 export type InsertContractLayer = typeof contractLayers.$inferInsert;
 
-// ── Contract Type Registry ────────────────────────────────────────────────────
+// -- Contract Type Registry ----------------------------------------------------
 // Full 20-contract type registry from the Commercial Contracts Matrix document.
 export const contractTypeRegistry = mysqlTable("contract_type_registry", {
   id:           int("id").autoincrement().primaryKey(),
@@ -2051,7 +2051,7 @@ export const contractTypeRegistry = mysqlTable("contract_type_registry", {
 export type ContractTypeRegistry = typeof contractTypeRegistry.$inferSelect;
 export type InsertContractTypeRegistry = typeof contractTypeRegistry.$inferInsert;
 
-// ── Legal Risk Items ──────────────────────────────────────────────────────────
+// -- Legal Risk Items ----------------------------------------------------------
 // Legal Risk Map: key risk areas, mitigations, and high-risk zones.
 export const legalRiskItems = mysqlTable("legal_risk_items", {
   id:              int("id").autoincrement().primaryKey(),
@@ -2069,7 +2069,7 @@ export const legalRiskItems = mysqlTable("legal_risk_items", {
 export type LegalRiskItem = typeof legalRiskItems.$inferSelect;
 export type InsertLegalRiskItem = typeof legalRiskItems.$inferInsert;
 
-// ── Legal Risk Escalations ────────────────────────────────────────────────────────────────────────────────
+// -- Legal Risk Escalations --------------------------------------------------------------------------------
 // Audit trail for escalated legal risks.
 export const legalRiskEscalations = mysqlTable("legal_risk_escalations", {
   id:          int("id").autoincrement().primaryKey(),
@@ -2083,13 +2083,13 @@ export const legalRiskEscalations = mysqlTable("legal_risk_escalations", {
 export type LegalRiskEscalation = typeof legalRiskEscalations.$inferSelect;
 export type InsertLegalRiskEscalation = typeof legalRiskEscalations.$inferInsert;
 
-// ╔══════════════════════════════════════════════════════════════════════════════╗
-// ║  DYNAMIC EQUITY ENGINE — Sprint 36                                          ║
-// ║  Based on EcoBlend Dynamic Equity Model specification                       ║
-// ║  Formula: Score = (0.4×VRL) + (0.3×Contribution) + (0.2×Capital) + (0.1×Perf)║
-// ╚══════════════════════════════════════════════════════════════════════════════╝
+// --------------------------------------------------------------------------------
+// -  DYNAMIC EQUITY ENGINE - Sprint 36                                          -
+// -  Based on EcoBlend Dynamic Equity Model specification                       -
+// -  Formula: Score = (0.4-VRL) + (0.3-Contribution) + (0.2-Capital) + (0.1-Perf)-
+// --------------------------------------------------------------------------------
 
-// ── Equity Rules (configurable weighting per venture) ────────────────────────
+// -- Equity Rules (configurable weighting per venture) ------------------------
 // Stores the formula weights for each venture's equity engine.
 // Defaults match the specification: VRL 40%, Contribution 30%, Capital 20%, Performance 10%.
 export const equityRules = mysqlTable("equity_rules", {
@@ -2107,7 +2107,7 @@ export const equityRules = mysqlTable("equity_rules", {
 export type EquityRule = typeof equityRules.$inferSelect;
 export type InsertEquityRule = typeof equityRules.$inferInsert;
 
-// ── Equity Allocations (per-member dynamic equity record) ────────────────────
+// -- Equity Allocations (per-member dynamic equity record) --------------------
 // Tracks each team member's current equity allocation and computed dynamic score.
 export const equityAllocations = mysqlTable("equity_allocations", {
   id:                  int("id").autoincrement().primaryKey(),
@@ -2121,13 +2121,13 @@ export const equityAllocations = mysqlTable("equity_allocations", {
   cliffMonths:         int("cliffMonths").default(12),
   monthsIn:            int("monthsIn").default(0),
   vestingStatus:       mysqlEnum("vestingStatus", ["Not Started","Cliff","Vesting","Fully Vested"]).default("Not Started"),
-  // Dynamic equity score components (0–10 scale each)
+  // Dynamic equity score components (0-10 scale each)
   vrlScore:            float("vrlScore").default(0),          // VRL contribution score
   contributionScore:   float("contributionScore").default(0), // Task/milestone effort score
-  capitalInput:        float("capitalInput").default(0),      // Capital contributed (£k)
+  capitalInput:        float("capitalInput").default(0),      // Capital contributed (-k)
   performanceScore:    float("performanceScore").default(0),  // Revenue/traction KPIs
   // Computed dynamic equity score (formula result)
-  dynamicEquityScore:  float("dynamicEquityScore").default(0), // 0–10
+  dynamicEquityScore:  float("dynamicEquityScore").default(0), // 0-10
   dynamicEquityPct:    float("dynamicEquityPct").default(0),   // % of pool earned
   // Stipend
   stipendStatus:       mysqlEnum("stipendStatus", ["Active","Completed","Pending","Paused"]).default("Pending"),
@@ -2144,12 +2144,12 @@ export const equityAllocations = mysqlTable("equity_allocations", {
 export type EquityAllocation = typeof equityAllocations.$inferSelect;
 export type InsertEquityAllocation = typeof equityAllocations.$inferInsert;
 
-// ── Contribution Logs (event-level contribution tracking) ────────────────────
+// -- Contribution Logs (event-level contribution tracking) --------------------
 // Records every contribution event that feeds into the equity engine.
 export const contributionLogs = mysqlTable("contribution_logs", {
   id:                  int("id").autoincrement().primaryKey(),
   ventureId:           varchar("ventureId", { length: 64 }).notNull(),
-  allocationId:        int("allocationId").notNull(), // FK → equity_allocations.id
+  allocationId:        int("allocationId").notNull(), // FK - equity_allocations.id
   memberName:          varchar("memberName", { length: 128 }).notNull(),
   contributionType:    mysqlEnum("contributionType", [
     "Task Completion",    // BRL/TRL task completed
@@ -2162,8 +2162,8 @@ export const contributionLogs = mysqlTable("contribution_logs", {
     "Other",
   ]).notNull(),
   description:         text("description"),
-  valueScore:          float("valueScore").notNull().default(0), // 0–10 impact score
-  capitalAmount:       float("capitalAmount").default(0),        // £ if capital type
+  valueScore:          float("valueScore").notNull().default(0), // 0-10 impact score
+  capitalAmount:       float("capitalAmount").default(0),        // - if capital type
   evidenceUrl:         varchar("evidenceUrl", { length: 512 }),
   loggedAt:            timestamp("loggedAt").defaultNow().notNull(),
   createdAt:           timestamp("createdAt").defaultNow().notNull(),
@@ -2171,7 +2171,7 @@ export const contributionLogs = mysqlTable("contribution_logs", {
 export type ContributionLog = typeof contributionLogs.$inferSelect;
 export type InsertContributionLog = typeof contributionLogs.$inferInsert;
 
-// ── Equity Milestones (legal conversion trigger points) ──────────────────────
+// -- Equity Milestones (legal conversion trigger points) ----------------------
 // Defines the milestones at which dynamic equity converts to legal equity.
 // Per spec: End of Validation (VRL 5), Pre-Seed Funding, Series A.
 export const equityMilestones = mysqlTable("equity_milestones", {
@@ -2187,7 +2187,7 @@ export const equityMilestones = mysqlTable("equity_milestones", {
     "Custom",
   ]).notNull(),
   triggerVrlLevel:     int("triggerVrlLevel"),          // VRL level that triggers conversion
-  triggerRevenueGbp:   float("triggerRevenueGbp"),      // Revenue threshold (£)
+  triggerRevenueGbp:   float("triggerRevenueGbp"),      // Revenue threshold (-)
   description:         text("description"),
   status:              mysqlEnum("status", ["Pending","Active","Triggered","Completed"]).default("Pending"),
   triggeredAt:         timestamp("triggeredAt"),
@@ -2198,13 +2198,13 @@ export const equityMilestones = mysqlTable("equity_milestones", {
 export type EquityMilestone = typeof equityMilestones.$inferSelect;
 export type InsertEquityMilestone = typeof equityMilestones.$inferInsert;
 
-// ── Venture Cap Table Snapshots (point-in-time cap table) ────────────────────
+// -- Venture Cap Table Snapshots (point-in-time cap table) --------------------
 // Records the cap table state at each major milestone for evolution tracking.
 export const ventureCapTableSnapshots = mysqlTable("venture_cap_table_snapshots", {
   id:                  int("id").autoincrement().primaryKey(),
   ventureId:           varchar("ventureId", { length: 64 }).notNull(),
   snapshotDate:        timestamp("snapshotDate").defaultNow().notNull(),
-  triggerEvent:        varchar("triggerEvent", { length: 128 }), // e.g. "VRL 3 reached", "Pre-Seed £150k"
+  triggerEvent:        varchar("triggerEvent", { length: 128 }), // e.g. "VRL 3 reached", "Pre-Seed -150k"
   // Aggregate cap table data (JSON-serialised array of {member, equityPct, dynamicScore})
   capTableJson:        text("capTableJson").notNull(),           // JSON string
   totalEquityAllocated: float("totalEquityAllocated").default(0), // sum of all equity %
@@ -2215,13 +2215,13 @@ export const ventureCapTableSnapshots = mysqlTable("venture_cap_table_snapshots"
 export type VentureCapTableSnapshot = typeof ventureCapTableSnapshots.$inferSelect;
 export type InsertVentureCapTableSnapshot = typeof ventureCapTableSnapshots.$inferInsert;
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// IP INTELLIGENCE MODULE — Sprint 37
+// -------------------------------------------------------------------------------
+// IP INTELLIGENCE MODULE - Sprint 37
 // Unified IP asset registry covering Patents, Trademarks, Copyrights,
 // Design Rights, and Trade Secrets, plus an AI Patent Workspace.
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
 
-// ── IP Assets (unified registry for all 5 IP types) ─────────────────────────
+// -- IP Assets (unified registry for all 5 IP types) -------------------------
 export const ipAssets = mysqlTable("ip_assets", {
   id:                  int("id").autoincrement().primaryKey(),
   ventureId:           varchar("ventureId", { length: 64 }).notNull(),
@@ -2258,7 +2258,7 @@ export const ipAssets = mysqlTable("ip_assets", {
 export type IpAsset = typeof ipAssets.$inferSelect;
 export type InsertIpAsset = typeof ipAssets.$inferInsert;
 
-// ── IP Licenses ──────────────────────────────────────────────────────────────
+// -- IP Licenses --------------------------------------------------------------
 export const ipLicenses = mysqlTable("ip_licenses", {
   id:              int("id").autoincrement().primaryKey(),
   ipAssetId:       int("ipAssetId").notNull(),
@@ -2280,7 +2280,7 @@ export const ipLicenses = mysqlTable("ip_licenses", {
 export type IpLicense = typeof ipLicenses.$inferSelect;
 export type InsertIpLicense = typeof ipLicenses.$inferInsert;
 
-// ── Patent AI Workspace Projects ─────────────────────────────────────────────
+// -- Patent AI Workspace Projects ---------------------------------------------
 export const patentProjects = mysqlTable("patent_projects", {
   id:                  int("id").autoincrement().primaryKey(),
   ipAssetId:           int("ipAssetId"),
@@ -2301,7 +2301,7 @@ export const patentProjects = mysqlTable("patent_projects", {
 export type PatentProject = typeof patentProjects.$inferSelect;
 export type InsertPatentProject = typeof patentProjects.$inferInsert;
 
-// ── Patent Hypotheses (AI-generated alternative embodiments) ─────────────────
+// -- Patent Hypotheses (AI-generated alternative embodiments) -----------------
 export const patentHypotheses = mysqlTable("patent_hypotheses", {
   id:            int("id").autoincrement().primaryKey(),
   projectId:     int("projectId").notNull(),
@@ -2316,7 +2316,7 @@ export const patentHypotheses = mysqlTable("patent_hypotheses", {
 export type PatentHypothesis = typeof patentHypotheses.$inferSelect;
 export type InsertPatentHypothesis = typeof patentHypotheses.$inferInsert;
 
-// ── LCSSA: Environmental LCA (Planet) ────────────────────────────────────────
+// -- LCSSA: Environmental LCA (Planet) ----------------------------------------
 export const lcssaEnvironmental = mysqlTable("lcssa_environmental", {
   id:                  int("id").autoincrement().primaryKey(),
   ventureId:           varchar("ventureId", { length: 64 }).notNull(),
@@ -2337,11 +2337,11 @@ export const lcssaEnvironmental = mysqlTable("lcssa_environmental", {
   airPollutionIndex:     float("airPollutionIndex").default(0),
   waterPollutionIndex:   float("waterPollutionIndex").default(0),
   // Ecosystem Impact
-  biodiversityScore:     float("biodiversityScore").default(0), // 0–10
+  biodiversityScore:     float("biodiversityScore").default(0), // 0-10
   landUseHectares:       float("landUseHectares").default(0),
-  ecosystemServicesScore: float("ecosystemServicesScore").default(0), // 0–10
+  ecosystemServicesScore: float("ecosystemServicesScore").default(0), // 0-10
   // Overall
-  environmentalScore:    float("environmentalScore").default(0), // 0–100
+  environmentalScore:    float("environmentalScore").default(0), // 0-100
   notes:                 text("notes"),
   assessmentDate:        timestamp("assessmentDate").defaultNow(),
   createdAt:             timestamp("createdAt").defaultNow().notNull(),
@@ -2350,7 +2350,7 @@ export const lcssaEnvironmental = mysqlTable("lcssa_environmental", {
 export type LcssaEnvironmental = typeof lcssaEnvironmental.$inferSelect;
 export type InsertLcssaEnvironmental = typeof lcssaEnvironmental.$inferInsert;
 
-// ── LCSSA: Social LCA (People) ───────────────────────────────────────────────
+// -- LCSSA: Social LCA (People) -----------------------------------------------
 export const lcssaSocial = mysqlTable("lcssa_social", {
   id:                  int("id").autoincrement().primaryKey(),
   ventureId:           varchar("ventureId", { length: 64 }).notNull(),
@@ -2361,20 +2361,20 @@ export const lcssaSocial = mysqlTable("lcssa_social", {
   collectiveBargaining: boolean("collectiveBargaining").default(false),
   // Human Rights
   humanRightsDueDiligence: boolean("humanRightsDueDiligence").default(false),
-  supplyChainAuditScore: float("supplyChainAuditScore").default(0), // 0–10
+  supplyChainAuditScore: float("supplyChainAuditScore").default(0), // 0-10
   childLaborRisk:       varchar("childLaborRisk", { length: 16 }).default("Low"), // Low/Medium/High
   forcedLaborRisk:      varchar("forcedLaborRisk", { length: 16 }).default("Low"),
   // Community Impact
   localHiringPct:       float("localHiringPct").default(0),
   communityInvestmentGbp: float("communityInvestmentGbp").default(0),
-  communityEngagementScore: float("communityEngagementScore").default(0), // 0–10
+  communityEngagementScore: float("communityEngagementScore").default(0), // 0-10
   // Health & Safety
   ltifr:                float("ltifr").default(0), // Lost Time Injury Frequency Rate
   nearMissReports:      int("nearMissReports").default(0),
   safetyTrainingHours:  float("safetyTrainingHours").default(0),
-  healthSafetyScore:    float("healthSafetyScore").default(0), // 0–10
+  healthSafetyScore:    float("healthSafetyScore").default(0), // 0-10
   // Overall
-  socialScore:          float("socialScore").default(0), // 0–100
+  socialScore:          float("socialScore").default(0), // 0-100
   notes:                text("notes"),
   assessmentDate:       timestamp("assessmentDate").defaultNow(),
   createdAt:            timestamp("createdAt").defaultNow().notNull(),
@@ -2383,7 +2383,7 @@ export const lcssaSocial = mysqlTable("lcssa_social", {
 export type LcssaSocial = typeof lcssaSocial.$inferSelect;
 export type InsertLcssaSocial = typeof lcssaSocial.$inferInsert;
 
-// ── LCSSA: Life Cycle Costing (Profit) ───────────────────────────────────────
+// -- LCSSA: Life Cycle Costing (Profit) ---------------------------------------
 export const lcssaLifeCycleCost = mysqlTable("lcssa_life_cycle_cost", {
   id:                  int("id").autoincrement().primaryKey(),
   ventureId:           varchar("ventureId", { length: 64 }).notNull(),
@@ -2406,7 +2406,7 @@ export const lcssaLifeCycleCost = mysqlTable("lcssa_life_cycle_cost", {
   remediationCostGbp:  float("remediationCostGbp").default(0),
   // Totals
   totalLccGbp:         float("totalLccGbp").default(0),
-  lccScore:            float("lccScore").default(0), // 0–100 (efficiency score)
+  lccScore:            float("lccScore").default(0), // 0-100 (efficiency score)
   currency:            varchar("currency", { length: 8 }).default("GBP"),
   notes:               text("notes"),
   assessmentDate:      timestamp("assessmentDate").defaultNow(),
@@ -2416,7 +2416,7 @@ export const lcssaLifeCycleCost = mysqlTable("lcssa_life_cycle_cost", {
 export type LcssaLifeCycleCost = typeof lcssaLifeCycleCost.$inferSelect;
 export type InsertLcssaLifeCycleCost = typeof lcssaLifeCycleCost.$inferInsert;
 
-// ── LCSSA: Oversight & Governance (Policy & Standards + Data & Reporting) ────
+// -- LCSSA: Oversight & Governance (Policy & Standards + Data & Reporting) ----
 export const lcssaOversight = mysqlTable("lcssa_oversight", {
   id:                  int("id").autoincrement().primaryKey(),
   ventureId:           varchar("ventureId", { length: 64 }).notNull(),
@@ -2427,20 +2427,20 @@ export const lcssaOversight = mysqlTable("lcssa_oversight", {
   sdgAlignmentCount:   int("sdgAlignmentCount").default(0), // number of SDGs addressed
   sdgHeatmap:          text("sdgHeatmap"), // JSON array of 17 booleans e.g. "[true,false,...]"
   policyDocumentUrl:   varchar("policyDocumentUrl", { length: 512 }),
-  complianceScore:     float("complianceScore").default(0), // 0–100
+  complianceScore:     float("complianceScore").default(0), // 0-100
   // Data & Reporting
   reportingFrequency:  varchar("reportingFrequency", { length: 32 }).default("Annual"), // Annual/Quarterly/Monthly
   lastReportDate:      timestamp("lastReportDate"),
   nextReportDate:      timestamp("nextReportDate"),
-  dataQualityScore:    float("dataQualityScore").default(0), // 0–10
+  dataQualityScore:    float("dataQualityScore").default(0), // 0-10
   thirdPartyVerified:  boolean("thirdPartyVerified").default(false),
   verifierName:        varchar("verifierName", { length: 128 }),
   reportUrl:           varchar("reportUrl", { length: 512 }),
   // Governance
   boardOversight:      boolean("boardOversight").default(false),
   sustainabilityCommittee: boolean("sustainabilityCommittee").default(false),
-  stakeholderEngagementScore: float("stakeholderEngagementScore").default(0), // 0–10
-  oversightScore:      float("oversightScore").default(0), // 0–100
+  stakeholderEngagementScore: float("stakeholderEngagementScore").default(0), // 0-10
+  oversightScore:      float("oversightScore").default(0), // 0-100
   notes:               text("notes"),
   createdAt:           timestamp("createdAt").defaultNow().notNull(),
   updatedAt:           timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -2448,7 +2448,7 @@ export const lcssaOversight = mysqlTable("lcssa_oversight", {
 export type LcssaOversight = typeof lcssaOversight.$inferSelect;
 export type InsertLcssaOversight = typeof lcssaOversight.$inferInsert;
 
-// ── LCSSA: Sustainable Decision Log ──────────────────────────────────────────
+// -- LCSSA: Sustainable Decision Log ------------------------------------------
 export const lcssaDecisionLog = mysqlTable("lcssa_decision_log", {
   id:                  int("id").autoincrement().primaryKey(),
   ventureId:           varchar("ventureId", { length: 64 }).notNull(),
@@ -2469,7 +2469,7 @@ export const lcssaDecisionLog = mysqlTable("lcssa_decision_log", {
 export type LcssaDecisionLog = typeof lcssaDecisionLog.$inferSelect;
 export type InsertLcssaDecisionLog = typeof lcssaDecisionLog.$inferInsert;
 
-// ── LCSSA: Monthly Snapshot (for trend chart) ─────────────────────────────────
+// -- LCSSA: Monthly Snapshot (for trend chart) ---------------------------------
 export const lcssaSnapshot = mysqlTable("lcssa_snapshot", {
   id:                  int("id").autoincrement().primaryKey(),
   ventureId:           varchar("ventureId", { length: 64 }).notNull(),
@@ -2486,47 +2486,47 @@ export const lcssaSnapshot = mysqlTable("lcssa_snapshot", {
 export type LcssaSnapshot = typeof lcssaSnapshot.$inferSelect;
 export type InsertLcssaSnapshot = typeof lcssaSnapshot.$inferInsert;
 
-// ╔══════════════════════════════════════════════════════════════════════════════╗
-// ║  DUAL RISK VENTURE CREATION SYSTEM                                           ║
-// ║  Brief: Dual Risk Venture Creation System – Prompt Brief (Manus AI)          ║
-// ║  Separates Business Risk (University) and Product Risk (Founder)             ║
-// ║  Recombines into VRL Engine with Decision Outputs                            ║
-// ╚══════════════════════════════════════════════════════════════════════════════╝
+// --------------------------------------------------------------------------------
+// -  DUAL RISK VENTURE CREATION SYSTEM                                           -
+// -  Brief: Dual Risk Venture Creation System - Prompt Brief (Manus AI)          -
+// -  Separates Business Risk (University) and Product Risk (Founder)             -
+// -  Recombines into VRL Engine with Decision Outputs                            -
+// --------------------------------------------------------------------------------
 
-// ── Business Risk Inputs (University Ownership) ───────────────────────────────
+// -- Business Risk Inputs (University Ownership) -------------------------------
 export const businessRiskInputs = mysqlTable("business_risk_inputs", {
   id:                    int("id").autoincrement().primaryKey(),
   ventureId:             varchar("ventureId", { length: 64 }).notNull().unique(),
   // Input source
   sourceType:            mysqlEnum("sourceType", ["research_paper", "market_report", "ip_document", "academic_model", "manual"]).notNull().default("manual"),
   inputCategory:         mysqlEnum("inputCategory", ["University", "Founder", "Joint"]).notNull().default("University"),
-  // Market Risk (0–100)
+  // Market Risk (0-100)
   marketRiskScore:       float("marketRiskScore").default(50),
   marketSizeScore:       float("marketSizeScore").default(50),       // TAM/SAM/SOM confidence
   competitorIntensity:   float("competitorIntensity").default(50),   // competitive landscape
   demandValidation:      float("demandValidation").default(50),      // customer validation strength
-  // ESG Risk (0–100)
+  // ESG Risk (0-100)
   esgRiskScore:          float("esgRiskScore").default(50),
   carbonFootprintRisk:   float("carbonFootprintRisk").default(50),
   socialLicenceRisk:     float("socialLicenceRisk").default(50),
   supplyChainEsgRisk:    float("supplyChainEsgRisk").default(50),
-  // Regulatory Risk (0–100)
+  // Regulatory Risk (0-100)
   regulatoryRiskScore:   float("regulatoryRiskScore").default(50),
   complianceComplexity:  float("complianceComplexity").default(50),
   certificationBarrier:  float("certificationBarrier").default(50),
   jurisdictionRisk:      float("jurisdictionRisk").default(50),
-  // Commercial Viability (0–100, higher = more viable)
+  // Commercial Viability (0-100, higher = more viable)
   commercialViabilityScore: float("commercialViabilityScore").default(50),
   revenueModelClarity:   float("revenueModelClarity").default(50),
   unitEconomicsScore:    float("unitEconomicsScore").default(50),
   partnershipReadiness:  float("partnershipReadiness").default(50),
-  // Strategic Risk (0–100)
+  // Strategic Risk (0-100)
   strategicRiskScore:    float("strategicRiskScore").default(50),
   ipProtectionStrength:  float("ipProtectionStrength").default(50),
   teamCapabilityRisk:    float("teamCapabilityRisk").default(50),
   executionTrack:        mysqlEnum("executionTrack", ["BEBUS", "ECORACE", "Both"]).default("BEBUS"),
   // Computed aggregate
-  businessRiskIndex:     float("businessRiskIndex").default(50),     // 0–100, lower = less risk
+  businessRiskIndex:     float("businessRiskIndex").default(50),     // 0-100, lower = less risk
   notes:                 text("notes"),
   lastUpdatedBy:         varchar("lastUpdatedBy", { length: 128 }),
   createdAt:             timestamp("createdAt").defaultNow().notNull(),
@@ -2535,38 +2535,38 @@ export const businessRiskInputs = mysqlTable("business_risk_inputs", {
 export type BusinessRiskInput = typeof businessRiskInputs.$inferSelect;
 export type InsertBusinessRiskInput = typeof businessRiskInputs.$inferInsert;
 
-// ── Product Risk Inputs (Founder Ownership) ───────────────────────────────────
+// -- Product Risk Inputs (Founder Ownership) -----------------------------------
 export const productRiskInputs = mysqlTable("product_risk_inputs", {
   id:                    int("id").autoincrement().primaryKey(),
   ventureId:             varchar("ventureId", { length: 64 }).notNull().unique(),
   // Input source
   sourceType:            mysqlEnum("sourceType", ["problem_statement", "industry_pain_point", "product_idea", "performance_gap", "manual"]).notNull().default("manual"),
   inputCategory:         mysqlEnum("inputCategory", ["University", "Founder", "Joint"]).notNull().default("Founder"),
-  // Technical Feasibility (0–100, higher = more feasible)
+  // Technical Feasibility (0-100, higher = more feasible)
   technicalFeasibilityScore: float("technicalFeasibilityScore").default(50),
   prototypeMaturity:     float("prototypeMaturity").default(50),     // how advanced the prototype is
   technologyReadiness:   float("technologyReadiness").default(50),   // linked to TRL
-  // Performance Risk (0–100)
+  // Performance Risk (0-100)
   performanceRiskScore:  float("performanceRiskScore").default(50),
   benchmarkGap:          float("benchmarkGap").default(50),          // gap vs POI benchmark
   qualityRisk:           float("qualityRisk").default(50),
   reliabilityRisk:       float("reliabilityRisk").default(50),
-  // Scalability Risk (0–100)
+  // Scalability Risk (0-100)
   scalabilityRiskScore:  float("scalabilityRiskScore").default(50),
   manufacturingRisk:     float("manufacturingRisk").default(50),
   supplyChainRisk:       float("supplyChainRisk").default(50),
   unitCostScalability:   float("unitCostScalability").default(50),
-  // Engineering Complexity (0–100, higher = more complex)
+  // Engineering Complexity (0-100, higher = more complex)
   engineeringComplexity: float("engineeringComplexity").default(50),
   integrationRisk:       float("integrationRisk").default(50),
   dependencyRisk:        float("dependencyRisk").default(50),
-  // R&D Maturity (0–100, higher = more mature)
+  // R&D Maturity (0-100, higher = more mature)
   rdMaturityScore:       float("rdMaturityScore").default(50),
   labValidationScore:    float("labValidationScore").default(50),    // EcoRace lab results
   pilotTestScore:        float("pilotTestScore").default(50),
   executionTrack:        mysqlEnum("executionTrack", ["BEBUS", "ECORACE", "Both"]).default("ECORACE"),
   // Computed aggregate
-  productRiskIndex:      float("productRiskIndex").default(50),      // 0–100, lower = less risk
+  productRiskIndex:      float("productRiskIndex").default(50),      // 0-100, lower = less risk
   notes:                 text("notes"),
   lastUpdatedBy:         varchar("lastUpdatedBy", { length: 128 }),
   createdAt:             timestamp("createdAt").defaultNow().notNull(),
@@ -2575,7 +2575,7 @@ export const productRiskInputs = mysqlTable("product_risk_inputs", {
 export type ProductRiskInput = typeof productRiskInputs.$inferSelect;
 export type InsertProductRiskInput = typeof productRiskInputs.$inferInsert;
 
-// ── Dual Risk Decisions (VRL Engine Output) ───────────────────────────────────
+// -- Dual Risk Decisions (VRL Engine Output) -----------------------------------
 export const dualRiskDecisions = mysqlTable("dual_risk_decisions", {
   id:                    int("id").autoincrement().primaryKey(),
   ventureId:             varchar("ventureId", { length: 64 }).notNull(),
@@ -2586,9 +2586,9 @@ export const dualRiskDecisions = mysqlTable("dual_risk_decisions", {
   brlScore:              float("brlScore").notNull(),
   esgScore:              float("esgScore").default(50),
   // VRL Engine outputs
-  vrlScore:              float("vrlScore").notNull(),                 // 0–9 scale
-  vrlLevel:              int("vrlLevel").notNull(),                   // 1–9
-  confidenceScore:       float("confidenceScore").default(0.5),      // 0.2–1.0
+  vrlScore:              float("vrlScore").notNull(),                 // 0-9 scale
+  vrlLevel:              int("vrlLevel").notNull(),                   // 1-9
+  confidenceScore:       float("confidenceScore").default(0.5),      // 0.2-1.0
   // Decision output
   decision:              mysqlEnum("decision", ["Build", "Validate", "Partner", "Reject"]).notNull(),
   decisionRationale:     text("decisionRationale"),
@@ -2596,7 +2596,7 @@ export const dualRiskDecisions = mysqlTable("dual_risk_decisions", {
   executionTrack:        mysqlEnum("executionTrack", ["BEBUS", "ECORACE", "Both", "None"]).default("None"),
   // Feedback loop
   marketFeedback:        text("marketFeedback"),
-  feedbackScore:         float("feedbackScore"),                      // 0–100 market response
+  feedbackScore:         float("feedbackScore"),                      // 0-100 market response
   // Metadata
   decidedBy:             varchar("decidedBy", { length: 128 }),
   sourceType:            mysqlEnum("sourceType", ["University", "Founder", "Joint"]).default("Joint"),
@@ -2606,11 +2606,11 @@ export const dualRiskDecisions = mysqlTable("dual_risk_decisions", {
 export type DualRiskDecision = typeof dualRiskDecisions.$inferSelect;
 export type InsertDualRiskDecision = typeof dualRiskDecisions.$inferInsert;
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
 // SUPPLY CHAIN & MANUFACTURING INTELLIGENCE MODULE (Sprint 42)
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
 
-// ── SC Products ───────────────────────────────────────────────────────────────
+// -- SC Products ---------------------------------------------------------------
 export const scProducts = mysqlTable("sc_products", {
   id:                   int("id").autoincrement().primaryKey(),
   ventureId:            varchar("ventureId", { length: 64 }).notNull(),
@@ -2627,7 +2627,7 @@ export const scProducts = mysqlTable("sc_products", {
   prototypeStatus:      mysqlEnum("prototypeStatus", [
     "concept", "design", "prototype_v1", "prototype_v2", "validated", "production_ready"
   ]).default("concept"),
-  trlLevel:             int("trlLevel").default(1),                   // 1–9
+  trlLevel:             int("trlLevel").default(1),                   // 1-9
   productionGeography:  mysqlEnum("productionGeography", ["UK", "China", "Both", "Other"]).default("UK"),
   targetMarket:         varchar("targetMarket", { length: 256 }),
   createdAt:            timestamp("createdAt").defaultNow().notNull(),
@@ -2636,7 +2636,7 @@ export const scProducts = mysqlTable("sc_products", {
 export type ScProduct = typeof scProducts.$inferSelect;
 export type InsertScProduct = typeof scProducts.$inferInsert;
 
-// ── SC Prototypes (UK R&D Layer) ──────────────────────────────────────────────
+// -- SC Prototypes (UK R&D Layer) ----------------------------------------------
 export const scPrototypes = mysqlTable("sc_prototypes", {
   id:                   int("id").autoincrement().primaryKey(),
   productId:            int("productId").notNull(),
@@ -2649,14 +2649,14 @@ export const scPrototypes = mysqlTable("sc_prototypes", {
   // Lab validation
   labTestStatus:        mysqlEnum("labTestStatus", ["not_started", "in_progress", "passed", "failed"]).default("not_started"),
   testResults:          text("testResults"),                          // JSON blob of test metrics
-  structuralIntegrity:  float("structuralIntegrity"),                 // 0–100 score
+  structuralIntegrity:  float("structuralIntegrity"),                 // 0-100 score
   weightGrams:          float("weightGrams"),
-  dimensionsMm:         varchar("dimensionsMm", { length: 128 }),     // "L×W×H"
+  dimensionsMm:         varchar("dimensionsMm", { length: 128 }),     // "L-W-H"
   // TRL progression
   trlAtStart:           int("trlAtStart").default(1),
   trlAtEnd:             int("trlAtEnd").default(1),
   // Early LCA
-  lcaScore:             float("lcaScore"),                            // 0–100 (lower = better impact)
+  lcaScore:             float("lcaScore"),                            // 0-100 (lower = better impact)
   carbonFootprintKg:    float("carbonFootprintKg"),                   // kg CO2e per unit prototype
   // Manufacturing requirements output
   manufacturingNotes:   text("manufacturingNotes"),
@@ -2668,7 +2668,7 @@ export const scPrototypes = mysqlTable("sc_prototypes", {
 export type ScPrototype = typeof scPrototypes.$inferSelect;
 export type InsertScPrototype = typeof scPrototypes.$inferInsert;
 
-// ── SC Manufacturing (Manufacturing Intelligence Layer) ───────────────────────
+// -- SC Manufacturing (Manufacturing Intelligence Layer) -----------------------
 export const scManufacturing = mysqlTable("sc_manufacturing", {
   id:                      int("id").autoincrement().primaryKey(),
   productId:               int("productId").notNull(),
@@ -2677,7 +2677,7 @@ export const scManufacturing = mysqlTable("sc_manufacturing", {
   bomJson:                 text("bomJson"),                           // JSON array of BOM line items
   bomVersion:              varchar("bomVersion", { length: 32 }).default("1.0"),
   // Cost modelling
-  unitCostGbp:             float("unitCostGbp"),                      // £ per unit
+  unitCostGbp:             float("unitCostGbp"),                      // - per unit
   toolingCostGbp:          float("toolingCostGbp"),
   moq:                     int("moq").default(1),                     // minimum order quantity
   targetUnitCostGbp:       float("targetUnitCostGbp"),
@@ -2686,12 +2686,12 @@ export const scManufacturing = mysqlTable("sc_manufacturing", {
     "composite_layup", "resin_transfer_moulding", "injection_moulding",
     "cnc_machining", "3d_printing", "casting", "forging", "assembly", "other"
   ]).default("composite_layup"),
-  processComplexityIndex:  int("processComplexityIndex").default(50), // 0–100
+  processComplexityIndex:  int("processComplexityIndex").default(50), // 0-100
   // Production capacity
   productionCapacityPerMonth: int("productionCapacityPerMonth"),
   leadTimeDays:            int("leadTimeDays"),
   // Manufacturing readiness
-  manufacturingReadinessScore: int("manufacturingReadinessScore").default(0), // 0–100
+  manufacturingReadinessScore: int("manufacturingReadinessScore").default(0), // 0-100
   readinessNotes:          text("readinessNotes"),
   // Tooling
   toolingStatus:           mysqlEnum("toolingStatus", ["not_started", "in_design", "ordered", "received", "validated"]).default("not_started"),
@@ -2701,7 +2701,7 @@ export const scManufacturing = mysqlTable("sc_manufacturing", {
 export type ScManufacturing = typeof scManufacturing.$inferSelect;
 export type InsertScManufacturing = typeof scManufacturing.$inferInsert;
 
-// ── SC Suppliers ──────────────────────────────────────────────────────────────
+// -- SC Suppliers --------------------------------------------------------------
 export const scSuppliers = mysqlTable("sc_suppliers", {
   id:                   int("id").autoincrement().primaryKey(),
   ventureId:            varchar("ventureId", { length: 64 }).notNull(),
@@ -2715,13 +2715,13 @@ export const scSuppliers = mysqlTable("sc_suppliers", {
   contactName:          varchar("contactName", { length: 128 }),
   contactEmail:         varchar("contactEmail", { length: 256 }),
   // Scoring
-  riskScore:            int("riskScore").default(50),                 // 0–100 (lower = less risk)
-  qualityScore:         int("qualityScore").default(50),              // 0–100
+  riskScore:            int("riskScore").default(50),                 // 0-100 (lower = less risk)
+  qualityScore:         int("qualityScore").default(50),              // 0-100
   leadTimeDays:         int("leadTimeDays"),
   unitCostIndex:        float("unitCostIndex"),                       // relative cost index
   // ESG
   esgComplianceStatus:  mysqlEnum("esgComplianceStatus", ["unknown", "non_compliant", "partial", "compliant", "certified"]).default("unknown"),
-  ethicalSourcingScore: int("ethicalSourcingScore").default(50),      // 0–100
+  ethicalSourcingScore: int("ethicalSourcingScore").default(50),      // 0-100
   // Geopolitical risk
   geopoliticalRiskFlag: boolean("geopoliticalRiskFlag").default(false),
   geopoliticalNotes:    text("geopoliticalNotes"),
@@ -2735,7 +2735,7 @@ export const scSuppliers = mysqlTable("sc_suppliers", {
 export type ScSupplier = typeof scSuppliers.$inferSelect;
 export type InsertScSupplier = typeof scSuppliers.$inferInsert;
 
-// ── SC Production Orders (Global Production Layer) ───────────────────────────
+// -- SC Production Orders (Global Production Layer) ---------------------------
 export const scProductionOrders = mysqlTable("sc_production_orders", {
   id:                   int("id").autoincrement().primaryKey(),
   ventureId:            varchar("ventureId", { length: 64 }).notNull(),
@@ -2769,11 +2769,11 @@ export const scProductionOrders = mysqlTable("sc_production_orders", {
 export type ScProductionOrder = typeof scProductionOrders.$inferSelect;
 export type InsertScProductionOrder = typeof scProductionOrders.$inferInsert;
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // CHINESE MANUFACTURING PLAYBOOK TABLES
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 
-// Master playbook project — one per venture/product combination
+// Master playbook project - one per venture/product combination
 export const mfgPlaybookProjects = mysqlTable("mfgPlaybookProjects", {
   id:              int("id").primaryKey().autoincrement(),
   ventureId:       varchar("ventureId", { length: 64 }).notNull(),
@@ -2836,7 +2836,7 @@ export const mfgSupplierTiers = mysqlTable("mfgSupplierTiers", {
 export type MfgSupplierTier = typeof mfgSupplierTiers.$inferSelect;
 export type InsertMfgSupplierTier = typeof mfgSupplierTiers.$inferInsert;
 
-// QC reports — pre-production, in-line, pre-shipment AQL
+// QC reports - pre-production, in-line, pre-shipment AQL
 export const mfgQcReports = mysqlTable("mfgQcReports", {
   id:              int("id").primaryKey().autoincrement(),
   projectId:       int("projectId").notNull(),
@@ -2890,7 +2890,7 @@ export const mfgLogisticsShipments = mysqlTable("mfgLogisticsShipments", {
 export type MfgLogisticsShipment = typeof mfgLogisticsShipments.$inferSelect;
 export type InsertMfgLogisticsShipment = typeof mfgLogisticsShipments.$inferInsert;
 
-// ── China Manufacturing Playbook Extended Tables ──────────────────────────────
+// -- China Manufacturing Playbook Extended Tables ------------------------------
 
 // Supplier Onboarding / Registration
 export const mfgSupplierOnboarding = mysqlTable("mfgSupplierOnboarding", {
@@ -3030,7 +3030,7 @@ export const mfgContractTemplates = mysqlTable("mfgContractTemplates", {
 export type MfgContractTemplate = typeof mfgContractTemplates.$inferSelect;
 export type InsertMfgContractTemplate = typeof mfgContractTemplates.$inferInsert;
 
-// ── University Playbook Tables ──────────────────────────────────────────────────
+// -- University Playbook Tables --------------------------------------------------
 
 // University Partners (universities, research institutions)
 export const uniPartners = mysqlTable("uniPartners", {
@@ -3200,7 +3200,7 @@ export const uniRoadmapMilestones = mysqlTable("uniRoadmapMilestones", {
 export type UniRoadmapMilestone = typeof uniRoadmapMilestones.$inferSelect;
 export type InsertUniRoadmapMilestone = typeof uniRoadmapMilestones.$inferInsert;
 
-// ── Workflow Engine ────────────────────────────────────────────────────────────
+// -- Workflow Engine ------------------------------------------------------------
 // Immutable log of every cross-module trigger fired by the workflow engine.
 // triggerType: research_completed | audit_failed | supplier_approved
 // status: pending | success | failed | skipped
@@ -3223,11 +3223,11 @@ export const workflowTriggerLog = mysqlTable("workflowTriggerLog", {
 export type WorkflowTriggerLog = typeof workflowTriggerLog.$inferSelect;
 export type InsertWorkflowTriggerLog = typeof workflowTriggerLog.$inferInsert;
 
-// ── Data Management Module ─────────────────────────────────────────────────────
+// -- Data Management Module -----------------------------------------------------
 // Section 8: Data ingestion, validation, quality scoring, AI integration
 // Section 9: RAG pipelines, fine-tuning, context engineering, feedback loops
 
-// ── Data Assets ───────────────────────────────────────────────────────────────
+// -- Data Assets ---------------------------------------------------------------
 // Central catalogue of all data assets used across the platform.
 // assetType: structured | unstructured | semi_structured | time_series | media
 // sourceType: manual_upload | api_feed | database_export | web_scrape | sensor | survey | interview
@@ -3262,7 +3262,7 @@ export const dmDataAssets = mysqlTable("dmDataAssets", {
 export type DmDataAsset = typeof dmDataAssets.$inferSelect;
 export type InsertDmDataAsset = typeof dmDataAssets.$inferInsert;
 
-// ── Quality Scores ─────────────────────────────────────────────────────────────
+// -- Quality Scores -------------------------------------------------------------
 // Per-asset quality dimension scores and issue flags.
 // Each row is one quality assessment snapshot for one asset.
 export const dmQualityScores = mysqlTable("dmQualityScores", {
@@ -3284,7 +3284,7 @@ export const dmQualityScores = mysqlTable("dmQualityScores", {
 export type DmQualityScore = typeof dmQualityScores.$inferSelect;
 export type InsertDmQualityScore = typeof dmQualityScores.$inferInsert;
 
-// ── AI Pipelines ───────────────────────────────────────────────────────────────
+// -- AI Pipelines ---------------------------------------------------------------
 // Configuration and metadata for AI processing pipelines.
 // pipelineType: classification | extraction | generation | summarisation | embedding | scoring | routing
 // status: draft | active | paused | deprecated | error
@@ -3318,7 +3318,7 @@ export const dmAiPipelines = mysqlTable("dmAiPipelines", {
 export type DmAiPipeline = typeof dmAiPipelines.$inferSelect;
 export type InsertDmAiPipeline = typeof dmAiPipelines.$inferInsert;
 
-// ── Pipeline Runs ──────────────────────────────────────────────────────────────
+// -- Pipeline Runs --------------------------------------------------------------
 // Immutable run history for each AI pipeline execution.
 // status: running | success | failed | cancelled | timeout
 export const dmPipelineRuns = mysqlTable("dmPipelineRuns", {
@@ -3340,7 +3340,7 @@ export const dmPipelineRuns = mysqlTable("dmPipelineRuns", {
 export type DmPipelineRun = typeof dmPipelineRuns.$inferSelect;
 export type InsertDmPipelineRun = typeof dmPipelineRuns.$inferInsert;
 
-// ── RAG Pipelines ──────────────────────────────────────────────────────────────
+// -- RAG Pipelines --------------------------------------------------------------
 // Retrieval-Augmented Generation pipeline configurations.
 // retrievalStrategy: similarity | mmr | hybrid | keyword | rerank
 // embeddingModel: text-embedding-3-small | text-embedding-3-large | ada-002
@@ -3375,7 +3375,7 @@ export const dmRagPipelines = mysqlTable("dmRagPipelines", {
 export type DmRagPipeline = typeof dmRagPipelines.$inferSelect;
 export type InsertDmRagPipeline = typeof dmRagPipelines.$inferInsert;
 
-// ── RAG Documents ──────────────────────────────────────────────────────────────
+// -- RAG Documents --------------------------------------------------------------
 // Individual documents registered in a RAG pipeline's document store.
 // status: pending | indexed | failed | excluded
 export const dmRagDocuments = mysqlTable("dmRagDocuments", {
@@ -3397,7 +3397,7 @@ export const dmRagDocuments = mysqlTable("dmRagDocuments", {
 export type DmRagDocument = typeof dmRagDocuments.$inferSelect;
 export type InsertDmRagDocument = typeof dmRagDocuments.$inferInsert;
 
-// ── Fine-Tuning Jobs ───────────────────────────────────────────────────────────
+// -- Fine-Tuning Jobs -----------------------------------------------------------
 // Tracks fine-tuning job lifecycle from dataset prep to model deployment.
 // status: draft | preparing | training | evaluating | completed | failed | cancelled
 export const dmFineTuningJobs = mysqlTable("dmFineTuningJobs", {
@@ -3429,7 +3429,7 @@ export const dmFineTuningJobs = mysqlTable("dmFineTuningJobs", {
 export type DmFineTuningJob = typeof dmFineTuningJobs.$inferSelect;
 export type InsertDmFineTuningJob = typeof dmFineTuningJobs.$inferInsert;
 
-// ── Fine-Tuning Datasets ───────────────────────────────────────────────────────
+// -- Fine-Tuning Datasets -------------------------------------------------------
 // Training data collections used for fine-tuning jobs.
 // splitType: train_only | train_val | train_val_test
 // status: draft | labelling | ready | archived
@@ -3457,8 +3457,8 @@ export const dmFineTuningDatasets = mysqlTable("dmFineTuningDatasets", {
 export type DmFineTuningDataset = typeof dmFineTuningDatasets.$inferSelect;
 export type InsertDmFineTuningDataset = typeof dmFineTuningDatasets.$inferInsert;
 
-// ── Feedback Entries ───────────────────────────────────────────────────────────
-// User feedback on AI-generated outputs — powers the feedback loop for model improvement.
+// -- Feedback Entries -----------------------------------------------------------
+// User feedback on AI-generated outputs - powers the feedback loop for model improvement.
 // feedbackType: thumbs_up | thumbs_down | rating | correction | flag
 // status: open | reviewed | actioned | dismissed
 export const dmFeedbackEntries = mysqlTable("dmFeedbackEntries", {
@@ -3486,7 +3486,7 @@ export const dmFeedbackEntries = mysqlTable("dmFeedbackEntries", {
 export type DmFeedbackEntry = typeof dmFeedbackEntries.$inferSelect;
 export type InsertDmFeedbackEntry = typeof dmFeedbackEntries.$inferInsert;
 
-// ─── COMMERCIAL CRM ───────────────────────────────────────────────────────────
+// --- COMMERCIAL CRM -----------------------------------------------------------
 
 export const crmPipelines = mysqlTable("crmPipelines", {
   id:          int("id").primaryKey().autoincrement(),
@@ -3545,7 +3545,7 @@ export const crmLeads = mysqlTable("crmLeads", {
   source:          varchar("source", { length: 100 }), // referral | linkedin | event | inbound | cold_outreach | partner | other
   status:          varchar("status", { length: 50 }).default("new"), // new | contacted | qualified | unqualified | converted
   score:           int("score").default(0), // 0-100 lead score
-  estimatedValue:  int("estimatedValue").default(0), // £
+  estimatedValue:  int("estimatedValue").default(0), // -
   assignedTo:      varchar("assignedTo", { length: 100 }),
   nextAction:      varchar("nextAction", { length: 255 }),
   nextActionDate:  bigint("nextActionDate", { mode: "number" }),
@@ -3565,7 +3565,7 @@ export const crmDeals = mysqlTable("crmDeals", {
   contactId:       varchar("contactId", { length: 36 }),
   title:           varchar("title", { length: 255 }).notNull(),
   company:         varchar("company", { length: 255 }),
-  value:           int("value").default(0), // £
+  value:           int("value").default(0), // -
   currency:        varchar("currency", { length: 10 }).default("GBP"),
   probability:     int("probability").default(0), // 0-100 %
   expectedCloseAt: bigint("expectedCloseAt", { mode: "number" }),
@@ -3601,7 +3601,7 @@ export const crmActivities = mysqlTable("crmActivities", {
 export type CrmActivity = typeof crmActivities.$inferSelect;
 export type InsertCrmActivity = typeof crmActivities.$inferInsert;
 
-// ─── INVESTOR CRM ─────────────────────────────────────────────────────────────
+// --- INVESTOR CRM -------------------------------------------------------------
 
 export const invContacts = mysqlTable("invContacts", {
   id:          int("id").primaryKey().autoincrement(),
@@ -3616,8 +3616,8 @@ export const invContacts = mysqlTable("invContacts", {
   websiteUrl:       varchar("websiteUrl", { length: 500 }),
   portfolioFocus:   text("portfolioFocus"), // JSON array of sectors
   geographicFocus:  varchar("geographicFocus", { length: 255 }),
-  minChequeSize:    int("minChequeSize").default(0), // £
-  maxChequeSize:    int("maxChequeSize").default(0), // £
+  minChequeSize:    int("minChequeSize").default(0), // -
+  maxChequeSize:    int("maxChequeSize").default(0), // -
   preferredStage:   varchar("preferredStage", { length: 100 }), // pre-seed | seed | series-a | series-b | growth
   relationshipStatus: varchar("relationshipStatus", { length: 50 }).default("prospect"), // prospect | contacted | meeting_scheduled | term_sheet | invested | passed | on_hold
   warmIntro:        boolean("warmIntro").default(false),
@@ -3636,10 +3636,10 @@ export const invFundingRounds = mysqlTable("invFundingRounds", {
   ventureId:       varchar("ventureId", { length: 36 }).notNull(),
   name:            varchar("name", { length: 255 }).notNull(), // e.g. "Pre-Seed Round", "Seed Round A"
   roundType:       varchar("roundType", { length: 50 }).notNull(), // pre_seed | seed | series_a | series_b | bridge | convertible_note | safe | grant | crowdfunding
-  targetAmount:    int("targetAmount").default(0), // £
-  raisedAmount:    int("raisedAmount").default(0), // £
-  preMoneyVal:     int("preMoneyVal").default(0), // £
-  postMoneyVal:    int("postMoneyVal").default(0), // £
+  targetAmount:    int("targetAmount").default(0), // -
+  raisedAmount:    int("raisedAmount").default(0), // -
+  preMoneyVal:     int("preMoneyVal").default(0), // -
+  postMoneyVal:    int("postMoneyVal").default(0), // -
   equityOffered:   int("equityOffered").default(0), // %
   status:          varchar("status", { length: 50 }).default("planning"), // planning | open | closing | closed | cancelled
   openedAt:        bigint("openedAt", { mode: "number" }),
@@ -3660,8 +3660,8 @@ export const invTermSheets = mysqlTable("invTermSheets", {
   ventureId:         varchar("ventureId", { length: 36 }).notNull(),
   investorContactId: varchar("investorContactId", { length: 36 }),
   investorName:      varchar("investorName", { length: 255 }).notNull(),
-  investmentAmount:  int("investmentAmount").default(0), // £
-  preMoneyVal:       int("preMoneyVal").default(0), // £
+  investmentAmount:  int("investmentAmount").default(0), // -
+  preMoneyVal:       int("preMoneyVal").default(0), // -
   equityPercent:     int("equityPercent").default(0), // %
   instrumentType:    varchar("instrumentType", { length: 50 }).default("equity"), // equity | safe | convertible_note | revenue_share
   liquidationPref:   varchar("liquidationPref", { length: 100 }), // 1x non-participating | 1x participating | 2x non-participating
@@ -3694,7 +3694,7 @@ export const invCapTable = mysqlTable("invCapTable", {
   numberOfShares:   int("numberOfShares").default(0),
   ownershipPercent: int("ownershipPercent").default(0), // stored as basis points (100 = 1%)
   pricePerShare:    int("pricePerShare").default(0), // pence
-  investmentAmount: int("investmentAmount").default(0), // £
+  investmentAmount: int("investmentAmount").default(0), // -
   vestingStart:     bigint("vestingStart", { mode: "number" }),
   vestingCliff:     int("vestingCliff").default(0), // months
   vestingPeriod:    int("vestingPeriod").default(0), // months
@@ -3743,12 +3743,12 @@ export const invUpdates = mysqlTable("invUpdates", {
 export type InvUpdate = typeof invUpdates.$inferSelect;
 export type InsertInvUpdate = typeof invUpdates.$inferInsert;
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// SPRINT 51 — GOVERNANCE & RBAC
+// -------------------------------------------------------------------------------
+// SPRINT 51 - GOVERNANCE & RBAC
 // Tables: auditLog, venturePermissions, governancePolicies, complianceChecks, riskRegister
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
 
-// ── Audit Log ─────────────────────────────────────────────────────────────────
+// -- Audit Log -----------------------------------------------------------------
 export const auditLog = mysqlTable("auditLog", {
   id:           int("id").primaryKey().autoincrement(),
   userId:       varchar("userId", { length: 64 }),
@@ -3768,7 +3768,7 @@ export const auditLog = mysqlTable("auditLog", {
 export type AuditLog = typeof auditLog.$inferSelect;
 export type InsertAuditLog = typeof auditLog.$inferInsert;
 
-// ── Venture Permissions ───────────────────────────────────────────────────────
+// -- Venture Permissions -------------------------------------------------------
 export const venturePermissions = mysqlTable("venturePermissions", {
   id:        int("id").primaryKey().autoincrement(),
   ventureId: varchar("ventureId", { length: 64 }).notNull(),
@@ -3784,7 +3784,7 @@ export const venturePermissions = mysqlTable("venturePermissions", {
 export type VenturePermission = typeof venturePermissions.$inferSelect;
 export type InsertVenturePermission = typeof venturePermissions.$inferInsert;
 
-// ── Governance Policies ───────────────────────────────────────────────────────
+// -- Governance Policies -------------------------------------------------------
 export const governancePolicies = mysqlTable("governancePolicies", {
   id:              int("id").primaryKey().autoincrement(),
   policyName:      varchar("policyName", { length: 255 }).notNull(),
@@ -3799,7 +3799,7 @@ export const governancePolicies = mysqlTable("governancePolicies", {
 export type GovernancePolicy = typeof governancePolicies.$inferSelect;
 export type InsertGovernancePolicy = typeof governancePolicies.$inferInsert;
 
-// ── Compliance Checks ─────────────────────────────────────────────────────────
+// -- Compliance Checks ---------------------------------------------------------
 export const complianceChecks = mysqlTable("complianceChecks", {
   id:           int("id").primaryKey().autoincrement(),
   ventureId:    varchar("ventureId", { length: 64 }),
@@ -3817,7 +3817,7 @@ export const complianceChecks = mysqlTable("complianceChecks", {
 export type ComplianceCheck = typeof complianceChecks.$inferSelect;
 export type InsertComplianceCheck = typeof complianceChecks.$inferInsert;
 
-// ── Risk Register ─────────────────────────────────────────────────────────────
+// -- Risk Register -------------------------------------------------------------
 export const riskRegister = mysqlTable("riskRegister", {
   id:              int("id").primaryKey().autoincrement(),
   ventureId:       varchar("ventureId", { length: 64 }),
@@ -3837,10 +3837,10 @@ export const riskRegister = mysqlTable("riskRegister", {
 });
 export type RiskRegisterEntry = typeof riskRegister.$inferSelect;
 export type InsertRiskRegisterEntry = typeof riskRegister.$inferInsert;
-// Sprint 52 — Financial Model Builder schema additions
+// Sprint 52 - Financial Model Builder schema additions
 // Append to drizzle/schema.ts
 
-// ── P&L Lines ─────────────────────────────────────────────────────────────────
+// -- P&L Lines -----------------------------------------------------------------
 export const finPlLines = mysqlTable("finPlLines", {
   id:          int("id").primaryKey().autoincrement(),
   ventureId:   varchar("ventureId", { length: 64 }),
@@ -3860,7 +3860,7 @@ export const finPlLines = mysqlTable("finPlLines", {
 export type FinPlLine = typeof finPlLines.$inferSelect;
 export type InsertFinPlLine = typeof finPlLines.$inferInsert;
 
-// ── Runway Scenarios ──────────────────────────────────────────────────────────
+// -- Runway Scenarios ----------------------------------------------------------
 export const finRunwayScenarios = mysqlTable("finRunwayScenarios", {
   id:              int("id").primaryKey().autoincrement(),
   ventureId:       varchar("ventureId", { length: 64 }),
@@ -3879,7 +3879,7 @@ export const finRunwayScenarios = mysqlTable("finRunwayScenarios", {
 export type FinRunwayScenario = typeof finRunwayScenarios.$inferSelect;
 export type InsertFinRunwayScenario = typeof finRunwayScenarios.$inferInsert;
 
-// ── Exit Waterfall ────────────────────────────────────────────────────────────
+// -- Exit Waterfall ------------------------------------------------------------
 export const finExitWaterfall = mysqlTable("finExitWaterfall", {
   id:                  int("id").primaryKey().autoincrement(),
   ventureId:           varchar("ventureId", { length: 64 }),
@@ -3896,7 +3896,7 @@ export const finExitWaterfall = mysqlTable("finExitWaterfall", {
 export type FinExitWaterfall = typeof finExitWaterfall.$inferSelect;
 export type InsertFinExitWaterfall = typeof finExitWaterfall.$inferInsert;
 
-// ── Waterfall Tranches ────────────────────────────────────────────────────────
+// -- Waterfall Tranches --------------------------------------------------------
 export const finWaterfallTranches = mysqlTable("finWaterfallTranches", {
   id:            int("id").primaryKey().autoincrement(),
   waterfallId:   int("waterfallId").notNull(),
@@ -3912,7 +3912,7 @@ export const finWaterfallTranches = mysqlTable("finWaterfallTranches", {
 export type FinWaterfallTranche = typeof finWaterfallTranches.$inferSelect;
 export type InsertFinWaterfallTranche = typeof finWaterfallTranches.$inferInsert;
 
-// ── Investor Report Packs ─────────────────────────────────────────────────────
+// -- Investor Report Packs -----------------------------------------------------
 export const finInvestorReports = mysqlTable("finInvestorReports", {
   id:           int("id").primaryKey().autoincrement(),
   ventureId:    varchar("ventureId", { length: 64 }),
@@ -3932,7 +3932,7 @@ export const finInvestorReports = mysqlTable("finInvestorReports", {
 export type FinInvestorReport = typeof finInvestorReports.$inferSelect;
 export type InsertFinInvestorReport = typeof finInvestorReports.$inferInsert;
 
-// ── Unit Economics ────────────────────────────────────────────────────────────
+// -- Unit Economics ------------------------------------------------------------
 export const finUnitEconomics = mysqlTable("finUnitEconomics", {
   id:              int("id").primaryKey().autoincrement(),
   ventureId:       varchar("ventureId", { length: 64 }),
@@ -3951,11 +3951,11 @@ export const finUnitEconomics = mysqlTable("finUnitEconomics", {
 export type FinUnitEconomics = typeof finUnitEconomics.$inferSelect;
 export type InsertFinUnitEconomics = typeof finUnitEconomics.$inferInsert;
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// SPRINT 56 — Marketing Strategy, Brand Readiness & PR/Newsletter
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
+// SPRINT 56 - Marketing Strategy, Brand Readiness & PR/Newsletter
+// -------------------------------------------------------------------------------
 
-// ── Marketing Campaigns ───────────────────────────────────────────────────────
+// -- Marketing Campaigns -------------------------------------------------------
 export const marketingCampaigns = mysqlTable("marketingCampaigns", {
   id:              int("id").primaryKey().autoincrement(),
   ventureId:       varchar("ventureId", { length: 64 }).notNull(),
@@ -3976,7 +3976,7 @@ export const marketingCampaigns = mysqlTable("marketingCampaigns", {
 export type MarketingCampaign = typeof marketingCampaigns.$inferSelect;
 export type InsertMarketingCampaign = typeof marketingCampaigns.$inferInsert;
 
-// ── Marketing Channel Scores ──────────────────────────────────────────────────
+// -- Marketing Channel Scores --------------------------------------------------
 export const marketingChannelScores = mysqlTable("marketingChannelScores", {
   id:              int("id").primaryKey().autoincrement(),
   ventureId:       varchar("ventureId", { length: 64 }).notNull(),
@@ -3990,7 +3990,7 @@ export const marketingChannelScores = mysqlTable("marketingChannelScores", {
 export type MarketingChannelScore = typeof marketingChannelScores.$inferSelect;
 export type InsertMarketingChannelScore = typeof marketingChannelScores.$inferInsert;
 
-// ── Brand Readiness Scores ────────────────────────────────────────────────────
+// -- Brand Readiness Scores ----------------------------------------------------
 export const brandReadinessScores = mysqlTable("brandReadinessScores", {
   id:              int("id").primaryKey().autoincrement(),
   ventureId:       varchar("ventureId", { length: 64 }).notNull(),
@@ -4004,7 +4004,7 @@ export const brandReadinessScores = mysqlTable("brandReadinessScores", {
 export type BrandReadinessScore = typeof brandReadinessScores.$inferSelect;
 export type InsertBrandReadinessScore = typeof brandReadinessScores.$inferInsert;
 
-// ── Brand Checklist Items ─────────────────────────────────────────────────────
+// -- Brand Checklist Items -----------------------------------------------------
 export const brandChecklistItems = mysqlTable("brandChecklistItems", {
   id:              int("id").primaryKey().autoincrement(),
   ventureId:       varchar("ventureId", { length: 64 }).notNull(),
@@ -4019,7 +4019,7 @@ export const brandChecklistItems = mysqlTable("brandChecklistItems", {
 export type BrandChecklistItem = typeof brandChecklistItems.$inferSelect;
 export type InsertBrandChecklistItem = typeof brandChecklistItems.$inferInsert;
 
-// ── Press Releases ────────────────────────────────────────────────────────────
+// -- Press Releases ------------------------------------------------------------
 export const pressReleases = mysqlTable("pressReleases", {
   id:              int("id").primaryKey().autoincrement(),
   ventureId:       varchar("ventureId", { length: 64 }).notNull(),
@@ -4037,7 +4037,7 @@ export const pressReleases = mysqlTable("pressReleases", {
 export type PressRelease = typeof pressReleases.$inferSelect;
 export type InsertPressRelease = typeof pressReleases.$inferInsert;
 
-// ── Newsletter Campaigns ──────────────────────────────────────────────────────
+// -- Newsletter Campaigns ------------------------------------------------------
 export const newsletterCampaigns = mysqlTable("newsletterCampaigns", {
   id:              int("id").primaryKey().autoincrement(),
   ventureId:       varchar("ventureId", { length: 64 }).notNull(),
@@ -4058,7 +4058,7 @@ export const newsletterCampaigns = mysqlTable("newsletterCampaigns", {
 export type NewsletterCampaign = typeof newsletterCampaigns.$inferSelect;
 export type InsertNewsletterCampaign = typeof newsletterCampaigns.$inferInsert;
 
-// ── Media Coverage ────────────────────────────────────────────────────────────
+// -- Media Coverage ------------------------------------------------------------
 export const mediaCoverage = mysqlTable("mediaCoverage", {
   id:              int("id").primaryKey().autoincrement(),
   ventureId:       varchar("ventureId", { length: 64 }).notNull(),
@@ -4075,7 +4075,7 @@ export const mediaCoverage = mysqlTable("mediaCoverage", {
 export type MediaCoverage = typeof mediaCoverage.$inferSelect;
 export type InsertMediaCoverage = typeof mediaCoverage.$inferInsert;
 
-// ── Sprint 57: Specialist Services ───────────────────────────────────────────
+// -- Sprint 57: Specialist Services -------------------------------------------
 export const specialists = mysqlTable("specialists", {
   id:            int("id").primaryKey().autoincrement(),
   name:          varchar("name", { length: 255 }).notNull(),
@@ -4136,7 +4136,7 @@ export const specialistServiceTasks = mysqlTable("specialistServiceTasks", {
 export type SpecialistServiceTask = typeof specialistServiceTasks.$inferSelect;
 export type InsertSpecialistServiceTask = typeof specialistServiceTasks.$inferInsert;
 
-// ── Sprint 60: Founder Onboarding Submissions ──────────────────────────────
+// -- Sprint 60: Founder Onboarding Submissions ------------------------------
 export const founderOnboardingSubmissions = mysqlTable("founderOnboardingSubmissions", {
   id:                int("id").primaryKey().autoincrement(),
   // Venture details (Step 1)
@@ -4167,7 +4167,7 @@ export const founderOnboardingSubmissions = mysqlTable("founderOnboardingSubmiss
 export type FounderOnboardingSubmission = typeof founderOnboardingSubmissions.$inferSelect;
 export type InsertFounderOnboardingSubmission = typeof founderOnboardingSubmissions.$inferInsert;
 
-// ── Sprint 61: Venture → Portfolio → Offering Architecture ───────────────────
+// -- Sprint 61: Venture - Portfolio - Offering Architecture -------------------
 
 export const portfolios = mysqlTable("portfolios", {
   id:            varchar("id", { length: 64 }).primaryKey(),
@@ -4218,7 +4218,7 @@ export const offerings = mysqlTable("offerings", {
 export type Offering = typeof offerings.$inferSelect;
 export type InsertOffering = typeof offerings.$inferInsert;
 
-// ── Offering-level KPI snapshots ──────────────────────────────────────────────
+// -- Offering-level KPI snapshots ----------------------------------------------
 export const offeringKpiSnapshots = mysqlTable("offeringKpiSnapshots", {
   id:              int("id").primaryKey().autoincrement(),
   offeringId:      varchar("offeringId", { length: 64 }).notNull(),
@@ -4238,7 +4238,7 @@ export const offeringKpiSnapshots = mysqlTable("offeringKpiSnapshots", {
 });
 export type OfferingKpiSnapshot = typeof offeringKpiSnapshots.$inferSelect;
 
-// ── Offering-level financial model ───────────────────────────────────────────
+// -- Offering-level financial model -------------------------------------------
 export const offeringFinancialModels = mysqlTable("offeringFinancialModels", {
   id:              int("id").primaryKey().autoincrement(),
   offeringId:      varchar("offeringId", { length: 64 }).notNull(),
@@ -4256,7 +4256,7 @@ export const offeringFinancialModels = mysqlTable("offeringFinancialModels", {
 });
 export type OfferingFinancialModel = typeof offeringFinancialModels.$inferSelect;
 
-// ── Offering execution linkage tables (additive — no existing tables modified) ─
+// -- Offering execution linkage tables (additive - no existing tables modified) -
 export const offeringWorkflowLinks = mysqlTable("offeringWorkflowLinks", {
   id:           int("id").primaryKey().autoincrement(),
   offeringId:   varchar("offeringId", { length: 64 }).notNull(),
@@ -4316,7 +4316,7 @@ export const offeringAnalyticsLinks = mysqlTable("offeringAnalyticsLinks", {
   createdAt:        timestamp("createdAt").defaultNow().notNull(),
 });
 
-// ── University Approval Reports (Sprint 62) ───────────────────────────────────
+// -- University Approval Reports (Sprint 62) -----------------------------------
 // Formal approval documents linking offering-level research, validation evidence,
 // and academic partnerships for university/lecturer sign-off.
 export const uniApprovalReports = mysqlTable("uniApprovalReports", {
@@ -4383,7 +4383,7 @@ export const uniApprovalReports = mysqlTable("uniApprovalReports", {
 export type UniApprovalReport = typeof uniApprovalReports.$inferSelect;
 export type InsertUniApprovalReport = typeof uniApprovalReports.$inferInsert;
 
-// ── Offering Research Links (Sprint 62) ───────────────────────────────────────
+// -- Offering Research Links (Sprint 62) ---------------------------------------
 export const offeringResearchLinks = mysqlTable("offeringResearchLinks", {
   id:                int("id").primaryKey().autoincrement(),
   offeringId:        varchar("offeringId", { length: 64 }).notNull(),
@@ -4400,7 +4400,7 @@ export const offeringResearchLinks = mysqlTable("offeringResearchLinks", {
 export type OfferingResearchLink = typeof offeringResearchLinks.$inferSelect;
 export type InsertOfferingResearchLink = typeof offeringResearchLinks.$inferInsert;
 
-// ── Spin-Out Blueprints (Sprint 63) ───────────────────────────────────────────
+// -- Spin-Out Blueprints (Sprint 63) -------------------------------------------
 // A Blueprint is created for a specific Offering (POI) and aggregates readiness
 // signals from all Venture OS libraries. It gates the path to Execution Platform.
 export const spinoutBlueprints = mysqlTable("spinoutBlueprints", {
@@ -4437,7 +4437,7 @@ export const spinoutBlueprints = mysqlTable("spinoutBlueprints", {
 export type SpinoutBlueprint = typeof spinoutBlueprints.$inferSelect;
 export type InsertSpinoutBlueprint = typeof spinoutBlueprints.$inferInsert;
 
-// ── Blueprint Library Links (Sprint 63) ──────────────────────────────────────
+// -- Blueprint Library Links (Sprint 63) --------------------------------------
 // Explicit links from a Blueprint to individual records in each Venture OS library.
 export const blueprintLibraryLinks = mysqlTable("blueprintLibraryLinks", {
   id:             int("id").primaryKey().autoincrement(),
@@ -4470,13 +4470,13 @@ export const blueprintLibraryLinks = mysqlTable("blueprintLibraryLinks", {
 export type BlueprintLibraryLink = typeof blueprintLibraryLinks.$inferSelect;
 export type InsertBlueprintLibraryLink = typeof blueprintLibraryLinks.$inferInsert;
 
-// ╔══════════════════════════════════════════════════════════════════════════════╗
-// ║  CULTURAL READINESS LEVEL (CRL) MODULE                                       ║
-// ║  Wasserman (2012): 65% of high-potential startups fail due to co-founder     ║
-// ║  conflict. CRL provides systematic, AI-powered cultural alignment assessment. ║
-// ╚══════════════════════════════════════════════════════════════════════════════╝
+// --------------------------------------------------------------------------------
+// -  CULTURAL READINESS LEVEL (CRL) MODULE                                       -
+// -  Wasserman (2012): 65% of high-potential startups fail due to co-founder     -
+// -  conflict. CRL provides systematic, AI-powered cultural alignment assessment. -
+// --------------------------------------------------------------------------------
 
-// ── CRL Assessments ───────────────────────────────────────────────────────────
+// -- CRL Assessments -----------------------------------------------------------
 export const crlAssessments = mysqlTable("crl_assessments", {
   id:             int("id").autoincrement().primaryKey(),
   ventureId:      varchar("ventureId", { length: 64 }).notNull(),
@@ -4500,7 +4500,7 @@ export const crlAssessments = mysqlTable("crl_assessments", {
 export type CrlAssessment = typeof crlAssessments.$inferSelect;
 export type InsertCrlAssessment = typeof crlAssessments.$inferInsert;
 
-// ── CRL Founder Responses ─────────────────────────────────────────────────────
+// -- CRL Founder Responses -----------------------------------------------------
 export const crlFounderResponses = mysqlTable("crl_founder_responses", {
   id:             int("id").autoincrement().primaryKey(),
   assessmentId:   int("assessmentId").notNull(),
@@ -4516,7 +4516,7 @@ export const crlFounderResponses = mysqlTable("crl_founder_responses", {
 export type CrlFounderResponse = typeof crlFounderResponses.$inferSelect;
 export type InsertCrlFounderResponse = typeof crlFounderResponses.$inferInsert;
 
-// ── CRL Interventions ─────────────────────────────────────────────────────────
+// -- CRL Interventions ---------------------------------------------------------
 export const crlInterventions = mysqlTable("crl_interventions", {
   id:               int("id").autoincrement().primaryKey(),
   ventureId:        varchar("ventureId", { length: 64 }).notNull(),
@@ -4543,7 +4543,7 @@ export const crlInterventions = mysqlTable("crl_interventions", {
 export type CrlIntervention = typeof crlInterventions.$inferSelect;
 export type InsertCrlIntervention = typeof crlInterventions.$inferInsert;
 
-// ── CRL Monitoring Records ────────────────────────────────────────────────────
+// -- CRL Monitoring Records ----------------------------------------------------
 export const crlMonitoringRecords = mysqlTable("crl_monitoring_records", {
   id:             int("id").autoincrement().primaryKey(),
   ventureId:      varchar("ventureId", { length: 64 }).notNull(),
@@ -4563,7 +4563,7 @@ export const crlMonitoringRecords = mysqlTable("crl_monitoring_records", {
 export type CrlMonitoringRecord = typeof crlMonitoringRecords.$inferSelect;
 export type InsertCrlMonitoringRecord = typeof crlMonitoringRecords.$inferInsert;
 
-// ── VRL Dynamic Weight Configs ────────────────────────────────────────────────
+// -- VRL Dynamic Weight Configs ------------------------------------------------
 export const vrlDynamicWeights = mysqlTable("vrl_dynamic_weights", {
   id:           int("id").autoincrement().primaryKey(),
   ventureId:    varchar("ventureId", { length: 64 }).notNull().unique(),
@@ -4587,12 +4587,12 @@ export const vrlDynamicWeights = mysqlTable("vrl_dynamic_weights", {
 export type VrlDynamicWeight = typeof vrlDynamicWeights.$inferSelect;
 export type InsertVrlDynamicWeight = typeof vrlDynamicWeights.$inferInsert;
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// INVESTMENT MODULE — Sprint 66
+// -------------------------------------------------------------------------------
+// INVESTMENT MODULE - Sprint 66
 // Tables: invReadinessScores, invOutputs, invTargets, invKpis, invFundraisingRounds
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
 
-// ── Investment Readiness Scores ───────────────────────────────────────────────
+// -- Investment Readiness Scores -----------------------------------------------
 export const invReadinessScores = mysqlTable("invReadinessScores", {
   id:                 int("id").autoincrement().primaryKey(),
   offeringId:         int("offeringId"),
@@ -4621,7 +4621,7 @@ export const invReadinessScores = mysqlTable("invReadinessScores", {
 export type InvReadinessScore = typeof invReadinessScores.$inferSelect;
 export type InsertInvReadinessScore = typeof invReadinessScores.$inferInsert;
 
-// ── Investment Outputs (Pitch Deck, Business Plan, Execution Plan) ─────────────
+// -- Investment Outputs (Pitch Deck, Business Plan, Execution Plan) -------------
 export const invOutputs = mysqlTable("invOutputs", {
   id:             int("id").autoincrement().primaryKey(),
   offeringId:     int("offeringId"),
@@ -4662,7 +4662,7 @@ export const invOutputs = mysqlTable("invOutputs", {
 export type InvOutput = typeof invOutputs.$inferSelect;
 export type InsertInvOutput = typeof invOutputs.$inferInsert;
 
-// ── Investor Targets (Matching & Outreach) ─────────────────────────────────────
+// -- Investor Targets (Matching & Outreach) -------------------------------------
 export const invTargets = mysqlTable("invTargets", {
   id:                 int("id").autoincrement().primaryKey(),
   offeringId:         int("offeringId"),
@@ -4692,7 +4692,7 @@ export const invTargets = mysqlTable("invTargets", {
 export type InvTarget = typeof invTargets.$inferSelect;
 export type InsertInvTarget = typeof invTargets.$inferInsert;
 
-// ── Investment KPIs ────────────────────────────────────────────────────────────
+// -- Investment KPIs ------------------------------------------------------------
 export const invKpis = mysqlTable("invKpis", {
   id:             int("id").autoincrement().primaryKey(),
   offeringId:     int("offeringId"),
@@ -4723,7 +4723,7 @@ export const invKpis = mysqlTable("invKpis", {
 export type InvKpi = typeof invKpis.$inferSelect;
 export type InsertInvKpi = typeof invKpis.$inferInsert;
 
-// ── Fundraising Rounds ─────────────────────────────────────────────────────────
+// -- Fundraising Rounds ---------------------------------------------------------
 export const invFundraisingRounds = mysqlTable("invFundraisingRounds", {
   id:                 int("id").autoincrement().primaryKey(),
   offeringId:         int("offeringId"),
@@ -4747,11 +4747,11 @@ export type InvFundraisingRound = typeof invFundraisingRounds.$inferSelect;
 export type InsertInvFundraisingRound = typeof invFundraisingRounds.$inferInsert;
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ECORACE LAB — 8-Stage Engineering Workflow (Sprint 67)
+// -----------------------------------------------------------------------------
+// ECORACE LAB - 8-Stage Engineering Workflow (Sprint 67)
 // Tables: erl_projects, erl_stages, erl_materials, erl_simulations,
 //         erl_ip_assets, erl_agent_runs, erl_validation_logs
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 
 export const erlProjects = mysqlTable("erl_projects", {
   id:               int("id").autoincrement().primaryKey(),
@@ -4893,9 +4893,9 @@ export const erlValidationLogs = mysqlTable("erl_validation_logs", {
 export type ErlValidationLog = typeof erlValidationLogs.$inferSelect;
 export type InsertErlValidationLog = typeof erlValidationLogs.$inferInsert;
 
-// ─────────────────────────────────────────────────────────────
-// INVESTOR DATA ROOM MODULE — 10 tables (migration 0044)
-// ─────────────────────────────────────────────────────────────
+// -------------------------------------------------------------
+// INVESTOR DATA ROOM MODULE - 10 tables (migration 0044)
+// -------------------------------------------------------------
 
 // 1. Data Room Rooms
 export const drRooms = mysqlTable("dr_rooms", {
@@ -5117,12 +5117,12 @@ export type DrAiGeneration = typeof drAiGenerations.$inferSelect;
 export type InsertDrAiGeneration = typeof drAiGenerations.$inferInsert;
 
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // LEARNING ENGINE MODULE (Sprint 69)
 // Tables: le_problems, le_insights, le_input_weights, le_vrl_metrics,
 //         le_learning_patterns, le_recommendations, le_knowledge_graph_nodes,
 //         le_knowledge_graph_edges
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 
 export const leProblems = mysqlTable("le_problems", {
   id:              int("id").primaryKey().autoincrement(),
@@ -5241,10 +5241,10 @@ export type LeKgEdge = typeof leKnowledgeGraphEdges.$inferSelect;
 export type InsertLeKgEdge = typeof leKnowledgeGraphEdges.$inferInsert;
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-// PLAYBOOK MODULE — Sprint 70
+// -----------------------------------------------------------------------------
+// PLAYBOOK MODULE - Sprint 70
 // Tables: pb_playbooks, pb_steps, pb_runs, pb_run_steps, pb_kpi_entries, pb_linked_assets
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 
 export const pbPlaybooks = mysqlTable("pb_playbooks", {
   id:                int("id").autoincrement().primaryKey(),
@@ -5359,11 +5359,11 @@ export type PbLinkedAsset = typeof pbLinkedAssets.$inferSelect;
 export type InsertPbLinkedAsset = typeof pbLinkedAssets.$inferInsert;
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-// IP INTELLIGENCE MODULE — IP_OBJECT Schema (Sprint 71)
+// -----------------------------------------------------------------------------
+// IP INTELLIGENCE MODULE - IP_OBJECT Schema (Sprint 71)
 // Tables: ip_analyses, ip_entities, ip_whitespace, ip_vrl_feed
 // Lightbringer-style mock analysis engine with VRL integration
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 
 export const ipAnalyses = mysqlTable("ip_analyses", {
   id:              int("id").autoincrement().primaryKey(),
@@ -5432,7 +5432,7 @@ export const ipVrlFeed = mysqlTable("ip_vrl_feed", {
 export type IpVrlFeed = typeof ipVrlFeed.$inferSelect;
 export type InsertIpVrlFeed = typeof ipVrlFeed.$inferInsert;
 
-// ── Sprint 72: G Drive Workspace Automation ───────────────────────────────────
+// -- Sprint 72: G Drive Workspace Automation -----------------------------------
 export const gdWorkspaces = mysqlTable("gd_workspaces", {
   id:             int("id").autoincrement().primaryKey(),
   ventureId:      varchar("ventureId", { length: 50 }).notNull(),
@@ -5482,7 +5482,7 @@ export const gdPermissions = mysqlTable("gd_permissions", {
 export type GdPermission = typeof gdPermissions.$inferSelect;
 export type InsertGdPermission = typeof gdPermissions.$inferInsert;
 
-// ── Sprint 73: VRL Dashboard V4 ──────────────────────────────────────────────
+// -- Sprint 73: VRL Dashboard V4 ----------------------------------------------
 export const vrlStageGates = mysqlTable("vrl_stage_gates", {
   id:              int("id").autoincrement().primaryKey(),
   ventureId:       varchar("ventureId", { length: 50 }).notNull(),
@@ -5527,7 +5527,7 @@ export const vrlActionsLog = mysqlTable("vrl_actions_log", {
 export type VrlActionsLog = typeof vrlActionsLog.$inferSelect;
 export type InsertVrlActionsLog = typeof vrlActionsLog.$inferInsert;
 
-// ── Sprint 74: Spin-Off Sequence Automation ───────────────────────────────────
+// -- Sprint 74: Spin-Off Sequence Automation -----------------------------------
 export const spinoffSequences = mysqlTable("spinoff_sequences", {
   id:               int("id").autoincrement().primaryKey(),
   ventureId:        varchar("ventureId", { length: 50 }).notNull(),
@@ -5579,7 +5579,7 @@ export const spinoffHandoverPacks = mysqlTable("spinoff_handover_packs", {
 export type SpinoffHandoverPack = typeof spinoffHandoverPacks.$inferSelect;
 export type InsertSpinoffHandoverPack = typeof spinoffHandoverPacks.$inferInsert;
 
-// ── Sprint 75: Brand Data Pipeline ───────────────────────────────────────────
+// -- Sprint 75: Brand Data Pipeline -------------------------------------------
 export const brandAssets = mysqlTable("brand_assets", {
   id:             int("id").autoincrement().primaryKey(),
   ventureId:      varchar("ventureId", { length: 50 }).notNull(),
@@ -5625,7 +5625,7 @@ export const brandUpdateLog = mysqlTable("brand_update_log", {
 export type BrandUpdateLog = typeof brandUpdateLog.$inferSelect;
 export type InsertBrandUpdateLog = typeof brandUpdateLog.$inferInsert;
 
-// ── Sprint 76: Interview-to-Insight & Stage Gate Review ──────────────────────
+// -- Sprint 76: Interview-to-Insight & Stage Gate Review ----------------------
 export const insightTriggers = mysqlTable("insight_triggers", {
   id:          int("id").autoincrement().primaryKey(),
   ventureId:   varchar("ventureId", { length: 50 }).notNull(),
@@ -5688,20 +5688,20 @@ export type StageGateEvidence = typeof stageGateEvidence.$inferSelect;
 export type InsertStageGateEvidence = typeof stageGateEvidence.$inferInsert;
 
 
-// ══════════════════════════════════════════════════════════════════════════════
-// SRL MODULE — SUSTAINABILITY READINESS LEVEL DATA MODEL
+// ------------------------------------------------------------------------------
+// SRL MODULE - SUSTAINABILITY READINESS LEVEL DATA MODEL
 // Reference: BEBUS-SRL-DMS-001 v1.0 | April 2026
 // 11 entities covering the full SRL scoring lifecycle.
 //
 // Compatibility notes:
 //   - ventureId columns use VARCHAR(64) to match ventures.id PK
-//   - All timestamps use MySQL TIMESTAMP (not TIMESTAMPTZ — MySQL dialect)
-//   - UUIDs stored as VARCHAR(36) — MySQL has no native UUID type
-//   - JSONB → JSON (MySQL dialect)
+//   - All timestamps use MySQL TIMESTAMP (not TIMESTAMPTZ - MySQL dialect)
+//   - UUIDs stored as VARCHAR(36) - MySQL has no native UUID type
+//   - JSONB - JSON (MySQL dialect)
 //   - DATERANGE not supported in MySQL; replaced with periodStart + periodEnd DATE pair
-// ══════════════════════════════════════════════════════════════════════════════
+// ------------------------------------------------------------------------------
 
-// ── SRL Portfolio ─────────────────────────────────────────────────────────────
+// -- SRL Portfolio -------------------------------------------------------------
 // Master container for a set of ventures under common ownership or fund management.
 export const srlPortfolios = mysqlTable("srl_portfolios", {
   id:            varchar("id", { length: 36 }).primaryKey(),
@@ -5716,8 +5716,8 @@ export const srlPortfolios = mysqlTable("srl_portfolios", {
 export type SrlPortfolio = typeof srlPortfolios.$inferSelect;
 export type InsertSrlPortfolio = typeof srlPortfolios.$inferInsert;
 
-// ── SRL Venture Profile ───────────────────────────────────────────────────────
-// 1:1 companion to the existing ventures table — adds SRL-specific metadata
+// -- SRL Venture Profile -------------------------------------------------------
+// 1:1 companion to the existing ventures table - adds SRL-specific metadata
 // without altering the core ventures schema.
 export const srlVentureProfiles = mysqlTable("srl_venture_profiles", {
   ventureId:           varchar("ventureId", { length: 64 }).primaryKey(),
@@ -5739,7 +5739,7 @@ export const srlVentureProfiles = mysqlTable("srl_venture_profiles", {
 export type SrlVentureProfile = typeof srlVentureProfiles.$inferSelect;
 export type InsertSrlVentureProfile = typeof srlVentureProfiles.$inferInsert;
 
-// ── SRL Dimension Definition ──────────────────────────────────────────────────
+// -- SRL Dimension Definition --------------------------------------------------
 // Master reference for the 5 scoring dimensions: ENV, LCA, SMF, SOC, ESG.
 // Seeded once; change-controlled thereafter.
 export const srlDimensionDefinitions = mysqlTable("srl_dimension_definitions", {
@@ -5756,7 +5756,7 @@ export const srlDimensionDefinitions = mysqlTable("srl_dimension_definitions", {
 export type SrlDimensionDefinition = typeof srlDimensionDefinitions.$inferSelect;
 export type InsertSrlDimensionDefinition = typeof srlDimensionDefinitions.$inferInsert;
 
-// ── SRL KPI Definition ────────────────────────────────────────────────────────
+// -- SRL KPI Definition --------------------------------------------------------
 // Master library of all 44 KPI metrics with normalisation rules and reporting tags.
 export const srlKpiDefinitions = mysqlTable("srl_kpi_definitions", {
   id:                  varchar("id", { length: 36 }).primaryKey(),
@@ -5788,7 +5788,7 @@ export const srlKpiDefinitions = mysqlTable("srl_kpi_definitions", {
 export type SrlKpiDefinition = typeof srlKpiDefinitions.$inferSelect;
 export type InsertSrlKpiDefinition = typeof srlKpiDefinitions.$inferInsert;
 
-// ── SRL Data Source ───────────────────────────────────────────────────────────
+// -- SRL Data Source -----------------------------------------------------------
 // Registry of all data sources feeding KPI values.
 export const srlDataSources = mysqlTable("srl_data_sources", {
   id:          varchar("id", { length: 36 }).primaryKey(),
@@ -5804,9 +5804,9 @@ export const srlDataSources = mysqlTable("srl_data_sources", {
 export type SrlDataSource = typeof srlDataSources.$inferSelect;
 export type InsertSrlDataSource = typeof srlDataSources.$inferInsert;
 
-// ── SRL Weight Configuration ──────────────────────────────────────────────────
+// -- SRL Weight Configuration --------------------------------------------------
 // Stage-aware and sector-aware weight configuration matrix.
-// Default weights per BEBUS-SRL-DMS-001 §6 — seeded by migration.
+// Default weights per BEBUS-SRL-DMS-001 -6 - seeded by migration.
 export const srlWeightConfigs = mysqlTable("srl_weight_configs", {
   id:             varchar("id", { length: 36 }).primaryKey(),
   dimensionCode:  mysqlEnum("srlWcDimCode", ["ENV","LCA","SMF","SOC","ESG"]).notNull(),
@@ -5822,8 +5822,8 @@ export const srlWeightConfigs = mysqlTable("srl_weight_configs", {
 export type SrlWeightConfig = typeof srlWeightConfigs.$inferSelect;
 export type InsertSrlWeightConfig = typeof srlWeightConfigs.$inferInsert;
 
-// ── SRL Gate Configuration ────────────────────────────────────────────────────
-// Framework constants defining composite floor and block type for each gate (G1–G5).
+// -- SRL Gate Configuration ----------------------------------------------------
+// Framework constants defining composite floor and block type for each gate (G1-G5).
 export const srlGateConfigs = mysqlTable("srl_gate_configs", {
   id:                      varchar("id", { length: 36 }).primaryKey(),
   gateCode:                mysqlEnum("srlGcCode", ["G1","G2","G3","G4","G5"]).notNull().unique(),
@@ -5837,7 +5837,7 @@ export const srlGateConfigs = mysqlTable("srl_gate_configs", {
 export type SrlGateConfig = typeof srlGateConfigs.$inferSelect;
 export type InsertSrlGateConfig = typeof srlGateConfigs.$inferInsert;
 
-// ── SRL Gate Dimension Floors ─────────────────────────────────────────────────
+// -- SRL Gate Dimension Floors -------------------------------------------------
 // Per-dimension minimum scores required at each gate.
 export const srlGateDimensionFloors = mysqlTable("srl_gate_dimension_floors", {
   id:            varchar("id", { length: 36 }).primaryKey(),
@@ -5849,7 +5849,7 @@ export const srlGateDimensionFloors = mysqlTable("srl_gate_dimension_floors", {
 export type SrlGateDimensionFloor = typeof srlGateDimensionFloors.$inferSelect;
 export type InsertSrlGateDimensionFloor = typeof srlGateDimensionFloors.$inferInsert;
 
-// ── SRL Assessment ────────────────────────────────────────────────────────────
+// -- SRL Assessment ------------------------------------------------------------
 // Immutable scored assessment event for a venture at a point in time.
 // is_locked = TRUE once committed; amendments create a new version row.
 export const srlAssessments = mysqlTable("srl_assessments", {
@@ -5874,7 +5874,7 @@ export const srlAssessments = mysqlTable("srl_assessments", {
 export type SrlAssessment = typeof srlAssessments.$inferSelect;
 export type InsertSrlAssessment = typeof srlAssessments.$inferInsert;
 
-// ── SRL Dimension Score ───────────────────────────────────────────────────────
+// -- SRL Dimension Score -------------------------------------------------------
 // Per-dimension weighted score within a given assessment (5 rows per assessment).
 export const srlDimensionScores = mysqlTable("srl_dimension_scores", {
   id:             varchar("id", { length: 36 }).primaryKey(),
@@ -5893,7 +5893,7 @@ export const srlDimensionScores = mysqlTable("srl_dimension_scores", {
 export type SrlDimensionScore = typeof srlDimensionScores.$inferSelect;
 export type InsertSrlDimensionScore = typeof srlDimensionScores.$inferInsert;
 
-// ── SRL KPI Value ─────────────────────────────────────────────────────────────
+// -- SRL KPI Value -------------------------------------------------------------
 // Individual KPI metric observation feeding a dimension score.
 export const srlKpiValues = mysqlTable("srl_kpi_values", {
   id:               varchar("id", { length: 36 }).primaryKey(),
@@ -5917,9 +5917,9 @@ export const srlKpiValues = mysqlTable("srl_kpi_values", {
 export type SrlKpiValue = typeof srlKpiValues.$inferSelect;
 export type InsertSrlKpiValue = typeof srlKpiValues.$inferInsert;
 
-// ── SRL Gate Holding Status ───────────────────────────────────────────────────
+// -- SRL Gate Holding Status ---------------------------------------------------
 // Tracks the compounding gate state machine per venture per gate.
-// REMEDIATION → HOLDING → CLEARED (or ESCALATED after 2 restarts).
+// REMEDIATION - HOLDING - CLEARED (or ESCALATED after 2 restarts).
 export const srlGateHoldingStatus = mysqlTable("srl_gate_holding_status", {
   id:                    varchar("id", { length: 36 }).primaryKey(),
   ventureId:             varchar("ventureId", { length: 64 }).notNull(),
@@ -5937,7 +5937,7 @@ export const srlGateHoldingStatus = mysqlTable("srl_gate_holding_status", {
 export type SrlGateHoldingStatus = typeof srlGateHoldingStatus.$inferSelect;
 export type InsertSrlGateHoldingStatus = typeof srlGateHoldingStatus.$inferInsert;
 
-// ── SRL Reporting Output ──────────────────────────────────────────────────────
+// -- SRL Reporting Output ------------------------------------------------------
 // Persisted report artefacts generated from assessment data.
 export const srlReportingOutputs = mysqlTable("srl_reporting_outputs", {
   id:             varchar("id", { length: 36 }).primaryKey(),
@@ -5956,7 +5956,7 @@ export const srlReportingOutputs = mysqlTable("srl_reporting_outputs", {
 export type SrlReportingOutput = typeof srlReportingOutputs.$inferSelect;
 export type InsertSrlReportingOutput = typeof srlReportingOutputs.$inferInsert;
 
-// ── SRL Audit Log ─────────────────────────────────────────────────────────────
+// -- SRL Audit Log -------------------------------------------------------------
 // Append-only, immutable audit record for all SRL scoring events and config changes.
 // payloadHash is SHA-256 of the submitted payload for tamper detection.
 export const srlAuditLog = mysqlTable("srl_audit_log", {
@@ -5973,30 +5973,30 @@ export const srlAuditLog = mysqlTable("srl_audit_log", {
 export type SrlAuditLogEntry = typeof srlAuditLog.$inferSelect;
 export type InsertSrlAuditLogEntry = typeof srlAuditLog.$inferInsert;
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// MRL MODULE — Manufacturing Readiness Level Intelligence System v1.0
-// Five-engine architecture: PDE · SCIE · CSM · QCE · SIL
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
+// MRL MODULE - Manufacturing Readiness Level Intelligence System v1.0
+// Five-engine architecture: PDE - SCIE - CSM - QCE - SIL
+// -------------------------------------------------------------------------------
 
-// ── MRL Assessments ───────────────────────────────────────────────────────────
+// -- MRL Assessments -----------------------------------------------------------
 // Top-level assessment record capturing composite MRL level and subsystem scores.
 export const mrlAssessments = mysqlTable("mrl_assessments", {
   id:              varchar("id", { length: 36 }).primaryKey(),
   ventureId:       varchar("ventureId", { length: 64 }).notNull(),
-  mrlLevel:        int("mrlLevel").notNull(),           // 1–9
+  mrlLevel:        int("mrlLevel").notNull(),           // 1-9
   mrlLabel:        varchar("mrlLabel", { length: 64 }).notNull(), // e.g. "Pilot Proven"
   trlLevel:        int("trlLevel"),                     // TRL at time of assessment
-  // Subsystem scores (0–100 each)
+  // Subsystem scores (0-100 each)
   pdeScore:        int("pdeScore"),                     // Process Design Engine
   scieScore:       int("scieScore"),                    // Supply Chain Intelligence Engine
   csmScore:        int("csmScore"),                     // Cost & Scale Model
   qceScore:        int("qceScore"),                     // Quality & Compliance Engine
   silScore:        int("silScore"),                     // Sustainability Integration Layer
-  compositeScore:  int("compositeScore"),               // weighted composite (0–100)
+  compositeScore:  int("compositeScore"),               // weighted composite (0-100)
   // VRL contribution (MRL weight = 0.30 in VRL composite)
-  vrlContribution: float("vrlContribution"),            // MRL × 0.30 contribution to VRL
+  vrlContribution: float("vrlContribution"),            // MRL - 0.30 contribution to VRL
   // Risk summary
-  riskScoreOverall: int("riskScoreOverall"),            // 0–100 RAG aggregate
+  riskScoreOverall: int("riskScoreOverall"),            // 0-100 RAG aggregate
   riskRag:         mysqlEnum("mrlRiskRag", ["GREEN","AMBER","RED"]).default("AMBER"),
   // Integration model
   mrlRegion: mysqlEnum("mrlRegion", ["CN","UK","HYBRID"]).default("HYBRID"),
@@ -6009,7 +6009,7 @@ export const mrlAssessments = mysqlTable("mrl_assessments", {
 export type MrlAssessment = typeof mrlAssessments.$inferSelect;
 export type InsertMrlAssessment = typeof mrlAssessments.$inferInsert;
 
-// ── MRL Process Routes (Process Design Engine — PDE) ─────────────────────────
+// -- MRL Process Routes (Process Design Engine - PDE) -------------------------
 // Directed-graph process route: each record is a single operation node.
 export const mrlProcessRoutes = mysqlTable("mrl_process_routes", {
   id:              varchar("id", { length: 36 }).primaryKey(),
@@ -6023,14 +6023,14 @@ export const mrlProcessRoutes = mysqlTable("mrl_process_routes", {
   bottleneckNodes: json("bottleneckNodes"),              // operation IDs flagged as bottlenecks
   targetVolumePerYear: int("targetVolumePerYear"),
   cycleTimeModelSec:   int("cycleTimeModelSec"),         // theoretical cycle time (seconds)
-  pdeScore:        int("pdeScore"),                      // 0–100
+  pdeScore:        int("pdeScore"),                      // 0-100
   createdAt:       timestamp("createdAt").defaultNow().notNull(),
   updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 export type MrlProcessRoute = typeof mrlProcessRoutes.$inferSelect;
 export type InsertMrlProcessRoute = typeof mrlProcessRoutes.$inferInsert;
 
-// ── MRL Suppliers (Supply Chain Intelligence Engine — SCIE) ──────────────────
+// -- MRL Suppliers (Supply Chain Intelligence Engine - SCIE) ------------------
 // Supplier records linked to ventures via BOM tier.
 export const mrlSuppliers = mysqlTable("mrl_suppliers", {
   id:              varchar("id", { length: 36 }).primaryKey(),
@@ -6043,7 +6043,7 @@ export const mrlSuppliers = mysqlTable("mrl_suppliers", {
   // BOM components supplied: [{partNo, description, moq, leadTimeWeeks}]
   bomComponents:   json("bomComponents"),
   // Risk scoring
-  riskScore:       int("riskScore").default(0),           // 0–100 (RAG × P × I)
+  riskScore:       int("riskScore").default(0),           // 0-100 (RAG - P - I)
   riskRag:         mysqlEnum("mrlScieRag", ["GREEN","AMBER","RED"]).default("AMBER"),
   isSingleSource:  boolean("isSingleSource").default(false),
   hasDualSource:   boolean("hasDualSource").default(false),
@@ -6059,7 +6059,7 @@ export const mrlSuppliers = mysqlTable("mrl_suppliers", {
 export type MrlSupplier = typeof mrlSuppliers.$inferSelect;
 export type InsertMrlSupplier = typeof mrlSuppliers.$inferInsert;
 
-// ── MRL Cost Models (Cost & Scale Model — CSM) ───────────────────────────────
+// -- MRL Cost Models (Cost & Scale Model - CSM) -------------------------------
 // Parametric cost model with volume scenarios and unit economics.
 export const mrlCostModels = mysqlTable("mrl_cost_models", {
   id:              varchar("id", { length: 36 }).primaryKey(),
@@ -6083,7 +6083,7 @@ export const mrlCostModels = mysqlTable("mrl_cost_models", {
   labourRates:     json("labourRates"),
   // Sensitivity: [{driver, lowImpact, highImpact}]
   sensitivityFactors: json("sensitivityFactors"),
-  csmScore:        int("csmScore"),                      // 0–100
+  csmScore:        int("csmScore"),                      // 0-100
   notes:           text("notes"),
   createdAt:       timestamp("createdAt").defaultNow().notNull(),
   updatedAt:       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -6091,7 +6091,7 @@ export const mrlCostModels = mysqlTable("mrl_cost_models", {
 export type MrlCostModel = typeof mrlCostModels.$inferSelect;
 export type InsertMrlCostModel = typeof mrlCostModels.$inferInsert;
 
-// ── MRL Compliance Records (Quality & Compliance Engine — QCE) ───────────────
+// -- MRL Compliance Records (Quality & Compliance Engine - QCE) ---------------
 // Per-standard compliance tracking with certification roadmap.
 export const mrlComplianceRecords = mysqlTable("mrl_compliance_records", {
   id:              varchar("id", { length: 36 }).primaryKey(),
@@ -6132,22 +6132,22 @@ export const mrlComplianceRecords = mysqlTable("mrl_compliance_records", {
 export type MrlComplianceRecord = typeof mrlComplianceRecords.$inferSelect;
 export type InsertMrlComplianceRecord = typeof mrlComplianceRecords.$inferInsert;
 
-// ── MRL LCSA Records (Sustainability Integration Layer — SIL) ─────────────────
+// -- MRL LCSA Records (Sustainability Integration Layer - SIL) -----------------
 // Lifecycle and Social Assessment records aligned to ISO 14040/44 + SA8000.
 export const mrlLcsaRecords = mysqlTable("mrl_lcsa_records", {
   id:              varchar("id", { length: 36 }).primaryKey(),
   ventureId:       varchar("ventureId", { length: 64 }).notNull(),
   assessmentId:    varchar("assessmentId", { length: 36 }),
   // Carbon intensity
-  carbonScope1:    float("carbonScope1"),                // kgCO2e — direct emissions
-  carbonScope2:    float("carbonScope2"),                // kgCO2e — energy indirect
-  carbonScope3:    float("carbonScope3"),                // kgCO2e — value chain
+  carbonScope1:    float("carbonScope1"),                // kgCO2e - direct emissions
+  carbonScope2:    float("carbonScope2"),                // kgCO2e - energy indirect
+  carbonScope3:    float("carbonScope3"),                // kgCO2e - value chain
   carbonIntensityPerUnit: float("carbonIntensityPerUnit"), // kgCO2e per unit produced
   // LCSA composite
-  lcsaScore:       int("lcsaScore"),                     // 0–100
-  circularityIndex: float("circularityIndex"),           // 0–1 (1 = fully circular)
+  lcsaScore:       int("lcsaScore"),                     // 0-100
+  circularityIndex: float("circularityIndex"),           // 0-1 (1 = fully circular)
   // Social risk
-  socialRiskIndex: float("socialRiskIndex"),             // 0–100 (higher = more risk)
+  socialRiskIndex: float("socialRiskIndex"),             // 0-100 (higher = more risk)
   // Facility energy mix: [{facility, energyMixPct: {renewable, grid, fossil}}]
   facilityEnergyMix: json("facilityEnergyMix"),
   // CBAM exposure
@@ -6155,7 +6155,7 @@ export const mrlLcsaRecords = mysqlTable("mrl_lcsa_records", {
   cbamEstimatedCostGbp: float("cbamEstimatedCostGbp"),
   // Benchmark vs sector
   sectorBenchmarkScore: int("sectorBenchmarkScore"),
-  silScore:        int("silScore"),                      // 0–100
+  silScore:        int("silScore"),                      // 0-100
   notes:           text("notes"),
   recordedAt:      timestamp("recordedAt").defaultNow().notNull(),
   createdAt:       timestamp("createdAt").defaultNow().notNull(),
@@ -6164,8 +6164,8 @@ export const mrlLcsaRecords = mysqlTable("mrl_lcsa_records", {
 export type MrlLcsaRecord = typeof mrlLcsaRecords.$inferSelect;
 export type InsertMrlLcsaRecord = typeof mrlLcsaRecords.$inferInsert;
 
-// ── MRL Risk Register ─────────────────────────────────────────────────────────
-// Per-assessment risk register using RAG × Probability × Impact formula.
+// -- MRL Risk Register ---------------------------------------------------------
+// Per-assessment risk register using RAG - Probability - Impact formula.
 export const mrlRiskRegister = mysqlTable("mrl_risk_register", {
   id:              varchar("id", { length: 36 }).primaryKey(),
   ventureId:       varchar("ventureId", { length: 64 }).notNull(),
@@ -6178,11 +6178,11 @@ export const mrlRiskRegister = mysqlTable("mrl_risk_register", {
     "Sustainability"
   ]).notNull(),
   description:     text("description").notNull(),
-  // RAG × Probability × Impact = Risk Score (0–100)
+  // RAG - Probability - Impact = Risk Score (0-100)
   rag:             mysqlEnum("mrlRag", ["G","A","R"]).notNull(), // 1=G / 2=A / 3=R
-  probability:     int("probability").notNull(),                 // 0–100
-  impact:          int("impact").notNull(),                      // 0–100
-  riskScore:       int("riskScore").notNull(),                   // computed: rag×P×I / 300
+  probability:     int("probability").notNull(),                 // 0-100
+  impact:          int("impact").notNull(),                      // 0-100
+  riskScore:       int("riskScore").notNull(),                   // computed: rag-P-I / 300
   priority:        mysqlEnum("mrlRiskPriority", ["LOW","MED","HIGH"]).default("MED"),
   mitigationAction: text("mitigationAction"),
   mitigationOwner: varchar("mitigationOwner", { length: 128 }),
@@ -6194,10 +6194,10 @@ export const mrlRiskRegister = mysqlTable("mrl_risk_register", {
 export type MrlRiskItem = typeof mrlRiskRegister.$inferSelect;
 export type InsertMrlRiskItem = typeof mrlRiskRegister.$inferInsert;
 
-// ── MRL Level Definitions (reference / seed data) ────────────────────────────
+// -- MRL Level Definitions (reference / seed data) ----------------------------
 // Canonical MRL level definitions aligned to the ECOBLEND MRL framework v1.0.
 export const mrlLevelDefs = mysqlTable("mrl_level_defs", {
-  level:           int("level").primaryKey(),            // 1–9
+  level:           int("level").primaryKey(),            // 1-9
   label:           varchar("label", { length: 64 }).notNull(),  // e.g. "Pilot Proven"
   trlAlignment:    varchar("trlAlignment", { length: 16 }),     // e.g. "5-6"
   description:     text("description").notNull(),
@@ -6208,11 +6208,11 @@ export const mrlLevelDefs = mysqlTable("mrl_level_defs", {
 export type MrlLevelDef = typeof mrlLevelDefs.$inferSelect;
 export type InsertMrlLevelDef = typeof mrlLevelDefs.$inferInsert;
 
-// ── TRL/MRL Sync Engine Tables ────────────────────────────────────────────────
+// -- TRL/MRL Sync Engine Tables ------------------------------------------------
 // Three tables only. ventures table already exists from MRL module.
 // Spec: BEBUS-SYNC-SE-001 / trlmrlsyncengine.pdf
 
-// sync_assessments — insert-only, one row per computeSync() call
+// sync_assessments - insert-only, one row per computeSync() call
 export const syncAssessments = mysqlTable("sync_assessments", {
   syncId:           varchar("syncId", { length: 36 }).primaryKey(),
   ventureId:        varchar("ventureId", { length: 36 }).notNull(),
@@ -6238,7 +6238,7 @@ export const syncAssessments = mysqlTable("sync_assessments", {
 export type SyncAssessment = typeof syncAssessments.$inferSelect;
 export type InsertSyncAssessment = typeof syncAssessments.$inferInsert;
 
-// sync_history — append-only, one row per TRL or MRL change
+// sync_history - append-only, one row per TRL or MRL change
 export const syncHistory = mysqlTable("sync_history", {
   historyId:   varchar("historyId", { length: 36 }).primaryKey(),
   ventureId:   varchar("ventureId", { length: 36 }).notNull(),
@@ -6250,7 +6250,7 @@ export const syncHistory = mysqlTable("sync_history", {
 export type SyncHistoryRow = typeof syncHistory.$inferSelect;
 export type InsertSyncHistoryRow = typeof syncHistory.$inferInsert;
 
-// sync_scenarios — 5 seeded demo scenarios (isDemo = true)
+// sync_scenarios - 5 seeded demo scenarios (isDemo = true)
 export const syncScenarios = mysqlTable("sync_scenarios", {
   scenarioId:        varchar("scenarioId", { length: 36 }).primaryKey(),
   name:              varchar("name", { length: 80 }).notNull(),
@@ -6268,12 +6268,12 @@ export type SyncScenario = typeof syncScenarios.$inferSelect;
 export type InsertSyncScenario = typeof syncScenarios.$inferInsert;
 
 // ============================================================
-// MRL SCORING SYSTEM — BEBUS-MRL-SCORE-001
+// MRL SCORING SYSTEM - BEBUS-MRL-SCORE-001
 // Tables: scoring_sessions, scoring_category_results, scoring_datasets
 // Do NOT recreate: ventures, mrl_assessments (already exist)
 // ============================================================
 
-// scoring_sessions — insert-only audit log of every MRL score run
+// scoring_sessions - insert-only audit log of every MRL score run
 export const scoringSessions = mysqlTable("scoring_sessions", {
   sessionId:       varchar("sessionId", { length: 36 }).primaryKey(),
   ventureId:       varchar("ventureId", { length: 36 }),
@@ -6294,7 +6294,7 @@ export const scoringSessions = mysqlTable("scoring_sessions", {
 export type ScoringSession = typeof scoringSessions.$inferSelect;
 export type InsertScoringSession = typeof scoringSessions.$inferInsert;
 
-// scoring_category_results — one row per category per session (5 rows per session)
+// scoring_category_results - one row per category per session (5 rows per session)
 export const scoringCategoryResults = mysqlTable("scoring_category_results", {
   resultId:        varchar("resultId", { length: 36 }).primaryKey(),
   sessionId:       varchar("sessionId", { length: 36 }).notNull(),
@@ -6310,7 +6310,7 @@ export const scoringCategoryResults = mysqlTable("scoring_category_results", {
 export type ScoringCategoryResult = typeof scoringCategoryResults.$inferSelect;
 export type InsertScoringCategoryResult = typeof scoringCategoryResults.$inferInsert;
 
-// scoring_datasets — seeded demo datasets (4 canonical examples)
+// scoring_datasets - seeded demo datasets (4 canonical examples)
 export const scoringDatasets = mysqlTable("scoring_datasets", {
   datasetId:           varchar("datasetId", { length: 36 }).primaryKey(),
   name:                varchar("name", { length: 80 }).notNull(),
@@ -6326,16 +6326,16 @@ export const scoringDatasets = mysqlTable("scoring_datasets", {
 export type ScoringDataset = typeof scoringDatasets.$inferSelect;
 export type InsertScoringDataset = typeof scoringDatasets.$inferInsert;
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// VRL WEIGHTED GATING MODEL — 9-Vector Assessment (BEBUS-VRL-UPDATE-001)
-// Spec: EcoBlendVRLUpdateManusPrompt.pdf — Changes 1–6
-// ═══════════════════════════════════════════════════════════════════════════════
-// vrl_assessments — one row per scored assessment, insert-only audit trail
+// -------------------------------------------------------------------------------
+// VRL WEIGHTED GATING MODEL - 9-Vector Assessment (BEBUS-VRL-UPDATE-001)
+// Spec: EcoBlendVRLUpdateManusPrompt.pdf - Changes 1-6
+// -------------------------------------------------------------------------------
+// vrl_assessments - one row per scored assessment, insert-only audit trail
 export const vrlAssessments = mysqlTable("vrl_assessments", {
   id:                   varchar("id", { length: 64 }).primaryKey(),
   ventureId:            varchar("ventureId", { length: 64 }).notNull(),
   createdAt:            timestamp("createdAt").defaultNow().notNull(),
-  // ── 9 raw input scores (0–100) ──────────────────────────────────────────────
+  // -- 9 raw input scores (0-100) ----------------------------------------------
   trlScore:             int("trl_score").notNull(),
   mrlScore:             int("mrl_score").notNull(),
   brlScore:             int("brl_score").notNull(),
@@ -6345,30 +6345,30 @@ export const vrlAssessments = mysqlTable("vrl_assessments", {
   frlScore:             int("frl_score").notNull(),
   regScore:             int("reg_score").notNull(),
   srlScore:             int("srl_score").notNull(),
-  // ── 5 computed meta-domain scores ──────────────────────────────────────────
+  // -- 5 computed meta-domain scores ------------------------------------------
   productScore:         decimal("product_score",      { precision: 5, scale: 2 }),
   marketScore:          decimal("market_score",       { precision: 5, scale: 2 }),
   executionScore:       decimal("execution_score",    { precision: 5, scale: 2 }),
   structuralScore:      decimal("structural_score",   { precision: 5, scale: 2 }),
   sustainabilityScore:  decimal("sustainability_score", { precision: 5, scale: 2 }),
-  // ── VRL output ─────────────────────────────────────────────────────────────
+  // -- VRL output -------------------------------------------------------------
   baseAverage:          decimal("base_average",       { precision: 5, scale: 2 }),
   isVetoed:             boolean("is_vetoed").default(false).notNull(),
   globalVrlScore:       int("global_vrl_score"),
   bandLabel:            varchar("band_label", { length: 64 }),
-  // ── Metadata ───────────────────────────────────────────────────────────────
+  // -- Metadata ---------------------------------------------------------------
   submittedBy:          varchar("submitted_by", { length: 128 }),
 });
 export type VrlAssessment = typeof vrlAssessments.$inferSelect;
 export type InsertVrlAssessment = typeof vrlAssessments.$inferInsert;
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// COACHING MODULE V2 — Execution Discipline Engine (BEBUS-COACH-V2-001)
+// -------------------------------------------------------------------------------
+// COACHING MODULE V2 - Execution Discipline Engine (BEBUS-COACH-V2-001)
 // Architecture Pack: EcoBlendCoachingV2ManusArchitecturePack.docx
 // Tables created in FK dependency order per Section 2.2
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
 
-// coaching_coaches — coach profiles and availability
+// coaching_coaches - coach profiles and availability
 export const coachingCoaches = mysqlTable("coaching_coaches", {
   id:           varchar("id", { length: 64 }).primaryKey(),
   name:         varchar("name", { length: 128 }).notNull(),
@@ -6383,11 +6383,11 @@ export const coachingCoaches = mysqlTable("coaching_coaches", {
 export type CoachingCoach = typeof coachingCoaches.$inferSelect;
 export type InsertCoachingCoach = typeof coachingCoaches.$inferInsert;
 
-// coaching_commitments — weekly founder commitments with measurable success indicators
+// coaching_commitments - weekly founder commitments with measurable success indicators
 export const coachingCommitments = mysqlTable("coaching_commitments", {
   id:          varchar("id", { length: 64 }).primaryKey(),
-  founderId:   int("founderId").notNull(),  // FK → founders.id
-  ventureId:   varchar("ventureId", { length: 64 }),  // FK → ventures.id
+  founderId:   int("founderId").notNull(),  // FK - founders.id
+  ventureId:   varchar("ventureId", { length: 64 }),  // FK - ventures.id
   week:        date("week").notNull(),  // ISO week start date (Monday)
   task:        text("task").notNull(),
   metric:      text("metric"),  // measurable success indicator
@@ -6400,11 +6400,11 @@ export const coachingCommitments = mysqlTable("coaching_commitments", {
 export type CoachingCommitment = typeof coachingCommitments.$inferSelect;
 export type InsertCoachingCommitment = typeof coachingCommitments.$inferInsert;
 
-// coaching_sessions — logged coaching sessions with structured action items
+// coaching_sessions - logged coaching sessions with structured action items
 export const coachingSessions = mysqlTable("coaching_sessions", {
   id:          varchar("id", { length: 64 }).primaryKey(),
-  coachId:     varchar("coachId", { length: 64 }).notNull(),  // FK → coaching_coaches.id
-  founderId:   int("founderId").notNull(),  // FK → founders.id
+  coachId:     varchar("coachId", { length: 64 }).notNull(),  // FK - coaching_coaches.id
+  founderId:   int("founderId").notNull(),  // FK - founders.id
   ventureId:   varchar("ventureId", { length: 64 }),
   sessionDate: date("sessionDate").notNull(),
   notes:       text("notes"),  // min 200 chars enforced in procedure
@@ -6417,10 +6417,10 @@ export const coachingSessions = mysqlTable("coaching_sessions", {
 export type CoachingSession = typeof coachingSessions.$inferSelect;
 export type InsertCoachingSession = typeof coachingSessions.$inferInsert;
 
-// coaching_behaviour_metrics — weekly behavioural metrics per founder
+// coaching_behaviour_metrics - weekly behavioural metrics per founder
 export const coachingBehaviourMetrics = mysqlTable("coaching_behaviour_metrics", {
   id:                 varchar("id", { length: 64 }).primaryKey(),
-  founderId:          int("founderId").notNull(),  // FK → founders.id
+  founderId:          int("founderId").notNull(),  // FK - founders.id
   ventureId:          varchar("ventureId", { length: 64 }),
   week:               date("week").notNull(),  // ISO week start date
   completionRate:     decimal("completionRate", { precision: 5, scale: 2 }).default("0.00"),  // 0.00 to 100.00
@@ -6434,11 +6434,11 @@ export const coachingBehaviourMetrics = mysqlTable("coaching_behaviour_metrics",
 export type CoachingBehaviourMetric = typeof coachingBehaviourMetrics.$inferSelect;
 export type InsertCoachingBehaviourMetric = typeof coachingBehaviourMetrics.$inferInsert;
 
-// coaching_frl — Founder Readiness Level scores per founder per week
-// FRL = (0.4 × completion_rate) + (0.2 × focus_hours) - (0.2 × delay_time) - (0.2 × missed_commitments)
+// coaching_frl - Founder Readiness Level scores per founder per week
+// FRL = (0.4 - completion_rate) + (0.2 - focus_hours) - (0.2 - delay_time) - (0.2 - missed_commitments)
 export const coachingFrl = mysqlTable("coaching_frl", {
   id:           varchar("id", { length: 64 }).primaryKey(),
-  founderId:    int("founderId").notNull(),  // FK → founders.id
+  founderId:    int("founderId").notNull(),  // FK - founders.id
   ventureId:    varchar("ventureId", { length: 64 }),
   week:         date("week").notNull(),
   score:        decimal("score", { precision: 5, scale: 2 }).notNull().default("0.00"),  // 0.00 to 100.00
@@ -6454,11 +6454,11 @@ export const coachingFrl = mysqlTable("coaching_frl", {
 export type CoachingFrl = typeof coachingFrl.$inferSelect;
 export type InsertCoachingFrl = typeof coachingFrl.$inferInsert;
 
-// coaching_vrl_link — FRL-adjusted VRL execution score per venture
-// execution_score = FRL.score × frl_weight; adjusted_vrl = base_vrl + execution_score (capped at 100)
+// coaching_vrl_link - FRL-adjusted VRL execution score per venture
+// execution_score = FRL.score - frl_weight; adjusted_vrl = base_vrl + execution_score (capped at 100)
 export const coachingVrlLink = mysqlTable("coaching_vrl_link", {
   id:             varchar("id", { length: 64 }).primaryKey(),
-  ventureId:      varchar("ventureId", { length: 64 }).notNull().unique(),  // FK → ventures.id
+  ventureId:      varchar("ventureId", { length: 64 }).notNull().unique(),  // FK - ventures.id
   frlWeight:      decimal("frlWeight", { precision: 3, scale: 2 }).notNull().default("0.25"),  // configurable per venture, default 0.25
   executionScore: decimal("executionScore", { precision: 5, scale: 2 }).default("0.00"),  // PRL-adjusted execution input
   baseVrl:        decimal("baseVrl", { precision: 5, scale: 2 }).default("0.00"),  // base VRL before PRL adjustment
@@ -6469,11 +6469,11 @@ export const coachingVrlLink = mysqlTable("coaching_vrl_link", {
 export type CoachingVrlLink = typeof coachingVrlLink.$inferSelect;
 export type InsertCoachingVrlLink = typeof coachingVrlLink.$inferInsert;
 
-// coaching_insights — AI-generated behavioural analysis per founder per week
+// coaching_insights - AI-generated behavioural analysis per founder per week
 // Populated by LLM integration; stores structured risks, patterns, recommendations
 export const coachingInsights = mysqlTable("coaching_insights", {
   id:              varchar("id", { length: 64 }).primaryKey(),
-  founderId:       int("founderId").notNull(),  // FK → founders.id
+  founderId:       int("founderId").notNull(),  // FK - founders.id
   ventureId:       varchar("ventureId", { length: 64 }),
   week:            date("week").notNull(),
   prlScoreAtTime:  decimal("prlScoreAtTime", { precision: 5, scale: 2 }),
@@ -6490,16 +6490,16 @@ export const coachingInsights = mysqlTable("coaching_insights", {
 export type CoachingInsight = typeof coachingInsights.$inferSelect;
 export type InsertCoachingInsight = typeof coachingInsights.$inferInsert;
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Sprint 78 — Coach Assignment & Commitment Templates
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
+// Sprint 78 - Coach Assignment & Commitment Templates
+// -------------------------------------------------------------------------------
 
-// coaching_assignments — links coaches to founders/ventures
+// coaching_assignments - links coaches to founders/ventures
 export const coachingAssignments = mysqlTable("coaching_assignments", {
   id:          varchar("id", { length: 64 }).primaryKey(),
-  coachId:     varchar("coachId", { length: 64 }).notNull(),   // FK → coaching_coaches.id
-  founderId:   int("founderId").notNull(),                      // FK → founders.id
-  ventureId:   varchar("ventureId", { length: 64 }),            // FK → ventures.id (optional)
+  coachId:     varchar("coachId", { length: 64 }).notNull(),   // FK - coaching_coaches.id
+  founderId:   int("founderId").notNull(),                      // FK - founders.id
+  ventureId:   varchar("ventureId", { length: 64 }),            // FK - ventures.id (optional)
   role:        mysqlEnum("role", ["primary", "secondary", "specialist"]).notNull().default("primary"),
   startDate:   date("startDate").notNull(),
   endDate:     date("endDate"),                                  // null = active
@@ -6510,10 +6510,10 @@ export const coachingAssignments = mysqlTable("coaching_assignments", {
 export type CoachingAssignment = typeof coachingAssignments.$inferSelect;
 export type InsertCoachingAssignment = typeof coachingAssignments.$inferInsert;
 
-// coaching_commitment_templates — pre-built commitment sets per VRL stage
+// coaching_commitment_templates - pre-built commitment sets per VRL stage
 export const coachingCommitmentTemplates = mysqlTable("coaching_commitment_templates", {
   id:                  varchar("id", { length: 64 }).primaryKey(),
-  vrlStage:            int("vrlStage").notNull(),                // 1–4 (maps to VRL stages)
+  vrlStage:            int("vrlStage").notNull(),                // 1-4 (maps to VRL stages)
   title:               varchar("title", { length: 256 }).notNull(),
   description:         text("description"),
   category:            mysqlEnum("category", ["product", "market", "execution", "structural", "sustainability"]).notNull().default("execution"),
@@ -6526,7 +6526,7 @@ export const coachingCommitmentTemplates = mysqlTable("coaching_commitment_templ
 export type CoachingCommitmentTemplate = typeof coachingCommitmentTemplates.$inferSelect;
 export type InsertCoachingCommitmentTemplate = typeof coachingCommitmentTemplates.$inferInsert;
 
-// ── Sprint 79: Coaching Onboarding State ─────────────────────────────────────
+// -- Sprint 79: Coaching Onboarding State -------------------------------------
 export const coachingOnboardingState = mysqlTable("coaching_onboarding_state", {
   id: int("id").autoincrement().primaryKey(),
   founderId: varchar("founder_id", { length: 255 }).notNull().unique(),
@@ -6540,19 +6540,19 @@ export const coachingOnboardingState = mysqlTable("coaching_onboarding_state", {
 export type CoachingOnboardingState = typeof coachingOnboardingState.$inferSelect;
 export type InsertCoachingOnboardingState = typeof coachingOnboardingState.$inferInsert;
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Sprint 80 — PRL Trend Alerts
-// ═══════════════════════════════════════════════════════════════════════════════
-// prl_trend_alerts — auto-generated alerts when PRL drops or risk escalates
+// -------------------------------------------------------------------------------
+// Sprint 80 - PRL Trend Alerts
+// -------------------------------------------------------------------------------
+// prl_trend_alerts - auto-generated alerts when PRL drops or risk escalates
 export const prlTrendAlerts = mysqlTable("prl_trend_alerts", {
   id:           varchar("id", { length: 64 }).primaryKey(),
-  founderId:    int("founderId").notNull(),          // FK → founders.id
-  ventureId:    varchar("ventureId", { length: 64 }), // FK → ventures.id
+  founderId:    int("founderId").notNull(),          // FK - founders.id
+  ventureId:    varchar("ventureId", { length: 64 }), // FK - ventures.id
   alertType:    mysqlEnum("alertType", [
     "sharp_drop",        // >10pt WoW decline
     "sustained_high",    // HIGH risk 3+ consecutive weeks
     "first_high_risk",   // first time entering HIGH risk
-    "recovery",          // PRL improved from HIGH → MEDIUM/LOW
+    "recovery",          // PRL improved from HIGH - MEDIUM/LOW
   ]).notNull(),
   severity:     mysqlEnum("severity", ["critical", "warning", "info"]).notNull().default("warning"),
   message:      text("message").notNull(),           // human-readable alert message
@@ -6567,14 +6567,14 @@ export const prlTrendAlerts = mysqlTable("prl_trend_alerts", {
 export type PrlTrendAlert = typeof prlTrendAlerts.$inferSelect;
 export type InsertPrlTrendAlert = typeof prlTrendAlerts.$inferInsert;
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Sprint 81 — Founder Progress Reports
-// ═══════════════════════════════════════════════════════════════════════════════
-// founder_progress_reports — AI-generated progress reports per founder
+// -------------------------------------------------------------------------------
+// Sprint 81 - Founder Progress Reports
+// -------------------------------------------------------------------------------
+// founder_progress_reports - AI-generated progress reports per founder
 export const founderProgressReports = mysqlTable("founder_progress_reports", {
   id:           varchar("id", { length: 64 }).primaryKey(),
-  founderId:    int("founderId").notNull(),          // FK → founders.id
-  ventureId:    varchar("ventureId", { length: 64 }), // FK → ventures.id
+  founderId:    int("founderId").notNull(),          // FK - founders.id
+  ventureId:    varchar("ventureId", { length: 64 }), // FK - ventures.id
   reportHtml:   longtext("reportHtml").notNull(),    // rendered HTML content
   aiNarrative:  text("aiNarrative"),                 // AI-generated executive summary
   prlSummary:   json("prlSummary"),                  // { current, trend, weeksTracked, avgScore }
@@ -6589,13 +6589,13 @@ export const founderProgressReports = mysqlTable("founder_progress_reports", {
 export type FounderProgressReport = typeof founderProgressReports.$inferSelect;
 export type InsertFounderProgressReport = typeof founderProgressReports.$inferInsert;
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Sprint 82 — Coach Performance Leaderboard
-// ═══════════════════════════════════════════════════════════════════════════════
-// coach_performance_snapshots — weekly computed performance metrics per coach
+// -------------------------------------------------------------------------------
+// Sprint 82 - Coach Performance Leaderboard
+// -------------------------------------------------------------------------------
+// coach_performance_snapshots - weekly computed performance metrics per coach
 export const coachPerformanceSnapshots = mysqlTable("coach_performance_snapshots", {
   id:                       varchar("id", { length: 64 }).primaryKey(),
-  coachId:                  varchar("coachId", { length: 64 }).notNull(), // FK → coaching_coaches.id
+  coachId:                  varchar("coachId", { length: 64 }).notNull(), // FK - coaching_coaches.id
   weekOf:                   date("weekOf").notNull(),                      // ISO week start date
   foundersAssigned:         int("foundersAssigned").notNull().default(0),
   sessionCount:             int("sessionCount").notNull().default(0),
@@ -6603,16 +6603,16 @@ export const coachPerformanceSnapshots = mysqlTable("coach_performance_snapshots
   commitmentCompletionRate: decimal("commitmentCompletionRate", { precision: 5, scale: 2 }).notNull().default("0.00"), // % of commitments completed
   highRiskFounders:         int("highRiskFounders").notNull().default(0),  // founders in HIGH risk this week
   recoveredFounders:        int("recoveredFounders").notNull().default(0), // founders moved out of HIGH risk
-  compositeScore:           decimal("compositeScore", { precision: 5, scale: 2 }).notNull().default("0.00"), // 0–100 leaderboard score
+  compositeScore:           decimal("compositeScore", { precision: 5, scale: 2 }).notNull().default("0.00"), // 0-100 leaderboard score
   rank:                     int("rank"),                                    // rank among all coaches this week
   computedAt:               timestamp("computedAt").defaultNow().notNull(),
 });
 export type CoachPerformanceSnapshot = typeof coachPerformanceSnapshots.$inferSelect;
 export type InsertCoachPerformanceSnapshot = typeof coachPerformanceSnapshots.$inferInsert;
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Sprint 83 — Automated Alert Scheduling
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
+// Sprint 83 - Automated Alert Scheduling
+// -------------------------------------------------------------------------------
 export const alertScheduleLog = mysqlTable("alert_schedule_log", {
   id:               varchar("id", { length: 64 }).primaryKey(),
   triggeredAt:      timestamp("triggeredAt").defaultNow().notNull(),
@@ -6630,9 +6630,9 @@ export const alertScheduleLog = mysqlTable("alert_schedule_log", {
 export type AlertScheduleLog = typeof alertScheduleLog.$inferSelect;
 export type InsertAlertScheduleLog = typeof alertScheduleLog.$inferInsert;
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Sprint 84 — Progress Report Email Delivery Log
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
+// Sprint 84 - Progress Report Email Delivery Log
+// -------------------------------------------------------------------------------
 export const reportDeliveryLog = mysqlTable("report_delivery_log", {
   id:             varchar("id", { length: 64 }).primaryKey(),
   reportId:       varchar("reportId", { length: 64 }).notNull(),
@@ -6647,9 +6647,9 @@ export const reportDeliveryLog = mysqlTable("report_delivery_log", {
 export type ReportDeliveryLog = typeof reportDeliveryLog.$inferSelect;
 export type InsertReportDeliveryLog = typeof reportDeliveryLog.$inferInsert;
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Sprint 85 — Coach Trend Cache (sparkline data for leaderboard)
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
+// Sprint 85 - Coach Trend Cache (sparkline data for leaderboard)
+// -------------------------------------------------------------------------------
 export const coachTrendCache = mysqlTable("coach_trend_cache", {
   id:             varchar("id", { length: 64 }).primaryKey(),
   coachId:        varchar("coachId", { length: 64 }).notNull(),
@@ -6665,9 +6665,9 @@ export const coachTrendCache = mysqlTable("coach_trend_cache", {
 export type CoachTrendCache = typeof coachTrendCache.$inferSelect;
 export type InsertCoachTrendCache = typeof coachTrendCache.$inferInsert;
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Sprint 86 — Founder Self-Assessment Portal
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
+// Sprint 86 - Founder Self-Assessment Portal
+// -------------------------------------------------------------------------------
 export const founderSelfAssessments = mysqlTable("founder_self_assessments", {
   id:                    varchar("id", { length: 64 }).primaryKey(),
   founderId:             int("founderId").notNull(),
@@ -6693,9 +6693,9 @@ export const founderSelfAssessments = mysqlTable("founder_self_assessments", {
 export type FounderSelfAssessment = typeof founderSelfAssessments.$inferSelect;
 export type InsertFounderSelfAssessment = typeof founderSelfAssessments.$inferInsert;
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Sprint 88 — Commitment Template Library
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
+// Sprint 88 - Commitment Template Library
+// -------------------------------------------------------------------------------
 export const commitmentTemplates = mysqlTable("commitment_templates", {
   id:           varchar("id", { length: 64 }).primaryKey(),
   title:        varchar("title", { length: 256 }).notNull(),
@@ -6714,9 +6714,9 @@ export const commitmentTemplates = mysqlTable("commitment_templates", {
 export type CommitmentTemplate = typeof commitmentTemplates.$inferSelect;
 export type InsertCommitmentTemplate = typeof commitmentTemplates.$inferInsert;
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Sprint 89 — Founder Leaderboard
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
+// Sprint 89 - Founder Leaderboard
+// -------------------------------------------------------------------------------
 export const founderLeaderboardSnapshots = mysqlTable("founder_leaderboard_snapshots", {
   id:             varchar("id", { length: 64 }).primaryKey(),
   founderId:      varchar("founderId", { length: 128 }).notNull(),
@@ -6736,9 +6736,9 @@ export const founderLeaderboardSnapshots = mysqlTable("founder_leaderboard_snaps
 export type FounderLeaderboardSnapshot = typeof founderLeaderboardSnapshots.$inferSelect;
 export type InsertFounderLeaderboardSnapshot = typeof founderLeaderboardSnapshots.$inferInsert;
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Sprint 90 — Coach Session Scheduler
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
+// Sprint 90 - Coach Session Scheduler
+// -------------------------------------------------------------------------------
 export const coachingSessionRequests = mysqlTable("coaching_session_requests", {
   id:               varchar("id", { length: 64 }).primaryKey(),
   founderId:        varchar("founderId", { length: 128 }).notNull(),
@@ -6760,9 +6760,9 @@ export const coachingSessionRequests = mysqlTable("coaching_session_requests", {
 export type CoachingSessionRequest = typeof coachingSessionRequests.$inferSelect;
 export type InsertCoachingSessionRequest = typeof coachingSessionRequests.$inferInsert;
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Sprint 91 — Template Effectiveness Analytics
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
+// Sprint 91 - Template Effectiveness Analytics
+// -------------------------------------------------------------------------------
 export const templateEffectivenessCache = mysqlTable("template_effectiveness_cache", {
   id:                    varchar("id", { length: 64 }).primaryKey(),
   templateId:            varchar("templateId", { length: 64 }).notNull(),
@@ -6780,9 +6780,9 @@ export const templateEffectivenessCache = mysqlTable("template_effectiveness_cac
 export type TemplateEffectivenessCache = typeof templateEffectivenessCache.$inferSelect;
 export type InsertTemplateEffectivenessCache = typeof templateEffectivenessCache.$inferInsert;
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Sprint 92 — Founder Notification Centre
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
+// Sprint 92 - Founder Notification Centre
+// -------------------------------------------------------------------------------
 export const founderNotifications = mysqlTable("founder_notifications", {
   id:           varchar("id", { length: 64 }).primaryKey(),
   ventureId:    varchar("ventureId", { length: 64 }).notNull(),
@@ -6812,9 +6812,9 @@ export const founderNotifications = mysqlTable("founder_notifications", {
 export type FounderNotification = typeof founderNotifications.$inferSelect;
 export type InsertFounderNotification = typeof founderNotifications.$inferInsert;
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Sprint 94 — PRL Goal Setting
-// ═══════════════════════════════════════════════════════════════════════════════
+// -------------------------------------------------------------------------------
+// Sprint 94 - PRL Goal Setting
+// -------------------------------------------------------------------------------
 export const frlGoals = mysqlTable("frl_goals", {
   id:               varchar("id", { length: 64 }).primaryKey(),
   ventureId:        varchar("ventureId", { length: 64 }).notNull(),
@@ -6834,14 +6834,14 @@ export const frlGoals = mysqlTable("frl_goals", {
 export type FrlGoal = typeof frlGoals.$inferSelect;
 export type InsertFrlGoal = typeof frlGoals.$inferInsert;
 
-// ── Sprint 95 — Flower Metrics Export Log ─────────────────────────────────────
+// -- Sprint 95 - Flower Metrics Export Log -------------------------------------
 export const flowerExportLog = mysqlTable("flower_export_log", {
   id: int("id").autoincrement().primaryKey(),
   ventureId: varchar("ventureId", { length: 64 }).notNull(),
   ventureName: varchar("ventureName", { length: 255 }).notNull(),
   exportedBy: varchar("exportedBy", { length: 255 }).notNull(),
   rowCount: int("rowCount").notNull().default(0),         // number of KPI rows in the CSV
-  snapshotMonth: varchar("snapshotMonth", { length: 7 }), // "2026-03" — latest month exported
+  snapshotMonth: varchar("snapshotMonth", { length: 7 }), // "2026-03" - latest month exported
   includesFinancials: boolean("includesFinancials").default(true),
   includesReadiness: boolean("includesReadiness").default(true),
   includesGrowthMetrics: boolean("includesGrowthMetrics").default(true),
@@ -6852,8 +6852,8 @@ export const flowerExportLog = mysqlTable("flower_export_log", {
 export type FlowerExportLog = typeof flowerExportLog.$inferSelect;
 export type InsertFlowerExportLog = typeof flowerExportLog.$inferInsert;
 
-// ── product_readiness_levels — PRL Composite (TRL × MRL) per venture ─────────
-// PRL = (trlWeight × TRL_norm) + (mrlWeight × MRL_norm)
+// -- product_readiness_levels - PRL Composite (TRL - MRL) per venture ---------
+// PRL = (trlWeight - TRL_norm) + (mrlWeight - MRL_norm)
 // Replaces TRL as the technology/product dimension in the VRL formula.
 // Default weights: TRL 50%, MRL 50% (equal parallel tracks).
 // Stage-specific weights can override via trlWeight / mrlWeight fields.
@@ -6861,18 +6861,18 @@ export const productReadinessLevels = mysqlTable("product_readiness_levels", {
   id:              varchar("id", { length: 36 }).primaryKey(),
   ventureId:       varchar("ventureId", { length: 64 }).notNull(),
   // Source inputs
-  trlLevel:        int("trlLevel").notNull(),            // 1–9 from ventures.trl
-  mrlLevel:        int("mrlLevel").notNull(),            // 1–9 from mrlAssessments.mrlLevel
-  mrlComposite:    int("mrlComposite"),                  // 0–100 from mrlAssessments.compositeScore
+  trlLevel:        int("trlLevel").notNull(),            // 1-9 from ventures.trl
+  mrlLevel:        int("mrlLevel").notNull(),            // 1-9 from mrlAssessments.mrlLevel
+  mrlComposite:    int("mrlComposite"),                  // 0-100 from mrlAssessments.compositeScore
   // Weights (sum must equal 1.0)
   trlWeight:       float("trlWeight").default(0.5).notNull(),
   mrlWeight:       float("mrlWeight").default(0.5).notNull(),
   // PRL output
-  prlScore:        float("prlScore").notNull(),          // 0–9 composite score
-  prlLevel:        int("prlLevel").notNull(),            // 1–9 discrete level (round(prlScore))
+  prlScore:        float("prlScore").notNull(),          // 0-9 composite score
+  prlLevel:        int("prlLevel").notNull(),            // 1-9 discrete level (round(prlScore))
   prlLabel:        varchar("prlLabel", { length: 64 }),  // e.g. "Product-Market Fit"
   // VRL contribution
-  vrlContribution: float("vrlContribution"),             // PRL × alpha_weight contribution to VRL
+  vrlContribution: float("vrlContribution"),             // PRL - alpha_weight contribution to VRL
   // Metadata
   computedAt:      timestamp("computedAt").defaultNow().notNull(),
   computedBy:      varchar("computedBy", { length: 128 }),
@@ -6882,3 +6882,67 @@ export const productReadinessLevels = mysqlTable("product_readiness_levels", {
 });
 export type ProductReadinessLevel = typeof productReadinessLevels.$inferSelect;
 export type InsertProductReadinessLevel = typeof productReadinessLevels.$inferInsert;
+
+// -- Playbook Library (Admin Module) --
+// Full-featured playbook management system for EcoBlend OS Admin module.
+// Playbooks are guidance documents linked to modules, workflow stages, roles,
+// templates, scoring frameworks, risk categories, and evidence requirements.
+export const playbookLibrary = mysqlTable("playbook_library", {
+  id:                    int("id").autoincrement().primaryKey(),
+  playbookId:            varchar("playbookId", { length: 64 }).notNull().unique(),
+  title:                 varchar("title", { length: 255 }).notNull(),
+  category:              varchar("category", { length: 128 }).notNull(),
+  relatedModule:         varchar("relatedModule", { length: 128 }),
+  relatedWorkflowStage:  varchar("relatedWorkflowStage", { length: 128 }),
+  userRole:              varchar("userRole", { length: 255 }),
+  purpose:               text("purpose"),
+  whenToUse:             text("whenToUse"),
+  stepByStepGuidance:    text("stepByStepGuidance"),
+  requiredInputs:        text("requiredInputs"),
+  requiredOutputs:       text("requiredOutputs"),
+  linkedTemplates:       text("linkedTemplates"),
+  linkedScoringFrameworks: text("linkedScoringFrameworks"),
+  linkedRiskCategories:  text("linkedRiskCategories"),
+  evidenceRequired:      text("evidenceRequired"),
+  completionChecklist:   text("completionChecklist"),
+  approvalRequired:      boolean("approvalRequired").default(false),
+  accessLevel:           mysqlEnum("playbookAccessLevel", [
+    "Admin Only",
+    "Internal Team",
+    "Venture Team",
+    "Advisor Access",
+    "Academic Partner Access",
+    "Investor View",
+    "Public / Exportable",
+  ]).notNull().default("Internal Team"),
+  version:               varchar("version", { length: 16 }).notNull().default("1.0"),
+  status:                mysqlEnum("playbookStatus", [
+    "Draft",
+    "Under Review",
+    "Approved",
+    "Published",
+    "Archived",
+    "Superseded",
+  ]).notNull().default("Draft"),
+  owner:                 varchar("owner", { length: 128 }),
+  reviewDate:            varchar("reviewDate", { length: 32 }),
+  createdBy:             varchar("createdBy", { length: 128 }),
+  updatedBy:             varchar("updatedBy", { length: 128 }),
+  createdAt:             timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:             timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type PlaybookLibraryRecord = typeof playbookLibrary.$inferSelect;
+export type InsertPlaybookLibraryRecord = typeof playbookLibrary.$inferInsert;
+
+// -- Playbook Version History --
+export const playbookVersions = mysqlTable("playbook_versions", {
+  id:          int("id").autoincrement().primaryKey(),
+  playbookDbId: int("playbookDbId").notNull(),
+  version:     varchar("version", { length: 16 }).notNull(),
+  snapshot:    text("snapshot").notNull(),
+  changedBy:   varchar("changedBy", { length: 128 }),
+  changeNote:  text("changeNote"),
+  createdAt:   timestamp("createdAt").defaultNow().notNull(),
+});
+export type PlaybookVersion = typeof playbookVersions.$inferSelect;
+export type InsertPlaybookVersion = typeof playbookVersions.$inferInsert;

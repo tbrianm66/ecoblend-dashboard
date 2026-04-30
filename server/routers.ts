@@ -20,6 +20,7 @@ import { investmentModuleRouter } from "./investmentModule.router";
 import { ecoraceLab } from "./ecoracelab.router";
 import { coachingRouter } from "./coaching.router";
 import { flowerRouter } from "./flower.router";
+import { adminRouter } from "./admin.router";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -225,6 +226,7 @@ export const appRouter = router({
   system: systemRouter,
   coaching: coachingRouter,
   flower: flowerRouter,
+  admin: adminRouter,
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

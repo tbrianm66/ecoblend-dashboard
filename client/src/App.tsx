@@ -78,6 +78,9 @@ import SyncPortfolio from "./pages/SyncPortfolio";
 import SyncVentureDetail from "./pages/SyncVentureDetail";
 import MrlScoring from "./pages/MrlScoring";
 import MrlCommandDashboard from "./pages/MrlCommandDashboard";
+import AdminHub from "./pages/AdminHub";
+import AdminPlaybooks from "./pages/AdminPlaybooks";
+import AdminPlaceholder from "./pages/AdminPlaceholder";
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
@@ -154,6 +157,18 @@ function Router() {
       <Route path="/mrl-command" component={MrlCommandDashboard} />
       <Route path="/sync" component={SyncPortfolio} />
       <Route path="/sync/:ventureId" component={SyncVentureDetail} />
+      {/* ── Admin ── */}
+      <Route path="/admin" component={AdminHub} />
+      <Route path="/admin/playbooks" component={AdminPlaybooks} />
+      <Route path="/admin/users" component={AdminPlaceholder} />
+      <Route path="/admin/permissions" component={AdminPlaceholder} />
+      <Route path="/admin/templates" component={AdminPlaceholder} />
+      <Route path="/admin/data-fields" component={AdminPlaceholder} />
+      <Route path="/admin/modules" component={AdminPlaceholder} />
+      <Route path="/admin/integrations" component={AdminPlaceholder} />
+      <Route path="/admin/api" component={AdminPlaceholder} />
+      <Route path="/admin/audit" component={AdminPlaceholder} />
+      <Route path="/admin/config" component={AdminPlaceholder} />
       <Route component={Home} />
     </Switch>
   );

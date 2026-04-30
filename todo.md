@@ -1164,3 +1164,16 @@
 - [ ] Update literature review: PRL = TRL × MRL, FRL = Founder Readiness Level
 - [ ] Update user manual: PRL and FRL terminology throughout
 - [x] Run Vitest tests and fix any failures (1873 tests passing, 65 test files)
+
+## Admin Module & Playbook Library (Apr 2026)
+- [x] Design playbook_library and playbook_versions DB tables (24-field schema)
+- [x] Seed 20 MVP playbooks into the database
+- [x] Build admin.router.ts with full Playbook CRUD procedures (list, getById, getByModule, create, update, publish, archive, setStatus, versions, categories)
+- [x] Wire adminRouter into appRouter in routers.ts
+- [x] Add Admin group to Sidebar.tsx with 10 sub-sections
+- [x] Build AdminHub landing page (/admin)
+- [x] Build AdminPlaybooks page (/admin/playbooks) — search, filter, category grouping, status pills, detail drawer, create/edit dialogs
+- [x] Build AdminPlaceholder page for 9 coming-soon Admin sections
+- [x] Build PlaybookPanel contextual component for embedding in workflow modules
+- [x] Register all Admin routes in App.tsx
+- [x] All 1873 Vitest tests passing after Admin build
