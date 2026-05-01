@@ -239,6 +239,8 @@ export const contextualRouter = router({
   adminCreateRule: protectedProcedure
     .input(
       z.object({
+        ruleName: z.string().min(1),
+        description: z.string().optional().default(""),
         playbookId: z.string(),
         module: z.string(),
         page: z.string().optional().default("ALL"),
@@ -253,6 +255,12 @@ export const contextualRouter = router({
         approvalGate: z.string().nullable().optional(),
         rdStage: z.string().nullable().optional(),
         investmentPackStatus: z.string().nullable().optional(),
+        missingEvidenceTrigger: z.string().nullable().optional(),
+        scoreThresholdTrigger: z.string().nullable().optional(),
+        riskThresholdTrigger: z.string().nullable().optional(),
+        approvalGateTrigger: z.string().nullable().optional(),
+        rdStageTrigger: z.string().nullable().optional(),
+        investmentPackStatusTrigger: z.string().nullable().optional(),
         priority: z.enum(["High", "Medium", "Low"]).optional().default("Medium"),
       })
     )
@@ -261,8 +269,9 @@ export const contextualRouter = router({
       const db = await getDb();
       const id = uuid();
       const now = Date.now();
+      const esc = (v: string | null | undefined) => v ? `'${v.replace(/'/g, "''")}'` : "NULL";
       await db.execute(
-        sql.raw(`INSERT INTO playbook_context_rules (id, playbook_id, module, page, workflow_stage, venture_stage, venture_type, spv_brand, user_roles, risk_categories, scoring_frameworks, evidence_types, approval_gate, rd_stage, investment_pack_status, priority, active, created_by, updated_by, created_at, updated_at) VALUES ('${id}', '${input.playbookId}', '${input.module}', '${input.page}', '${input.workflowStage}', '${input.ventureStage}', '${input.ventureType}', '${input.spvBrand}', ${input.userRoles ? `'${input.userRoles}'` : "NULL"}, ${input.riskCategories ? `'${input.riskCategories}'` : "NULL"}, ${input.scoringFrameworks ? `'${input.scoringFrameworks}'` : "NULL"}, ${input.evidenceTypes ? `'${input.evidenceTypes}'` : "NULL"}, ${input.approvalGate ? `'${input.approvalGate}'` : "NULL"}, ${input.rdStage ? `'${input.rdStage}'` : "NULL"}, ${input.investmentPackStatus ? `'${input.investmentPackStatus}'` : "NULL"}, '${input.priority}', 1, '${ctx.user.id}', '${ctx.user.id}', ${now}, ${now})`)
+        sql.raw(`INSERT INTO playbook_context_rules (id, rule_name, description, playbook_id, module, page, workflow_stage, venture_stage, venture_type, spv_brand, user_roles, risk_categories, scoring_frameworks, evidence_types, approval_gate, rd_stage, investment_pack_status, missing_evidence_trigger, score_threshold_trigger, risk_threshold_trigger, approval_gate_trigger, rd_stage_trigger, investment_pack_status_trigger, priority, active, created_by, updated_by, created_at, updated_at) VALUES ('${id}', ${esc(input.ruleName)}, ${esc(input.description)}, '${input.playbookId}', '${input.module}', '${input.page}', '${input.workflowStage}', '${input.ventureStage}', '${input.ventureType}', '${input.spvBrand}', ${esc(input.userRoles)}, ${esc(input.riskCategories)}, ${esc(input.scoringFrameworks)}, ${esc(input.evidenceTypes)}, ${esc(input.approvalGate)}, ${esc(input.rdStage)}, ${esc(input.investmentPackStatus)}, ${esc(input.missingEvidenceTrigger)}, ${esc(input.scoreThresholdTrigger)}, ${esc(input.riskThresholdTrigger)}, ${esc(input.approvalGateTrigger)}, ${esc(input.rdStageTrigger)}, ${esc(input.investmentPackStatusTrigger)}, '${input.priority}', 1, '${ctx.user.id}', '${ctx.user.id}', ${now}, ${now})`)
       );
       return { id };
     }),
@@ -272,10 +281,28 @@ export const contextualRouter = router({
     .input(
       z.object({
         id: z.string(),
+        ruleName: z.string().optional(),
+        description: z.string().optional(),
+        playbookId: z.string().optional(),
         module: z.string().optional(),
         page: z.string().optional(),
         workflowStage: z.string().optional(),
         ventureStage: z.string().optional(),
+        ventureType: z.string().optional(),
+        spvBrand: z.string().optional(),
+        userRoles: z.string().nullable().optional(),
+        riskCategories: z.string().nullable().optional(),
+        scoringFrameworks: z.string().nullable().optional(),
+        evidenceTypes: z.string().nullable().optional(),
+        approvalGate: z.string().nullable().optional(),
+        rdStage: z.string().nullable().optional(),
+        investmentPackStatus: z.string().nullable().optional(),
+        missingEvidenceTrigger: z.string().nullable().optional(),
+        scoreThresholdTrigger: z.string().nullable().optional(),
+        riskThresholdTrigger: z.string().nullable().optional(),
+        approvalGateTrigger: z.string().nullable().optional(),
+        rdStageTrigger: z.string().nullable().optional(),
+        investmentPackStatusTrigger: z.string().nullable().optional(),
         priority: z.enum(["High", "Medium", "Low"]).optional(),
         active: z.boolean().optional(),
       })
@@ -284,11 +311,30 @@ export const contextualRouter = router({
       if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
       const db = await getDb();
       const now = Date.now();
+      const esc = (v: string) => v.replace(/'/g, "''");
       const sets: string[] = [`updated_by = '${ctx.user.id}'`, `updated_at = ${now}`];
+      if (input.ruleName !== undefined) sets.push(`rule_name = '${esc(input.ruleName)}'`);
+      if (input.description !== undefined) sets.push(`description = '${esc(input.description)}'`);
+      if (input.playbookId !== undefined) sets.push(`playbook_id = '${input.playbookId}'`);
       if (input.module !== undefined) sets.push(`module = '${input.module}'`);
       if (input.page !== undefined) sets.push(`page = '${input.page}'`);
-      if (input.workflowStage !== undefined) sets.push(`workflow_stage = '${input.workflowStage}'`);
-      if (input.ventureStage !== undefined) sets.push(`venture_stage = '${input.ventureStage}'`);
+      if (input.workflowStage !== undefined) sets.push(`workflow_stage = '${esc(input.workflowStage)}'`);
+      if (input.ventureStage !== undefined) sets.push(`venture_stage = '${esc(input.ventureStage)}'`);
+      if (input.ventureType !== undefined) sets.push(`venture_type = '${esc(input.ventureType)}'`);
+      if (input.spvBrand !== undefined) sets.push(`spv_brand = '${esc(input.spvBrand)}'`);
+      if (input.userRoles !== undefined) sets.push(input.userRoles ? `user_roles = '${esc(input.userRoles)}'` : `user_roles = NULL`);
+      if (input.riskCategories !== undefined) sets.push(input.riskCategories ? `risk_categories = '${esc(input.riskCategories)}'` : `risk_categories = NULL`);
+      if (input.scoringFrameworks !== undefined) sets.push(input.scoringFrameworks ? `scoring_frameworks = '${esc(input.scoringFrameworks)}'` : `scoring_frameworks = NULL`);
+      if (input.evidenceTypes !== undefined) sets.push(input.evidenceTypes ? `evidence_types = '${esc(input.evidenceTypes)}'` : `evidence_types = NULL`);
+      if (input.approvalGate !== undefined) sets.push(input.approvalGate ? `approval_gate = '${esc(input.approvalGate)}'` : `approval_gate = NULL`);
+      if (input.rdStage !== undefined) sets.push(input.rdStage ? `rd_stage = '${esc(input.rdStage)}'` : `rd_stage = NULL`);
+      if (input.investmentPackStatus !== undefined) sets.push(input.investmentPackStatus ? `investment_pack_status = '${esc(input.investmentPackStatus)}'` : `investment_pack_status = NULL`);
+      if (input.missingEvidenceTrigger !== undefined) sets.push(input.missingEvidenceTrigger ? `missing_evidence_trigger = '${esc(input.missingEvidenceTrigger)}'` : `missing_evidence_trigger = NULL`);
+      if (input.scoreThresholdTrigger !== undefined) sets.push(input.scoreThresholdTrigger ? `score_threshold_trigger = '${esc(input.scoreThresholdTrigger)}'` : `score_threshold_trigger = NULL`);
+      if (input.riskThresholdTrigger !== undefined) sets.push(input.riskThresholdTrigger ? `risk_threshold_trigger = '${esc(input.riskThresholdTrigger)}'` : `risk_threshold_trigger = NULL`);
+      if (input.approvalGateTrigger !== undefined) sets.push(input.approvalGateTrigger ? `approval_gate_trigger = '${esc(input.approvalGateTrigger)}'` : `approval_gate_trigger = NULL`);
+      if (input.rdStageTrigger !== undefined) sets.push(input.rdStageTrigger ? `rd_stage_trigger = '${esc(input.rdStageTrigger)}'` : `rd_stage_trigger = NULL`);
+      if (input.investmentPackStatusTrigger !== undefined) sets.push(input.investmentPackStatusTrigger ? `investment_pack_status_trigger = '${esc(input.investmentPackStatusTrigger)}'` : `investment_pack_status_trigger = NULL`);
       if (input.priority !== undefined) sets.push(`priority = '${input.priority}'`);
       if (input.active !== undefined) sets.push(`active = ${input.active ? 1 : 0}`);
       await db.execute(

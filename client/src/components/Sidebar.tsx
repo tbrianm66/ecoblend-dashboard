@@ -245,6 +245,7 @@ const NAV_GROUPS: NavGroup[] = [
     defaultOpen: false,
     items: [
       { id: "admin-playbooks",    label: "Playbook Library",     icon: "BookOpenCheck",    href: "/admin/playbooks" },
+      { id: "admin-context-rules",label: "Context Rules",        icon: "GitBranch",        href: "/admin/context-rules" },
       { id: "admin-users",        label: "Users & Roles",        icon: "Users",            href: "/admin/users" },
       { id: "admin-permissions",  label: "Permissions",          icon: "Shield",           href: "/admin/permissions" },
       { id: "admin-templates",    label: "Templates",            icon: "LayoutTemplate",   href: "/admin/templates" },

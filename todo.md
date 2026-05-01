@@ -1220,3 +1220,20 @@
 - [x] Phase 4: Integrate panel into 7 key modules (VentureIntake, ReadinessScoring, RDHub, RiskIntelligence, InvestmentPack, GovernanceHub, ExecutionPlanning)
 - [ ] Phase 4: Implement usage event tracking
 - [x] Run Vitest tests and fix any failures (1873 tests passing, 65 test files)
+
+## Phase 3A — Contextual Playbook Intelligence Foundation
+- [x] Part 1: Populate 20 MVP playbooks with structured content (1,160-1,835 chars each, all 10 sections)
+- [x] Part 1: Set all playbooks to status=Published, version=1.0, accessLevel=Internal Team, owner=Platform Admin
+- [x] Part 2: Extended playbook_context_rules schema with rule_name, description, and 6 trigger fields
+- [x] Part 2: Build Context Rule Builder UI at /admin/context-rules (AdminContextRules.tsx)
+- [x] Part 2: Context Rule List table with edit/duplicate/activate/deactivate/delete actions
+- [x] Part 2: Create/Edit Rule Form with 4 tabs (Context, Triggers, Filters, Preview)
+- [x] Part 2: Filter and search rules by module, priority, active status
+- [x] Part 2: Rule Preview panel showing plain English description
+- [x] Part 2: Form validation (rule name, playbook, module required)
+- [x] Part 3: 23 starter context rules updated with proper rule names
+- [x] Part 4: Updated contextual.router.ts adminCreateRule and adminUpdateRule with all trigger fields
+- [x] Part 5: Audit logging via updated_by/updated_at on all rule mutations
+- [x] Part 6: Add Context Rules to Admin sidebar navigation (GitBranch icon)
+- [x] Part 6: Add /admin/context-rules route to App.tsx
+- [x] Run Vitest tests — 1,873 tests passing, 65 test files

@@ -80,6 +80,7 @@ import MrlScoring from "./pages/MrlScoring";
 import MrlCommandDashboard from "./pages/MrlCommandDashboard";
 import AdminHub from "./pages/AdminHub";
 import AdminPlaybooks from "./pages/AdminPlaybooks";
+import AdminContextRules from "./pages/AdminContextRules";
 import AdminPlaceholder from "./pages/AdminPlaceholder";
 import ModulePlaceholder from "./pages/ModulePlaceholder";
 import VentureIntake from "./pages/VentureIntake";
@@ -168,6 +169,7 @@ function Router() {
       {/* ── Admin ── */}
       <Route path="/admin" component={AdminHub} />
       <Route path="/admin/playbooks" component={AdminPlaybooks} />
+      <Route path="/admin/context-rules" component={AdminContextRules} />
       <Route path="/admin/users" component={AdminPlaceholder} />
       <Route path="/admin/permissions" component={AdminPlaceholder} />
       <Route path="/admin/templates" component={AdminPlaceholder} />
