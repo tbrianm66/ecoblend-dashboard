@@ -10,6 +10,7 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { VentureProvider } from "./contexts/VentureContext";
+import { SelectedVentureProvider } from "./contexts/SelectedVentureContext";
 import Sidebar from "./components/Sidebar";
 import Home from "./pages/Home";
 import VentureDetail from "./pages/VentureDetail";
@@ -279,6 +280,7 @@ function App() {
     <ErrorBoundary>
       <ThemeProvider defaultTheme="light">
         <VentureProvider>
+          <SelectedVentureProvider>
           <TooltipProvider>
             <Toaster />
             <div className="flex min-h-screen bg-gray-50">
@@ -288,6 +290,7 @@ function App() {
               </div>
             </div>
           </TooltipProvider>
+          </SelectedVentureProvider>
         </VentureProvider>
       </ThemeProvider>
     </ErrorBoundary>

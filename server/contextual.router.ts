@@ -961,13 +961,17 @@ export const contextualRouter = router({
       if (input.threshold !== undefined) sets.push(`min_recommendation_score = ${input.threshold}`);
       if (input.position !== undefined) sets.push(`placement = '${input.position}'`);
       await db.execute(sql.raw(`
-        INSERT INTO playbook_widget_configs (id, module, widget_type, created_by, updated_by, created_at, updated_at)
-        VALUES ('${id}', '${input.module}', '${input.widgetType}', '${updater}', '${updater}', ${now}, ${now})
+        INSERT INTO playbook_widget_configs
+          (id, module, widget_type, page, placement, enabled, max_items, display_mode,
+           show_completion_status, show_evidence_links, show_score_impact, show_risk_impact,
+           min_recommendation_score, created_by, updated_by, created_at, updated_at)
+        VALUES
+          ('${id}', '${input.module}', '${input.widgetType}', 'ALL', 'RightPanel', 1, 5, 'Standard',
+           1, 1, 0, 0, 30, '${updater}', '${updater}', ${now}, ${now})
         ON DUPLICATE KEY UPDATE ${sets.join(", ")}
       `));
       return { ok: true };
     }),
-
   // A13. adminUpdateRoleVisibility
   adminUpdateRoleVisibility: protectedProcedure
     .input(z.object({
@@ -1063,6 +1067,152 @@ export const contextualRouter = router({
         ORDER BY created_at DESC LIMIT 5000
       `)).catch(() => [[]]);
       return { rows: rows as any[] };
+    }),
+
+  // ── Phase 3D: Recommendation Quality Loop ─────────────────────────────────
+
+  // A16. adminQualityMetrics — aggregate quality metrics per playbook/widget
+  adminQualityMetrics: protectedProcedure
+    .input(z.object({
+      days: z.number().optional().default(30),
+      module: z.string().optional(),
+      widgetType: z.string().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await getDb();
+      const cutoff = Date.now() - input.days * 24 * 60 * 60 * 1000;
+      const moduleFilter = input.module ? ` AND pue.module = '${input.module}'` : "";
+      const widgetFilter = input.widgetType ? ` AND pue.widget_type = '${input.widgetType}'` : "";
+
+      const [playbookRows] = await db.execute(sql.raw(`
+        SELECT
+          pue.playbook_id,
+          p.title AS playbook_title,
+          pue.module,
+          pue.widget_type,
+          COUNT(*) AS total_events,
+          SUM(CASE WHEN pue.action_type = 'View' THEN 1 ELSE 0 END) AS view_count,
+          SUM(CASE WHEN pue.action_type = 'Open' THEN 1 ELSE 0 END) AS open_count,
+          SUM(CASE WHEN pue.action_type = 'Dismiss' THEN 1 ELSE 0 END) AS dismiss_count,
+          SUM(CASE WHEN pue.action_type = 'Complete' THEN 1 ELSE 0 END) AS complete_count,
+          ROUND(100.0 * SUM(CASE WHEN pue.action_type = 'Open' THEN 1 ELSE 0 END) / NULLIF(SUM(CASE WHEN pue.action_type = 'View' THEN 1 ELSE 0 END), 0), 1) AS open_rate,
+          ROUND(100.0 * SUM(CASE WHEN pue.action_type = 'Dismiss' THEN 1 ELSE 0 END) / NULLIF(SUM(CASE WHEN pue.action_type = 'View' THEN 1 ELSE 0 END), 0), 1) AS dismissal_rate,
+          ROUND(100.0 * SUM(CASE WHEN pue.action_type = 'Complete' THEN 1 ELSE 0 END) / NULLIF(SUM(CASE WHEN pue.action_type = 'Open' THEN 1 ELSE 0 END), 0), 1) AS completion_rate
+        FROM playbook_usage_events pue
+        LEFT JOIN playbooks p ON p.id = pue.playbook_id
+        WHERE pue.created_at >= ${cutoff}${moduleFilter}${widgetFilter}
+        GROUP BY pue.playbook_id, p.title, pue.module, pue.widget_type
+        ORDER BY dismiss_count DESC, view_count DESC
+        LIMIT 100
+      `)).catch(() => [[]]);
+
+      const [dismissalReasons] = await db.execute(sql.raw(`
+        SELECT dismissed_reason, COUNT(*) AS cnt, module, widget_type
+        FROM playbook_usage_events
+        WHERE action_type = 'Dismiss' AND dismissed_reason IS NOT NULL
+          AND created_at >= ${cutoff}
+        GROUP BY dismissed_reason, module, widget_type
+        ORDER BY cnt DESC LIMIT 50
+      `)).catch(() => [[]]);
+
+      const LOW_OPEN_THRESHOLD = 20;
+      const HIGH_DISMISS_THRESHOLD = 40;
+      const MIN_VIEWS = 5;
+      const allPlaybooks = playbookRows as any[];
+      const lowRelevancePlaybooks = allPlaybooks.filter(r =>
+        r.view_count >= MIN_VIEWS &&
+        (r.open_rate < LOW_OPEN_THRESHOLD || r.dismissal_rate > HIGH_DISMISS_THRESHOLD)
+      );
+
+      return {
+        playbookMetrics: allPlaybooks,
+        lowRelevancePlaybooks,
+        dismissalReasons: dismissalReasons as any[],
+        thresholds: { minViews: MIN_VIEWS, lowOpenRate: LOW_OPEN_THRESHOLD, highDismissalRate: HIGH_DISMISS_THRESHOLD },
+      };
+    }),
+
+  // A17. adminQualityRuleMetrics — per context-rule quality metrics
+  adminQualityRuleMetrics: protectedProcedure
+    .input(z.object({ days: z.number().optional().default(30) }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await getDb();
+      const cutoff = Date.now() - input.days * 24 * 60 * 60 * 1000;
+
+      const [rules] = await db.execute(sql.raw(`
+        SELECT
+          pcr.id AS rule_id,
+          pcr.rule_name,
+          pcr.module,
+          pcr.playbook_id,
+          pcr.active,
+          p.title AS playbook_title,
+          COUNT(pue.id) AS total_events,
+          SUM(CASE WHEN pue.action_type = 'View' THEN 1 ELSE 0 END) AS view_count,
+          SUM(CASE WHEN pue.action_type = 'Open' THEN 1 ELSE 0 END) AS open_count,
+          SUM(CASE WHEN pue.action_type = 'Dismiss' THEN 1 ELSE 0 END) AS dismiss_count,
+          SUM(CASE WHEN pue.action_type = 'Complete' THEN 1 ELSE 0 END) AS complete_count,
+          ROUND(100.0 * SUM(CASE WHEN pue.action_type = 'Open' THEN 1 ELSE 0 END) / NULLIF(SUM(CASE WHEN pue.action_type = 'View' THEN 1 ELSE 0 END), 0), 1) AS open_rate,
+          ROUND(100.0 * SUM(CASE WHEN pue.action_type = 'Dismiss' THEN 1 ELSE 0 END) / NULLIF(SUM(CASE WHEN pue.action_type = 'View' THEN 1 ELSE 0 END), 0), 1) AS dismissal_rate,
+          ROUND(100.0 * SUM(CASE WHEN pue.action_type = 'Complete' THEN 1 ELSE 0 END) / NULLIF(SUM(CASE WHEN pue.action_type = 'Open' THEN 1 ELSE 0 END), 0), 1) AS completion_rate
+        FROM playbook_context_rules pcr
+        LEFT JOIN playbooks p ON p.id = pcr.playbook_id
+        LEFT JOIN playbook_usage_events pue ON pue.playbook_id = pcr.playbook_id AND pue.created_at >= ${cutoff}
+        GROUP BY pcr.id, pcr.rule_name, pcr.module, pcr.playbook_id, pcr.active, p.title
+        ORDER BY dismiss_count DESC, view_count DESC
+      `)).catch(() => [[]]);
+
+      const allRules = rules as any[];
+      const LOW_OPEN_THRESHOLD = 15;
+      const HIGH_DISMISS_THRESHOLD = 50;
+      const MIN_VIEWS = 3;
+      const lowPerformingRules = allRules.filter(r =>
+        r.active && r.view_count >= MIN_VIEWS &&
+        (r.open_rate < LOW_OPEN_THRESHOLD || r.dismissal_rate > HIGH_DISMISS_THRESHOLD)
+      );
+
+      return {
+        rules: allRules,
+        lowPerformingRules,
+        thresholds: { minViews: MIN_VIEWS, lowOpenRate: LOW_OPEN_THRESHOLD, highDismissalRate: HIGH_DISMISS_THRESHOLD },
+      };
+    }),
+
+  // A18. adminArchiveContextRule — archive a low-performing context rule (admin only)
+  adminArchiveContextRule: protectedProcedure
+    .input(z.object({
+      ruleId: z.string(),
+      reason: z.string().optional().default("Archived due to low performance"),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await getDb();
+      const now = Date.now();
+
+      const [ruleRows] = await db.execute(sql.raw(`
+        SELECT id, rule_name, module, playbook_id, active FROM playbook_context_rules WHERE id = '${input.ruleId}' LIMIT 1
+      `)).catch(() => [[]]);
+      const rule = (ruleRows as any[])[0];
+      if (!rule) throw new TRPCError({ code: "NOT_FOUND", message: "Context rule not found" });
+      if (!rule.active) throw new TRPCError({ code: "BAD_REQUEST", message: "Rule is already archived" });
+
+      await db.execute(sql.raw(`
+        UPDATE playbook_context_rules SET active = 0, updated_by = '${ctx.user.id}', updated_at = ${now} WHERE id = '${input.ruleId}'
+      `));
+
+      const auditId = uuid();
+      await db.execute(sql.raw(`
+        INSERT INTO audit_log (id, user_id, user_name, action, entity_type, entity_id, before_value, after_value, created_at)
+        VALUES ('${auditId}', '${ctx.user.id}', '${(ctx.user.name || ctx.user.id).replace(/'/g, "''")}',
+                'ARCHIVE_CONTEXT_RULE', 'playbook_context_rules', '${input.ruleId}',
+                '${JSON.stringify({ active: true, rule_name: rule.rule_name }).replace(/'/g, "''")}',
+                '${JSON.stringify({ active: false, reason: input.reason }).replace(/'/g, "''")}',
+                ${now})
+      `)).catch(() => null);
+
+      return { ok: true, ruleId: input.ruleId, ruleName: rule.rule_name };
     }),
 });
 

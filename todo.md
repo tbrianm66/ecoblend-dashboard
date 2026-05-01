@@ -1272,3 +1272,20 @@
 - [x] Fix adminUpdateModuleWidgetConfig SQL to use correct column names (enabled, max_items, min_recommendation_score, placement, updated_by)
 - [x] Write 39 Phase 3C Vitest tests covering: permission hardening (admin-only endpoints), usage event logging, widget settings CRUD, context rule diagnostics, CSV export, full analytics
 - [x] All 1,912 tests pass (0 failures, 66 test files)
+
+## Phase 3D — Venture Context Binding + Quality Loop (Complete)
+- [x] Phase 3D: Create SelectedVentureContext with persistence and permission filtering
+- [x] Phase 3D: Build GlobalVentureSelector component for sidebar
+- [x] Phase 3D: Build NoVentureSelectedState component
+- [x] Phase 3D: Wire SelectedVentureProvider into App.tsx
+- [x] Phase 3D: Add GlobalVentureSelector to Sidebar.tsx
+- [x] Phase 3D: Update ContextualWidgetPanel to read from SelectedVentureContext
+- [x] Phase 3D: Seed 42 default playbook_widget_configs rows (7 modules x 6 widget types)
+- [x] Phase 3D: Add adminQualityMetrics endpoint (A16) with low-relevance playbook detection
+- [x] Phase 3D: Add adminQualityRuleMetrics endpoint (A17) with low-performing rule detection
+- [x] Phase 3D: Add adminArchiveContextRule endpoint (A18) with audit log
+- [x] Phase 3D: Add Quality Loop section to AdminWidgetAnalytics page
+- [x] Phase 3D: Add dismissed_reason column to playbook_usage_events
+- [x] Phase 3D: Modify audit_log.action to VARCHAR(64) for custom action names
+- [x] Phase 3D: Write 29 Phase 3D QA Vitest tests (all passing)
+- [x] Phase 3D: All 1,941 tests pass (67 test files)

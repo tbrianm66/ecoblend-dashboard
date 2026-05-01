@@ -24,6 +24,7 @@ import {
   UserCheck, Brain, GitBranch, Sliders, CheckSquare,
 } from "lucide-react";
 import { useVentures } from "@/contexts/VentureContext";
+import GlobalVentureSelector from "@/components/GlobalVentureSelector";
 
 type IconName = string;
 const iconMap: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
@@ -461,6 +462,8 @@ export default function Sidebar() {
         )}
       </div>
 
+      {/* Global Venture Selector */}
+      <GlobalVentureSelector />
       {/* Grouped navigation */}
       <nav className="flex-1 px-2 py-3 overflow-y-auto">
         {NAV_GROUPS.map(group => (

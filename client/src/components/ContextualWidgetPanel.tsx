@@ -5,6 +5,10 @@
  *   - Usage tracking: logs View events on mount, Open events on expand
  *   - Dismissal: logs Dismiss events when a card is collapsed after being open
  *
+ * Phase 3D additions:
+ *   - Reads selectedVentureId from SelectedVentureContext (global venture selector)
+ *   - Shows NoVentureSelectedState when no venture is selected
+ *
  * Module → Widget mapping:
  *   Venture Intake              → MissingEvidenceCard
  *   Discovery & Market          → MissingEvidenceCard
@@ -20,6 +24,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { ChevronDown, ChevronUp, Layers } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
+import { useSelectedVenture } from "@/contexts/SelectedVentureContext";
+import NoVentureSelectedState from "./NoVentureSelectedState";
 import ContextualPlaybookPanel from "./ContextualPlaybookPanel";
 import MissingEvidenceCard from "./widgets/MissingEvidenceCard";
 import ScoreImprovementCard from "./widgets/ScoreImprovementCard";
@@ -69,6 +75,7 @@ function getWidgetsForModule(module: string): WidgetConfig[] {
       return [{ id: "me", type: "missing-evidence", label: "Evidence Gaps", color: "#F49C13" }];
 
     case "Discovery & Market":
+    case "Discovery & Market Validation":
       return [{ id: "me", type: "missing-evidence", label: "Evidence Gaps", color: "#F49C13" }];
 
     case "Research & Technical Validation":
@@ -106,7 +113,7 @@ function WidgetCard({
   module,
 }: {
   config: WidgetConfig;
-  ventureId: string | null;
+  ventureId: string;
   module: string;
 }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -208,28 +215,46 @@ function WidgetCard({
 
 export default function ContextualWidgetPanel({
   module,
-  ventureId,
+  ventureId: ventureIdProp,
   page,
   workflowStage,
   showPlaybookPanel = true,
 }: ContextualWidgetPanelProps) {
+  // Prefer the globally selected venture; fall back to the prop
+  const { selectedVentureId } = useSelectedVenture();
+  const ventureId = selectedVentureId ?? ventureIdProp;
+
   const widgets = getWidgetsForModule(module);
+
+  const sectionHeader = (
+    <div className="flex items-center gap-2 px-1">
+      <Layers size={13} className="text-gray-400" />
+      <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+        Contextual Guidance
+      </span>
+      <Badge
+        variant="outline"
+        className="text-[10px] px-1.5 py-0 border-gray-200 text-gray-400 ml-auto"
+      >
+        {module}
+      </Badge>
+    </div>
+  );
+
+  // No venture selected → show actionable empty state
+  if (!ventureId) {
+    return (
+      <div className="flex flex-col gap-3">
+        {sectionHeader}
+        <NoVentureSelectedState />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-3">
       {/* Section label */}
-      <div className="flex items-center gap-2 px-1">
-        <Layers size={13} className="text-gray-400" />
-        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-          Contextual Guidance
-        </span>
-        <Badge
-          variant="outline"
-          className="text-[10px] px-1.5 py-0 border-gray-200 text-gray-400 ml-auto"
-        >
-          {module}
-        </Badge>
-      </div>
+      {sectionHeader}
 
       {/* Specialised widget cards */}
       {widgets.map((cfg) => (

@@ -11,7 +11,8 @@ import { useLocation } from "wouter";
 import {
   BarChart3, TrendingUp, BookOpenCheck, Eye, CheckCircle2,
   XCircle, AlertTriangle, Download, Filter, RefreshCw,
-  Activity, Layers, Users, FileWarning,
+  Activity, Layers, Users, FileWarning, Archive, ThumbsDown,
+  ShieldAlert, TrendingDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -218,6 +219,19 @@ export default function AdminWidgetAnalytics() {
     { days, module: module === "All Modules" ? undefined : module },
     { enabled: user?.role === "admin" }
   );
+
+  // Phase 3D: Quality Loop
+  const { data: qualityData, refetch: refetchQuality } = trpc.contextual.adminQualityMetrics.useQuery(
+    queryInput,
+    { enabled: user?.role === "admin" }
+  );
+  const { data: ruleQualityData, refetch: refetchRuleQuality } = trpc.contextual.adminQualityRuleMetrics.useQuery(
+    { days },
+    { enabled: user?.role === "admin" }
+  );
+  const archiveRule = trpc.contextual.adminArchiveContextRule.useMutation({
+    onSuccess: () => { refetchQuality(); refetchRuleQuality(); },
+  });
 
   const ov = data?.overview || {};
   const recPerf = data?.recPerf || {};
@@ -572,6 +586,129 @@ export default function AdminWidgetAnalytics() {
               </div>
             </div>
           </div>
+        </section>
+
+        {/* ── Phase 3D: Recommendation Quality Loop ── */}
+        <section>
+          <SectionHeader
+            title="Recommendation Quality Loop"
+            sub="Identify low-relevance playbooks and underperforming context rules"
+          />
+
+          {/* Quality KPIs */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <KpiCard
+              label="Low-Relevance Playbooks"
+              value={fmt(qualityData?.lowRelevancePlaybooks?.length)}
+              sub={`of ${fmt(qualityData?.playbookMetrics?.length)} tracked`}
+              accent="#ef4444"
+              icon={ThumbsDown}
+            />
+            <KpiCard
+              label="Low-Performing Rules"
+              value={fmt(ruleQualityData?.lowPerformingRules?.length)}
+              sub={`of ${fmt(ruleQualityData?.rules?.length)} active rules`}
+              accent="#f97316"
+              icon={ShieldAlert}
+            />
+            <KpiCard
+              label="Top Dismissal Reason"
+              value={(qualityData?.dismissalReasons?.[0]?.dismissed_reason || "—").toString().slice(0, 18)}
+              sub={qualityData?.dismissalReasons?.[0] ? `${fmt(qualityData.dismissalReasons[0].cnt)} times` : "No data yet"}
+              accent="#6b7280"
+              icon={XCircle}
+            />
+            <KpiCard
+              label="Open Rate Threshold"
+              value={`${qualityData?.thresholds?.lowOpenRate ?? 20}%`}
+              sub="Flag below this rate"
+              accent="#3A97D3"
+              icon={TrendingDown}
+            />
+          </div>
+
+          {/* Low-Relevance Playbooks table */}
+          {(qualityData?.lowRelevancePlaybooks?.length ?? 0) > 0 && (
+            <div className="mb-6">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                Low-Relevance Playbooks (open rate &lt; {qualityData?.thresholds?.lowOpenRate}% or dismissal rate &gt; {qualityData?.thresholds?.highDismissalRate}%)
+              </p>
+              <DataTable
+                columns={[
+                  { key: "playbook_title", label: "Playbook" },
+                  { key: "module", label: "Module" },
+                  { key: "widget_type", label: "Widget" },
+                  { key: "view_count", label: "Views" },
+                  { key: "open_rate", label: "Open %" },
+                  { key: "dismissal_rate", label: "Dismiss %" },
+                  { key: "completion_rate", label: "Complete %" },
+                ]}
+                rows={qualityData?.lowRelevancePlaybooks ?? []}
+              />
+            </div>
+          )}
+
+          {/* Low-Performing Context Rules with archive action */}
+          {(ruleQualityData?.lowPerformingRules?.length ?? 0) > 0 ? (
+            <div className="mb-6">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                Low-Performing Context Rules — one-click archive
+              </p>
+              <div className="flex flex-col gap-2">
+                {ruleQualityData!.lowPerformingRules.map((rule: any) => (
+                  <div
+                    key={rule.rule_id}
+                    className="flex items-center justify-between bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-sm"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-800 truncate">{rule.rule_name || rule.rule_id}</p>
+                      <p className="text-xs text-gray-400">
+                        {rule.module} · Views: {fmt(rule.view_count)} · Open: {rule.open_rate ?? "—"}% · Dismiss: {rule.dismissal_rate ?? "—"}%
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="ml-4 gap-1.5 text-xs border-red-200 text-red-600 hover:bg-red-50"
+                      disabled={archiveRule.isPending}
+                      onClick={() => {
+                        if (confirm(`Archive rule "${rule.rule_name || rule.rule_id}"? This will stop it from triggering recommendations.`)) {
+                          archiveRule.mutate({ ruleId: rule.rule_id, reason: "Archived via Admin Quality Loop" });
+                        }
+                      }}
+                    >
+                      <Archive size={12} /> Archive
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3 bg-green-50 border border-green-100 rounded-xl p-4 mb-6">
+              <CheckCircle2 size={16} className="text-green-500 flex-shrink-0" />
+              <p className="text-sm text-green-700">
+                No low-performing context rules detected in the last {days} days.
+              </p>
+            </div>
+          )}
+
+          {/* Dismissal Reasons breakdown */}
+          {(qualityData?.dismissalReasons?.length ?? 0) > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                Dismissal Reasons Breakdown
+              </p>
+              <DataTable
+                columns={[
+                  { key: "dismissed_reason", label: "Reason" },
+                  { key: "module", label: "Module" },
+                  { key: "widget_type", label: "Widget" },
+                  { key: "cnt", label: "Count" },
+                ]}
+                rows={qualityData?.dismissalReasons ?? []}
+              />
+            </div>
+          )}
         </section>
       </div>
     </div>
