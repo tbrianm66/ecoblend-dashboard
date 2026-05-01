@@ -2,7 +2,7 @@
 // GOVERNANCE MODULE — Stage-Gate Approvals + Audit Trail + Board Reporting
 // Architecture Module 15 — Phase 6 MVP
 // ============================================================
-import ContextualPlaybookPanel from "@/components/ContextualPlaybookPanel";
+import ContextualWidgetPanel from "@/components/ContextualWidgetPanel";
 
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -269,7 +269,7 @@ export default function GovernanceHub() {
 
         {/* Contextual Playbook Guidance */}
         <div className="p-8 pt-0">
-          <ContextualPlaybookPanel module="Governance" ventureId={null} page="governance" workflowStage="ALL" />
+          <ContextualWidgetPanel module="Governance" ventureId={null} page="governance" workflowStage="ALL" />
         </div>
     </div>
   );

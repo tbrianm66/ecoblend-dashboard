@@ -223,6 +223,324 @@ export const contextualRouter = router({
     return rows as any[];
   }),
 
+  // ─── Specialised Widget Data Endpoints (7) ───
+
+  // W1. getMissingEvidence — evidence gaps for current module/venture
+  getMissingEvidence: protectedProcedure
+    .input(
+      z.object({
+        ventureId: z.string(),
+        module: z.string(),
+        scoreType: z.string().optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const db = await getDb();
+      // Fetch evidence items for this venture
+      const [evidenceRows] = await db.execute(
+        sql.raw(`SELECT id, evidence_type, title, status, confidence_score, module FROM evidence_items WHERE venture_id = '${input.ventureId}' ORDER BY created_at DESC LIMIT 50`)
+      ).catch(() => [[]]);
+      const evidence = evidenceRows as any[];
+
+      // Fetch recommended playbooks for missing evidence context
+      const playbooks = await getContextualPlaybooks(
+        input.ventureId, input.module, "ALL", "ALL", ctx.user.id, ctx.user.role || "user"
+      );
+
+      // Determine missing evidence based on module
+      const moduleEvidenceMap: Record<string, string[]> = {
+        "Venture Intake": ["Problem Statement", "Target Customer Profile", "Initial Hypothesis"],
+        "Discovery & Market": ["Customer Interview Records", "Market Size Data", "Competitor Matrix", "Pricing Evidence", "Demand Validation"],
+        "Research & Technical Validation": ["Technical Specification", "Simulation Report", "Prototype Test Evidence", "Technical KPI Records", "IP Assessment"],
+        "Risk Intelligence": ["Risk Register", "Mitigation Plans", "Residual Risk Assessment"],
+        "Readiness Scoring": ["VRL Evidence", "TRL Evidence", "BRL Evidence", "MRL Evidence"],
+        "Investment Readiness": ["Financial Model", "Market Validation Report", "Investor Deck", "Data Room Documents"],
+        "Governance": ["Stage-Gate Checklist", "Decision Log", "Approval Records"],
+      };
+
+      const required = moduleEvidenceMap[input.module] || [];
+      const completedTypes = evidence.filter(e => e.status === "Approved" || e.status === "Verified").map(e => e.evidence_type);
+      const missing = required.filter(r => !completedTypes.some(c => c?.toLowerCase().includes(r.toLowerCase())));
+      const total = required.length;
+      const completed = total - missing.length;
+      const confidenceScore = total > 0 ? Math.round((completed / total) * 100) : 100;
+
+      return {
+        missing,
+        completed,
+        total,
+        confidenceScore,
+        evidenceItems: evidence.slice(0, 10),
+        recommendedPlaybooks: playbooks.slice(0, 3),
+        isEmpty: missing.length === 0,
+      };
+    }),
+
+  // W2. getScoreImprovement — score blockers and improvement guidance
+  getScoreImprovement: protectedProcedure
+    .input(
+      z.object({
+        ventureId: z.string(),
+        scoreType: z.string().optional().default("VRL"),
+        threshold: z.number().optional().default(60),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const db = await getDb();
+      // Fetch latest VRL score
+      const [scoreRows] = await db.execute(
+        sql.raw(`SELECT * FROM vrl_scores WHERE venture_id = '${input.ventureId}' ORDER BY created_at DESC LIMIT 1`)
+      ).catch(() => [[]]);
+      const latestScore = (scoreRows as any[])[0];
+
+      // Fetch risk count
+      const [riskRows] = await db.execute(
+        sql.raw(`SELECT COUNT(*) as cnt FROM risk_register WHERE venture_id = '${input.ventureId}' AND risk_level IN ('High','Critical') AND status = 'Open'`)
+      ).catch(() => [[{ cnt: 0 }]]);
+      const highRisks = (riskRows as any[])[0]?.cnt || 0;
+
+      // Fetch evidence confidence
+      const [evRows] = await db.execute(
+        sql.raw(`SELECT COUNT(*) as total, SUM(CASE WHEN status IN ('Approved','Verified') THEN 1 ELSE 0 END) as approved FROM evidence_items WHERE venture_id = '${input.ventureId}'`)
+      ).catch(() => [[{ total: 0, approved: 0 }]]);
+      const evData = (evRows as any[])[0];
+      const evidenceConfidence = evData?.total > 0 ? Math.round((evData.approved / evData.total) * 100) : 0;
+
+      const currentScore = latestScore?.composite_score || latestScore?.vrl_score || 0;
+      const blockers: string[] = [];
+      if (currentScore < input.threshold) blockers.push(`${input.scoreType} score (${currentScore}) is below threshold (${input.threshold})`);
+      if (highRisks > 0) blockers.push(`${highRisks} unresolved high/critical risk${highRisks > 1 ? 's' : ''} limiting score`);
+      if (evidenceConfidence < 60) blockers.push(`Evidence confidence low (${evidenceConfidence}%) — add more verified evidence`);
+      if (!latestScore) blockers.push("No score recorded yet — complete the scoring assessment");
+
+      const playbooks = await getContextualPlaybooks(
+        input.ventureId, "Readiness Scoring", "ALL", "ALL", ctx.user.id, ctx.user.role || "user"
+      );
+
+      return {
+        scoreType: input.scoreType,
+        currentScore,
+        targetScore: input.threshold,
+        blockers,
+        highRisks,
+        evidenceConfidence,
+        recommendedPlaybooks: playbooks.slice(0, 3),
+        isEmpty: blockers.length === 0,
+      };
+    }),
+
+  // W3. getRDStageGuidance — R&D stage requirements and playbooks
+  getRDStageGuidance: protectedProcedure
+    .input(
+      z.object({
+        ventureId: z.string(),
+        rdProjectId: z.string().optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const db = await getDb();
+      // Fetch latest R&D project
+      const [projectRows] = await db.execute(
+        sql.raw(`SELECT * FROM rd_projects WHERE venture_id = '${input.ventureId}' ORDER BY created_at DESC LIMIT 1`)
+      ).catch(() => [[]]);
+      const project = (projectRows as any[])[0];
+      const currentStage = project?.current_stage || project?.trl_stage || "Concept";
+
+      const stageRequirements: Record<string, string[]> = {
+        "Concept": ["Problem definition document", "Initial technical hypothesis", "Literature review", "IP landscape search"],
+        "Simulation": ["Simulation model setup", "Simulation report uploaded", "Technical KPI baseline", "Technical risk review"],
+        "Prototyping": ["Prototype build plan", "Prototype test evidence", "Performance KPI records", "Safety assessment"],
+        "Track / Platform Integration": ["Integration test evidence", "Platform validation report", "Final IP assessment", "Funding gate approval"],
+      };
+
+      const required = stageRequirements[currentStage] || stageRequirements["Concept"];
+      // Check evidence for this stage
+      const [evRows] = await db.execute(
+        sql.raw(`SELECT evidence_type, status FROM evidence_items WHERE venture_id = '${input.ventureId}' AND module = 'Research & Technical Validation'`)
+      ).catch(() => [[]]);
+      const evidence = evRows as any[];
+      const completedEv = evidence.filter(e => e.status === "Approved" || e.status === "Verified").map(e => e.evidence_type);
+      const missing = required.filter(r => !completedEv.some(c => c?.toLowerCase().includes(r.toLowerCase().split(" ")[0])));
+
+      const playbooks = await getContextualPlaybooks(
+        input.ventureId, "Research & Technical Validation", "ALL", "ALL", ctx.user.id, ctx.user.role || "user"
+      );
+
+      return {
+        currentStage,
+        projectTitle: project?.title || "R&D Project",
+        requiredEvidence: required,
+        missingEvidence: missing,
+        completedCount: required.length - missing.length,
+        totalCount: required.length,
+        recommendedPlaybooks: playbooks.slice(0, 3),
+        isEmpty: missing.length === 0,
+      };
+    }),
+
+  // W4. getInvestmentPackReadiness — investor pack readiness status
+  getInvestmentPackReadiness: protectedProcedure
+    .input(z.object({ ventureId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const db = await getDb();
+      // Fetch VRL score
+      const [scoreRows] = await db.execute(
+        sql.raw(`SELECT composite_score, vrl_score, brl_score FROM vrl_scores WHERE venture_id = '${input.ventureId}' ORDER BY created_at DESC LIMIT 1`)
+      ).catch(() => [[]]);
+      const score = (scoreRows as any[])[0];
+
+      // Fetch high risks
+      const [riskRows] = await db.execute(
+        sql.raw(`SELECT COUNT(*) as cnt FROM risk_register WHERE venture_id = '${input.ventureId}' AND risk_level IN ('High','Critical') AND status = 'Open'`)
+      ).catch(() => [[{ cnt: 0 }]]);
+      const highRisks = (riskRows as any[])[0]?.cnt || 0;
+
+      // Fetch evidence confidence
+      const [evRows] = await db.execute(
+        sql.raw(`SELECT COUNT(*) as total, SUM(CASE WHEN status IN ('Approved','Verified') THEN 1 ELSE 0 END) as approved FROM evidence_items WHERE venture_id = '${input.ventureId}'`)
+      ).catch(() => [[{ total: 0, approved: 0 }]]);
+      const evData = (evRows as any[])[0];
+      const evidenceConfidence = evData?.total > 0 ? Math.round((evData.approved / evData.total) * 100) : 0;
+
+      const blockers: string[] = [];
+      const warnings: string[] = [];
+      const brlScore = score?.brl_score || 0;
+      const compositeScore = score?.composite_score || score?.vrl_score || 0;
+
+      if (!score) blockers.push("No readiness score recorded — complete scoring assessment first");
+      if (brlScore < 60) blockers.push(`BRL score (${brlScore}) below minimum threshold of 60`);
+      if (highRisks > 0) blockers.push(`${highRisks} unresolved high/critical risk${highRisks > 1 ? 's' : ''}`);
+      if (evidenceConfidence < 50) blockers.push(`Evidence confidence critically low (${evidenceConfidence}%)`);
+      else if (evidenceConfidence < 70) warnings.push(`Evidence confidence below recommended level (${evidenceConfidence}%)`);
+      if (compositeScore < 50) warnings.push(`Overall readiness score (${compositeScore}) is below investor-ready threshold`);
+
+      let status: "Ready" | "Ready with Warnings" | "Not Ready" = "Ready";
+      if (blockers.length > 0) status = "Not Ready";
+      else if (warnings.length > 0) status = "Ready with Warnings";
+
+      const playbooks = await getContextualPlaybooks(
+        input.ventureId, "Investment Readiness", "ALL", "ALL", ctx.user.id, ctx.user.role || "user"
+      );
+
+      return {
+        status,
+        blockers,
+        warnings,
+        brlScore,
+        compositeScore,
+        highRisks,
+        evidenceConfidence,
+        canGenerateDraft: blockers.length === 0 || warnings.length > 0,
+        recommendedPlaybooks: playbooks.slice(0, 3),
+        isEmpty: blockers.length === 0 && warnings.length === 0,
+      };
+    }),
+
+  // W5. getRiskMitigation — high risk items and mitigation guidance
+  getRiskMitigation: protectedProcedure
+    .input(
+      z.object({
+        ventureId: z.string(),
+        module: z.string().optional().default("Risk Intelligence"),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const db = await getDb();
+      const [riskRows] = await db.execute(
+        sql.raw(`SELECT id, risk_category, risk_title, risk_level, status, mitigation_status, risk_score, owner FROM risk_register WHERE venture_id = '${input.ventureId}' AND risk_level IN ('High','Critical') AND status IN ('Open','Escalated') ORDER BY risk_score DESC LIMIT 10`)
+      ).catch(() => [[]]);
+      const risks = riskRows as any[];
+
+      const playbooks = await getContextualPlaybooks(
+        input.ventureId, "Risk Intelligence", "ALL", "ALL", ctx.user.id, ctx.user.role || "user"
+      );
+
+      const topCategory = risks[0]?.risk_category || null;
+      const totalHighRisks = risks.length;
+      const missingMitigation = risks.filter(r => !r.mitigation_status || r.mitigation_status === "Not Started");
+
+      return {
+        topRiskCategory: topCategory,
+        totalHighRisks,
+        risks: risks.slice(0, 5),
+        missingMitigationCount: missingMitigation.length,
+        recommendedPlaybooks: playbooks.slice(0, 3),
+        isEmpty: risks.length === 0,
+      };
+    }),
+
+  // W6. getStageGate — stage-gate blockers and approval readiness
+  getStageGate: protectedProcedure
+    .input(
+      z.object({
+        ventureId: z.string(),
+        currentStage: z.string().optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const db = await getDb();
+      // Fetch venture stage info
+      const [ventureRows] = await db.execute(
+        sql.raw(`SELECT id, name, status, vrl_stage FROM ventures WHERE id = '${input.ventureId}' LIMIT 1`)
+      ).catch(() => [[]]);
+      const venture = (ventureRows as any[])[0];
+      const currentStage = input.currentStage || venture?.vrl_stage || "Validation";
+
+      // Fetch pending approvals
+      const [approvalRows] = await db.execute(
+        sql.raw(`SELECT id, gate_name, status, decision, blockers FROM stage_gate_decisions WHERE venture_id = '${input.ventureId}' AND status IN ('Pending','Blocked') ORDER BY created_at DESC LIMIT 5`)
+      ).catch(() => [[]]);
+      const pendingApprovals = approvalRows as any[];
+
+      // Stage gate requirements map
+      const gateRequirements: Record<string, { target: string; conditions: string[] }> = {
+        "Ideation": { target: "Validation", conditions: ["Problem statement documented", "Initial hypothesis formed", "Target customer defined"] },
+        "Validation": { target: "MVP", conditions: ["Market validation evidence", "Customer discovery complete", "Risk mitigation reviewed", "BRL score ≥ 50"] },
+        "MVP": { target: "Growth", conditions: ["MVP tested with customers", "Product-market fit signal", "Financial model complete", "VRL score ≥ 60"] },
+        "Growth": { target: "Scale", conditions: ["Revenue evidence", "Unit economics validated", "Investment readiness confirmed", "VRL score ≥ 75"] },
+      };
+
+      const gateInfo = gateRequirements[currentStage] || gateRequirements["Validation"];
+      const blockers: string[] = pendingApprovals.flatMap(a => {
+        try { return JSON.parse(a.blockers || "[]"); } catch { return []; }
+      });
+
+      const playbooks = await getContextualPlaybooks(
+        input.ventureId, "Governance", "ALL", "ALL", ctx.user.id, ctx.user.role || "user"
+      );
+
+      return {
+        currentStage,
+        targetStage: gateInfo.target,
+        requiredConditions: gateInfo.conditions,
+        blockers: blockers.length > 0 ? blockers : (pendingApprovals.length > 0 ? ["Approval pending review"] : []),
+        pendingApprovals: pendingApprovals.slice(0, 3),
+        recommendedPlaybooks: playbooks.slice(0, 3),
+        isEmpty: pendingApprovals.length === 0 && blockers.length === 0,
+      };
+    }),
+
+  // W7. getWidgetContext — combined context for ContextualWidgetPanel
+  getWidgetContext: protectedProcedure
+    .input(
+      z.object({
+        ventureId: z.string().nullable(),
+        module: z.string(),
+        widgetTypes: z.array(z.string()).optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const playbooks = await getContextualPlaybooks(
+        input.ventureId, input.module, "ALL", "ALL", ctx.user.id, ctx.user.role || "user"
+      );
+      return {
+        module: input.module,
+        ventureId: input.ventureId,
+        recommendedPlaybooks: playbooks,
+        userRole: ctx.user.role || "user",
+      };
+    }),
+
   // ─── Admin Procedures (7) ───
 
   // A1. listContextRules — all context rules with playbook titles

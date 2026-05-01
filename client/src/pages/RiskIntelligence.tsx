@@ -2,7 +2,7 @@
 // RISK INTELLIGENCE MODULE — FMEA-based Risk Register + Heatmap
 // Architecture Module 9 — Phase 4 MVP
 // ============================================================
-import ContextualPlaybookPanel from "@/components/ContextualPlaybookPanel";
+import ContextualWidgetPanel from "@/components/ContextualWidgetPanel";
 
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -225,7 +225,7 @@ export default function RiskIntelligence() {
 
         {/* Contextual Playbook Guidance */}
         <div className="p-8 pt-0">
-          <ContextualPlaybookPanel module="Risk Intelligence" ventureId={null} page="risk" workflowStage="ALL" />
+          <ContextualWidgetPanel module="Risk Intelligence" ventureId={null} page="risk" workflowStage="ALL" />
         </div>
     </div>
   );

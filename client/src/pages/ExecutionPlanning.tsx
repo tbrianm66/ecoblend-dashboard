@@ -2,7 +2,7 @@
 // EXECUTION PLANNING MODULE — Roadmap + Milestones + Budget
 // Architecture Module 12 — Phase 5 MVP
 // ============================================================
-import ContextualPlaybookPanel from "@/components/ContextualPlaybookPanel";
+import ContextualWidgetPanel from "@/components/ContextualWidgetPanel";
 
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -248,7 +248,7 @@ export default function ExecutionPlanning() {
 
         {/* Contextual Playbook Guidance */}
         <div className="p-8 pt-0">
-          <ContextualPlaybookPanel module="Execution Planning" ventureId={null} page="execution" workflowStage="Build" />
+          <ContextualWidgetPanel module="Execution Planning" ventureId={null} page="execution" workflowStage="Build" />
         </div>
     </div>
   );

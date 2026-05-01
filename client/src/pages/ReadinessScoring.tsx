@@ -2,7 +2,7 @@
 // READINESS SCORING MODULE — 7-Dimension Composite Dashboard
 // Architecture Module 10 — Phase 4 MVP
 // ============================================================
-import ContextualPlaybookPanel from "@/components/ContextualPlaybookPanel";
+import ContextualWidgetPanel from "@/components/ContextualWidgetPanel";
 
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -220,7 +220,7 @@ export default function ReadinessScoring() {
 
         {/* Contextual Playbook Guidance */}
         <div className="p-8 pt-0">
-          <ContextualPlaybookPanel module="Readiness Scoring" ventureId={null} page="scoring" workflowStage="Validation" />
+          <ContextualWidgetPanel module="Readiness Scoring" ventureId={null} page="scoring" workflowStage="Validation" />
         </div>
     </div>
   );

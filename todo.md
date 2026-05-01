@@ -1237,3 +1237,22 @@
 - [x] Part 6: Add Context Rules to Admin sidebar navigation (GitBranch icon)
 - [x] Part 6: Add /admin/context-rules route to App.tsx
 - [x] Run Vitest tests — 1,873 tests passing, 65 test files
+
+## Phase 3B — Specialised Widget Cards (Contextual Playbook Widget System)
+- [x] Add 7 specialised widget data endpoints to contextual.router.ts (W1-W7: getMissingEvidence, getScoreImprovement, getRDStageGuidance, getInvestmentPackReadiness, getRiskMitigation, getStageGate, getWidgetContext)
+- [x] Build shared widget primitives: WidgetPrimitives.tsx (WidgetLoadingState, WidgetErrorState, WidgetEmptyState, WidgetNoVentureState, WidgetActionButton, RecommendedPlaybookLink, WidgetProgressBar, WidgetSectionHeader, WidgetBlockerItem)
+- [x] Build MissingEvidenceCard (W1) — evidence gaps with progress bar and recommended playbooks
+- [x] Build ScoreImprovementCard (W2) — score blockers, high risks, evidence confidence metrics
+- [x] Build RDStageGuidanceCard (W3) — R&D stage requirements checklist with missing evidence
+- [x] Build InvestmentPackReadinessCard (W4) — Ready/Ready with Warnings/Not Ready status banner
+- [x] Build RiskMitigationCard (W5) — top high/critical risks with mitigation status
+- [x] Build StageGateApprovalCard (W6) — stage-gate blockers and pending approvals
+- [x] Build ContextualWidgetPanel host component — module-aware card selection + ContextualPlaybookPanel
+- [x] Integrate ContextualWidgetPanel into VentureIntake (replaces ContextualPlaybookPanel)
+- [x] Integrate ContextualWidgetPanel into ReadinessScoring (replaces ContextualPlaybookPanel)
+- [x] Integrate ContextualWidgetPanel into RDHub (replaces ContextualPlaybookPanel, module="Research & Technical Validation")
+- [x] Integrate ContextualWidgetPanel into RiskIntelligence (replaces ContextualPlaybookPanel)
+- [x] Integrate ContextualWidgetPanel into InvestmentPack (replaces ContextualPlaybookPanel, module="Investment Readiness")
+- [x] Integrate ContextualWidgetPanel into GovernanceHub (replaces ContextualPlaybookPanel)
+- [x] Integrate ContextualWidgetPanel into ExecutionPlanning (replaces ContextualPlaybookPanel)
+- [x] Run Vitest tests — 1,873 tests passing, 65 test files (no regressions)
