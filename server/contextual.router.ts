@@ -765,6 +765,305 @@ export const contextualRouter = router({
         completionBreakdown: completions as any[],
       };
     }),
+
+  // A8. adminFullAnalytics — extended analytics for /admin/widget-analytics
+  adminFullAnalytics: protectedProcedure
+    .input(
+      z.object({
+        days: z.number().optional().default(30),
+        module: z.string().optional(),
+        widgetType: z.string().optional(),
+        ventureId: z.string().optional(),
+        playbookId: z.string().optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await getDb();
+      const cutoff = Date.now() - input.days * 24 * 60 * 60 * 1000;
+      const filters: string[] = [`created_at >= ${cutoff}`];
+      if (input.module) filters.push(`module = '${input.module}'`);
+      if (input.widgetType) filters.push(`widget_type = '${input.widgetType}'`);
+      if (input.ventureId) filters.push(`venture_id = '${input.ventureId}'`);
+      if (input.playbookId) filters.push(`playbook_id = '${input.playbookId}'`);
+      const where = filters.join(" AND ");
+
+      const [overview] = await db.execute(sql.raw(`
+        SELECT
+          COUNT(*) as totalViews,
+          SUM(CASE WHEN action_type = 'PlaybookOpened' THEN 1 ELSE 0 END) as playbookOpens,
+          SUM(CASE WHEN action_type = 'PlaybookCompleted' THEN 1 ELSE 0 END) as playbookCompletions,
+          SUM(CASE WHEN action_type IN ('PlaybookDismissed','RecommendationDismissed') THEN 1 ELSE 0 END) as dismissals,
+          SUM(CASE WHEN action_type = 'EvidenceLinked' THEN 1 ELSE 0 END) as evidenceLinked,
+          SUM(CASE WHEN action_type = 'ApprovalGuidanceUsed' THEN 1 ELSE 0 END) as approvalsSupported,
+          SUM(CASE WHEN action_type = 'InvestorWarningDisplayed' THEN 1 ELSE 0 END) as investorWarnings,
+          SUM(CASE WHEN action_type = 'DraftInvestorPackGeneratedWithWarnings' THEN 1 ELSE 0 END) as draftPacksWithWarnings
+        FROM playbook_usage_events WHERE ${where}
+      `)).catch(() => [[{}]]);
+
+      const [byModule] = await db.execute(sql.raw(`
+        SELECT module, COUNT(*) as views,
+          SUM(CASE WHEN action_type = 'PlaybookOpened' THEN 1 ELSE 0 END) as opens,
+          SUM(CASE WHEN action_type = 'PlaybookCompleted' THEN 1 ELSE 0 END) as completions
+        FROM playbook_usage_events WHERE ${where}
+        GROUP BY module ORDER BY views DESC
+      `)).catch(() => [[]]);
+
+      const [byWidget] = await db.execute(sql.raw(`
+        SELECT widget_type, COUNT(*) as views,
+          SUM(CASE WHEN action_type = 'PlaybookOpened' THEN 1 ELSE 0 END) as opens
+        FROM playbook_usage_events WHERE ${where}
+        GROUP BY widget_type ORDER BY views DESC
+      `)).catch(() => [[]]);
+
+      const [topPlaybooks] = await db.execute(sql.raw(`
+        SELECT pue.playbook_id, pl.title, pl.category,
+          COUNT(*) as views,
+          SUM(CASE WHEN pue.action_type = 'PlaybookOpened' THEN 1 ELSE 0 END) as opens,
+          SUM(CASE WHEN pue.action_type = 'PlaybookCompleted' THEN 1 ELSE 0 END) as completions,
+          SUM(CASE WHEN pue.action_type IN ('PlaybookDismissed','RecommendationDismissed') THEN 1 ELSE 0 END) as dismissals
+        FROM playbook_usage_events pue
+        LEFT JOIN playbook_library pl ON pue.playbook_id = pl.id
+        WHERE ${where}
+        GROUP BY pue.playbook_id, pl.title, pl.category
+        ORDER BY views DESC LIMIT 20
+      `)).catch(() => [[]]);
+
+      const [recPerf] = await db.execute(sql.raw(`
+        SELECT
+          COUNT(*) as displayed,
+          SUM(CASE WHEN action_type = 'PlaybookOpened' THEN 1 ELSE 0 END) as opened,
+          SUM(CASE WHEN action_type = 'PlaybookCompleted' THEN 1 ELSE 0 END) as completed,
+          SUM(CASE WHEN action_type IN ('PlaybookDismissed','RecommendationDismissed') THEN 1 ELSE 0 END) as dismissed,
+          SUM(CASE WHEN action_type = 'EvidenceLinked' THEN 1 ELSE 0 END) as evidenceLinked
+        FROM playbook_usage_events WHERE ${where}
+      `)).catch(() => [[{}]]);
+
+      const [dismissReasons] = await db.execute(sql.raw(`
+        SELECT dismissed_reason, COUNT(*) as count
+        FROM playbook_usage_events
+        WHERE ${where} AND dismissed_reason IS NOT NULL
+        GROUP BY dismissed_reason ORDER BY count DESC
+      `)).catch(() => [[]]);
+
+      const [orphanPlaybooks] = await db.execute(sql.raw(`
+        SELECT pl.id, pl.title, pl.category, pl.status
+        FROM playbook_library pl
+        LEFT JOIN playbook_context_rules pcr ON pl.id = pcr.playbook_id AND pcr.is_active = 1
+        WHERE pl.status = 'Published' AND pcr.id IS NULL
+        LIMIT 20
+      `)).catch(() => [[]]);
+
+      return {
+        overview: (overview as any[])[0] || {},
+        byModule: byModule as any[],
+        byWidget: byWidget as any[],
+        topPlaybooks: topPlaybooks as any[],
+        recPerf: (recPerf as any[])[0] || {},
+        dismissReasons: dismissReasons as any[],
+        orphanPlaybooks: orphanPlaybooks as any[],
+      };
+    }),
+
+  // A9. adminGetWidgetSettings — fetch global + threshold + module + role settings
+  adminGetWidgetSettings: protectedProcedure.query(async ({ ctx }) => {
+    if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+    const db = await getDb();
+    const [global] = await db.execute(sql.raw(`SELECT * FROM widget_global_settings WHERE id = 1`)).catch(() => [[{}]]);
+    const [thresholds] = await db.execute(sql.raw(`SELECT * FROM widget_threshold_settings WHERE id = 1`)).catch(() => [[{}]]);
+    const [roleSettings] = await db.execute(sql.raw(`SELECT * FROM widget_role_settings ORDER BY role, widget_type`)).catch(() => [[]]);
+    const [moduleConfigs] = await db.execute(sql.raw(`SELECT * FROM playbook_widget_configs ORDER BY module, widget_type`)).catch(() => [[]]);
+    return {
+      global: (global as any[])[0] || {},
+      thresholds: (thresholds as any[])[0] || {},
+      roleSettings: roleSettings as any[],
+      moduleConfigs: moduleConfigs as any[],
+    };
+  }),
+
+  // A10. adminUpdateWidgetGlobalSettings
+  adminUpdateWidgetGlobalSettings: protectedProcedure
+    .input(z.object({
+      enableWidgetsGlobally: z.boolean().optional(),
+      showAsSidePanel: z.boolean().optional(),
+      showInline: z.boolean().optional(),
+      maxRecommendedPlaybooks: z.number().optional(),
+      defaultRecommendationThreshold: z.number().optional(),
+      enableUsageTracking: z.boolean().optional(),
+      enableDismissalReasons: z.boolean().optional(),
+      enableCompletionTracking: z.boolean().optional(),
+      enableInvestorWarningGates: z.boolean().optional(),
+      enableStageGateWarningGates: z.boolean().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await getDb();
+      const updater = ctx.user.name || ctx.user.openId;
+      const sets: string[] = [`updatedBy = '${updater}'`];
+      if (input.enableWidgetsGlobally !== undefined) sets.push(`enableWidgetsGlobally = ${input.enableWidgetsGlobally ? 1 : 0}`);
+      if (input.showAsSidePanel !== undefined) sets.push(`showAsSidePanel = ${input.showAsSidePanel ? 1 : 0}`);
+      if (input.showInline !== undefined) sets.push(`showInline = ${input.showInline ? 1 : 0}`);
+      if (input.maxRecommendedPlaybooks !== undefined) sets.push(`maxRecommendedPlaybooks = ${input.maxRecommendedPlaybooks}`);
+      if (input.defaultRecommendationThreshold !== undefined) sets.push(`defaultRecommendationThreshold = ${input.defaultRecommendationThreshold}`);
+      if (input.enableUsageTracking !== undefined) sets.push(`enableUsageTracking = ${input.enableUsageTracking ? 1 : 0}`);
+      if (input.enableDismissalReasons !== undefined) sets.push(`enableDismissalReasons = ${input.enableDismissalReasons ? 1 : 0}`);
+      if (input.enableCompletionTracking !== undefined) sets.push(`enableCompletionTracking = ${input.enableCompletionTracking ? 1 : 0}`);
+      if (input.enableInvestorWarningGates !== undefined) sets.push(`enableInvestorWarningGates = ${input.enableInvestorWarningGates ? 1 : 0}`);
+      if (input.enableStageGateWarningGates !== undefined) sets.push(`enableStageGateWarningGates = ${input.enableStageGateWarningGates ? 1 : 0}`);
+      await db.execute(sql.raw(`INSERT INTO widget_global_settings (id) VALUES (1) ON DUPLICATE KEY UPDATE ${sets.join(", ")}`) );
+      return { ok: true };
+    }),
+
+  // A11. adminUpdateWidgetThresholds
+  adminUpdateWidgetThresholds: protectedProcedure
+    .input(z.object({
+      evidenceConfidenceWarning: z.number().optional(),
+      readinessScoreWarning: z.number().optional(),
+      highRiskThreshold: z.number().optional(),
+      investorPackWarning: z.number().optional(),
+      stageGateMinEvidence: z.number().optional(),
+      maxUnresolvedHighRisks: z.number().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await getDb();
+      const updater = ctx.user.name || ctx.user.openId;
+      const sets: string[] = [`updatedBy = '${updater}'`];
+      if (input.evidenceConfidenceWarning !== undefined) sets.push(`evidenceConfidenceWarning = ${input.evidenceConfidenceWarning}`);
+      if (input.readinessScoreWarning !== undefined) sets.push(`readinessScoreWarning = ${input.readinessScoreWarning}`);
+      if (input.highRiskThreshold !== undefined) sets.push(`highRiskThreshold = ${input.highRiskThreshold}`);
+      if (input.investorPackWarning !== undefined) sets.push(`investorPackWarning = ${input.investorPackWarning}`);
+      if (input.stageGateMinEvidence !== undefined) sets.push(`stageGateMinEvidence = ${input.stageGateMinEvidence}`);
+      if (input.maxUnresolvedHighRisks !== undefined) sets.push(`maxUnresolvedHighRisks = ${input.maxUnresolvedHighRisks}`);
+      await db.execute(sql.raw(`INSERT INTO widget_threshold_settings (id) VALUES (1) ON DUPLICATE KEY UPDATE ${sets.join(", ")}`) );
+      return { ok: true };
+    }),
+
+  // A12. adminUpdateModuleWidgetConfig
+  adminUpdateModuleWidgetConfig: protectedProcedure
+    .input(z.object({
+      module: z.string(),
+      widgetType: z.string(),
+      isEnabled: z.boolean().optional(),
+      maxPlaybooks: z.number().optional(),
+      threshold: z.number().optional(),
+      position: z.enum(["sidebar", "inline", "both"]).optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await getDb();
+      const updater = ctx.user.name || ctx.user.openId;
+      const now = Date.now();
+      const id = uuid();
+      const sets: string[] = [`updated_by = '${updater}'`, `updated_at = ${now}`];
+      if (input.isEnabled !== undefined) sets.push(`enabled = ${input.isEnabled ? 1 : 0}`);
+      if (input.maxPlaybooks !== undefined) sets.push(`max_items = ${input.maxPlaybooks}`);
+      if (input.threshold !== undefined) sets.push(`min_recommendation_score = ${input.threshold}`);
+      if (input.position !== undefined) sets.push(`placement = '${input.position}'`);
+      await db.execute(sql.raw(`
+        INSERT INTO playbook_widget_configs (id, module, widget_type, created_by, updated_by, created_at, updated_at)
+        VALUES ('${id}', '${input.module}', '${input.widgetType}', '${updater}', '${updater}', ${now}, ${now})
+        ON DUPLICATE KEY UPDATE ${sets.join(", ")}
+      `));
+      return { ok: true };
+    }),
+
+  // A13. adminUpdateRoleVisibility
+  adminUpdateRoleVisibility: protectedProcedure
+    .input(z.object({
+      role: z.string(),
+      widgetType: z.string(),
+      isVisible: z.boolean(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await getDb();
+      const updater = ctx.user.name || ctx.user.openId;
+      await db.execute(sql.raw(`
+        INSERT INTO widget_role_settings (role, widget_type, isVisible, updatedBy)
+        VALUES ('${input.role}', '${input.widgetType}', ${input.isVisible ? 1 : 0}, '${updater}')
+        ON DUPLICATE KEY UPDATE isVisible = ${input.isVisible ? 1 : 0}, updatedBy = '${updater}'
+      `));
+      return { ok: true };
+    }),
+
+  // A14. adminGetContextDiagnostics — explain why recommendations appear
+  adminGetContextDiagnostics: protectedProcedure
+    .input(z.object({
+      ventureId: z.string().optional(),
+      module: z.string(),
+      page: z.string().optional(),
+      workflowStage: z.string().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await getDb();
+      const [allRules] = await db.execute(sql.raw(`
+        SELECT pcr.*, pl.title as playbook_title, pl.status as playbook_status
+        FROM playbook_context_rules pcr
+        LEFT JOIN playbook_library pl ON pcr.playbook_id = pl.id
+        WHERE pcr.module = '${input.module}' OR pcr.module IS NULL
+        ORDER BY pcr.priority DESC
+      `)).catch(() => [[]]);
+      let ventureInfo: any = null;
+      if (input.ventureId) {
+        const [vRows] = await db.execute(sql.raw(`SELECT id, name, vrl, trl, status FROM ventures WHERE id = '${input.ventureId}' LIMIT 1`)).catch(() => [[]]);
+        ventureInfo = (vRows as any[])[0] || null;
+      }
+      const rules = allRules as any[];
+      const matched: any[] = [];
+      const excluded: any[] = [];
+      for (const rule of rules) {
+        const exclusions: string[] = [];
+        if (rule.module && rule.module !== input.module) exclusions.push(`Module mismatch: rule requires '${rule.module}', current is '${input.module}'`);
+        if (rule.playbook_status && rule.playbook_status !== 'Published') exclusions.push(`Playbook status is '${rule.playbook_status}' (not Published)`);
+        if (!rule.is_active) exclusions.push('Rule is inactive');
+        if (exclusions.length > 0) {
+          excluded.push({ ...rule, exclusionReasons: exclusions });
+        } else {
+          const reasons: string[] = [];
+          if (rule.module === input.module) reasons.push(`Module matched: ${input.module}`);
+          if (rule.missing_evidence_trigger) reasons.push('Missing evidence trigger: enabled');
+          if (rule.high_risk_trigger) reasons.push('High risk trigger: enabled');
+          if (rule.low_score_trigger) reasons.push('Low score trigger: enabled');
+          if (rule.stage_gate_trigger) reasons.push('Stage-gate trigger: enabled');
+          if (rule.investor_warning_trigger) reasons.push('Investor warning trigger: enabled');
+          matched.push({ ...rule, matchReasons: reasons });
+        }
+      }
+      return {
+        module: input.module,
+        page: input.page || null,
+        venture: ventureInfo,
+        userRole: ctx.user.role,
+        matchedRules: matched,
+        excludedRules: excluded,
+        totalRules: rules.length,
+        matchedCount: matched.length,
+        excludedCount: excluded.length,
+      };
+    }),
+
+  // A15. adminExportAnalyticsCsv — export usage events as raw rows for CSV download
+  adminExportAnalyticsCsv: protectedProcedure
+    .input(z.object({
+      days: z.number().optional().default(30),
+      module: z.string().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await getDb();
+      const cutoff = Date.now() - input.days * 24 * 60 * 60 * 1000;
+      const moduleFilter = input.module ? ` AND module = '${input.module}'` : "";
+      const [rows] = await db.execute(sql.raw(`
+        SELECT id, event_type, playbook_id, widget_type, user_id, venture_id, module, page,
+               action_type, outcome, dismissed_reason, created_at
+        FROM playbook_usage_events
+        WHERE created_at >= ${cutoff}${moduleFilter}
+        ORDER BY created_at DESC LIMIT 5000
+      `)).catch(() => [[]]);
+      return { rows: rows as any[] };
+    }),
 });
 
 export type ContextualRouter = typeof contextualRouter;

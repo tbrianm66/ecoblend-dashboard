@@ -21,7 +21,7 @@ import {
   BookOpenCheck, LayoutTemplate, Plug, Code2, SlidersHorizontal,
   ChevronDown, ChevronRight, Bell, X,
   Target, Compass, Building2, Shield, Map, HandCoins,
-  UserCheck, Brain, GitBranch,
+  UserCheck, Brain, GitBranch, Sliders, CheckSquare,
 } from "lucide-react";
 import { useVentures } from "@/contexts/VentureContext";
 
@@ -40,7 +40,7 @@ const iconMap: Record<string, React.ComponentType<{ size?: number; className?: s
   Lock, Database, Settings2,
   BookOpenCheck, LayoutTemplate, Plug, Code2, SlidersHorizontal,
   Target, Compass, Building2, Shield, Map, HandCoins,
-  UserCheck, Brain, GitBranch,
+  UserCheck, Brain, GitBranch, Sliders, CheckSquare,
 };
 
 interface NavItem {
@@ -245,8 +245,11 @@ const NAV_GROUPS: NavGroup[] = [
     defaultOpen: false,
     items: [
       { id: "admin-playbooks",    label: "Playbook Library",     icon: "BookOpenCheck",    href: "/admin/playbooks" },
-      { id: "admin-context-rules",label: "Context Rules",        icon: "GitBranch",        href: "/admin/context-rules" },
-      { id: "admin-users",        label: "Users & Roles",        icon: "Users",            href: "/admin/users" },
+      { id: "admin-context-rules",   label: "Context Rules",       icon: "GitBranch",        href: "/admin/context-rules" },
+      { id: "admin-widget-analytics",label: "Widget Analytics",     icon: "BarChart3",        href: "/admin/widget-analytics" },
+      { id: "admin-widget-settings", label: "Widget Settings",      icon: "Sliders",          href: "/admin/widget-settings" },
+      { id: "admin-prod-readiness",  label: "Production Readiness", icon: "CheckSquare",      href: "/admin/production-readiness" },
+      { id: "admin-users",           label: "Users & Roles",        icon: "Users",            href: "/admin/users" },
       { id: "admin-permissions",  label: "Permissions",          icon: "Shield",           href: "/admin/permissions" },
       { id: "admin-templates",    label: "Templates",            icon: "LayoutTemplate",   href: "/admin/templates" },
       { id: "admin-data-fields",  label: "Data Fields",          icon: "Database",         href: "/admin/data-fields" },

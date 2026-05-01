@@ -1,8 +1,9 @@
 /**
  * ContextualWidgetPanel — Host component for Phase 3B specialised widget cards.
  *
- * Renders the appropriate specialised card(s) based on the current module,
- * alongside the existing ContextualPlaybookPanel recommendations.
+ * Phase 3C additions:
+ *   - Usage tracking: logs View events on mount, Open events on expand
+ *   - Dismissal: logs Dismiss events when a card is collapsed after being open
  *
  * Module → Widget mapping:
  *   Venture Intake              → MissingEvidenceCard
@@ -15,9 +16,10 @@
  *   Execution Planning          → ScoreImprovementCard
  *   (default)                   → MissingEvidenceCard
  */
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ChevronDown, ChevronUp, Layers } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { trpc } from "@/lib/trpc";
 import ContextualPlaybookPanel from "./ContextualPlaybookPanel";
 import MissingEvidenceCard from "./widgets/MissingEvidenceCard";
 import ScoreImprovementCard from "./widgets/ScoreImprovementCard";
@@ -49,6 +51,16 @@ interface WidgetConfig {
   label: string;
   color: string;
 }
+
+// Widget type → stable sentinel playbook ID for usage tracking
+const WIDGET_SENTINEL_IDS: Record<string, string> = {
+  "missing-evidence": "__widget_missing_evidence__",
+  "score-improvement": "__widget_score_improvement__",
+  "rd-stage-guidance": "__widget_rd_stage_guidance__",
+  "investment-pack-readiness": "__widget_investment_pack_readiness__",
+  "risk-mitigation": "__widget_risk_mitigation__",
+  "stage-gate-approval": "__widget_stage_gate_approval__",
+};
 
 /** Determine which widgets to show for a given module */
 function getWidgetsForModule(module: string): WidgetConfig[] {
@@ -98,13 +110,55 @@ function WidgetCard({
   module: string;
 }) {
   const [collapsed, setCollapsed] = useState(false);
+  const logUsage = trpc.contextual.logUsageEvent.useMutation();
+  // Track whether the card was ever opened (to avoid spurious Dismiss logs)
+  const wasOpenedRef = useRef(false);
+
+  // Log a View event when the card first mounts (visible to user)
+  useEffect(() => {
+    logUsage.mutate({
+      playbookId: WIDGET_SENTINEL_IDS[config.type] || config.type,
+      ventureId,
+      module,
+      widgetType: config.type,
+      actionType: "View",
+    });
+    // Only run on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleToggle = () => {
+    const willExpand = collapsed; // about to expand
+    setCollapsed((c) => !c);
+
+    if (willExpand) {
+      // User is expanding — log Open
+      wasOpenedRef.current = true;
+      logUsage.mutate({
+        playbookId: WIDGET_SENTINEL_IDS[config.type] || config.type,
+        ventureId,
+        module,
+        widgetType: config.type,
+        actionType: "Open",
+      });
+    } else if (wasOpenedRef.current) {
+      // User is collapsing after having opened — log Dismiss
+      logUsage.mutate({
+        playbookId: WIDGET_SENTINEL_IDS[config.type] || config.type,
+        ventureId,
+        module,
+        widgetType: config.type,
+        actionType: "Dismiss",
+      });
+    }
+  };
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white overflow-hidden shadow-sm">
       {/* Card header */}
       <button
         className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
-        onClick={() => setCollapsed((c) => !c)}
+        onClick={handleToggle}
       >
         <div className="flex items-center gap-2">
           <span

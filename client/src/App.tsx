@@ -82,6 +82,9 @@ import AdminHub from "./pages/AdminHub";
 import AdminPlaybooks from "./pages/AdminPlaybooks";
 import AdminContextRules from "./pages/AdminContextRules";
 import AdminPlaceholder from "./pages/AdminPlaceholder";
+import AdminWidgetAnalytics from "./pages/AdminWidgetAnalytics";
+import AdminWidgetSettings from "./pages/AdminWidgetSettings";
+import AdminProductionReadiness from "./pages/AdminProductionReadiness";
 import ModulePlaceholder from "./pages/ModulePlaceholder";
 import VentureIntake from "./pages/VentureIntake";
 import ReadinessScoring from "./pages/ReadinessScoring";
@@ -170,6 +173,9 @@ function Router() {
       <Route path="/admin" component={AdminHub} />
       <Route path="/admin/playbooks" component={AdminPlaybooks} />
       <Route path="/admin/context-rules" component={AdminContextRules} />
+      <Route path="/admin/widget-analytics" component={AdminWidgetAnalytics} />
+      <Route path="/admin/widget-settings" component={AdminWidgetSettings} />
+      <Route path="/admin/production-readiness" component={AdminProductionReadiness} />
       <Route path="/admin/users" component={AdminPlaceholder} />
       <Route path="/admin/permissions" component={AdminPlaceholder} />
       <Route path="/admin/templates" component={AdminPlaceholder} />

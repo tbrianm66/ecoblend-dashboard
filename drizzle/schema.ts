@@ -6946,3 +6946,175 @@ export const playbookVersions = mysqlTable("playbook_versions", {
 });
 export type PlaybookVersion = typeof playbookVersions.$inferSelect;
 export type InsertPlaybookVersion = typeof playbookVersions.$inferInsert;
+
+// ============================================================
+// PHASE 3C — Contextual Playbook Widget System: Production Hardening
+// Tables: playbook_context_rules, playbook_widget_configs,
+//         playbook_usage_events, playbook_completions,
+//         widget_global_settings, widget_module_settings,
+//         widget_threshold_settings, widget_role_settings
+// ============================================================
+
+// -- Playbook Context Rules ---------------------------------------------------
+export const playbookContextRules = mysqlTable("playbook_context_rules", {
+  id:                       int("id").autoincrement().primaryKey(),
+  ruleName:                 varchar("ruleName", { length: 128 }).notNull(),
+  description:              text("description"),
+  playbookId:               varchar("playbookId", { length: 64 }).notNull(),
+  module:                   varchar("module", { length: 128 }),
+  page:                     varchar("page", { length: 128 }),
+  workflowStage:            varchar("workflowStage", { length: 64 }),
+  rdStage:                  varchar("rdStage", { length: 64 }),
+  scoringFramework:         varchar("scoringFramework", { length: 64 }),
+  missingEvidenceTrigger:   boolean("missingEvidenceTrigger").default(false),
+  highRiskTrigger:          boolean("highRiskTrigger").default(false),
+  lowScoreTrigger:          boolean("lowScoreTrigger").default(false),
+  stageGateTrigger:         boolean("stageGateTrigger").default(false),
+  investorWarningTrigger:   boolean("investorWarningTrigger").default(false),
+  allowedRoles:             text("allowedRoles"),          // JSON array of role strings
+  priority:                 int("priority").default(50),
+  adminPriority:            int("adminPriority").default(50),
+  suppressIfCompleted:      boolean("suppressIfCompleted").default(true),
+  allowRepeatRecommendation:boolean("allowRepeatRecommendation").default(false),
+  minimumRecommendationScore: int("minimumRecommendationScore").default(0),
+  isActive:                 boolean("isActive").default(true),
+  updatedBy:                varchar("updatedBy", { length: 128 }),
+  createdAt:                timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:                timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type PlaybookContextRule = typeof playbookContextRules.$inferSelect;
+export type InsertPlaybookContextRule = typeof playbookContextRules.$inferInsert;
+
+// -- Playbook Widget Configs --------------------------------------------------
+export const playbookWidgetConfigs = mysqlTable("playbook_widget_configs", {
+  id:           int("id").autoincrement().primaryKey(),
+  module:       varchar("module", { length: 128 }).notNull(),
+  widgetType:   varchar("widgetType", { length: 64 }).notNull(),
+  isEnabled:    boolean("isEnabled").default(true),
+  maxPlaybooks: int("maxPlaybooks").default(3),
+  threshold:    int("threshold").default(40),
+  position:     mysqlEnum("position", ["sidebar", "inline", "both"]).default("sidebar"),
+  updatedBy:    varchar("updatedBy", { length: 128 }),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:    timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type PlaybookWidgetConfig = typeof playbookWidgetConfigs.$inferSelect;
+export type InsertPlaybookWidgetConfig = typeof playbookWidgetConfigs.$inferInsert;
+
+// -- Playbook Usage Events ----------------------------------------------------
+export const playbookUsageEvents = mysqlTable("playbook_usage_events", {
+  id:                  varchar("id", { length: 64 }).primaryKey(),
+  eventType:           varchar("eventType", { length: 64 }).notNull(),
+  playbookId:          varchar("playbookId", { length: 64 }),
+  widgetType:          varchar("widgetType", { length: 64 }),
+  userId:              int("userId"),
+  ventureId:           varchar("ventureId", { length: 64 }),
+  module:              varchar("module", { length: 128 }),
+  page:                varchar("page", { length: 128 }),
+  contextRuleId:       int("contextRuleId"),
+  recommendationScore: int("recommendationScore"),
+  actionType:          varchar("actionType", { length: 64 }),
+  contextSnapshot:     text("contextSnapshot"),
+  outcome:             varchar("outcome", { length: 128 }),
+  dismissedReason:     mysqlEnum("dismissedReason", [
+    "Not relevant",
+    "Already completed",
+    "Too advanced",
+    "Too basic",
+    "Wrong module",
+    "No time now",
+    "Other",
+  ]),
+  createdAt:           bigint("createdAt", { mode: "number" }).notNull(),
+});
+export type PlaybookUsageEvent = typeof playbookUsageEvents.$inferSelect;
+export type InsertPlaybookUsageEvent = typeof playbookUsageEvents.$inferInsert;
+
+// -- Playbook Completions -----------------------------------------------------
+export const playbookCompletions = mysqlTable("playbook_completions", {
+  id:               varchar("id", { length: 64 }).primaryKey(),
+  playbookId:       varchar("playbookId", { length: 64 }).notNull(),
+  userId:           int("userId").notNull(),
+  ventureId:        varchar("ventureId", { length: 64 }),
+  module:           varchar("module", { length: 128 }),
+  workflowStage:    varchar("workflowStage", { length: 64 }),
+  completionStatus: mysqlEnum("completionStatus", [
+    "Not Started",
+    "In Progress",
+    "Completed",
+    "Needs Review",
+    "Reviewed",
+    "Reopened",
+  ]).default("Not Started"),
+  completedSteps:   text("completedSteps"),   // JSON array
+  evidenceLinks:    text("evidenceLinks"),     // JSON array
+  completedAt:      bigint("completedAt", { mode: "number" }),
+  reviewedBy:       varchar("reviewedBy", { length: 128 }),
+  reviewStatus:     mysqlEnum("reviewStatus", [
+    "Not Required",
+    "Pending Review",
+    "Approved",
+    "Rejected",
+    "Changes Requested",
+  ]).default("Not Required"),
+  createdAt:        timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:        timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type PlaybookCompletion = typeof playbookCompletions.$inferSelect;
+export type InsertPlaybookCompletion = typeof playbookCompletions.$inferInsert;
+
+// -- Widget Global Settings ---------------------------------------------------
+export const widgetGlobalSettings = mysqlTable("widget_global_settings", {
+  id:                          int("id").autoincrement().primaryKey(),
+  enableWidgetsGlobally:       boolean("enableWidgetsGlobally").default(true),
+  showAsSidePanel:             boolean("showAsSidePanel").default(true),
+  showInline:                  boolean("showInline").default(false),
+  maxRecommendedPlaybooks:     int("maxRecommendedPlaybooks").default(3),
+  defaultRecommendationThreshold: int("defaultRecommendationThreshold").default(40),
+  enableUsageTracking:         boolean("enableUsageTracking").default(true),
+  enableDismissalReasons:      boolean("enableDismissalReasons").default(true),
+  enableCompletionTracking:    boolean("enableCompletionTracking").default(true),
+  enableInvestorWarningGates:  boolean("enableInvestorWarningGates").default(true),
+  enableStageGateWarningGates: boolean("enableStageGateWarningGates").default(true),
+  updatedBy:                   varchar("updatedBy", { length: 128 }),
+  updatedAt:                   timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type WidgetGlobalSettings = typeof widgetGlobalSettings.$inferSelect;
+
+// -- Widget Threshold Settings ------------------------------------------------
+export const widgetThresholdSettings = mysqlTable("widget_threshold_settings", {
+  id:                              int("id").autoincrement().primaryKey(),
+  evidenceConfidenceWarning:       int("evidenceConfidenceWarning").default(50),
+  readinessScoreWarning:           int("readinessScoreWarning").default(40),
+  highRiskThreshold:               int("highRiskThreshold").default(3),
+  investorPackWarning:             int("investorPackWarning").default(60),
+  stageGateMinEvidence:            int("stageGateMinEvidence").default(3),
+  maxUnresolvedHighRisks:          int("maxUnresolvedHighRisks").default(2),
+  updatedBy:                       varchar("updatedBy", { length: 128 }),
+  updatedAt:                       timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type WidgetThresholdSettings = typeof widgetThresholdSettings.$inferSelect;
+
+// -- Widget Role Visibility Settings ------------------------------------------
+export const widgetRoleSettings = mysqlTable("widget_role_settings", {
+  id:         int("id").autoincrement().primaryKey(),
+  role:       varchar("role", { length: 64 }).notNull(),
+  widgetType: varchar("widgetType", { length: 64 }).notNull(),
+  isVisible:  boolean("isVisible").default(true),
+  updatedBy:  varchar("updatedBy", { length: 128 }),
+  updatedAt:  timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type WidgetRoleSetting = typeof widgetRoleSettings.$inferSelect;
+
+// -- Contextual Guidance Events -----------------------------------------------
+export const contextualGuidanceEvents = mysqlTable("contextual_guidance_events", {
+  id:          varchar("id", { length: 64 }).primaryKey(),
+  ventureId:   varchar("ventureId", { length: 64 }).notNull(),
+  module:      varchar("module", { length: 128 }),
+  eventType:   varchar("eventType", { length: 64 }),
+  payload:     text("payload"),
+  status:      mysqlEnum("status", ["Active", "Resolved", "Dismissed"]).default("Active"),
+  resolvedAt:  bigint("resolvedAt", { mode: "number" }),
+  createdAt:   bigint("createdAt", { mode: "number" }).notNull(),
+});
+export type ContextualGuidanceEvent = typeof contextualGuidanceEvents.$inferSelect;

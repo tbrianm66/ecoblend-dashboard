@@ -449,6 +449,13 @@
       "when": 1776522053438,
       "tag": "0063_wooden_sentinels",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "5",
+      "when": 1777669079448,
+      "tag": "0064_watery_blizzard",
+      "breakpoints": true
     }
   ]
 }

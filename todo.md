@@ -1256,3 +1256,19 @@
 - [x] Integrate ContextualWidgetPanel into GovernanceHub (replaces ContextualPlaybookPanel)
 - [x] Integrate ContextualWidgetPanel into ExecutionPlanning (replaces ContextualPlaybookPanel)
 - [x] Run Vitest tests — 1,873 tests passing, 65 test files (no regressions)
+
+## Phase 3C — Contextual Widget System Hardening (May 2026)
+- [x] Add 9 Phase 3C DB tables: widget_global_settings, widget_threshold_settings, widget_role_settings, playbook_widget_configs (extended), playbook_completions (extended), playbook_usage_events (extended), contextual_guidance_events, playbook_versions, coaching_frl
+- [x] Add Phase 3C server endpoints: adminFullAnalytics, adminGetWidgetSettings, adminUpdateWidgetGlobalSettings, adminUpdateWidgetThresholds, adminUpdateModuleWidgetConfig, adminUpdateRoleVisibility, adminGetContextDiagnostics, adminExportAnalyticsCsv
+- [x] Build AdminWidgetAnalytics page (/admin/widget-analytics) — usage metrics, engagement rates, top playbooks, module breakdown
+- [x] Build AdminWidgetSettings page (/admin/widget-settings) — global toggles, thresholds, module-level controls, role visibility
+- [x] Build ContextRuleDiagnosticsPanel component — explains why recommendations appear (matched vs excluded rules)
+- [x] Wire usage tracking (View/Open/Dismiss/Complete events) into ContextualWidgetPanel
+- [x] Build AdminProductionReadiness page (/admin/production-readiness) — pre-launch verification checklist
+- [x] Register 3 new admin routes in App.tsx (/admin/widget-analytics, /admin/widget-settings, /admin/production-readiness)
+- [x] Add 4 new admin sections to AdminHub (Context Rules, Widget Analytics, Widget Settings, Production Readiness)
+- [x] Add 4 new admin nav items to Sidebar.tsx
+- [x] Fix widget_role_settings column name (widgetType → widget_type)
+- [x] Fix adminUpdateModuleWidgetConfig SQL to use correct column names (enabled, max_items, min_recommendation_score, placement, updated_by)
+- [x] Write 39 Phase 3C Vitest tests covering: permission hardening (admin-only endpoints), usage event logging, widget settings CRUD, context rule diagnostics, CSV export, full analytics
+- [x] All 1,912 tests pass (0 failures, 66 test files)

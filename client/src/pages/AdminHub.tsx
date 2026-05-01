@@ -6,7 +6,8 @@ import { useLocation } from "wouter";
 import {
   BookOpenCheck, Users, ShieldCheck, LayoutTemplate,
   Database, Settings2, Plug, Code2, ClipboardList,
-  SlidersHorizontal, ChevronRight,
+  SlidersHorizontal, ChevronRight, BarChart3, Sliders, CheckSquare,
+  GitBranch,
 } from "lucide-react";
 
 const ADMIN_SECTIONS = [
@@ -99,6 +100,42 @@ const ADMIN_SECTIONS = [
     description: "Configure global platform settings: scoring weights, stage-gate thresholds, notification rules.",
     color: "#fbbf24",
     count: "Coming soon",
+  },
+  {
+    id: "context-rules",
+    href: "/admin/context-rules",
+    icon: GitBranch,
+    label: "Context Rules",
+    description: "Manage context-matching rules that determine which playbooks appear automatically based on module, VRL/TRL stage, and venture state.",
+    color: "#51AF37",
+    count: "Live",
+  },
+  {
+    id: "widget-analytics",
+    href: "/admin/widget-analytics",
+    icon: BarChart3,
+    label: "Widget Analytics",
+    description: "View usage metrics, engagement rates, completion rates, and top recommendations for all contextual widget cards.",
+    color: "#3A97D3",
+    count: "Live",
+  },
+  {
+    id: "widget-settings",
+    href: "/admin/widget-settings",
+    icon: Sliders,
+    label: "Widget Settings",
+    description: "Configure global widget behaviour, thresholds, module-level controls, and role visibility for the contextual widget system.",
+    color: "#8b5cf6",
+    count: "Live",
+  },
+  {
+    id: "production-readiness",
+    href: "/admin/production-readiness",
+    icon: CheckSquare,
+    label: "Production Readiness",
+    description: "Pre-launch verification checklist covering all Phase 3C hardening areas: DB schema, permissions, thresholds, QA tests, and more.",
+    color: "#F49C13",
+    count: "Live",
   },
 ];
 
