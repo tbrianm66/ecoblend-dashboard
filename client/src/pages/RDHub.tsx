@@ -2,6 +2,7 @@
 // R&D HUB MODULE — 4-Stage Lifecycle (Concept → Simulation → Prototype → Integration)
 // Architecture Module 5 — Phase 3 MVP
 // ============================================================
+import ContextualPlaybookPanel from "@/components/ContextualPlaybookPanel";
 
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -374,6 +375,11 @@ export default function RDHub() {
           </div>
         )}
       </div>
+
+        {/* Contextual Playbook Guidance */}
+        <div className="p-8 pt-0">
+          <ContextualPlaybookPanel module="R&D Hub" ventureId={null} page="rd-hub" workflowStage="Build" />
+        </div>
     </div>
   );
 }

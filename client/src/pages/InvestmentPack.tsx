@@ -2,6 +2,7 @@
 // INVESTMENT PACK MODULE — Investment Thesis + Gating Logic + Data Room
 // Architecture Module 11 — Phase 5 MVP
 // ============================================================
+import ContextualPlaybookPanel from "@/components/ContextualPlaybookPanel";
 
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -281,6 +282,11 @@ export default function InvestmentPack() {
           </div>
         )}
       </div>
+
+        {/* Contextual Playbook Guidance */}
+        <div className="p-8 pt-0">
+          <ContextualPlaybookPanel module="Investment Pack" ventureId={null} page="investment" workflowStage="Scale" />
+        </div>
     </div>
   );
 }

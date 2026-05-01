@@ -2,6 +2,7 @@
 // VENTURE INTAKE MODULE — Problem Statement + Hypothesis Register
 // Architecture Module 2 — Phase 1 MVP
 // ============================================================
+import ContextualPlaybookPanel from "@/components/ContextualPlaybookPanel";
 
 import { useState } from "react";
 import { useLocation } from "wouter";
@@ -265,6 +266,11 @@ export default function VentureIntake() {
           </div>
         )}
       </div>
+
+        {/* Contextual Playbook Guidance */}
+        <div className="p-8 pt-0">
+          <ContextualPlaybookPanel module="Venture Intake" ventureId={null} page="intake" workflowStage="Opportunity" />
+        </div>
     </div>
   );
 }

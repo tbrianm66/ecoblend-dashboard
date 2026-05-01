@@ -1199,3 +1199,24 @@
 - [ ] Build Sustainability module pages (impact, LCA, circularity, B Corp)
 - [ ] Build Collaboration module pages (advisors, academics, specialists)
 - [ ] Build Command Centre dashboard (venture status, alerts, portfolio view)
+
+## Contextual Playbook Widget System Implementation
+- [x] Phase 1: Create 5 new DB tables (playbook_context_rules, playbook_widget_configs, playbook_usage_events, playbook_completions, contextual_guidance_events)
+- [x] Phase 1: Seed default PlaybookWidgetConfig for all 16 modules (160 records)
+- [x] Phase 1: Seed initial PlaybookContextRules for all 20 MVP playbooks (23 rules)
+- [x] Phase 2: Build Context Engine service (context-engine.ts) with 10-factor scoring formula
+- [x] Phase 3: Build contextual.router.ts with 12 contextual + 7 admin tRPC procedures
+- [x] Phase 3: Admin contextual procedures included in contextual.router.ts
+- [x] Phase 3: Merge contextualRouter into appRouter (server running cleanly)
+- [ ] Phase 4: Build ContextualPlaybookPanel host component
+- [ ] Phase 4: Build RecommendedPlaybookCard widget
+- [ ] Phase 4: Build PlaybookDrawer detail panel
+- [ ] Phase 4: Build PlaybookSearchModal
+- [ ] Phase 4: Build EvidenceRequirementsCard widget
+- [ ] Phase 4: Build MissingEvidenceCard widget
+- [ ] Phase 4: Build ScoreImprovementCard widget
+- [ ] Phase 4: Build RDStageGuidanceCard widget
+- [ ] Phase 4: Build InvestmentPackReadinessCard widget
+- [x] Phase 4: Integrate panel into 7 key modules (VentureIntake, ReadinessScoring, RDHub, RiskIntelligence, InvestmentPack, GovernanceHub, ExecutionPlanning)
+- [ ] Phase 4: Implement usage event tracking
+- [x] Run Vitest tests and fix any failures (1873 tests passing, 65 test files)
