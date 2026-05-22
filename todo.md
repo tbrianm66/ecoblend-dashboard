@@ -1289,3 +1289,59 @@
 - [x] Phase 3D: Modify audit_log.action to VARCHAR(64) for custom action names
 - [x] Phase 3D: Write 29 Phase 3D QA Vitest tests (all passing)
 - [x] Phase 3D: All 1,941 tests pass (67 test files)
+
+
+## Phase 4 — Startup Failure Early Warning System (In Progress)
+
+### Phase 4A: Planning & Schema
+- [ ] Phase 4A: Audit existing modules for data integration points
+- [ ] Phase 4A: Create 13 new database tables for failure risk metrics
+- [ ] Phase 4A: Design failure risk scoring model (9-factor weighted)
+- [ ] Phase 4A: Define alert thresholds and trigger logic
+
+### Phase 4B: Core Scoring Engine
+- [ ] Phase 4B: Build startup_failure_risk_scores calculation engine
+- [ ] Phase 4B: Implement 9 sub-score calculators (cash, customer, revenue, execution, team, flexibility, funding, market, roadmap)
+- [ ] Phase 4B: Create score aggregation and RAG status mapping
+
+### Phase 4C: Dashboard & Visualization
+- [ ] Phase 4C: Build Startup Failure Early Warning Dashboard
+- [ ] Phase 4C: Create 10 KPI cards (Overall Risk, Cash Runway, Customer Validation, Revenue Model, Execution, Team, Flexibility, Funding, Market Timing, Roadmap)
+- [ ] Phase 4C: Build Failure Risk Heatmap (ventures × risk categories)
+- [ ] Phase 4C: Add trend chart tracking overall failure risk over time
+- [ ] Phase 4C: Build Risk Detail Drawer with evidence and recommendations
+
+### Phase 4D: Contextual Playbooks
+- [ ] Phase 4D: Implement 8 contextual playbook widgets (Burn Rate, Customer Validation, Revenue Model, Flexibility, Execution, Team, Funding, Market Timing)
+- [ ] Phase 4D: Wire trigger logic for each widget
+- [ ] Phase 4D: Add recommended actions to each widget
+
+### Phase 4E: Scenario Planning
+- [ ] Phase 4E: Build Scenario & Contingency Planning sub-module
+- [ ] Phase 4E: Implement 8 scenario types (Revenue downside, Funding delay, Burn increase, Competitor, Regulatory, Adoption delay, Supplier failure, Technical delay)
+- [ ] Phase 4E: Create impact calculators for each scenario
+
+### Phase 4F: Playbook Library
+- [ ] Phase 4F: Add 12 failure-recovery playbooks to Admin Playbook Library
+- [ ] Phase 4F: Create playbook structure (failure signal, diagnostic questions, evidence, intervention, role, timeframe, criteria, module link)
+
+### Phase 4G: Alerts & Automation
+- [ ] Phase 4G: Implement automated alert system with 6 categories
+- [ ] Phase 4G: Create alert thresholds and trigger logic
+- [ ] Phase 4G: Build alert resolution workflow
+
+### Phase 4H: Reports
+- [ ] Phase 4H: Build 10 automated report generators
+- [ ] Phase 4H: Implement report export (PDF, CSV)
+- [ ] Phase 4H: Create report templates for each stakeholder type
+
+### Phase 4I: Access Control & Navigation
+- [ ] Phase 4I: Implement role-based access (Founder, Analyst, Investment Lead, Admin, Advisor)
+- [ ] Phase 4I: Update sidebar navigation with Risk Intelligence sub-modules
+- [ ] Phase 4I: Wire routes and permissions
+
+### Phase 4J: Testing & Delivery
+- [ ] Phase 4J: Write comprehensive Phase 4 QA tests
+- [ ] Phase 4J: Test failure scoring, alerts, playbooks, reports
+- [ ] Phase 4J: Run full test suite
+- [ ] Phase 4J: Save checkpoint

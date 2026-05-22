@@ -22,6 +22,7 @@ import { coachingRouter } from "./coaching.router";
 import { flowerRouter } from "./flower.router";
 import { adminRouter } from "./admin.router";
 import { contextualRouter } from "./contextual.router";
+import { startupFailureRiskRouter } from "./startupFailureRisk.router";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -224,6 +225,7 @@ import { specialistServicesRouter } from "./specialistServices.router";
 import { portfoliosOfferingsRouter } from "./portfoliosOfferings.router";
 
 export const appRouter = router({
+  startupFailureRisk: startupFailureRiskRouter,
   system: systemRouter,
   coaching: coachingRouter,
   flower: flowerRouter,

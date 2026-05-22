@@ -456,6 +456,13 @@
       "when": 1777669079448,
       "tag": "0064_watery_blizzard",
       "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "5",
+      "when": 1777688988654,
+      "tag": "0065_pale_bloodscream",
+      "breakpoints": true
     }
   ]
 }

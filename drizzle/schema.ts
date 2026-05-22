@@ -7118,3 +7118,215 @@ export const contextualGuidanceEvents = mysqlTable("contextual_guidance_events",
   createdAt:   bigint("createdAt", { mode: "number" }).notNull(),
 });
 export type ContextualGuidanceEvent = typeof contextualGuidanceEvents.$inferSelect;
+
+
+// ============================================================================
+// PHASE 4: STARTUP FAILURE EARLY WARNING SYSTEM
+// ============================================================================
+
+// -- Startup Failure Risk Scores (Main aggregated score table) ---------------
+export const startupFailureRiskScores = mysqlTable("startup_failure_risk_scores", {
+  id:                       varchar("id", { length: 64 }).primaryKey(),
+  ventureId:                varchar("ventureId", { length: 64 }).notNull(),
+  overallFailureRiskScore:  int("overallFailureRiskScore").default(0),    // 0-100
+  cashRunwayRisk:           int("cashRunwayRisk").default(0),             // 0-100
+  customerValidationRisk:   int("customerValidationRisk").default(0),     // 0-100
+  revenueModelRisk:         int("revenueModelRisk").default(0),           // 0-100
+  executionVelocityRisk:    int("executionVelocityRisk").default(0),      // 0-100
+  teamCompetencyRisk:       int("teamCompetencyRisk").default(0),         // 0-100
+  flexibilityRisk:          int("flexibilityRisk").default(0),            // 0-100
+  fundingProgressionRisk:   int("fundingProgressionRisk").default(0),     // 0-100
+  marketTimingRisk:         int("marketTimingRisk").default(0),           // 0-100
+  strategicRoadmapRisk:     int("strategicRoadmapRisk").default(0),       // 0-100
+  riskBand:                 mysqlEnum("riskBand", ["Green", "Amber", "Red"]).default("Green"),
+  calculatedAt:             timestamp("calculatedAt").defaultNow().notNull(),
+  updatedAt:                timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type StartupFailureRiskScore = typeof startupFailureRiskScores.$inferSelect;
+export type InsertStartupFailureRiskScore = typeof startupFailureRiskScores.$inferInsert;
+
+// -- Burn Rate Metrics -------------------------------------------------------
+export const burnRateMetrics = mysqlTable("burn_rate_metrics", {
+  id:                   varchar("id", { length: 64 }).primaryKey(),
+  ventureId:            varchar("ventureId", { length: 64 }).notNull(),
+  monthlyBurnRate:      decimal("monthlyBurnRate", { precision: 12, scale: 2 }),
+  cashBalance:          decimal("cashBalance", { precision: 12, scale: 2 }),
+  monthlyRevenue:       decimal("monthlyRevenue", { precision: 12, scale: 2 }),
+  netBurn:              decimal("netBurn", { precision: 12, scale: 2 }),
+  runwayMonths:         float("runwayMonths"),
+  previousRunwayMonths: float("previousRunwayMonths"),
+  runwayTrend:          mysqlEnum("runwayTrend", ["Improving", "Stable", "Declining"]).default("Stable"),
+  alertStatus:          mysqlEnum("alertStatus", ["Green", "Amber", "Red"]).default("Green"),
+  reportingPeriod:      varchar("reportingPeriod", { length: 32 }),
+  createdAt:            timestamp("createdAt").defaultNow().notNull(),
+});
+export type BurnRateMetric = typeof burnRateMetrics.$inferSelect;
+export type InsertBurnRateMetric = typeof burnRateMetrics.$inferInsert;
+
+// -- Customer Validation Evidence --------------------------------------------
+export const customerValidationEvidence = mysqlTable("customer_validation_evidence", {
+  id:                      varchar("id", { length: 64 }).primaryKey(),
+  ventureId:               varchar("ventureId", { length: 64 }).notNull(),
+  customerSegment:         varchar("customerSegment", { length: 255 }),
+  interviewCount:          int("interviewCount").default(0),
+  validatedProblem:        boolean("validatedProblem").default(false),
+  painIntensityScore:      int("painIntensityScore"),                    // 0-100
+  willingnessToPayScore:   int("willingnessToPayScore"),                 // 0-100
+  evidenceQualityScore:    int("evidenceQualityScore"),                  // 0-100
+  problemSolutionFitScore: int("problemSolutionFitScore"),               // 0-100
+  evidenceSource:          varchar("evidenceSource", { length: 255 }),
+  dateCollected:           timestamp("dateCollected"),
+  createdAt:               timestamp("createdAt").defaultNow().notNull(),
+});
+export type CustomerValidationEvidence = typeof customerValidationEvidence.$inferSelect;
+export type InsertCustomerValidationEvidence = typeof customerValidationEvidence.$inferInsert;
+
+// -- Revenue Model Assessments -----------------------------------------------
+export const revenueModelAssessments = mysqlTable("revenue_model_assessments", {
+  id:                    varchar("id", { length: 64 }).primaryKey(),
+  ventureId:             varchar("ventureId", { length: 64 }).notNull(),
+  revenueModelType:      varchar("revenueModelType", { length: 128 }),   // Direct, Subscription, Licensing, Platform, etc.
+  pricingValidated:      boolean("pricingValidated").default(false),
+  grossMarginAssumption: int("grossMarginAssumption"),                   // %
+  unitEconomicsScore:    int("unitEconomicsScore"),                      // 0-100
+  repeatabilityScore:    int("repeatabilityScore"),                      // 0-100
+  scalabilityScore:      int("scalabilityScore"),                        // 0-100
+  revenueConfidenceScore: int("revenueConfidenceScore"),                 // 0-100
+  riskScore:             int("riskScore"),                               // 0-100
+  createdAt:             timestamp("createdAt").defaultNow().notNull(),
+});
+export type RevenueModelAssessment = typeof revenueModelAssessments.$inferSelect;
+export type InsertRevenueModelAssessment = typeof revenueModelAssessments.$inferInsert;
+
+// -- Execution Velocity Metrics ----------------------------------------------
+export const executionVelocityMetrics = mysqlTable("execution_velocity_metrics", {
+  id:                      varchar("id", { length: 64 }).primaryKey(),
+  ventureId:               varchar("ventureId", { length: 64 }).notNull(),
+  sprintName:              varchar("sprintName", { length: 255 }),
+  plannedMilestones:       int("plannedMilestones").default(0),
+  completedMilestones:     int("completedMilestones").default(0),
+  overdueMilestones:       int("overdueMilestones").default(0),
+  velocityScore:           int("velocityScore"),                         // 0-100
+  deliveryConfidenceScore: int("deliveryConfidenceScore"),               // 0-100
+  stageGateSlippageDays:   int("stageGateSlippageDays").default(0),
+  riskScore:               int("riskScore"),                             // 0-100
+  createdAt:               timestamp("createdAt").defaultNow().notNull(),
+});
+export type ExecutionVelocityMetric = typeof executionVelocityMetrics.$inferSelect;
+export type InsertExecutionVelocityMetric = typeof executionVelocityMetrics.$inferInsert;
+
+// -- Team Competency Assessments ---------------------------------------------
+export const teamCompetencyAssessments = mysqlTable("team_competency_assessments", {
+  id:                      varchar("id", { length: 64 }).primaryKey(),
+  ventureId:               varchar("ventureId", { length: 64 }).notNull(),
+  founderCapabilityScore:  int("founderCapabilityScore"),                // 0-100
+  technicalExpertiseScore: int("technicalExpertiseScore"),               // 0-100
+  commercialExpertiseScore: int("commercialExpertiseScore"),             // 0-100
+  financialExpertiseScore: int("financialExpertiseScore"),               // 0-100
+  leadershipScore:         int("leadershipScore"),                       // 0-100
+  domainExpertiseScore:    int("domainExpertiseScore"),                  // 0-100
+  missingRoles:            text("missingRoles"),                         // JSON array of missing role names
+  aggregateTeamScore:      int("aggregateTeamScore"),                    // 0-100
+  competencyRiskScore:     int("competencyRiskScore"),                   // 0-100
+  createdAt:               timestamp("createdAt").defaultNow().notNull(),
+});
+export type TeamCompetencyAssessment = typeof teamCompetencyAssessments.$inferSelect;
+export type InsertTeamCompetencyAssessment = typeof teamCompetencyAssessments.$inferInsert;
+
+// -- Flexibility & Pivot Logs ------------------------------------------------
+export const flexibilityPivotLogs = mysqlTable("flexibility_pivot_logs", {
+  id:                      varchar("id", { length: 64 }).primaryKey(),
+  ventureId:               varchar("ventureId", { length: 64 }).notNull(),
+  pivotEvent:              varchar("pivotEvent", { length: 255 }),
+  pivotReason:             text("pivotReason"),
+  evidenceBasedBoolean:    boolean("evidenceBasedBoolean").default(false),
+  recommendationsOverridden: int("recommendationsOverridden").default(0),
+  playbookDismissals:      int("playbookDismissals").default(0),
+  dismissalReason:         varchar("dismissalReason", { length: 255 }),
+  adaptabilityScore:       int("adaptabilityScore"),                     // 0-100
+  flexibilityRiskScore:    int("flexibilityRiskScore"),                  // 0-100
+  loggedAt:                timestamp("loggedAt").defaultNow().notNull(),
+});
+export type FlexibilityPivotLog = typeof flexibilityPivotLogs.$inferSelect;
+export type InsertFlexibilityPivotLog = typeof flexibilityPivotLogs.$inferInsert;
+
+// -- Funding Progression Metrics ---------------------------------------------
+export const fundingProgressionMetrics = mysqlTable("funding_progression_metrics", {
+  id:                      varchar("id", { length: 64 }).primaryKey(),
+  ventureId:               varchar("ventureId", { length: 64 }).notNull(),
+  currentFundingStage:     varchar("currentFundingStage", { length: 64 }),
+  capitalRequired:         decimal("capitalRequired", { precision: 12, scale: 2 }),
+  capitalSecured:          decimal("capitalSecured", { precision: 12, scale: 2 }),
+  fundingGap:              decimal("fundingGap", { precision: 12, scale: 2 }),
+  monthsToNextRaise:       int("monthsToNextRaise"),
+  investorReadinessScore:  int("investorReadinessScore"),                // 0-100
+  pitchDeckReadyBoolean:   boolean("pitchDeckReadyBoolean").default(false),
+  businessPlanReadyBoolean: boolean("businessPlanReadyBoolean").default(false),
+  dataRoomReadyBoolean:    boolean("dataRoomReadyBoolean").default(false),
+  fundingRiskScore:        int("fundingRiskScore"),                      // 0-100
+  createdAt:               timestamp("createdAt").defaultNow().notNull(),
+});
+export type FundingProgressionMetric = typeof fundingProgressionMetrics.$inferSelect;
+export type InsertFundingProgressionMetric = typeof fundingProgressionMetrics.$inferInsert;
+
+// -- Market Timing Signals ---------------------------------------------------
+export const marketTimingSignals = mysqlTable("market_timing_signals", {
+  id:                      varchar("id", { length: 64 }).primaryKey(),
+  ventureId:               varchar("ventureId", { length: 64 }).notNull(),
+  marketGrowthScore:       int("marketGrowthScore"),                     // 0-100
+  competitorActivityScore: int("competitorActivityScore"),               // 0-100
+  regulatoryRiskScore:     int("regulatoryRiskScore"),                   // 0-100
+  adoptionReadinessScore:  int("adoptionReadinessScore"),                // 0-100
+  externalShockRiskScore:  int("externalShockRiskScore"),                // 0-100
+  marketSignalSource:      varchar("marketSignalSource", { length: 255 }),
+  marketTimingRiskScore:   int("marketTimingRiskScore"),                 // 0-100
+  collectedAt:             timestamp("collectedAt").defaultNow().notNull(),
+});
+export type MarketTimingSignal = typeof marketTimingSignals.$inferSelect;
+export type InsertMarketTimingSignal = typeof marketTimingSignals.$inferInsert;
+
+// -- Strategic Roadmap Assessments -------------------------------------------
+export const strategicRoadmapAssessments = mysqlTable("strategic_roadmap_assessments", {
+  id:                         varchar("id", { length: 64 }).primaryKey(),
+  ventureId:                  varchar("ventureId", { length: 64 }).notNull(),
+  roadmapExistsBoolean:       boolean("roadmapExistsBoolean").default(false),
+  milestoneQualityScore:      int("milestoneQualityScore"),               // 0-100
+  dependencyRiskScore:        int("dependencyRiskScore"),                 // 0-100
+  stageGateClarityScore:      int("stageGateClarityScore"),               // 0-100
+  executionPlanCompletenessScore: int("executionPlanCompletenessScore"), // 0-100
+  roadmapRiskScore:           int("roadmapRiskScore"),                    // 0-100
+  createdAt:                  timestamp("createdAt").defaultNow().notNull(),
+});
+export type StrategicRoadmapAssessment = typeof strategicRoadmapAssessments.$inferSelect;
+export type InsertStrategicRoadmapAssessment = typeof strategicRoadmapAssessments.$inferInsert;
+
+// -- Failure Risk Alerts (Auto-triggered alerts) ----------------------------
+export const failureRiskAlerts = mysqlTable("failure_risk_alerts", {
+  id:                varchar("id", { length: 64 }).primaryKey(),
+  ventureId:         varchar("ventureId", { length: 64 }).notNull(),
+  alertType:         varchar("alertType", { length: 128 }),              // BurnRate, CustomerValidation, Revenue, Execution, Team, Flexibility, Funding, Market, Roadmap
+  alertSeverity:     mysqlEnum("alertSeverity", ["Amber", "Red"]).default("Amber"),
+  alertMessage:      text("alertMessage"),
+  linkedModule:      varchar("linkedModule", { length: 128 }),
+  recommendedAction: text("recommendedAction"),
+  status:            mysqlEnum("status", ["Active", "Resolved", "Dismissed"]).default("Active"),
+  createdAt:         timestamp("createdAt").defaultNow().notNull(),
+  resolvedAt:        timestamp("resolvedAt"),
+});
+export type FailureRiskAlert = typeof failureRiskAlerts.$inferSelect;
+export type InsertFailureRiskAlert = typeof failureRiskAlerts.$inferInsert;
+
+// -- Contingency Playbooks (Pre-built response playbooks) -------------------
+export const contingencyPlaybooks = mysqlTable("contingency_playbooks", {
+  id:                varchar("id", { length: 64 }).primaryKey(),
+  riskType:          varchar("riskType", { length: 128 }).notNull(),
+  triggerCondition:  text("triggerCondition"),
+  recommendedResponse: text("recommendedResponse"),
+  linkedPlaybook:    varchar("linkedPlaybook", { length: 255 }),
+  responsibleRole:   varchar("responsibleRole", { length: 128 }),
+  escalationPath:    text("escalationPath"),
+  createdAt:         timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:         timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ContingencyPlaybook = typeof contingencyPlaybooks.$inferSelect;
+export type InsertContingencyPlaybook = typeof contingencyPlaybooks.$inferInsert;
