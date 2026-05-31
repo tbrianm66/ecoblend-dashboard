@@ -1,24 +1,51 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <!-- 1. Parser fundamentals — charset must be within the first 1024 bytes -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    <title>EcoBlend — VBS Analytics Dashboard</title>
-    <meta name="description" content="EcoBlend Venture Builder Studio — portfolio intelligence platform tracking Venture Readiness Level (VRL) and Technology Readiness Level (TRL) across active ventures." />
-    <!-- Browser chrome colour on mobile (matches manifest theme_color) -->
-    <meta name="theme-color" content="#51AF37" />
 
-    <!-- Early connection hints — placed before everything else so DNS/TLS resolves ASAP -->
-    <!-- Fonts -->
+    <!-- 2. Early connection hints — placed before everything else so DNS/TLS resolves ASAP -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <!-- Image CDN: serves sidebar logo, venture logos, and hero background on first paint -->
     <link rel="preconnect" href="https://d2xsxph8kpxj0f.cloudfront.net" crossorigin />
     <link rel="dns-prefetch" href="https://d2xsxph8kpxj0f.cloudfront.net" />
-    <!-- Preload the font CSS at high priority to kick off font file fetches sooner -->
+
+    <!-- 3. Preload render-critical resources at highest priority -->
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700;800&family=Inter:wght@400;500;600;700&family=Nunito:wght@400;500;600;700&display=swap" />
 
-    <!-- Structured data (JSON-LD) -->
+    <!-- 4. Render-blocking stylesheet — immediately after its preload so the browser
+         consumes the already-warm preload cache entry rather than re-fetching -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700;800&family=Inter:wght@400;500;600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet" crossorigin />
+
+    <!-- 5. Page identity & metadata — no render impact -->
+    <title>EcoBlend — VBS Analytics Dashboard</title>
+    <meta name="description" content="EcoBlend Venture Builder Studio — portfolio intelligence platform tracking Venture Readiness Level (VRL) and Technology Readiness Level (TRL) across active ventures." />
+    <meta name="theme-color" content="#51AF37" />
+
+    <!-- 6. Canonical URL (kept in sync with client-side navigation via deferred script) -->
+    <link rel="canonical" href="/" id="canonical-url" />
+    <script src="/canonical.js" defer></script>
+
+    <!-- 7. Social / sharing metadata — pure metadata, no render impact -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="EcoBlend — VBS Analytics Dashboard" />
+    <meta property="og:description" content="EcoBlend Venture Builder Studio — portfolio intelligence platform tracking Venture Readiness Level (VRL) and Technology Readiness Level (TRL) across active ventures." />
+    <meta property="og:site_name" content="EcoBlend VBS" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="EcoBlend — VBS Analytics Dashboard" />
+    <meta name="twitter:description" content="EcoBlend Venture Builder Studio — portfolio intelligence platform tracking Venture Readiness Level (VRL) and Technology Readiness Level (TRL) across active ventures." />
+
+    <!-- 8. Favicon, PWA manifest, Apple home-screen tags — non-blocking discovery -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="EcoBlend VBS" />
+
+    <!-- 9. Structured data — pure JSON-LD data, not executed as JS; placed last in <head>
+         so it adds no bytes before the connection hints and preloads above -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -38,30 +65,6 @@
       }
     }
     </script>
-
-    <!-- Canonical URL (kept in sync with client-side navigation) -->
-    <link rel="canonical" href="/" id="canonical-url" />
-    <script src="/canonical.js" defer></script>
-
-    <!-- Open Graph / Social sharing -->
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="EcoBlend — VBS Analytics Dashboard" />
-    <meta property="og:description" content="EcoBlend Venture Builder Studio — portfolio intelligence platform tracking Venture Readiness Level (VRL) and Technology Readiness Level (TRL) across active ventures." />
-    <meta property="og:site_name" content="EcoBlend VBS" />
-
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="EcoBlend — VBS Analytics Dashboard" />
-    <meta name="twitter:description" content="EcoBlend Venture Builder Studio — portfolio intelligence platform tracking Venture Readiness Level (VRL) and Technology Readiness Level (TRL) across active ventures." />
-
-    <!-- Favicon & PWA manifest -->
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="manifest" href="/manifest.json" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="EcoBlend VBS" />
-
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700;800&family=Inter:wght@400;500;600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet" crossorigin />
   </head>
   <body>
     <div id="root"></div>
