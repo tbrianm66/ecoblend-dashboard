@@ -1047,7 +1047,7 @@ function SessionBookingCard() {
                     <p className="text-xs text-green-400">Confirmed: {new Date(req.confirmedDate).toLocaleString()}</p>
                   )}
                   {req.meetingLink && (
-                    <a href={req.meetingLink} target="_blank" rel="noreferrer" className="text-xs text-blue-400 underline">Join meeting</a>
+                    <a href={req.meetingLink} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 underline">Join meeting</a>
                   )}
                   {req.coachNotes && <p className="text-xs text-slate-400 italic mt-1">{req.coachNotes}</p>}
                 </div>

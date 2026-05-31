@@ -1437,7 +1437,7 @@ function SessionRequestsPanel() {
                 <p className="text-xs text-green-400 mt-1">Confirmed: {new Date(req.confirmedDate).toLocaleString()}</p>
               )}
               {req.meetingLink && (
-                <a href={req.meetingLink} target="_blank" rel="noreferrer" className="text-xs text-blue-400 underline mt-1 block">Meeting link</a>
+                <a href={req.meetingLink} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 underline mt-1 block">Meeting link</a>
               )}
             </div>
             <div className="flex items-center gap-1.5 flex-shrink-0">

@@ -159,7 +159,7 @@ export default function GDriveWorkspace() {
                           <p className="text-xs text-gray-400">Venture ID: {ws.ventureId} · {ws.totalFolders} modules provisioned</p>
                         </div>
                         {ws.driveUrl && (
-                          <a href={ws.driveUrl} target="_blank" rel="noreferrer">
+                          <a href={ws.driveUrl} target="_blank" rel="noopener noreferrer">
                             <Button size="sm" variant="outline" className="gap-1.5 text-xs"><ExternalLink size={12} /> Open Drive</Button>
                           </a>
                         )}
