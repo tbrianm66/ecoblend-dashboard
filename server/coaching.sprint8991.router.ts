@@ -150,16 +150,7 @@ export const leaderboardRouter = router({
           deltaFromPrev: delta as unknown as any,
           isOptedIn:     optIn?.isOptedIn ?? false,
           displayAlias:  optIn?.alias ?? null,
-        }).onDuplicateKeyUpdate({
-          set: {
-            frlScore:     entry.frlScore as unknown as any,
-            rankInCohort: rank,
-            cohortSize,
-            percentile:   percentile as unknown as any,
-            deltaFromPrev: delta as unknown as any,
-            updatedAt:    new Date(),
-          },
-        });
+        }).onConflictDoNothing();
         inserted++;
       }
 
@@ -457,18 +448,7 @@ export const templateEffectivenessRouter = router({
           avgDaysToComplete:  r.avgDaysToComplete as unknown as any,
           effectivenessScore: r.effectivenessScore as unknown as any,
           rank:               i + 1,
-        }).onDuplicateKeyUpdate({
-          set: {
-            totalAssigned:      r.totalAssigned,
-            totalCompleted:     r.totalCompleted,
-            completionRate:     r.completionRate as unknown as any,
-            avgDaysToComplete:  r.avgDaysToComplete as unknown as any,
-            effectivenessScore: r.effectivenessScore as unknown as any,
-            rank:               i + 1,
-            computedAt:         new Date(),
-            updatedAt:          new Date(),
-          },
-        });
+        }).onConflictDoNothing();
       }
 
       return { computed: results.length, message: `Effectiveness scores computed for ${results.length} templates` };

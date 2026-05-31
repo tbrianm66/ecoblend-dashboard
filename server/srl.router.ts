@@ -499,15 +499,7 @@ export const srlRouter = router({
         sustainabilityWatch: engineResult.sustainabilityWatch,
         watchActivatedAt: engineResult.sustainabilityWatch ? new Date() : null,
         isActive: true,
-      }).onDuplicateKeyUpdate({
-        set: {
-          currentStage: stage as any,
-          srlCurrentLevel: engineResult.srlLevel,
-          srlCurrentScore: String(engineResult.compositeFinal),
-          sustainabilityWatch: engineResult.sustainabilityWatch,
-          updatedAt: new Date(),
-        },
-      });
+      }).onConflictDoNothing();
 
       // 10. Update gate holding status
       if (gateRef && engineResult.gateResult) {

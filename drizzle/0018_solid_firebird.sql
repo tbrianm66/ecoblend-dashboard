@@ -1,1 +1,0 @@
-ALTER TABLE `contract_type_registry` ADD `expiryDate` date;

@@ -1974,7 +1974,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         const db = (await getDb())!;
         const { pivotTriggerConfig } = await import("../drizzle/schema");
         await db.insert(pivotTriggerConfig).values(input as any)
-          .onDuplicateKeyUpdate({ set: input as any });
+          .onConflictDoNothing();
         return { success: true };
       }),
 
@@ -2019,7 +2019,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
           lastCalculatedAt: new Date(),
         };
         await db.insert(pivotRunwayInputs).values(values as any)
-          .onDuplicateKeyUpdate({ set: values as any });
+          .onConflictDoNothing();
         return { success: true, runwayMonths, pivotsRemaining, alertActive };
       }),
   }),
@@ -2062,7 +2062,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
           input.requiresDifferentCustomerRelationship);
         const values = { ...input, autonomousTeamRecommended: input.autonomousTeamRecommended ?? autoRecommend };
         await db.insert(valueNetworks).values(values as any)
-          .onDuplicateKeyUpdate({ set: values as any });
+          .onConflictDoNothing();
         return { success: true };
       }),
   }),
@@ -2310,7 +2310,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
           autonomousTeamFlagged: autonomousFlagged,
         };
         await db.insert(opportunityDisruptionScores).values(values as any)
-          .onDuplicateKeyUpdate({ set: values as any });
+          .onConflictDoNothing();
         return { success: true, disruptionPotentialScore: total };
       }),
 

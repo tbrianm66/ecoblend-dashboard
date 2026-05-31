@@ -65,16 +65,7 @@ const portfoliosRouter = router({
       await db!
         .insert(portfolios)
         .values({ ...input, id })
-        .onDuplicateKeyUpdate({
-          set: {
-            name: input.name,
-            description: input.description,
-            portfolioType: input.portfolioType,
-            status: input.status,
-            color: input.color,
-            sortOrder: input.sortOrder,
-          },
-        });
+        .onConflictDoNothing();
       return { id };
     }),
 
@@ -179,25 +170,7 @@ const offeringsRouter = router({
           tags: input.tags,
           sortOrder: input.sortOrder,
         })
-        .onDuplicateKeyUpdate({
-          set: {
-            name: input.name,
-            description: input.description,
-            offeringType: input.offeringType,
-            offeringStatus: input.offeringStatus,
-            trl: input.trl,
-            brlScore: input.brlScore,
-            revenueModel: input.revenueModel,
-            targetSegment: input.targetSegment,
-            pricePoint: input.pricePoint,
-            currency: input.currency,
-            launchDate,
-            color: input.color,
-            logoUrl: input.logoUrl,
-            tags: input.tags,
-            sortOrder: input.sortOrder,
-          },
-        });
+        .onConflictDoNothing();
       return { id };
     }),
 

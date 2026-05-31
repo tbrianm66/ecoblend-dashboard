@@ -1,5 +1,5 @@
 import { eq, desc, and, inArray, gt } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
+import { drizzle } from "drizzle-orm/node-postgres";
 import {
   InsertUser,
   InsertContractDocument,
@@ -98,7 +98,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     else if (user.openId === ENV.ownerOpenId) { values.role = "admin"; updateSet.role = "admin"; }
     if (!values.lastSignedIn) values.lastSignedIn = new Date();
     if (Object.keys(updateSet).length === 0) updateSet.lastSignedIn = new Date();
-    await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });
+    await db.insert(users).values(values).onConflictDoNothing();
   } catch (error) {
     console.error("[Database] Failed to upsert user:", error);
     throw error;
@@ -148,7 +148,7 @@ export async function getVentureById(id: string) {
 export async function upsertVenture(data: InsertVenture) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  return db.insert(ventures).values(data).onDuplicateKeyUpdate({ set: data });
+  return db.insert(ventures).values(data).onConflictDoNothing();
 }
 
 export async function updateVenture(id: string, data: Partial<InsertVenture>) {
@@ -374,7 +374,7 @@ export async function getAllLatestFinancialSnapshots() {
 export async function upsertFinancialSnapshot(data: InsertFinancialSnapshot) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  return db.insert(financialSnapshots).values(data).onDuplicateKeyUpdate({ set: data });
+  return db.insert(financialSnapshots).values(data).onConflictDoNothing();
 }
 
 // ── Research Papers ───────────────────────────────────────────────────────────
@@ -935,7 +935,7 @@ export async function getVrlScoringParams(ventureId: string): Promise<VrlScoring
 export async function upsertVrlScoringParams(data: InsertVrlScoringParams) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  return db.insert(vrlScoringParams).values(data).onDuplicateKeyUpdate({ set: data });
+  return db.insert(vrlScoringParams).values(data).onConflictDoNothing();
 }
 
 export async function getAllVrlScoringParams() {
