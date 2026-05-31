@@ -41,20 +41,7 @@
 
     <!-- Canonical URL (kept in sync with client-side navigation) -->
     <link rel="canonical" href="/" id="canonical-url" />
-    <script>
-      (function () {
-        var canonical = document.getElementById("canonical-url");
-        function update() {
-          canonical.href = window.location.origin + window.location.pathname;
-        }
-        update();
-        var _pushState = history.pushState;
-        var _replaceState = history.replaceState;
-        history.pushState = function () { _pushState.apply(this, arguments); update(); };
-        history.replaceState = function () { _replaceState.apply(this, arguments); update(); };
-        window.addEventListener("popstate", update);
-      })();
-    </script>
+    <script src="/canonical.js" defer></script>
 
     <!-- Open Graph / Social sharing -->
     <meta property="og:type" content="website" />
@@ -79,9 +66,9 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <script
-      defer
-      src="%VITE_ANALYTICS_ENDPOINT%/umami"
-      data-website-id="%VITE_ANALYTICS_WEBSITE_ID%"></script>
+    <!-- Analytics config — read by /canonical.js, which guards against unset env vars -->
+    <meta name="analytics-config"
+          data-endpoint="%VITE_ANALYTICS_ENDPOINT%"
+          data-website-id="%VITE_ANALYTICS_WEBSITE_ID%" />
   </body>
 </html>
