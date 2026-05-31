@@ -520,7 +520,7 @@ export default function MarketIntelligence() {
                   color: selectedVentureId === v.id ? v.color : "#6b7280",
                 }}
               >
-                {v.logo && <img src={v.logo} alt="" className="w-4 h-4 object-contain rounded" style={{ background: v.logoBg || "#f9fafb" }} />}
+                {v.logo && <img src={v.logo} alt="" loading="lazy" className="w-4 h-4 object-contain rounded" style={{ background: v.logoBg || "#f9fafb" }} />}
                 {v.name}
               </button>
             ))}

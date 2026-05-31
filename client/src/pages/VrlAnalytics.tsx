@@ -672,7 +672,7 @@ export default function VrlAnalytics() {
             {selectedVenture.logo && (
               <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0"
                 style={{ background: (selectedVenture as any).logoBg ?? "#f8fafc", border: "1px solid #e2e8f0" }}>
-                <img src={selectedVenture.logo} alt={selectedVenture.name} className="w-10 h-10 object-contain" />
+                <img src={selectedVenture.logo} alt={selectedVenture.name} loading="lazy" className="w-10 h-10 object-contain" />
               </div>
             )}
             <div>

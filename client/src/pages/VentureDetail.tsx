@@ -94,7 +94,7 @@ export default function VentureDetail() {
                   background: venture.logoBg || "#f9fafb",
                 }}
               >
-                <img src={venture.logo} alt={`${venture.name} logo`} className="w-full h-full object-contain p-2" />
+                <img src={venture.logo} alt={`${venture.name} logo`} loading="lazy" className="w-full h-full object-contain p-2" />
               </div>
             )}
           <div>
