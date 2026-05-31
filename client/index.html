@@ -6,6 +6,23 @@
     <title>EcoBlend — VBS Analytics Dashboard</title>
     <meta name="description" content="EcoBlend Venture Builder Studio — portfolio intelligence platform tracking Venture Readiness Level (VRL) and Technology Readiness Level (TRL) across active ventures." />
 
+    <!-- Canonical URL (kept in sync with client-side navigation) -->
+    <link rel="canonical" href="/" id="canonical-url" />
+    <script>
+      (function () {
+        var canonical = document.getElementById("canonical-url");
+        function update() {
+          canonical.href = window.location.origin + window.location.pathname;
+        }
+        update();
+        var _pushState = history.pushState;
+        var _replaceState = history.replaceState;
+        history.pushState = function () { _pushState.apply(this, arguments); update(); };
+        history.replaceState = function () { _replaceState.apply(this, arguments); update(); };
+        window.addEventListener("popstate", update);
+      })();
+    </script>
+
     <!-- Open Graph / Social sharing -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="EcoBlend — VBS Analytics Dashboard" />
