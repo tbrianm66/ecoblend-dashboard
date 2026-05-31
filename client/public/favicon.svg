@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect width="64" height="64" rx="12" fill="#1a2e1a"/>
+  <!-- Wave lines representing EcoBlend brand -->
+  <path d="M10 22 Q17 16 24 22 Q31 28 38 22 Q45 16 54 22" stroke="#51AF37" stroke-width="4" stroke-linecap="round" fill="none"/>
+  <path d="M10 32 Q17 26 24 32 Q31 38 38 32 Q45 26 54 32" stroke="#51AF37" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.75"/>
+  <path d="M10 42 Q17 36 24 42 Q31 48 38 42 Q45 36 54 42" stroke="#51AF37" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.45"/>
+</svg>

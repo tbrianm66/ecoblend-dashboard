@@ -1,0 +1,17 @@
+{
+  "name": "EcoBlend VBS Analytics Dashboard",
+  "short_name": "EcoBlend VBS",
+  "description": "Portfolio intelligence platform tracking Venture Readiness Level and Technology Readiness Level across active ventures.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f1a0f",
+  "theme_color": "#51AF37",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
