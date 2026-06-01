@@ -88,6 +88,7 @@ import AdminWidgetSettings from "./pages/AdminWidgetSettings";
 import AdminProductionReadiness from "./pages/AdminProductionReadiness";
 import ModulePlaceholder from "./pages/ModulePlaceholder";
 import VentureIntake from "./pages/VentureIntake";
+import ProblemStatement from "./pages/ProblemStatement";
 import ReadinessScoring from "./pages/ReadinessScoring";
 import RDHub from "./pages/RDHub";
 import RiskIntelligence from "./pages/RiskIntelligence";
@@ -192,7 +193,7 @@ function Router() {
       <Route path="/intake" component={VentureIntake} />
       <Route path="/intake/founder" component={ModulePlaceholder} />
       <Route path="/intake/strategic-fit" component={ModulePlaceholder} />
-      <Route path="/intake/problem" component={ModulePlaceholder} />
+      <Route path="/intake/problem" component={ProblemStatement} />
       <Route path="/intake/hypotheses" component={ModulePlaceholder} />
       {/* Module 3: Discovery & Market Validation */}
       <Route path="/discovery" component={ModulePlaceholder} />
