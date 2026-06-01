@@ -1,0 +1,1 @@
+- [Blank app_preview screenshots](screenshot-blank-csp.md) — screenshot tool renders all-white for every route here (CSP/headless quirk); verify via vite build + curl, not screenshots.

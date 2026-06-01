@@ -6,7 +6,7 @@ import SpinoffSequenceOS from "@/pages/SpinoffSequenceOS";
 import BrandPipeline from "@/pages/BrandPipeline";
 import InsightAutomation from "@/pages/InsightAutomation";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Route, Switch } from "wouter";
+import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { VentureProvider } from "./contexts/VentureContext";
@@ -94,6 +94,7 @@ import RiskIntelligence from "./pages/RiskIntelligence";
 import InvestmentPack from "./pages/InvestmentPack";
 import GovernanceHub from "./pages/GovernanceHub";
 import ExecutionPlanning from "./pages/ExecutionPlanning";
+import V2App from "./v2/V2App";
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
@@ -270,8 +271,28 @@ function Router() {
       {/* Command Centre extras */}
       <Route path="/venture-status" component={ModulePlaceholder} />
       <Route path="/alerts" component={ModulePlaceholder} />
+      {/* ECOBLEND OS Agentic Validation Platform v2 (self-contained namespace) */}
+      <Route path="/v2" component={V2App} />
+      <Route path="/v2/:rest*" component={V2App} />
       <Route component={Home} />
     </Switch>
+  );
+}
+
+function AppShell() {
+  const [location] = useLocation();
+  // The v2 namespace is a self-contained layer with its own full-screen layout,
+  // so it renders outside the legacy sidebar shell.
+  if (location.startsWith("/v2")) {
+    return <Router />;
+  }
+  return (
+    <div className="flex min-h-screen bg-gray-50">
+      <Sidebar />
+      <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
+        <Router />
+      </div>
+    </div>
   );
 }
 
@@ -283,12 +304,7 @@ function App() {
           <SelectedVentureProvider>
           <TooltipProvider>
             <Toaster />
-            <div className="flex min-h-screen bg-gray-50">
-              <Sidebar />
-              <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
-                <Router />
-              </div>
-            </div>
+            <AppShell />
           </TooltipProvider>
           </SelectedVentureProvider>
         </VentureProvider>
