@@ -6,6 +6,13 @@
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { ventures } from "@/lib/data";
+import {
+  useHypothesisStore,
+  type Hypothesis,
+  type CoreType,
+  type Risk,
+  type HypothesisStatus as Status,
+} from "@/stores/hypothesisStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -36,24 +43,6 @@ import {
 const GREEN = "#56A837";
 const BLUE = "#3B85BA";
 
-// ── Domain types ──
-type CoreType = "value" | "growth";
-type Risk = "low" | "medium" | "high";
-type Status = "backlog" | "testing" | "validated" | "invalidated";
-
-interface Hypothesis {
-  id: string;
-  ventureId: string;
-  type: CoreType;
-  persona: string;
-  behavior: string;
-  experiment: string;
-  metric: string;
-  risk: Risk;
-  status: Status;
-  notes: string;
-}
-
 // ── Config maps ──
 const TYPE_META: Record<CoreType, { label: string; icon: typeof Heart; color: string }> = {
   value: { label: "Value", icon: Heart, color: GREEN },
@@ -74,36 +63,6 @@ const STATUS_META: Record<Status, { label: string; color: string; bg: string }> 
 };
 
 const STATUS_ORDER: Status[] = ["backlog", "testing", "validated", "invalidated"];
-
-// ── Seed data ──
-const SEED: Hypothesis[] = [
-  {
-    id: "h-ecocomp-loi",
-    ventureId: "ecoblend",
-    type: "value",
-    persona: "Enterprise Procurement Managers",
-    behavior: "pay a 15% premium for bio-based materials",
-    experiment: "direct interviews with 10 target buyers presenting a pricing tier sheet",
-    metric: "5 out of 10 sign a non-binding Letter of Intent (LOI)",
-    risk: "high",
-    status: "testing",
-    notes:
-      "3 interviews completed so far. 2 buyers expressed strong interest but need to see ASTM safety certifications first.",
-  },
-  {
-    id: "h-bebus-webinar",
-    ventureId: "bebus",
-    type: "growth",
-    persona: "Municipal Transit Operators",
-    behavior: "discover our electric transport retrofitting via regional green logistics webinars",
-    experiment: "hosting a targeted 30-minute educational webinar with Q&A",
-    metric: "40+ attendees and at least 8 follow-up discovery calls",
-    risk: "medium",
-    status: "validated",
-    notes:
-      "Webinar completed on June 1st. Had 52 attendees and locked in 11 follow-up discovery meetings. Growth channel validated.",
-  },
-];
 
 // ── Type toggle ──
 function TypeToggle({ value, onChange }: { value: CoreType; onChange: (v: CoreType) => void }) {
@@ -340,7 +299,10 @@ export default function HypothesisRegister() {
   const [, navigate] = useLocation();
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [errors, setErrors] = useState<FieldErrors>({});
-  const [items, setItems] = useState<Hypothesis[]>(SEED);
+  const items = useHypothesisStore((s) => s.hypotheses);
+  const addHypothesis = useHypothesisStore((s) => s.addHypothesis);
+  const storeSetStatus = useHypothesisStore((s) => s.setStatus);
+  const storeSetNotes = useHypothesisStore((s) => s.setNotes);
   const [filter, setFilter] = useState<Status | "all">("all");
   const [search, setSearch] = useState("");
 
@@ -388,7 +350,7 @@ export default function HypothesisRegister() {
       status: "backlog",
       notes: "",
     };
-    setItems((prev) => [created, ...prev]);
+    addHypothesis(created);
     setForm(INITIAL_FORM);
     setErrors({});
     const v = ventureFor(created.ventureId);
@@ -396,12 +358,12 @@ export default function HypothesisRegister() {
   };
 
   const setStatus = (id: string, status: Status) => {
-    setItems((prev) => prev.map((h) => (h.id === id ? { ...h, status } : h)));
+    storeSetStatus(id, status);
     toast.success(`Status updated to “${STATUS_META[status].label}”.`);
   };
 
   const setNotes = (id: string, notes: string) => {
-    setItems((prev) => prev.map((h) => (h.id === id ? { ...h, notes } : h)));
+    storeSetNotes(id, notes);
   };
 
   const filtered = useMemo(() => {

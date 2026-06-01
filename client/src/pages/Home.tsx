@@ -5,7 +5,7 @@
 // Spacing: 8px grid (8/16/24/40px)
 // ============================================================
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import HubSpokeDiagram from "@/components/HubSpokeDiagram";
 import { VRL_STAGES, TRL_LEVELS, Venture } from "@/lib/data";
@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { exportPortfolioPdf, exportInvestorPack } from "@/lib/exportPdf";
 import { trpc } from "@/lib/trpc";
+import { useHypothesisStore, selectVrlByVenture } from "@/stores/hypothesisStore";
 
 const HERO_BG = "https://d2xsxph8kpxj0f.cloudfront.net/310419663031397390/ggmroLG8ezURUZiLzGveTG/ecoblend-hero-bg-4sozsAnSEGXN6NLMPzPbzp.webp";
 
@@ -121,7 +122,7 @@ const ENGINE_COLORS: Record<string, { bg: string; color: string; label: string }
   Paid:    { bg: "#FEF0D9", color: "#b45309", label: "Paid" },
 };
 function VentureCard({
-  venture, onClick, onEdit, onEditMilestones, computedVrlScore, computedVrlLevel, engineOfGrowth,
+  venture, onClick, onEdit, onEditMilestones, computedVrlScore, computedVrlLevel, engineOfGrowth, pivot, hypothesisVrl,
 }: {
   venture: Venture;
   onClick: () => void;
@@ -130,8 +131,16 @@ function VentureCard({
   computedVrlScore?: number;
   computedVrlLevel?: number;
   engineOfGrowth?: string | null;
+  pivot?: boolean;
+  hypothesisVrl?: { vrl: number; stageLabel: string };
 }) {
   const vrlStage = VRL_STAGES[venture.vrl - 1];
+  // When the venture is driven by the Lean Startup Hypothesis Register, the
+  // primary VRL readout + progress bar reflect the live 0-9 engine score.
+  const hypDriven = hypothesisVrl !== undefined;
+  const vrlBarPercent = hypDriven
+    ? Math.round((hypothesisVrl.vrl / 9) * 100)
+    : Math.round(((venture.vrl - 1) / 4 + venture.vrlPercent / 400) * 100);
   const trlLevel = TRL_LEVELS[venture.trl - 1];
   const status = statusConfig[venture.status] ?? statusConfig["Paused"];
   const lifecycleStage = lifecycleStageFromVrl(venture.vrl);
@@ -205,6 +214,16 @@ function VentureCard({
                 {ENGINE_COLORS[engineOfGrowth].label}
               </span>
             )}
+            {pivot && (
+              <span
+                className="vos-badge"
+                style={{ background: "rgba(220,38,38,0.10)", color: "#dc2626", fontSize: "0.6rem" }}
+                title="A core assumption was invalidated — pivot required"
+              >
+                <Zap size={8} className="mr-0.5" />
+                Pivot Initiated
+              </span>
+            )}
             <button
               onClick={onEdit}
               className="w-6 h-6 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
@@ -229,7 +248,9 @@ function VentureCard({
             <div className="flex justify-between items-center mb-1">
               <span className="flex items-center gap-1.5 text-xs font-medium text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>
                 <TrendingUp size={10} style={{ color: "#56A837" }} />
-                VRL {venture.vrl} — {vrlStage?.label}
+                {hypDriven
+                  ? <>VRL {hypothesisVrl.vrl.toFixed(1)} — {hypothesisVrl.stageLabel}</>
+                  : <>VRL {venture.vrl} — {vrlStage?.label}</>}
               </span>
               <div className="flex items-center gap-2">
                 {computedVrlScore !== undefined && (
@@ -237,14 +258,14 @@ function VentureCard({
                     Score: {computedVrlScore.toFixed(1)}/9
                   </span>
                 )}
-                <span className="text-xs font-mono text-gray-400">{venture.vrlPercent}%</span>
+                <span className="text-xs font-mono text-gray-400">{vrlBarPercent}%</span>
               </div>
             </div>
             <div className="vos-progress-track">
               <div
                 className="vos-progress-fill"
                 style={{
-                  width: `${((venture.vrl - 1) / 4 + venture.vrlPercent / 400) * 100}%`,
+                  width: `${vrlBarPercent}%`,
                   background: "#56A837",
                 }}
               />
@@ -313,8 +334,19 @@ export default function Home() {
     : 0;
   // VRL portfolio scores (computed via scoring engine)
   const { data: vrlPortfolioScores = [] } = trpc.vrlScoring.portfolioScores.useQuery();
-  const avgComputedVrl = vrlPortfolioScores.length > 0
-    ? (vrlPortfolioScores.reduce((sum, v) => sum + v.vrlScore, 0) / vrlPortfolioScores.length).toFixed(1)
+  // Live VRL driven by the Lean Startup Hypothesis Register
+  const hypotheses = useHypothesisStore((s) => s.hypotheses);
+  const vrlByVenture = useMemo(() => selectVrlByVenture(hypotheses), [hypotheses]);
+  // Effective VRL score per venture: hypothesis-driven when present, else the
+  // server-computed score. The AVG widget averages every venture that has a score.
+  const effectiveVrlScore = (ventureId: string): number | undefined =>
+    vrlByVenture[ventureId]?.vrl ??
+    vrlPortfolioScores.find((s) => s.ventureId === ventureId)?.vrlScore;
+  const avgVrlValues = portfolioBrands
+    .map((v) => effectiveVrlScore(v.id))
+    .filter((x): x is number => x !== undefined);
+  const avgComputedVrl = avgVrlValues.length > 0
+    ? (avgVrlValues.reduce((sum, x) => sum + x, 0) / avgVrlValues.length).toFixed(1)
     : "--";
   // Innovation Accounting: experiment pass rate + engine of growth
   const { data: leanMetrics = [] } = trpc.leanMetrics.portfolioSummary.useQuery();
@@ -512,6 +544,7 @@ export default function Home() {
             {portfolioBrands.map((venture) => {
               const vrlScore = vrlPortfolioScores.find(s => s.ventureId === venture.id);
               const leanEntry = leanMetrics.find((m: any) => m.id === venture.id);
+              const hypVrl = vrlByVenture[venture.id];
               return (
                 <VentureCard
                   key={venture.id}
@@ -519,9 +552,11 @@ export default function Home() {
                   onClick={() => handleVentureClick(venture.id)}
                   onEdit={(e) => handleEditClick(e, venture)}
                   onEditMilestones={(e) => handleMilestonesClick(e, venture)}
-                  computedVrlScore={vrlScore?.vrlScore}
+                  computedVrlScore={hypVrl?.vrl ?? vrlScore?.vrlScore}
                   computedVrlLevel={vrlScore?.vrlLevel}
                   engineOfGrowth={leanEntry?.engineOfGrowth}
+                  pivot={hypVrl?.pivot}
+                  hypothesisVrl={hypVrl ? { vrl: hypVrl.vrl, stageLabel: hypVrl.stageLabel } : undefined}
                 />
               );
             })}
