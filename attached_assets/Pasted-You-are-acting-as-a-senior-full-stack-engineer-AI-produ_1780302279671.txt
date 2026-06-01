@@ -1,0 +1,552 @@
+You are acting as a senior full-stack engineer, AI product architect, SaaS auditor, and agentic systems architect.
+
+I need you to audit the existing ECOBLEND OS codebase and propose a technical solution for evolving it into the new ECOBLEND OS Agentic Validation Platform.
+
+Do not immediately rewrite the application.
+
+First, perform a structured audit of the current codebase, then propose the safest implementation strategy.
+
+PROJECT CONTEXT
+
+ECOBLEND OS is being repositioned from a traditional modular SaaS dashboard into an agentic venture validation operating system.
+
+The original platform should be treated as the reference system.
+
+The new strategy is:
+
+Agents complete specialist validation workflows.
+The dashboard becomes the stakeholder command centre.
+The platform should provide visibility, evidence traceability, readiness scoring, risk intelligence, human approval gates, and report/data-room outputs.
+
+The system should not become a generic SaaS dashboard, CRM, task manager, or document storage tool.
+
+The new platform should focus on:
+
+* Agentic venture validation
+* Evidence-based readiness scoring
+* Evidence confidence scoring
+* Agent activity and auditability
+* R&D stage-gate decisions
+* Risk and blocker management
+* Human approval workflows
+* Stakeholder-specific views
+* Reports and data-room outputs
+
+IMPORTANT BUILD INSTRUCTION
+
+Do not overwrite the existing application without first proposing a migration plan.
+
+Treat the current platform as:
+
+* Legacy reference architecture
+* Visual and navigation reference
+* Existing module reference
+* Terminology reference
+* Baseline codebase
+
+The proposed new platform should be called:
+
+ECOBLEND OS Agentic Validation Platform v2
+
+Preferred implementation approach:
+
+* Preserve the original app
+* Create a new branch or separate v2 folder
+* Use mock data first
+* Do not connect production data until reviewed
+* Do not delete existing components unless explicitly approved
+* Produce a clear audit report before making structural changes
+
+STRATEGIC PRODUCT MODEL
+
+The new product stack should be:
+
+Agent Workforce
+→ Validation Workflows
+→ Evidence Graph
+→ Readiness Scoring Engine
+→ Stakeholder Dashboard
+→ Reports / Stage-Gate Decisions / Data Room
+
+The dashboard should include six core areas:
+
+1. Readiness Command Centre
+2. Evidence Library
+3. Agent Activity Log
+4. Risk & Blockers Board
+5. Stage-Gate Decision Board
+6. Reports & Data Room
+
+MVP AGENT WORKFORCE
+
+The MVP should support these agents conceptually, even if they are initially represented with mock data:
+
+1. Orchestrator Agent
+2. Evidence Intake Agent
+3. Venture Readiness Agent
+4. Technical / R&D Readiness Agent
+5. Business Model Validation Agent
+6. Sustainability Readiness Agent
+7. Evaluator / Scoring Agent
+
+Future agents to allow for in the architecture:
+
+8. Manufacturing Readiness Agent
+9. IP & Data Moat Agent
+10. Finance & Funding Agent
+11. Governance & Compliance Agent
+12. Academic Evidence Agent
+13. Portfolio Benchmarking Agent
+14. Capital Allocation Agent
+15. Talent / People Risk Agent
+16. Supplier Intelligence Agent
+17. Market Signal Agent
+18. Learning Loop Agent
+
+READINESS SCORING MODEL
+
+The system should use a dual-score model:
+
+1. Readiness Score
+    Measures apparent venture, product, or project maturity.
+2. Evidence Confidence Score
+    Measures how strongly the readiness score is supported by actual evidence.
+
+The platform should avoid false precision. A high readiness score with low evidence confidence must be marked as provisional.
+
+Module-level scores should include:
+
+* VRL: Venture Readiness Level
+* TRL: Technical Readiness Level
+* BRL: Business Readiness Level
+* SRL: Sustainability Readiness Level
+* MRL: Manufacturing Readiness Level
+* IP Defensibility Score
+* Finance / Funding Readiness Score
+* Governance / Compliance Score
+* Evidence Confidence Score
+
+R&D HUB / STAGE-GATE MODEL
+
+The R&D workflow should follow a Formula 1-style stage-gate model:
+
+Concept
+→ Simulation
+→ Prototyping
+→ Track / Platform Integration
+
+R&D projects should track:
+
+* Project type: iterative or moonshot
+* Domain focus: composite structures, kinematic systems, material science, manufacturing process
+* Risk profile: low, medium, high
+* Budget allocation pool
+* Burn rate versus milestone
+* IP status: trade secret, defensive publication, patent pending, clean room status
+* Technical KPIs: specific modulus, specific strength, manufacturing cycle time, delta-cost, weight delta
+* Human/executive sign-off before funding or resource allocation is unlocked at each gate
+
+CORE DASHBOARD REQUIREMENTS
+
+1. Readiness Command Centre
+
+Audit whether the existing platform can support:
+
+* Overall Validation Readiness Score
+* Evidence Confidence Score
+* Module-level score cards
+* Top unresolved blockers
+* Stage-gate status
+* Proceed / pause / pivot / kill recommendation
+* Most recent score changes
+* Agent recommendations
+* Human approvals required
+* Next validation sprint actions
+
+2. Evidence Library
+
+Audit whether the current app can support:
+
+* Evidence upload or evidence record creation
+* Evidence classification
+* Evidence type
+* Source
+* Owner
+* Upload date
+* Linked venture/project/module
+* Agent review status
+* Evidence confidence rating
+* Source credibility rating
+* Linked score impact
+* Version history
+
+Evidence categories should include:
+
+* Technical reports
+* CAD / engineering notes
+* FEA / CFD summaries
+* Prototype test reports
+* Sustainability / LCA documents
+* Carbon data
+* Supplier data
+* Market research
+* Customer interviews
+* Founder interviews
+* Financial models
+* IP notes
+* Academic papers
+* Governance documents
+* Investor materials
+
+3. Agent Activity Log
+
+Audit whether the current platform can support:
+
+* Agent name
+* Task performed
+* Evidence reviewed
+* Output summary
+* Score impact
+* Confidence level
+* Risks identified
+* Recommended action
+* Human approval requirement
+* Timestamp
+* Agent version
+* Runtime/cost placeholder
+
+4. Risk & Blockers Board
+
+Audit whether the current platform can support risk cards with:
+
+* Risk title
+* Risk category
+* Severity: blocking, material, monitor, advisory
+* Affected readiness score
+* Evidence gap
+* Recommended validation action
+* Owner
+* Deadline
+* Status
+* Human approval requirement
+* Link to evidence
+* Link to agent assessment
+
+Risk categories:
+
+* Technical risk
+* Commercial risk
+* Sustainability risk
+* Manufacturing risk
+* IP risk
+* Finance risk
+* People risk
+* Governance risk
+* Data confidence risk
+
+5. Stage-Gate Decision Board
+
+Audit whether the current platform can support:
+
+* R&D pipeline view
+* Current gate
+* Entry criteria
+* Exit criteria
+* Evidence submitted
+* Agent recommendation
+* Human approver
+* Funding status
+* Gate decision: approved, rejected, conditional, pending evidence
+
+6. Reports & Data Room
+
+Audit whether the current platform can support:
+
+* Venture Readiness Report
+* Technical Validation Report
+* Sustainability Evidence Review
+* Investor Readiness Pack
+* R&D Stage-Gate Report
+* Manufacturing Readiness Review
+* IP & Data Moat Summary
+* Funding Readiness Checklist
+* Data Room Checklist
+* Portfolio Readiness Summary
+
+Each report should have:
+
+* Report status
+* Generated by which agents
+* Evidence used
+* Confidence level
+* Human reviewer
+* Export options
+* Version history
+* Stakeholder access level
+
+ROLE-BASED DASHBOARD VIEWS
+
+Audit whether the current app can support role-based views for:
+
+1. Founder / Venture Lead
+2. Investor
+3. Engineer / R&D Lead
+4. Sustainability Specialist
+5. Manufacturing Partner
+6. Academic / University Partner
+7. Governance / Admin User
+8. ECOBLEND Internal Reviewer
+
+Each stakeholder should see a tailored view.
+
+Founder view:
+
+* Actions
+* Evidence gaps
+* Sprint tasks
+* Readiness score
+* Blocking risks
+
+Investor view:
+
+* Readiness score
+* Evidence confidence
+* Key risks
+* Data room status
+* Investment readiness
+
+Engineer view:
+
+* TRL
+* R&D gates
+* Prototype evidence
+* Simulation evidence
+* Technical KPIs
+
+Sustainability view:
+
+* SRL
+* LCA evidence
+* Carbon data
+* Circularity claims
+* Greenwashing risk
+
+Manufacturing partner view:
+
+* MRL
+* Supplier readiness
+* Process capability
+* Cost-to-scale risks
+
+Academic partner view:
+
+* Research evidence
+* Literature support
+* Methodology quality
+* Validation framework
+
+Admin view:
+
+* Users
+* Permissions
+* Audit logs
+* Approvals
+* Agent settings
+* Scoring configuration
+
+AUDIT TASKS
+
+Please inspect the existing codebase and produce a structured audit covering:
+
+1. Current app structure
+
+* Framework used
+* Main folders
+* Routing structure
+* Component structure
+* Data handling approach
+* Styling approach
+* Authentication status
+* API structure
+* Database or mock data structure
+
+2. Current dashboard capability
+    Identify which existing parts can be reused for the new v2 platform.
+
+Map current features against the new target architecture.
+
+Create a table:
+
+Current Feature / Component
+Keep / Refactor / Replace / Remove
+Target v2 Location
+Reason
+Risk Level
+
+3. Technical gap analysis
+    Identify what is missing for:
+
+* Agent activity tracking
+* Evidence management
+* Readiness score calculation
+* Evidence confidence calculation
+* Risk and blocker logic
+* Stage-gate workflow
+* Role-based dashboard views
+* Reports and data room
+* Human approvals
+* Audit logs
+* Future Supabase integration
+* Future LLM/agent integration
+
+4. Proposed architecture
+    Recommend a clean architecture for the v2 platform.
+
+Include:
+
+* Frontend structure
+* Components
+* Pages/routes
+* Mock data structure
+* API layer
+* Future database schema
+* Future agent workflow layer
+* Future Supabase integration
+* Future LLM integration
+* Security and permissions considerations
+
+5. Data model proposal
+    Propose MVP entities and fields for:
+
+* users
+* organisations
+* ventures
+* projects
+* modules
+* agents
+* evidence_items
+* agent_assessments
+* readiness_scores
+* risks
+* recommendations
+* stage_gates
+* approvals
+* reports
+* audit_logs
+
+For each entity, define:
+
+* Purpose
+* Key fields
+* Relationships
+* MVP priority
+
+6. Recommended build strategy
+    Recommend one of the following:
+
+Option A: Refactor the existing application in-place
+Option B: Create a new v2 route/folder inside the current app
+Option C: Create a separate v2 branch
+Option D: Create a completely separate repository
+
+Evaluate each option using:
+
+* Safety
+* Speed
+* Reuse of existing work
+* Technical risk
+* Ease of GitHub version control
+* Ease of later migration
+* Suitability for investor/demo use
+
+Then recommend the best option.
+
+My preferred approach is to preserve the original platform and create a new v2 branch or standalone v2 implementation unless the audit shows in-place refactoring is safer.
+
+7. Implementation roadmap
+    Create a staged implementation plan:
+
+Phase 0: Codebase audit and preservation
+Phase 1: v2 information architecture and navigation
+Phase 2: Mock-data dashboard build
+Phase 3: Readiness scoring model
+Phase 4: Evidence library and agent activity log
+Phase 5: Risk board and stage-gate board
+Phase 6: Reports and data-room view
+Phase 7: Role-based views
+Phase 8: Supabase-ready data model
+Phase 9: Agent API placeholder integration
+Phase 10: Production hardening
+
+8. Build backlog
+    Create a practical build backlog with tasks grouped as:
+
+* Must-have for MVP
+* Should-have for MVP+
+* Could-have for later
+* Do-not-build-yet
+
+Each backlog item should include:
+
+* Task name
+* Description
+* Files/components likely affected
+* Estimated complexity: low, medium, high
+* Dependencies
+* Acceptance criteria
+
+9. Red-team critique
+    Challenge the proposed solution.
+
+Identify at least 10 risks or failure modes, including:
+
+* Overbuilding the dashboard before agent workflows are validated
+* Recreating a generic SaaS dashboard
+* Losing useful legacy functionality
+* Weak data model
+* False precision in readiness scoring
+* No evidence traceability
+* Black-box agent recommendations
+* Poor role-based access design
+* Expensive future agent calls
+* Difficult GitHub/version-control process
+* Security risks from evidence uploads
+* Lack of human approval gates
+
+For each risk, propose a mitigation.
+
+10. Final recommendation
+    Conclude with:
+
+* Whether the current app should be refactored or preserved
+* Whether to create a v2 branch or new repo
+* What the first build sprint should focus on
+* What should not be built yet
+* What needs human review before coding
+
+OUTPUT FORMAT
+
+Please produce the audit as a structured report with these headings:
+
+1. Executive Summary
+2. Current Codebase Overview
+3. Current Platform vs New Strategy Fit
+4. Legacy-to-v2 Mapping Table
+5. Technical Gap Analysis
+6. Recommended v2 Architecture
+7. Proposed Data Model
+8. Recommended Build Strategy
+9. Implementation Roadmap
+10. MVP Build Backlog
+11. Red-Team Risk Assessment
+12. Final Recommendation
+
+IMPORTANT CONSTRAINTS
+
+* Do not overwrite existing files during the audit.
+* Do not remove existing functionality without approval.
+* Use mock data first.
+* Prioritise a clean, investor-grade v2 prototype.
+* Keep the original platform available as reference.
+* Avoid generic SaaS features.
+* Focus on agentic validation, evidence confidence, readiness scoring, stage-gates, auditability, and stakeholder trust.
