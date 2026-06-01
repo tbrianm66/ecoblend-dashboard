@@ -1,0 +1,1 @@
+ALTER TABLE "mission_integrity_scores" ALTER COLUMN "id" SET DATA TYPE serial;

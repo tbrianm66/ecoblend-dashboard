@@ -23,6 +23,12 @@ import { flowerRouter } from "./flower.router";
 import { adminRouter } from "./admin.router";
 import { contextualRouter } from "./contextual.router";
 import { startupFailureRiskRouter } from "./startupFailureRisk.router";
+import {
+  missionIntegrityRouter,
+  constitutionalGovernanceRouter,
+  successionPlanningRouter,
+  stakeholderAlignmentRouter,
+} from "./missionProtection.router";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -231,6 +237,11 @@ export const appRouter = router({
   flower: flowerRouter,
   admin: adminRouter,
   contextual: contextualRouter,
+  // Phase 5 — Mission Protection Framework
+  missionIntegrity: missionIntegrityRouter,
+  constitutionalGovernance: constitutionalGovernanceRouter,
+  successionPlanning: successionPlanningRouter,
+  stakeholderAlignment: stakeholderAlignmentRouter,
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

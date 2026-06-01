@@ -6960,7 +6960,7 @@ export type InsertContingencyPlaybook = typeof contingencyPlaybooks.$inferInsert
 
 // -- Mission Integrity Scores (Phase 5A) -----------------------------------
 export const missionIntegrityScores = pgTable("mission_integrity_scores", {
-  id:                    varchar("id", { length: 64 }).primaryKey(),
+  id:                    serial("id").primaryKey(),
   ventureId:             varchar("ventureId", { length: 64 }).notNull(),
   overallScore:          integer("overallScore").notNull(),           // 0-100
   financialVsMissionDrift: integer("financialVsMissionDrift").notNull(), // 0-100: divergence between financial and impact metrics

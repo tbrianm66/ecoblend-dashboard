@@ -1,0 +1,9 @@
+{
+  "query": "\nALTER TABLE `governance_structures` \n  ADD COLUMN IF NOT EXISTS `complianceScore` INT NULL,\n  ADD COLUMN IF NOT EXISTS `lastReviewAt` TIMESTAMP NULL,\n  ADD COLUMN IF NOT EXISTS `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  ADD COLUMN IF NOT EXISTS `updatedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  ADD COLUMN IF NOT EXISTS `antiDilutionProtections` BOOLEAN NOT NULL DEFAULT FALSE,\n  ADD COLUMN IF NOT EXISTS `changeOfControlProtections` BOOLEAN NOT NULL DEFAULT FALSE,\n  ADD COLUMN IF NOT EXISTS `missionDriftProtocol` TEXT,\n  ADD COLUMN IF NOT EXISTS `founderVetoTriggers` JSON\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3HthdpivREJ9B8M.root --database ggmroLG8ezURUZiLzGveTG --execute \nALTER TABLE `governance_structures` \n  ADD COLUMN IF NOT EXISTS `complianceScore` INT NULL,\n  ADD COLUMN IF NOT EXISTS `lastReviewAt` TIMESTAMP NULL,\n  ADD COLUMN IF NOT EXISTS `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  ADD COLUMN IF NOT EXISTS `updatedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  ADD COLUMN IF NOT EXISTS `antiDilutionProtections` BOOLEAN NOT NULL DEFAULT FALSE,\n  ADD COLUMN IF NOT EXISTS `changeOfControlProtections` BOOLEAN NOT NULL DEFAULT FALSE,\n  ADD COLUMN IF NOT EXISTS `missionDriftProtocol` TEXT,\n  ADD COLUMN IF NOT EXISTS `founderVetoTriggers` JSON\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 579
+}

@@ -220,19 +220,12 @@ export default function RiskIntelligence() {
         {/* RPN Formula note */}
         <div className="mt-4 flex items-center gap-2 text-xs text-gray-400">
           <AlertTriangle size={10} />
-          RPN = Severity (1-10) × Probability (1-10) × Detectability (1-10). Critical ≥ 200, High ≥ 120, Medium ≥ 60, Low < 60.
+          {"RPN = Severity (1–10) × Probability (1–10) × Detectability (1–10). Critical ≥ 200, High ≥ 120, Medium ≥ 60, Low < 60."}
         </div>
 
         {/* Mission Integrity Index (Phase 5A) */}
         <div className="mt-8 mb-6">
-          <MissionIntegrityCard
-            overallScore={72}
-            financialVsMissionDrift={25}
-            stakeholderAlignment={68}
-            governanceStrength={65}
-            leadershipContinuity={58}
-            trend="Stable"
-          />
+          <MissionIntegrityCard />
         </div>
       </div>
 
