@@ -6952,3 +6952,121 @@ export const contingencyPlaybooks = pgTable("contingency_playbooks", {
 });
 export type ContingencyPlaybook = typeof contingencyPlaybooks.$inferSelect;
 export type InsertContingencyPlaybook = typeof contingencyPlaybooks.$inferInsert;
+
+
+// ============================================================================
+// PHASE 5: MISSION PROTECTION FRAMEWORK
+// ============================================================================
+
+// -- Mission Integrity Scores (Phase 5A) -----------------------------------
+export const missionIntegrityScores = pgTable("mission_integrity_scores", {
+  id:                    varchar("id", { length: 64 }).primaryKey(),
+  ventureId:             varchar("ventureId", { length: 64 }).notNull(),
+  overallScore:          integer("overallScore").notNull(),           // 0-100
+  financialVsMissionDrift: integer("financialVsMissionDrift").notNull(), // 0-100: divergence between financial and impact metrics
+  stakeholderAlignmentScore: integer("stakeholderAlignmentScore").notNull(), // 0-100: investor/founder/employee alignment
+  governanceStrengthScore: integer("governanceStrengthScore").notNull(),   // 0-100: mission-protecting governance structures
+  leadershipContinuityScore: integer("leadershipContinuityScore").notNull(), // 0-100: succession planning readiness
+  missionDriftTrend:     text("missionDriftTrend").default("Stable"),  // Improving | Stable | Declining
+  lastAssessmentAt:      timestamp("lastAssessmentAt"),
+  createdAt:             timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:             timestamp("updatedAt").defaultNow().notNull(),
+});
+export type MissionIntegrityScore = typeof missionIntegrityScores.$inferSelect;
+export type InsertMissionIntegrityScore = typeof missionIntegrityScores.$inferInsert;
+
+// -- Constitutional Governance (Phase 5B) ----------------------------------
+export const governanceStructures = pgTable("governance_structures", {
+  id:                    varchar("id", { length: 64 }).primaryKey(),
+  ventureId:             varchar("ventureId", { length: 64 }).notNull(),
+  // Founder Protection Mechanisms
+  founderVetoRights:     boolean("founderVetoRights").default(false),      // Founder can veto mission-critical decisions
+  founderVetoScope:      text("founderVetoScope"),                         // Which decisions require founder veto
+  // Board Composition
+  boardSize:             integer("boardSize"),                                 // Total board seats
+  founderSeats:          integer("founderSeats"),                              // Seats held by founder(s)
+  independentSeats:      integer("independentSeats"),                          // Independent director seats
+  investorSeats:         integer("investorSeats"),                             // Investor-nominated seats
+  missionAlignedSeats:   integer("missionAlignedSeats"),                       // Seats reserved for mission-aligned directors
+  // Stakeholder Rights
+  employeeRepresentation: boolean("employeeRepresentation").default(false), // Employee board seat or advisory role
+  communityRepresentation: boolean("communityRepresentation").default(false), // Community stakeholder representation
+  customerAdvisoryBoard: boolean("customerAdvisoryBoard").default(false),  // Customer feedback mechanism
+  // Mission Protection Clauses
+  missionClauseInBylaws:  boolean("missionClauseInBylaws").default(false), // Explicit mission protection in bylaws
+  missionClauseText:     text("missionClauseText"),                        // Text of mission protection clause
+  // Governance Compliance
+  complianceScore:       integer("complianceScore"),                           // 0-100: governance structure compliance
+  lastReviewAt:          timestamp("lastReviewAt"),
+  createdAt:             timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:             timestamp("updatedAt").defaultNow().notNull(),
+});
+export type GovernanceStructure = typeof governanceStructures.$inferSelect;
+export type InsertGovernanceStructure = typeof governanceStructures.$inferInsert;
+
+// -- Succession Plans (Phase 5C) -------------------------------------------
+export const successionPlans = pgTable("succession_plans", {
+  id:                    varchar("id", { length: 64 }).primaryKey(),
+  ventureId:             varchar("ventureId", { length: 64 }).notNull(),
+  // Leadership Pipeline
+  currentCeo:            varchar("currentCeo", { length: 255 }),
+  ceoPlanningHorizon:    integer("ceoPlanningHorizon"),                        // Years until planned CEO transition
+  potentialSuccessors:   json("potentialSuccessors"),                      // Array of {name, role, readinessScore}
+  // Mission Continuity
+  founderIntentDocumented: boolean("founderIntentDocumented").default(false), // Founder has documented mission intent
+  founderIntentSummary:  text("founderIntentSummary"),                 // Summary of founder's mission intent
+  institutionalMemorySystem: boolean("institutionalMemorySystem").default(false), // Formal system to preserve mission
+  missionCodexDocument:  text("missionCodexDocument"),                 // Codified mission, values, decision principles
+  // Institutional Memory
+  keyDecisionFrameworks: json("keyDecisionFrameworks"),                    // Array of {decision, framework, rationale}
+  coreValuesDocumented:  json("coreValuesDocumented"),                     // Array of {value, definition, examples}
+  // Succession Readiness
+  successionReadinessScore: integer("successionReadinessScore"),               // 0-100: readiness for leadership transition
+  riskFactors:           json("riskFactors"),                              // Array of {risk, mitigation}
+  lastUpdatedAt:         timestamp("lastUpdatedAt"),
+  createdAt:             timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:             timestamp("updatedAt").defaultNow().notNull(),
+});
+export type SuccessionPlan = typeof successionPlans.$inferSelect;
+export type InsertSuccessionPlan = typeof successionPlans.$inferInsert;
+
+// -- Mission Drift Alerts (Phase 5A) ----------------------------------------
+export const missionDriftAlerts = pgTable("mission_drift_alerts", {
+  id:                    varchar("id", { length: 64 }).primaryKey(),
+  ventureId:             varchar("ventureId", { length: 64 }).notNull(),
+  alertType:             text("alertType").notNull(),  // FinancialVsMissionDivergence | StakeholderMisalignment | GovernanceWeakness | SuccessionVulnerability | LeadershipChange | IncrementalCompromise
+  severity:              text("severity").default("Medium"),  // Low | Medium | High | Critical
+  description:           text("description"),
+  evidence:              text("evidence"),                                  // Data supporting the alert
+  recommendedAction:     text("recommendedAction"),
+  status:                text("status").default("Active"),  // Active | Acknowledged | Mitigating | Resolved
+  acknowledgedAt:        timestamp("acknowledgedAt"),
+  resolvedAt:            timestamp("resolvedAt"),
+  createdAt:             timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:             timestamp("updatedAt").defaultNow().notNull(),
+});
+export type MissionDriftAlert = typeof missionDriftAlerts.$inferSelect;
+export type InsertMissionDriftAlert = typeof missionDriftAlerts.$inferInsert;
+
+// -- Stakeholder Alignment (Phase 5D - Future) ----------------------------
+export const stakeholderProfiles = pgTable("stakeholder_profiles", {
+  id:                    varchar("id", { length: 64 }).primaryKey(),
+  ventureId:             varchar("ventureId", { length: 64 }).notNull(),
+  stakeholderType:       text("stakeholderType").notNull(),  // Founder | Employee | Investor | Customer | Community | Board | Advisor
+  name:                  varchar("name", { length: 255 }).notNull(),
+  role:                  varchar("role", { length: 128 }),
+  // Incentive Analysis
+  primaryIncentive:      varchar("primaryIncentive", { length: 255 }),     // What drives this stakeholder
+  missionAlignment:      integer("missionAlignment"),                          // 0-100: alignment with venture mission
+  financialAlignment:    integer("financialAlignment"),                        // 0-100: alignment with financial goals
+  // Engagement
+  lastEngagementAt:      timestamp("lastEngagementAt"),
+  feedbackScore:         integer("feedbackScore"),                             // 0-100: satisfaction/engagement
+  // Risk Assessment
+  conflictRisk:          text("conflictRisk").default("Low"),  // Low | Medium | High
+  conflictDescription:   text("conflictDescription"),
+  createdAt:             timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:             timestamp("updatedAt").defaultNow().notNull(),
+});
+export type StakeholderProfile = typeof stakeholderProfiles.$inferSelect;
+export type InsertStakeholderProfile = typeof stakeholderProfiles.$inferInsert;

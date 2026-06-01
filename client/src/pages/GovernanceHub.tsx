@@ -3,6 +3,8 @@
 // Architecture Module 15 — Phase 6 MVP
 // ============================================================
 import ContextualWidgetPanel from "@/components/ContextualWidgetPanel";
+import ConstitutionalGovernanceForm from "@/components/ConstitutionalGovernanceForm";
+import SuccessionPlanningForm from "@/components/SuccessionPlanningForm";
 
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -117,7 +119,7 @@ const actionColors: Record<string, string> = {
 };
 
 export default function GovernanceHub() {
-  const [activeTab, setActiveTab] = useState<"gates" | "audit" | "board">("gates");
+  const [activeTab, setActiveTab] = useState<"gates" | "audit" | "board" | "constitutional" | "succession">("gates");
 
   const pendingCount = STAGE_GATES.filter(g => g.status === "pending").length;
 
@@ -146,16 +148,18 @@ export default function GovernanceHub() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mt-4">
+        <div className="flex gap-1 mt-4 overflow-x-auto pb-2">
           {[
             { key: "gates", label: "Stage Gates", icon: CheckCircle2 },
             { key: "audit", label: "Audit Trail", icon: History },
             { key: "board", label: "Board Reports", icon: FileText },
+            { key: "constitutional", label: "Constitutional Governance", icon: Scale },
+            { key: "succession", label: "Succession Planning", icon: Users },
           ].map(tab => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as any)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap"
               style={{
                 background: activeTab === tab.key ? "white" : "transparent",
                 color: activeTab === tab.key ? "#1a2332" : "#6b7280",
@@ -263,6 +267,30 @@ export default function GovernanceHub() {
             <Button variant="outline" size="sm" className="gap-2" onClick={() => toast.info("Board report generation — coming in next build")}>
               <FileText size={14} /> Generate Q2 2026 Board Report
             </Button>
+          </div>
+        )}
+
+        {/* Constitutional Governance (Phase 5B) */}
+        {activeTab === "constitutional" && (
+          <div>
+            <ConstitutionalGovernanceForm
+              onSubmit={(data) => {
+                console.log("Constitutional Governance data:", data);
+                toast.success("Governance structure saved");
+              }}
+            />
+          </div>
+        )}
+
+        {/* Succession Planning (Phase 5C) */}
+        {activeTab === "succession" && (
+          <div>
+            <SuccessionPlanningForm
+              onSubmit={(data) => {
+                console.log("Succession Planning data:", data);
+                toast.success("Succession plan saved");
+              }}
+            />
           </div>
         )}
       </div>
