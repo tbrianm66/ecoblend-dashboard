@@ -39,8 +39,15 @@ const analyticsOrigin = (() => {
   }
 })();
 
+// In development, Vite's @vitejs/plugin-react injects an inline preamble script
+// (and HMR uses inline scripts). Without 'unsafe-inline' the browser blocks it,
+// React Refresh never installs, and the app crashes with "can't detect preamble".
+// Production serves a static bundle with no inline scripts, so it keeps the strict policy.
+const isProduction = process.env.NODE_ENV === "production";
+
 const scriptSrc = [
   "'self'",
+  isProduction ? null : "'unsafe-inline'", // dev-only: allow Vite preamble/HMR inline scripts
   "https://forge.butterfly-effect.dev", // Maps proxy script + API calls
   "https://maps.googleapis.com",         // Google Maps JS API (loaded via forge proxy)
   analyticsOrigin,                        // Umami analytics (if VITE_ANALYTICS_ENDPOINT is set)

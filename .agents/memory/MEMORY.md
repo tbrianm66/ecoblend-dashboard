@@ -1,1 +1,1 @@
-- [Blank app_preview screenshots](screenshot-blank-csp.md) — screenshot tool renders all-white for every route here (CSP/headless quirk); verify via vite build + curl, not screenshots.
+- [Dev CSP must allow inline scripts](screenshot-blank-csp.md) — strict script-src crashes dev app ("can't detect preamble", blank page); dev needs 'unsafe-inline' gated on NODE_ENV.
