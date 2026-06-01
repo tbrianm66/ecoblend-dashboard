@@ -68,7 +68,7 @@ function LiveCalculator() {
     <Card className="border-[#e5e7eb]">
       <CardHeader className="pb-3">
         <CardTitle className="text-sm font-bold text-gray-900 flex items-center gap-2">
-          <Zap size={14} className="text-[#51AF37]" />
+          <Zap size={14} className="text-[#56A837]" />
           Live Sync Calculator
         </CardTitle>
       </CardHeader>
@@ -78,16 +78,16 @@ function LiveCalculator() {
           <div>
             <div className="flex justify-between mb-1">
               <label className="text-xs font-semibold text-gray-600">TRL</label>
-              <span className="text-xs font-mono font-bold text-[#3A97D3]">{trl}</span>
+              <span className="text-xs font-mono font-bold text-[#3B85BA]">{trl}</span>
             </div>
-            <Slider min={1} max={9} step={1} value={[trl]} onValueChange={([v]) => setTrl(v)} className="accent-[#3A97D3]" />
+            <Slider min={1} max={9} step={1} value={[trl]} onValueChange={([v]) => setTrl(v)} className="accent-[#3B85BA]" />
           </div>
           <div>
             <div className="flex justify-between mb-1">
               <label className="text-xs font-semibold text-gray-600">MRL</label>
-              <span className="text-xs font-mono font-bold text-[#F49C13]">{mrl}</span>
+              <span className="text-xs font-mono font-bold text-[#F69111]">{mrl}</span>
             </div>
-            <Slider min={1} max={9} step={1} value={[mrl]} onValueChange={([v]) => setMrl(v)} className="accent-[#F49C13]" />
+            <Slider min={1} max={9} step={1} value={[mrl]} onValueChange={([v]) => setMrl(v)} className="accent-[#F69111]" />
           </div>
         </div>
 
@@ -175,7 +175,7 @@ export default function SyncPortfolio() {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#3A97D315", color: "#3A97D3" }}>
+              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#3B85BA15", color: "#3B85BA" }}>
                 BEBUS-SYNC-SE-001
               </span>
             </div>
@@ -243,15 +243,15 @@ export default function SyncPortfolio() {
                       >
                         <td className="px-6 py-3">
                           <div className="flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: v.color ?? "#51AF37" }} />
+                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: v.color ?? "#56A837" }} />
                             <span className="font-semibold text-gray-900">{v.name}</span>
                           </div>
                         </td>
                         <td className="px-4 py-3 text-center">
-                          <span className="font-mono font-bold text-[#3A97D3]">{s?.trl ?? v.trl ?? "—"}</span>
+                          <span className="font-mono font-bold text-[#3B85BA]">{s?.trl ?? v.trl ?? "—"}</span>
                         </td>
                         <td className="px-4 py-3 text-center">
-                          <span className="font-mono font-bold text-[#F49C13]">{s?.mrl ?? "—"}</span>
+                          <span className="font-mono font-bold text-[#F69111]">{s?.mrl ?? "—"}</span>
                         </td>
                         <td className="px-4 py-3 text-center">
                           {delta !== null ? (

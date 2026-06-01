@@ -81,7 +81,7 @@ function FormulaCard({
   return (
     <div className="vos-panel p-6">
       <div className="flex items-center gap-2 mb-5">
-        <Calculator size={16} style={{ color: "#51AF37" }} />
+        <Calculator size={16} style={{ color: "#56A837" }} />
         <h3 className="font-bold text-gray-900" style={{ fontFamily: "'Inter', sans-serif" }}>
           VRL Formula Breakdown
         </h3>
@@ -187,7 +187,7 @@ function VrlLevelIndicator({ currentLevel, vrlScore }: { currentLevel: number; v
   return (
     <div className="vos-panel p-6">
       <div className="flex items-center gap-2 mb-4">
-        <TrendingUp size={16} style={{ color: "#51AF37" }} />
+        <TrendingUp size={16} style={{ color: "#56A837" }} />
         <h3 className="font-bold text-gray-900" style={{ fontFamily: "'Inter', sans-serif" }}>
           9-Level Readiness Scale
         </h3>
@@ -464,7 +464,7 @@ function PortfolioComparison() {
   return (
     <div className="vos-panel p-6">
       <div className="flex items-center gap-2 mb-4">
-        <TrendingUp size={16} style={{ color: "#51AF37" }} />
+        <TrendingUp size={16} style={{ color: "#56A837" }} />
         <h3 className="font-bold text-gray-900" style={{ fontFamily: "'Inter', sans-serif" }}>
           Portfolio VRL Scores (Computed)
         </h3>
@@ -635,7 +635,7 @@ export default function VrlAnalytics() {
     <div className="flex-1 overflow-y-auto bg-gray-50">
       <div className="vos-page-header">
         <div className="flex items-center gap-2 mb-1">
-          <TrendingUp size={16} style={{ color: "#51AF37" }} />
+          <TrendingUp size={16} style={{ color: "#56A837" }} />
           <span className="vos-badge vos-badge-success" style={{ fontSize: "0.65rem" }}>VRL Scoring Engine</span>
           <span className="text-xs text-gray-400">·</span>
           <span className="text-xs text-gray-400 font-mono">9-Level Scale</span>
@@ -768,15 +768,15 @@ export default function VrlAnalytics() {
               <span className="text-xs text-gray-400">Business Readiness</span>
             </div>
           </div>
-          <div className="vos-metric" style={{ borderTop: "3px solid #51AF37" }}>
+          <div className="vos-metric" style={{ borderTop: "3px solid #56A837" }}>
             <span className="vos-metric-label">Computed VRL Score</span>
             <div className="flex items-baseline gap-1">
-              <span className="vos-metric-value" style={{ color: "#51AF37" }}>{score.vrlScore.toFixed(2)}</span>
+              <span className="vos-metric-value" style={{ color: "#56A837" }}>{score.vrlScore.toFixed(2)}</span>
               <span className="text-sm text-gray-400">/ 9</span>
             </div>
             <span className="vos-metric-sub">Level {score.vrlLevel}: {score.vrlLevelLabel}</span>
             <div className="flex items-center gap-1 mt-1">
-              <TrendingUp size={12} style={{ color: "#51AF37" }} />
+              <TrendingUp size={12} style={{ color: "#56A837" }} />
               <span className="text-xs text-gray-400">Venture Readiness</span>
             </div>
           </div>

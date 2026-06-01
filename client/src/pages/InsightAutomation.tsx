@@ -19,7 +19,7 @@ const RECOMMENDATION_COLORS: Record<string, string> = {
   requires_action: "bg-red-100 text-red-800",
 };
 const STAGE_COLORS: Record<string, string> = {
-  discover: "#3A97D3", define: "#8B5CF6", build: "#F49C13", launch: "#51AF37", spinout: "#EC4899",
+  discover: "#3B85BA", define: "#8B5CF6", build: "#F69111", launch: "#56A837", spinout: "#EC4899",
 };
 
 export default function InsightAutomation() {
@@ -71,7 +71,7 @@ export default function InsightAutomation() {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#3A97D315", color: "#3A97D3" }}>Sprint 76</span>
+              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#3B85BA15", color: "#3B85BA" }}>Sprint 76</span>
               <span className="text-xs text-gray-400">·</span>
               <span className="text-xs text-gray-400 font-mono">V4 Architecture Brief — Section 3.5 & 3.6</span>
             </div>
@@ -94,7 +94,7 @@ export default function InsightAutomation() {
             </div>
             <div className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
               <div className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Avg Opportunity Score</div>
-              <div className="text-3xl font-bold" style={{ color: "#51AF37", fontFamily: "'Prompt', sans-serif" }}>{b.avgOpportunityScore}/10</div>
+              <div className="text-3xl font-bold" style={{ color: "#56A837", fontFamily: "'Prompt', sans-serif" }}>{b.avgOpportunityScore}/10</div>
             </div>
             <div className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
               <div className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Validated Hypotheses</div>
@@ -123,12 +123,12 @@ export default function InsightAutomation() {
           <div>
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-semibold text-gray-900">Interview Transcripts</h3>
-              <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => setShowTranscriptForm(!showTranscriptForm)} style={{ borderColor: "#3A97D3", color: "#3A97D3" }}>
+              <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => setShowTranscriptForm(!showTranscriptForm)} style={{ borderColor: "#3B85BA", color: "#3B85BA" }}>
                 <Plus size={13} /> Process Transcript
               </Button>
             </div>
             {showTranscriptForm && (
-              <Card className="mb-6 border-2" style={{ borderColor: "#3A97D3" }}>
+              <Card className="mb-6 border-2" style={{ borderColor: "#3B85BA" }}>
                 <CardHeader><CardTitle className="text-base flex items-center gap-2"><Brain size={16} /> AI Transcript Processor</CardTitle></CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-3 gap-4 mb-4">
@@ -173,7 +173,7 @@ export default function InsightAutomation() {
                       {card.contradictions > 0 && <div className="text-xs text-amber-600 mt-0.5">⚠ {card.contradictions} contradiction flag(s)</div>}
                     </div>
                     <div className="text-right">
-                      <div className="text-xl font-bold" style={{ color: parseFloat(card.opportunityScore as string || "0") >= 7 ? "#51AF37" : parseFloat(card.opportunityScore as string || "0") >= 5 ? "#F49C13" : "#EF4444" }}>
+                      <div className="text-xl font-bold" style={{ color: parseFloat(card.opportunityScore as string || "0") >= 7 ? "#56A837" : parseFloat(card.opportunityScore as string || "0") >= 5 ? "#F69111" : "#EF4444" }}>
                         {parseFloat(card.opportunityScore as string || "0").toFixed(1)}
                       </div>
                       <div className="text-xs text-gray-400">opp. score</div>
@@ -191,7 +191,7 @@ export default function InsightAutomation() {
             </div>
             {/* Selected insight detail */}
             {selectedInsight && insight.data && (
-              <Card className="mt-4 border-2" style={{ borderColor: "#3A97D3" }}>
+              <Card className="mt-4 border-2" style={{ borderColor: "#3B85BA" }}>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle className="text-sm">Insight Detail</CardTitle>
                   <Button size="sm" variant="ghost" className="text-xs" onClick={() => setSelectedInsight(null)}>Close</Button>
@@ -262,12 +262,12 @@ export default function InsightAutomation() {
           <div>
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-semibold text-gray-900">Stage Gate Reviews</h3>
-              <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => setShowGateForm(!showGateForm)} style={{ borderColor: "#51AF37", color: "#51AF37" }}>
+              <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => setShowGateForm(!showGateForm)} style={{ borderColor: "#56A837", color: "#56A837" }}>
                 <Plus size={13} /> New Gate Review
               </Button>
             </div>
             {showGateForm && (
-              <Card className="mb-6 border-2" style={{ borderColor: "#51AF37" }}>
+              <Card className="mb-6 border-2" style={{ borderColor: "#56A837" }}>
                 <CardHeader><CardTitle className="text-base flex items-center gap-2"><Sparkles size={16} /> AI Stage Gate Review</CardTitle></CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-3 gap-4 mb-4">
@@ -342,7 +342,7 @@ export default function InsightAutomation() {
             </div>
             {/* Review detail */}
             {selectedReview && review.data && (
-              <Card className="mt-4 border-2" style={{ borderColor: "#51AF37" }}>
+              <Card className="mt-4 border-2" style={{ borderColor: "#56A837" }}>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle className="text-sm capitalize">{review.data.review.targetStage} Gate Review — {review.data.review.recommendation?.replace(/_/g, " ").toUpperCase()}</CardTitle>
                   <Button size="sm" variant="ghost" className="text-xs" onClick={() => setSelectedReview(null)}>Close</Button>

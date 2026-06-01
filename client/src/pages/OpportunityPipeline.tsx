@@ -120,7 +120,7 @@ function DisruptionRadar({ opportunityId }: { opportunityId: number }) {
           </span>
           <span className="text-xs font-mono text-gray-400">{totalScore}/50</span>
           {score?.autonomousTeamFlagged && (
-            <span className="text-xs px-1.5 py-0.5 rounded flex items-center gap-1" style={{ background: "#fef3dc", color: "#b45309" }}>
+            <span className="text-xs px-1.5 py-0.5 rounded flex items-center gap-1" style={{ background: "#FEF0D9", color: "#b45309" }}>
               <AlertTriangle size={9} /> Needs autonomous team
             </span>
           )}
@@ -477,10 +477,10 @@ function ReportsPanelDialog({ opp, open, onClose }: { opp: any; open: boolean; o
 // ── Pipeline Kanban Stage config ─────────────────────────────────────────────
 const PIPELINE_STAGES = [
   { key: "Identified",          label: "Identified",          icon: Lightbulb,     color: "#6b7280", bg: "#6b728010", desc: "Opportunity logged, no matches yet" },
-  { key: "Matched",             label: "Matched",             icon: Users,         color: "#3A97D3", bg: "#3A97D310", desc: "Founders matched to this opportunity" },
-  { key: "Spin-Off Configured", label: "Spin-Off Configured", icon: GitBranch,     color: "#F49C13", bg: "#F49C1310", desc: "Spin-Off OS configuration created" },
+  { key: "Matched",             label: "Matched",             icon: Users,         color: "#3B85BA", bg: "#3B85BA10", desc: "Founders matched to this opportunity" },
+  { key: "Spin-Off Configured", label: "Spin-Off Configured", icon: GitBranch,     color: "#F69111", bg: "#F6911110", desc: "Spin-Off OS configuration created" },
   { key: "Approved",            label: "Approved",            icon: CheckCircle2,  color: "#8b5cf6", bg: "#8b5cf610", desc: "Configuration approved by VBS team" },
-  { key: "Launched",            label: "Launched",            icon: Rocket,        color: "#51AF37", bg: "#51AF3710", desc: "Live venture created in portfolio" },
+  { key: "Launched",            label: "Launched",            icon: Rocket,        color: "#56A837", bg: "#56A83710", desc: "Live venture created in portfolio" },
 ] as const;
 
 type PipelineStageKey = typeof PIPELINE_STAGES[number]["key"];
@@ -630,7 +630,7 @@ export default function OpportunityPipeline() {
               </button>
               <button
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold transition-colors"
-                style={viewMode === "pipeline" ? { background: "#51AF37", color: "white" } : { background: "white", color: "#6b7280" }}
+                style={viewMode === "pipeline" ? { background: "#56A837", color: "white" } : { background: "white", color: "#6b7280" }}
                 onClick={() => setViewMode("pipeline")}
               >
                 <LayoutGrid size={12} /> Pipeline Map
@@ -674,7 +674,7 @@ export default function OpportunityPipeline() {
                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Pipeline Flow</span>
                 <Button
                   size="sm" variant="outline" className="ml-auto gap-1 text-xs h-6"
-                  style={{ borderColor: "#3A97D3", color: "#3A97D3" }}
+                  style={{ borderColor: "#3B85BA", color: "#3B85BA" }}
                   onClick={() => pipelineQuery.refetch()}
                   disabled={pipelineQuery.isFetching}
                 >
@@ -765,7 +765,7 @@ export default function OpportunityPipeline() {
                                 <span className="flex items-center gap-1 text-xs text-gray-500"><GitBranch size={10} /> Config #{item.spinoffConfigId}</span>
                               )}
                               {item.convertedToVentureId && (
-                                <span className="flex items-center gap-1 text-xs font-semibold" style={{ color: "#51AF37" }}><Rocket size={10} /> {item.convertedToVentureId}</span>
+                                <span className="flex items-center gap-1 text-xs font-semibold" style={{ color: "#56A837" }}><Rocket size={10} /> {item.convertedToVentureId}</span>
                               )}
                             </div>
                           </div>

@@ -25,9 +25,9 @@ import {
 } from "lucide-react";
 
 // ── Colour palette ────────────────────────────────────────────────────────────
-const ECOBLEND_GREEN = "#51AF37";
-const ECOBLEND_BLUE  = "#3A97D3";
-const ECOBLEND_AMBER = "#F49C13";
+const ECOBLEND_GREEN = "#56A837";
+const ECOBLEND_BLUE  = "#3B85BA";
+const ECOBLEND_AMBER = "#F69111";
 const ECOBLEND_RED   = "#E05252";
 const ECOBLEND_PURPLE = "#9B59B6";
 const STATUS_COLORS: Record<string, string> = {

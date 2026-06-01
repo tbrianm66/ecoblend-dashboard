@@ -46,21 +46,21 @@ export default function StageGateApprovalCard({ ventureId, currentStage }: Stage
         <WidgetSectionHeader
           title="Stage-Gate Approval"
           badge={isBlocked ? "Blocked" : hasPending ? "Pending" : "On Track"}
-          badgeColor={isBlocked ? "#ef4444" : hasPending ? "#F49C13" : "#51AF37"}
+          badgeColor={isBlocked ? "#ef4444" : hasPending ? "#F69111" : "#56A837"}
           icon={<GitMerge size={14} />}
         />
         {/* Stage transition indicator */}
         <div className="flex items-center gap-2 mt-1">
           <span
             className="text-xs font-semibold px-2 py-0.5 rounded-full"
-            style={{ background: "#3A97D315", color: "#3A97D3" }}
+            style={{ background: "#3B85BA15", color: "#3B85BA" }}
           >
             {data.currentStage}
           </span>
           <span className="text-gray-300 text-xs">→</span>
           <span
             className="text-xs font-semibold px-2 py-0.5 rounded-full"
-            style={{ background: "#51AF3715", color: "#51AF37" }}
+            style={{ background: "#56A83715", color: "#56A837" }}
           >
             {data.targetStage}
           </span>

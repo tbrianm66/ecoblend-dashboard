@@ -29,7 +29,7 @@ function formatMoney(val: number | null | undefined, unit = "£M") {
 }
 
 const THREAT_COLORS: Record<string, string> = {
-  High: "#ef4444", Medium: "#F49C13", Low: "#51AF37",
+  High: "#ef4444", Medium: "#F69111", Low: "#56A837",
 };
 const STAGE_COLORS: Record<string, string> = {
   Startup: "#8b5cf6", "Scale-up": "#3b82f6", Established: "#0ea5e9",
@@ -43,9 +43,9 @@ const TYPE_LABELS: Record<string, string> = {
 function MarketFunnel({ tam, sam, som, unit }: { tam: number; sam: number; som: number; unit: string }) {
   const maxVal = Math.max(tam, 1);
   const levels = [
-    { label: "TAM", value: tam, color: "#3A97D3", desc: "Total Addressable Market", pct: 100 },
-    { label: "SAM", value: sam, color: "#51AF37", desc: "Serviceable Addressable Market", pct: Math.round((sam / maxVal) * 100) },
-    { label: "SOM", value: som, color: "#F49C13", desc: "Serviceable Obtainable Market", pct: Math.round((som / maxVal) * 100) },
+    { label: "TAM", value: tam, color: "#3B85BA", desc: "Total Addressable Market", pct: 100 },
+    { label: "SAM", value: sam, color: "#56A837", desc: "Serviceable Addressable Market", pct: Math.round((sam / maxVal) * 100) },
+    { label: "SOM", value: som, color: "#F69111", desc: "Serviceable Obtainable Market", pct: Math.round((som / maxVal) * 100) },
   ];
   return (
     <div className="flex flex-col gap-2 w-full">
@@ -89,7 +89,7 @@ function MarketCard({ item, ventureColor, onDelete }: { item: any; ventureColor:
               <span className="flex items-center gap-1"><Globe size={11} /> {item.geography || "Global"}</span>
               <span>{item.marketYear || "2025"} → {item.forecastYear || "2030"}</span>
               {item.cagr > 0 && (
-                <span className="flex items-center gap-1 font-semibold" style={{ color: "#51AF37" }}>
+                <span className="flex items-center gap-1 font-semibold" style={{ color: "#56A837" }}>
                   <TrendingUp size={11} /> {item.cagr}% CAGR
                 </span>
               )}
@@ -106,7 +106,7 @@ function MarketCard({ item, ventureColor, onDelete }: { item: any; ventureColor:
           <div className="mt-3 text-xs text-gray-400 flex items-center gap-1">
             <span>Source:</span>
             {item.sourceUrl ? (
-              <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer" className="hover:underline flex items-center gap-0.5" style={{ color: "#3A97D3" }}>
+              <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer" className="hover:underline flex items-center gap-0.5" style={{ color: "#3B85BA" }}>
                 {item.sourceName} <ExternalLink size={9} />
               </a>
             ) : (
@@ -128,12 +128,12 @@ function MarketCard({ item, ventureColor, onDelete }: { item: any; ventureColor:
             {item.keyDrivers && (
               <div>
                 <div className="text-xs font-semibold text-gray-500 mb-1 flex items-center gap-1">
-                  <Zap size={10} style={{ color: "#51AF37" }} /> Growth Drivers
+                  <Zap size={10} style={{ color: "#56A837" }} /> Growth Drivers
                 </div>
                 <ul className="space-y-1">
                   {item.keyDrivers.split(",").map((d: string, i: number) => (
                     <li key={i} className="text-xs text-gray-600 flex items-start gap-1">
-                      <CheckCircle2 size={10} className="mt-0.5 shrink-0" style={{ color: "#51AF37" }} />
+                      <CheckCircle2 size={10} className="mt-0.5 shrink-0" style={{ color: "#56A837" }} />
                       {d.trim()}
                     </li>
                   ))}
@@ -148,7 +148,7 @@ function MarketCard({ item, ventureColor, onDelete }: { item: any; ventureColor:
                 <ul className="space-y-1">
                   {item.keyBarriers.split(",").map((b: string, i: number) => (
                     <li key={i} className="text-xs text-gray-600 flex items-start gap-1">
-                      <AlertTriangle size={10} className="mt-0.5 shrink-0" style={{ color: "#F49C13" }} />
+                      <AlertTriangle size={10} className="mt-0.5 shrink-0" style={{ color: "#F69111" }} />
                       {b.trim()}
                     </li>
                   ))}
@@ -201,7 +201,7 @@ function CompetitorCard({ comp, onDelete }: { comp: any; onDelete: () => void })
               {comp.fundingRaised && <span>Funding: {comp.fundingRaised}</span>}
               {comp.website && (
                 <a href={comp.website.startsWith("http") ? comp.website : `https://${comp.website}`} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-0.5 hover:underline" style={{ color: "#3A97D3" }}>
+                  className="flex items-center gap-0.5 hover:underline" style={{ color: "#3B85BA" }}>
                   Website <ExternalLink size={9} />
                 </a>
               )}
@@ -490,7 +490,7 @@ export default function MarketIntelligence() {
           </div>
           <div className="flex items-center gap-2">
             <div className="text-center px-4 py-2 bg-white rounded-xl border shadow-sm" style={{ borderColor: "#e5e7eb" }}>
-              <div className="text-lg font-bold" style={{ color: "#3A97D3", fontFamily: "'Prompt', sans-serif" }}>{formatMoney(totalTAM)}</div>
+              <div className="text-lg font-bold" style={{ color: "#3B85BA", fontFamily: "'Prompt', sans-serif" }}>{formatMoney(totalTAM)}</div>
               <div className="text-xs text-gray-400">Total TAM tracked</div>
             </div>
             <div className="text-center px-4 py-2 bg-white rounded-xl border shadow-sm" style={{ borderColor: "#e5e7eb" }}>
@@ -498,7 +498,7 @@ export default function MarketIntelligence() {
               <div className="text-xs text-gray-400">High-threat competitors</div>
             </div>
             <div className="text-center px-4 py-2 bg-white rounded-xl border shadow-sm" style={{ borderColor: "#e5e7eb" }}>
-              <div className="text-lg font-bold" style={{ color: "#51AF37", fontFamily: "'Prompt', sans-serif" }}>{allCompetitors.length}</div>
+              <div className="text-lg font-bold" style={{ color: "#56A837", fontFamily: "'Prompt', sans-serif" }}>{allCompetitors.length}</div>
               <div className="text-xs text-gray-400">Competitors mapped</div>
             </div>
           </div>
@@ -532,7 +532,7 @@ export default function MarketIntelligence() {
                 onClick={() => setActiveTab(tab)}
                 className="px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all"
                 style={{
-                  background: activeTab === tab ? (selectedVenture?.color || "#51AF37") : "transparent",
+                  background: activeTab === tab ? (selectedVenture?.color || "#56A837") : "transparent",
                   color: activeTab === tab ? "white" : "#6b7280",
                 }}
               >
@@ -562,7 +562,7 @@ export default function MarketIntelligence() {
                   {generateMarketAI.isPending ? "Generating..." : "AI Generate"}
                 </Button>
                 <Button size="sm" className="gap-1.5 text-xs" onClick={() => setShowAddMarket(true)}
-                  style={{ background: selectedVenture?.color || "#51AF37" }}>
+                  style={{ background: selectedVenture?.color || "#56A837" }}>
                   <Plus size={13} /> Add Analysis
                 </Button>
               </div>
@@ -586,7 +586,7 @@ export default function MarketIntelligence() {
                   <MarketCard
                     key={item.id}
                     item={item}
-                    ventureColor={selectedVenture?.color || "#51AF37"}
+                    ventureColor={selectedVenture?.color || "#56A837"}
                     onDelete={() => deleteMarket.mutate({ id: item.id })}
                   />
                 ))}
@@ -630,7 +630,7 @@ export default function MarketIntelligence() {
                   {generateCompAI.isPending ? "Identifying..." : "AI Identify Competitors"}
                 </Button>
                 <Button size="sm" className="gap-1.5 text-xs" onClick={() => setShowAddCompetitor(true)}
-                  style={{ background: selectedVenture?.color || "#51AF37" }}>
+                  style={{ background: selectedVenture?.color || "#56A837" }}>
                   <Plus size={13} /> Add Competitor
                 </Button>
               </div>

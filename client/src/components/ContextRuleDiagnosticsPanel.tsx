@@ -76,7 +76,7 @@ function RuleRow({
             className="text-[10px]"
             style={
               matched
-                ? { color: "#51AF37", borderColor: "#51AF37" }
+                ? { color: "#56A837", borderColor: "#56A837" }
                 : { color: "#9ca3af", borderColor: "#e5e7eb" }
             }
           >

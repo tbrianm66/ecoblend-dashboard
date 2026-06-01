@@ -46,8 +46,8 @@ function StatusIcon({ status }: { status: CheckStatus }) {
 }
 
 function statusColor(status: CheckStatus) {
-  if (status === "pass") return "#51AF37";
-  if (status === "warn") return "#F49C13";
+  if (status === "pass") return "#56A837";
+  if (status === "warn") return "#F69111";
   if (status === "fail") return "#ef4444";
   return "#9ca3af";
 }
@@ -156,7 +156,7 @@ function buildChecklist(
       id: "database",
       title: "Database Schema",
       icon: Database,
-      accent: "#3A97D3",
+      accent: "#3B85BA",
       items: [
         {
           id: "db-playbook-library",
@@ -227,7 +227,7 @@ function buildChecklist(
       id: "global-settings",
       title: "Global Widget Configuration",
       icon: Settings,
-      accent: "#51AF37",
+      accent: "#56A837",
       items: [
         {
           id: "gs-enabled",
@@ -277,7 +277,7 @@ function buildChecklist(
       id: "thresholds",
       title: "Threshold Configuration",
       icon: Zap,
-      accent: "#F49C13",
+      accent: "#F69111",
       items: [
         {
           id: "th-evidence",
@@ -377,7 +377,7 @@ function buildChecklist(
       id: "playbook-library",
       title: "Playbook Library Health",
       icon: BookOpen,
-      accent: "#3A97D3",
+      accent: "#3B85BA",
       items: [
         {
           id: "pl-orphans",
@@ -405,7 +405,7 @@ function buildChecklist(
       id: "analytics",
       title: "Analytics & Usage Tracking",
       icon: BarChart3,
-      accent: "#51AF37",
+      accent: "#56A837",
       items: [
         {
           id: "an-events",
@@ -451,7 +451,7 @@ function buildChecklist(
       id: "widget-cards",
       title: "Specialised Widget Cards",
       icon: Activity,
-      accent: "#F49C13",
+      accent: "#F69111",
       items: [
         {
           id: "wc-missing-evidence",
@@ -508,7 +508,7 @@ function buildChecklist(
       id: "qa",
       title: "QA Test Coverage",
       icon: FileCheck,
-      accent: "#3A97D3",
+      accent: "#3B85BA",
       items: [
         {
           id: "qa-permissions",
@@ -592,7 +592,7 @@ export default function AdminProductionReadiness() {
             <div className="flex items-center gap-2 mb-1">
               <span
                 className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded"
-                style={{ background: "#51AF3715", color: "#51AF37" }}
+                style={{ background: "#56A83715", color: "#56A837" }}
               >
                 Admin
               </span>
@@ -657,7 +657,7 @@ export default function AdminProductionReadiness() {
               className="h-full rounded-full transition-all duration-700"
               style={{
                 width: `${(passCount / total) * 100}%`,
-                background: overallStatus === "fail" ? "#ef4444" : overallStatus === "warn" ? "#F49C13" : "#51AF37",
+                background: overallStatus === "fail" ? "#ef4444" : overallStatus === "warn" ? "#F69111" : "#56A837",
               }}
             />
           </div>

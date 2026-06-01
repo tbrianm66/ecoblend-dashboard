@@ -9,9 +9,9 @@ import { ChevronDown, Building2, CheckCircle2, Loader2 } from "lucide-react";
 import { useSelectedVenture } from "@/contexts/SelectedVentureContext";
 
 const STATUS_COLORS: Record<string, string> = {
-  Active: "#51AF37",
-  Scaling: "#3A97D3",
-  "Pre-Launch": "#F49C13",
+  Active: "#56A837",
+  Scaling: "#3B85BA",
+  "Pre-Launch": "#F69111",
   Paused: "#6b7280",
   Archived: "#374151",
 };
@@ -54,8 +54,8 @@ export default function GlobalVentureSelector() {
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-150"
         style={{
-          background: open ? "rgba(81,175,55,0.12)" : "rgba(255,255,255,0.05)",
-          border: `1px solid ${open ? "rgba(81,175,55,0.35)" : "rgba(255,255,255,0.09)"}`,
+          background: open ? "rgba(86, 168, 55,0.12)" : "rgba(255,255,255,0.05)",
+          border: `1px solid ${open ? "rgba(86, 168, 55,0.35)" : "rgba(255,255,255,0.09)"}`,
         }}
         title="Switch active venture"
       >
@@ -124,7 +124,7 @@ export default function GlobalVentureSelector() {
                   }}
                   className="w-full flex items-center gap-2.5 px-3 py-2.5 transition-all duration-100"
                   style={{
-                    background: isSelected ? "rgba(81,175,55,0.12)" : "transparent",
+                    background: isSelected ? "rgba(86, 168, 55,0.12)" : "transparent",
                     borderBottom: "1px solid rgba(255,255,255,0.04)",
                   }}
                   onMouseEnter={(e) => {
@@ -144,7 +144,7 @@ export default function GlobalVentureSelector() {
                   <span
                     className="flex-1 text-left text-xs font-medium truncate"
                     style={{
-                      color: isSelected ? "#51AF37" : "rgba(255,255,255,0.75)",
+                      color: isSelected ? "#56A837" : "rgba(255,255,255,0.75)",
                       fontFamily: "'Inter', sans-serif",
                     }}
                   >
@@ -165,7 +165,7 @@ export default function GlobalVentureSelector() {
                     </span>
                   )}
                   {isSelected && (
-                    <CheckCircle2 size={12} style={{ color: "#51AF37", shrink: 0 }} />
+                    <CheckCircle2 size={12} style={{ color: "#56A837", shrink: 0 }} />
                   )}
                 </button>
               );

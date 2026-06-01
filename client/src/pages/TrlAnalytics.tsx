@@ -130,7 +130,7 @@ export default function TrlAnalytics() {
     <div className="flex-1 overflow-y-auto bg-gray-50">
       <div className="vos-page-header">
         <div className="flex items-center gap-2 mb-1">
-          <FlaskConical size={16} style={{ color: "#3A97D3" }} />
+          <FlaskConical size={16} style={{ color: "#3B85BA" }} />
           <span className="vos-badge vos-badge-blue" style={{ fontSize: "0.65rem" }}>TRL Analytics</span>
         </div>
         <h1 className="vos-page-title mb-1">Technology Readiness Level</h1>

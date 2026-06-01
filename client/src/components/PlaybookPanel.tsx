@@ -33,12 +33,12 @@ export function PlaybookPanel({ module, compact = false }: PlaybookPanelProps) {
         style={{ borderBottom: expanded ? "1px solid #1e2d3d" : "none" }}
       >
         <div className="flex items-center gap-2">
-          <BookOpenCheck size={14} style={{ color: "#51AF37" }} />
-          <span className="text-xs font-semibold" style={{ color: "#51AF37" }}>
+          <BookOpenCheck size={14} style={{ color: "#56A837" }} />
+          <span className="text-xs font-semibold" style={{ color: "#56A837" }}>
             Playbooks for this module
           </span>
           <span className="text-xs px-1.5 py-0.5 rounded-full font-mono"
-            style={{ background: "#51AF3715", color: "#51AF37" }}>
+            style={{ background: "#56A83715", color: "#56A837" }}>
             {playbooks.length}
           </span>
         </div>
@@ -56,7 +56,7 @@ export function PlaybookPanel({ module, compact = false }: PlaybookPanelProps) {
                   onClick={() => setSelectedId(pb.id)}
                   className="flex items-start gap-2 p-2 rounded-lg text-left hover:bg-white/5 transition-colors"
                 >
-                  <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "#51AF37" }} />
+                  <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "#56A837" }} />
                   <div>
                     <div className="text-xs font-medium" style={{ color: "#e2e8f0" }}>{pb.title}</div>
                     {pb.purpose && (
@@ -82,7 +82,7 @@ export function PlaybookPanel({ module, compact = false }: PlaybookPanelProps) {
                 <button
                   onClick={() => navigate("/admin/playbooks")}
                   className="text-xs flex items-center gap-1"
-                  style={{ color: "#3A97D3" }}
+                  style={{ color: "#3B85BA" }}
                 >
                   View all <ExternalLink size={10} />
                 </button>
@@ -117,7 +117,7 @@ export function PlaybookPanel({ module, compact = false }: PlaybookPanelProps) {
                 <div className="mt-2 flex items-center gap-1 flex-wrap">
                   {selected.linkedScoringFrameworks.split(",").map(f => (
                     <span key={f} className="text-xs px-1.5 py-0.5 rounded"
-                      style={{ background: "#0f1923", color: "#3A97D3", border: "1px solid #1e2d3d" }}>
+                      style={{ background: "#0f1923", color: "#3B85BA", border: "1px solid #1e2d3d" }}>
                       {f.trim()}
                     </span>
                   ))}

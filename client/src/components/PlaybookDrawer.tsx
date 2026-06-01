@@ -187,7 +187,7 @@ export default function PlaybookDrawer({ playbookId, ventureId, module, onClose 
             <Button
               size="sm"
               className="w-full gap-2"
-              style={{ background: "#51AF37" }}
+              style={{ background: "#56A837" }}
               onClick={handleStartPlaybook}
               disabled={startMutation.isPending}
             >

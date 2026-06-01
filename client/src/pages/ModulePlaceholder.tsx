@@ -44,14 +44,14 @@ export default function ModulePlaceholder() {
       <div className="max-w-2xl mx-auto mt-16">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: "rgba(81,175,55,0.1)" }}>
-            <Construction size={24} style={{ color: "#51AF37" }} />
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: "rgba(86, 168, 55,0.1)" }}>
+            <Construction size={24} style={{ color: "#56A837" }} />
           </div>
           <div>
             <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
               {meta.module}
             </h1>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(81,175,55,0.1)", color: "#51AF37" }}>
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(86, 168, 55,0.1)", color: "#56A837" }}>
               {meta.phase}
             </span>
           </div>

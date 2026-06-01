@@ -15,9 +15,9 @@ import { useVentures } from "@/contexts/VentureContext";
 
 // ── Scoring Configuration ──
 const DIMENSIONS = [
-  { key: "vrl", label: "VRL", fullLabel: "Venture Readiness", weight: 0.20, icon: TrendingUp, color: "#51AF37" },
-  { key: "trl", label: "TRL", fullLabel: "Technology Readiness", weight: 0.20, icon: FlaskConical, color: "#3A97D3" },
-  { key: "brl", label: "BRL", fullLabel: "Business Readiness", weight: 0.20, icon: Briefcase, color: "#F49C13" },
+  { key: "vrl", label: "VRL", fullLabel: "Venture Readiness", weight: 0.20, icon: TrendingUp, color: "#56A837" },
+  { key: "trl", label: "TRL", fullLabel: "Technology Readiness", weight: 0.20, icon: FlaskConical, color: "#3B85BA" },
+  { key: "brl", label: "BRL", fullLabel: "Business Readiness", weight: 0.20, icon: Briefcase, color: "#F69111" },
   { key: "mrl", label: "MRL", fullLabel: "Manufacturing Readiness", weight: 0.15, icon: Factory, color: "#8b5cf6" },
   { key: "srl", label: "SRL", fullLabel: "Sustainability Readiness", weight: 0.10, icon: Leaf, color: "#059669" },
   { key: "irl", label: "IRL", fullLabel: "Impact Readiness", weight: 0.10, icon: Heart, color: "#ec4899" },
@@ -79,8 +79,8 @@ export default function ReadinessScoring() {
       {/* Header */}
       <div className="px-8 py-6 border-b" style={{ borderColor: "#e5e7eb" }}>
         <div className="flex items-center gap-2 mb-1">
-          <PieChart size={18} style={{ color: "#51AF37" }} />
-          <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#51AF37" }}>Module 10</span>
+          <PieChart size={18} style={{ color: "#56A837" }} />
+          <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#56A837" }}>Module 10</span>
         </div>
         <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
           Readiness Scoring Engine
@@ -120,7 +120,7 @@ export default function ReadinessScoring() {
                   <span className="text-sm font-normal text-gray-400 ml-1">/ 9.0</span>
                 </div>
                 <div className="w-full h-2 rounded-full bg-gray-100 mt-3 overflow-hidden">
-                  <div className="h-full rounded-full" style={{ width: `${(composite / 9) * 100}%`, background: "#51AF37" }} />
+                  <div className="h-full rounded-full" style={{ width: `${(composite / 9) * 100}%`, background: "#56A837" }} />
                 </div>
               </div>
 
@@ -209,7 +209,7 @@ export default function ReadinessScoring() {
                 <span className="text-xs text-gray-400 font-mono">
                   = ({DIMENSIONS.map(d => `${(selectedVenture.scores[d.key]?.score || 0).toFixed(1)}×${(d.weight * 100).toFixed(0)}%`).join(" + ")})
                 </span>
-                <span className="text-sm font-bold" style={{ color: "#51AF37" }}>
+                <span className="text-sm font-bold" style={{ color: "#56A837" }}>
                   = {composite.toFixed(2)}
                 </span>
               </div>

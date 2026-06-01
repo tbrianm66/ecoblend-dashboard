@@ -137,23 +137,23 @@ const VENTURE_LABELS: Record<string, string> = {
 };
 
 const VENTURE_COLORS: Record<string, string> = {
-  ecoblend: "#51AF37",
-  tone: "#F49C13",
-  real: "#3A97D3",
+  ecoblend: "#56A837",
+  tone: "#F69111",
+  real: "#3B85BA",
   pipe: "#8b5cf6",
   bebus: "#ef4444",
 };
 
 const CATEGORY_COLOURS: Record<string, string> = {
-  "VRL Framework": "#51AF37",
-  "TRL Framework": "#3A97D3",
-  "Lean Methodology": "#F49C13",
+  "VRL Framework": "#56A837",
+  "TRL Framework": "#3B85BA",
+  "Lean Methodology": "#F69111",
   "Social Enterprise": "#8b5cf6",
   "Impact Investing": "#d97706",
-  "Circular Economy": "#51AF37",
+  "Circular Economy": "#56A837",
   "Sports Technology": "#ef4444",
   "Eco Materials": "#06b6d4",
-  "Venture Building": "#F49C13",
+  "Venture Building": "#F69111",
   "University Spin-out": "#1d4ed8",
   "Other": "#6b7280",
 };
@@ -161,7 +161,7 @@ const CATEGORY_COLOURS: Record<string, string> = {
 // ── Helper components ─────────────────────────────────────────────────────────
 function RelevanceDot({ score }: { score: number | null | undefined }) {
   const s = score ?? 5;
-  const color = s >= 8 ? "#51AF37" : s >= 5 ? "#F49C13" : "#ef4444";
+  const color = s >= 8 ? "#56A837" : s >= 5 ? "#F69111" : "#ef4444";
   return (
     <span className="inline-flex items-center gap-1 text-xs font-semibold" style={{ color }}>
       <span className="w-2 h-2 rounded-full inline-block" style={{ background: color }} />
@@ -173,11 +173,11 @@ function RelevanceDot({ score }: { score: number | null | undefined }) {
 function StatusBadge({ status }: { status: string | null | undefined }) {
   const s = status ?? "Prospective";
   const map: Record<string, { bg: string; color: string }> = {
-    Active: { bg: "#51AF3715", color: "#51AF37" },
-    Prospective: { bg: "#3A97D315", color: "#3A97D3" },
+    Active: { bg: "#56A83715", color: "#56A837" },
+    Prospective: { bg: "#3B85BA15", color: "#3B85BA" },
     Past: { bg: "#6b728015", color: "#6b7280" },
-    Completed: { bg: "#51AF3715", color: "#51AF37" },
-    Paused: { bg: "#F49C1315", color: "#F49C13" },
+    Completed: { bg: "#56A83715", color: "#56A837" },
+    Paused: { bg: "#F6911115", color: "#F69111" },
   };
   const style = map[s] ?? { bg: "#6b728015", color: "#6b7280" };
   return (
@@ -190,8 +190,8 @@ function StatusBadge({ status }: { status: string | null | undefined }) {
 function StrengthBadge({ strength }: { strength: string | null | undefined }) {
   const s = strength ?? "Moderate";
   const map: Record<string, { bg: string; color: string; icon: React.ReactNode }> = {
-    Strong: { bg: "#51AF3715", color: "#51AF37", icon: <CheckCircle2 size={11} /> },
-    Moderate: { bg: "#F49C1315", color: "#F49C13", icon: <AlertCircle size={11} /> },
+    Strong: { bg: "#56A83715", color: "#56A837", icon: <CheckCircle2 size={11} /> },
+    Moderate: { bg: "#F6911115", color: "#F69111", icon: <AlertCircle size={11} /> },
     Weak: { bg: "#ef444415", color: "#ef4444", icon: <Clock size={11} /> },
   };
   const style = map[s] ?? map.Moderate;
@@ -275,8 +275,8 @@ function PapersSection() {
     <div>
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "#3A97D315" }}>
-            <BookOpen size={16} style={{ color: "#3A97D3" }} />
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "#3B85BA15" }}>
+            <BookOpen size={16} style={{ color: "#3B85BA" }} />
           </div>
           <div>
             <h2 className="text-base font-bold text-gray-900" style={{ fontFamily: "'Inter', sans-serif" }}>Research Papers</h2>
@@ -296,7 +296,7 @@ function PapersSection() {
             </SelectContent>
           </Select>
           <Button size="sm" className="gap-1.5 text-xs h-8" onClick={() => setShowAdd(true)}
-            style={{ background: "#3A97D3", color: "white" }}>
+            style={{ background: "#3B85BA", color: "white" }}>
             <Plus size={13} /> Add Paper
           </Button>
         </div>
@@ -327,7 +327,7 @@ function PapersSection() {
                             </span>
                           )}
                           {paper.evidenceType && (
-                            <Badge variant="outline" className="text-xs py-0 px-1.5" style={{ borderColor: "#3A97D340", color: "#3A97D3" }}>
+                            <Badge variant="outline" className="text-xs py-0 px-1.5" style={{ borderColor: "#3B85BA40", color: "#3B85BA" }}>
                               {paper.evidenceType}
                             </Badge>
                           )}
@@ -351,7 +351,7 @@ function PapersSection() {
                       ))}
                       {paper.vrlStagesSupported && paper.vrlStagesSupported.split(",").map(l => (
                         <span key={l} className="text-xs font-semibold px-1.5 py-0.5 rounded flex items-center gap-0.5"
-                          style={{ background: "#51AF3715", color: "#51AF37" }}>
+                          style={{ background: "#56A83715", color: "#56A837" }}>
                           <TrendingUp size={9} /> VRL {l.trim()}
                         </span>
                       ))}
@@ -405,7 +405,7 @@ function PapersSection() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <BookOpen size={16} style={{ color: "#3A97D3" }} /> Add Research Paper
+              <BookOpen size={16} style={{ color: "#3B85BA" }} /> Add Research Paper
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3 mt-2">
@@ -490,7 +490,7 @@ function PapersSection() {
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" size="sm" onClick={() => { setShowAdd(false); resetForm(); }}>Cancel</Button>
               <Button size="sm" onClick={handleSubmit} disabled={addPaper.isPending}
-                style={{ background: "#3A97D3", color: "white" }}>
+                style={{ background: "#3B85BA", color: "white" }}>
                 {addPaper.isPending ? "Adding..." : "Add Paper"}
               </Button>
             </div>
@@ -537,8 +537,8 @@ function FellowsSection() {
   };
 
   const COLLAB_COLOURS: Record<string, string> = {
-    "Academic Advisor": "#51AF37", "Co-Researcher": "#3A97D3",
-    "Industry Fellow": "#F49C13", "Visiting Scholar": "#8b5cf6",
+    "Academic Advisor": "#56A837", "Co-Researcher": "#3B85BA",
+    "Industry Fellow": "#F69111", "Visiting Scholar": "#8b5cf6",
     "PhD Supervisor": "#1d4ed8", "Peer Reviewer": "#06b6d4", "Consultant": "#d97706",
   };
 
@@ -546,8 +546,8 @@ function FellowsSection() {
     <div>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "#F49C1315" }}>
-            <Users size={16} style={{ color: "#F49C13" }} />
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "#F6911115" }}>
+            <Users size={16} style={{ color: "#F69111" }} />
           </div>
           <div>
             <h2 className="text-base font-bold text-gray-900" style={{ fontFamily: "'Inter', sans-serif" }}>Fellow Researchers</h2>
@@ -555,7 +555,7 @@ function FellowsSection() {
           </div>
         </div>
         <Button size="sm" className="gap-1.5 text-xs h-8" onClick={() => setShowAdd(true)}
-          style={{ background: "#F49C13", color: "white" }}>
+          style={{ background: "#F69111", color: "white" }}>
           <Plus size={13} /> Add Fellow
         </Button>
       </div>
@@ -640,7 +640,7 @@ function FellowsSection() {
         <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Users size={16} style={{ color: "#F49C13" }} /> Add Fellow Researcher
+              <Users size={16} style={{ color: "#F69111" }} /> Add Fellow Researcher
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3 mt-2">
@@ -715,7 +715,7 @@ function FellowsSection() {
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" size="sm" onClick={() => { setShowAdd(false); resetForm(); }}>Cancel</Button>
               <Button size="sm" onClick={handleSubmit} disabled={addFellow.isPending}
-                style={{ background: "#F49C13", color: "white" }}>
+                style={{ background: "#F69111", color: "white" }}>
                 {addFellow.isPending ? "Adding..." : "Add Fellow"}
               </Button>
             </div>
@@ -764,15 +764,15 @@ function PartnershipsSection() {
   };
 
   const statusColors: Record<string, string> = {
-    Active: "#51AF37", Prospective: "#3A97D3", Completed: "#6b7280", Paused: "#F49C13",
+    Active: "#56A837", Prospective: "#3B85BA", Completed: "#6b7280", Paused: "#F69111",
   };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "#51AF3715" }}>
-            <Building2 size={16} style={{ color: "#51AF37" }} />
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "#56A83715" }}>
+            <Building2 size={16} style={{ color: "#56A837" }} />
           </div>
           <div>
             <h2 className="text-base font-bold text-gray-900" style={{ fontFamily: "'Inter', sans-serif" }}>University Partnerships</h2>
@@ -780,7 +780,7 @@ function PartnershipsSection() {
           </div>
         </div>
         <Button size="sm" className="gap-1.5 text-xs h-8" onClick={() => setShowAdd(true)}
-          style={{ background: "#51AF37", color: "white" }}>
+          style={{ background: "#56A837", color: "white" }}>
           <Plus size={13} /> Add Partnership
         </Button>
       </div>
@@ -793,7 +793,7 @@ function PartnershipsSection() {
       ) : (
         <div className="space-y-3">
           {partnerships.map(p => {
-            const statusColor = statusColors[p.status ?? "Prospective"] ?? "#3A97D3";
+            const statusColor = statusColors[p.status ?? "Prospective"] ?? "#3B85BA";
             return (
               <div key={p.id} className="vos-card">
                 <div className="flex items-start justify-between gap-3">
@@ -820,12 +820,12 @@ function PartnershipsSection() {
                 <div className="mt-3 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
                     {p.partnershipType && (
-                      <Badge variant="outline" className="text-xs" style={{ borderColor: "#51AF3740", color: "#51AF37" }}>
+                      <Badge variant="outline" className="text-xs" style={{ borderColor: "#56A83740", color: "#56A837" }}>
                         {p.partnershipType}
                       </Badge>
                     )}
                     {p.fundingLinked && p.fundingAmount && p.fundingAmount > 0 && (
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: "#F49C1315", color: "#F49C13" }}>
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: "#F6911115", color: "#F69111" }}>
                         £{p.fundingAmount.toLocaleString()} linked
                       </span>
                     )}
@@ -854,7 +854,7 @@ function PartnershipsSection() {
         <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Building2 size={16} style={{ color: "#51AF37" }} /> Add University Partnership
+              <Building2 size={16} style={{ color: "#56A837" }} /> Add University Partnership
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3 mt-2">
@@ -928,7 +928,7 @@ function PartnershipsSection() {
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" size="sm" onClick={() => { setShowAdd(false); resetForm(); }}>Cancel</Button>
               <Button size="sm" onClick={handleSubmit} disabled={addPartnership.isPending}
-                style={{ background: "#51AF37", color: "white" }}>
+                style={{ background: "#56A837", color: "white" }}>
                 {addPartnership.isPending ? "Adding..." : "Add Partnership"}
               </Button>
             </div>
@@ -1090,7 +1090,7 @@ function EvidenceClaimsSection({ papers }: { papers: ResearchPaper[] }) {
                       )}
                       {claim.vrlStage && (
                         <span className="text-xs font-semibold px-1.5 py-0.5 rounded flex items-center gap-0.5"
-                          style={{ background: "#51AF3715", color: "#51AF37" }}>
+                          style={{ background: "#56A83715", color: "#56A837" }}>
                           <TrendingUp size={9} /> VRL Stage {claim.vrlStage}
                         </span>
                       )}
@@ -1204,9 +1204,9 @@ export default function AcademicResearch() {
   const { data: claims = [] } = trpc.academic.listClaims.useQuery();
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode; count: number; accent: string }[] = [
-    { id: "papers", label: "Research Papers", icon: <BookOpen size={14} />, count: papers.length, accent: "#3A97D3" },
-    { id: "fellows", label: "Fellow Researchers", icon: <Users size={14} />, count: fellows.length, accent: "#F49C13" },
-    { id: "partnerships", label: "University Partnerships", icon: <Building2 size={14} />, count: partnerships.length, accent: "#51AF37" },
+    { id: "papers", label: "Research Papers", icon: <BookOpen size={14} />, count: papers.length, accent: "#3B85BA" },
+    { id: "fellows", label: "Fellow Researchers", icon: <Users size={14} />, count: fellows.length, accent: "#F69111" },
+    { id: "partnerships", label: "University Partnerships", icon: <Building2 size={14} />, count: partnerships.length, accent: "#56A837" },
     { id: "claims", label: "Evidence Claims", icon: <BarChart2 size={14} />, count: claims.length, accent: "#8b5cf6" },
   ];
 
@@ -1233,8 +1233,8 @@ export default function AcademicResearch() {
               and evidence claims that underpin VRL/TRL readiness scores across the EcoRace Studio portfolio.
             </p>
           </div>
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "#3A97D315" }}>
-            <GraduationCap size={20} style={{ color: "#3A97D3" }} />
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "#3B85BA15" }}>
+            <GraduationCap size={20} style={{ color: "#3B85BA" }} />
           </div>
         </div>
 
@@ -1242,17 +1242,17 @@ export default function AcademicResearch() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
           <div className="vos-metric">
             <span className="vos-metric-label">Research Papers</span>
-            <span className="vos-metric-value" style={{ color: "#3A97D3" }}>{papers.length}</span>
+            <span className="vos-metric-value" style={{ color: "#3B85BA" }}>{papers.length}</span>
             <span className="vos-metric-sub">{peerReviewed} peer reviewed</span>
           </div>
           <div className="vos-metric">
             <span className="vos-metric-label">Fellow Researchers</span>
-            <span className="vos-metric-value" style={{ color: "#F49C13" }}>{fellows.length}</span>
+            <span className="vos-metric-value" style={{ color: "#F69111" }}>{fellows.length}</span>
             <span className="vos-metric-sub">{activeFellows} active</span>
           </div>
           <div className="vos-metric">
             <span className="vos-metric-label">University Partners</span>
-            <span className="vos-metric-value" style={{ color: "#51AF37" }}>{partnerships.length}</span>
+            <span className="vos-metric-value" style={{ color: "#56A837" }}>{partnerships.length}</span>
             <span className="vos-metric-sub">{activePartnerships} active</span>
           </div>
           <div className="vos-metric">

@@ -89,7 +89,7 @@ export default function PlaybookSearchModal({ module, onSelect, onClose }: Playb
                   className="w-full text-left px-5 py-3 hover:bg-gray-50 transition-colors flex items-start gap-3"
                   onClick={() => onSelect(pb.id)}
                 >
-                  <BookOpen size={16} className="mt-0.5 flex-shrink-0" style={{ color: "#51AF37" }} />
+                  <BookOpen size={16} className="mt-0.5 flex-shrink-0" style={{ color: "#56A837" }} />
                   <div className="flex-1">
                     <div className="text-sm font-semibold text-gray-800">{pb.title}</div>
                     <div className="text-xs text-gray-500 mt-0.5 line-clamp-2">{pb.purpose}</div>

@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 
 // ── Score ring component ────────────────────────────────────────────────────
-function ScoreRing({ score, size = 56, color = "#51AF37" }: { score: number; size?: number; color?: string }) {
+function ScoreRing({ score, size = 56, color = "#56A837" }: { score: number; size?: number; color?: string }) {
   const r = (size - 8) / 2;
   const circumference = 2 * Math.PI * r;
   const filled = (score / 100) * circumference;
@@ -50,7 +50,7 @@ function ScoreRing({ score, size = 56, color = "#51AF37" }: { score: number; siz
 }
 
 // ── Dimension bar ───────────────────────────────────────────────────────────
-function DimBar({ label, value, color = "#51AF37" }: { label: string; value: number; color?: string }) {
+function DimBar({ label, value, color = "#56A837" }: { label: string; value: number; color?: string }) {
   return (
     <div className="flex items-center gap-2 mb-1.5">
       <span className="text-xs text-gray-500 w-28 shrink-0 truncate">{label}</span>
@@ -67,14 +67,14 @@ function DimBar({ label, value, color = "#51AF37" }: { label: string; value: num
 
 // ── Score colour helper ─────────────────────────────────────────────────────
 function scoreColor(s: number) {
-  if (s >= 75) return "#51AF37";
-  if (s >= 50) return "#F49C13";
+  if (s >= 75) return "#56A837";
+  if (s >= 50) return "#F69111";
   return "#ef4444";
 }
 
 function scoreBadge(s: number) {
-  if (s >= 75) return { label: "Strong Match", color: "#51AF37", bg: "#51AF3715" };
-  if (s >= 50) return { label: "Moderate Match", color: "#F49C13", bg: "#F49C1315" };
+  if (s >= 75) return { label: "Strong Match", color: "#56A837", bg: "#56A83715" };
+  if (s >= 50) return { label: "Moderate Match", color: "#F69111", bg: "#F6911115" };
   return { label: "Weak Match", color: "#ef4444", bg: "#ef444415" };
 }
 
@@ -131,7 +131,7 @@ function MatchCard({
               {isStale && (
                 <span
                   className="text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1"
-                  style={{ background: "#F49C1315", color: "#F49C13" }}
+                  style={{ background: "#F6911115", color: "#F69111" }}
                   title="Score is older than 30 days — consider re-running matching"
                 >
                   <AlertCircle size={10} /> Stale
@@ -182,7 +182,7 @@ function MatchCard({
               size="sm"
               variant="outline"
               className="h-7 text-xs gap-1"
-              style={{ borderColor: "#51AF37", color: "#51AF37" }}
+              style={{ borderColor: "#56A837", color: "#56A837" }}
               onClick={() => onLaunchSpinoff(match.talentProfileId)}
             >
               <GitBranch size={11} /> Launch Spin-Off
@@ -301,7 +301,7 @@ export default function FounderMatching() {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#51AF3715", color: "#51AF37" }}>
+              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#56A83715", color: "#56A837" }}>
                 Intelligence
               </span>
             </div>
@@ -317,7 +317,7 @@ export default function FounderMatching() {
               size="sm"
               variant="outline"
               className="gap-1.5 text-xs"
-              style={{ borderColor: "#51AF37", color: "#51AF37" }}
+              style={{ borderColor: "#56A837", color: "#56A837" }}
               onClick={() => batchMatch.mutate()}
               disabled={batchMatch.isPending}
             >
@@ -328,7 +328,7 @@ export default function FounderMatching() {
               size="sm"
               variant="outline"
               className="gap-1.5 text-xs"
-              style={{ borderColor: "#3A97D3", color: "#3A97D3" }}
+              style={{ borderColor: "#3B85BA", color: "#3B85BA" }}
               onClick={() => navigate("/spinoff")}
             >
               <GitBranch size={13} /> Open Spin-Off OS
@@ -403,7 +403,7 @@ export default function FounderMatching() {
                   size="sm"
                   onClick={() => selectedOppId && computeAll.mutate({ productOpportunityId: selectedOppId })}
                   disabled={computeAll.isPending}
-                  style={{ background: "#51AF37", color: "white" }}
+                  style={{ background: "#56A837", color: "white" }}
                 >
                   <Zap size={13} className="mr-1.5" />
                   {computeAll.isPending ? "Computing…" : "Run Matching Engine"}
@@ -417,8 +417,8 @@ export default function FounderMatching() {
                 <div className="grid grid-cols-3 gap-4 mb-6">
                   {[
                     { label: "Total Profiles", value: matches.length, icon: Users, color: "#1a2332" },
-                    { label: "Strong Matches (≥75)", value: matches.filter((m: { overallMatchScore: number | null }) => (m.overallMatchScore ?? 0) >= 75).length, icon: Star, color: "#51AF37" },
-                    { label: "Moderate Matches (≥50)", value: matches.filter((m: { overallMatchScore: number | null }) => (m.overallMatchScore ?? 0) >= 50 && (m.overallMatchScore ?? 0) < 75).length, icon: CheckCircle2, color: "#F49C13" },
+                    { label: "Strong Matches (≥75)", value: matches.filter((m: { overallMatchScore: number | null }) => (m.overallMatchScore ?? 0) >= 75).length, icon: Star, color: "#56A837" },
+                    { label: "Moderate Matches (≥50)", value: matches.filter((m: { overallMatchScore: number | null }) => (m.overallMatchScore ?? 0) >= 50 && (m.overallMatchScore ?? 0) < 75).length, icon: CheckCircle2, color: "#F69111" },
                   ].map(({ label, value, icon: Icon, color }) => (
                     <div key={label} className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
                       <div className="flex items-center gap-2 mb-1">
@@ -511,7 +511,7 @@ export default function FounderMatching() {
               <Button
                 size="sm"
                 className="gap-1.5 text-xs mb-6"
-                style={{ background: "#51AF37", color: "white" }}
+                style={{ background: "#56A837", color: "white" }}
                 onClick={handleComputeCoFounder}
                 disabled={computeCoFounder.isPending || !coFounderA || !coFounderB}
               >

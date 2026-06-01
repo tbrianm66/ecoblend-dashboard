@@ -34,7 +34,7 @@ import {
 
 // ── Colour palette ─────────────────────────────────────────────────────────────
 const C = {
-  green: "#51AF37", blue: "#3A97D3", amber: "#F49C13",
+  green: "#56A837", blue: "#3B85BA", amber: "#F69111",
   red: "#e53e3e", purple: "#805ad5", teal: "#0d9488",
   navy: "#1a2332",
 };

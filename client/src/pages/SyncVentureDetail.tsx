@@ -72,15 +72,15 @@ function ScenarioExplorer() {
             <button
               key={s.scenarioId}
               onClick={() => setSelectedId(s.scenarioId)}
-              className={`text-left rounded-lg border p-3 transition-all ${isSelected ? "border-[#3A97D3] bg-blue-50" : "border-[#e5e7eb] hover:border-gray-300 bg-white"}`}
+              className={`text-left rounded-lg border p-3 transition-all ${isSelected ? "border-[#3B85BA] bg-blue-50" : "border-[#e5e7eb] hover:border-gray-300 bg-white"}`}
             >
               <div className="flex items-center justify-between mb-1">
                 <span className="text-sm font-semibold text-gray-900">{s.name}</span>
                 <span className="text-xs text-gray-400">{s.sector}</span>
               </div>
               <div className="flex gap-3 text-xs text-gray-500">
-                <span>TRL <strong className="text-[#3A97D3]">{s.trl}</strong></span>
-                <span>MRL <strong className="text-[#F49C13]">{s.mrl}</strong></span>
+                <span>TRL <strong className="text-[#3B85BA]">{s.trl}</strong></span>
+                <span>MRL <strong className="text-[#F69111]">{s.mrl}</strong></span>
                 <span>Δ <strong className={s.trl - s.mrl === 0 ? "text-green-600" : Math.abs(s.trl - s.mrl) >= 3 ? "text-red-600" : "text-orange-500"}>
                   {s.trl - s.mrl > 0 ? `+${s.trl - s.mrl}` : s.trl - s.mrl}
                 </strong></span>
@@ -163,7 +163,7 @@ export default function SyncVentureDetail() {
       {
         label: "Δ (TRL − MRL)",
         data: deltaData,
-        borderColor: "#3A97D3",
+        borderColor: "#3B85BA",
         backgroundColor: (ctx: any) => {
           const v = ctx.raw as number;
           if (v === 0) return "#22c55e40";
@@ -180,8 +180,8 @@ export default function SyncVentureDetail() {
   const trlMrlChartData = {
     labels: chartLabels,
     datasets: [
-      { label: "TRL", data: trlData, borderColor: "#3A97D3", backgroundColor: "#3A97D320", fill: false, tension: 0.3 },
-      { label: "MRL", data: mrlData, borderColor: "#F49C13", backgroundColor: "#F49C1320", fill: false, tension: 0.3 },
+      { label: "TRL", data: trlData, borderColor: "#3B85BA", backgroundColor: "#3B85BA20", fill: false, tension: 0.3 },
+      { label: "MRL", data: mrlData, borderColor: "#F69111", backgroundColor: "#F6911120", fill: false, tension: 0.3 },
     ],
   };
 
@@ -209,7 +209,7 @@ export default function SyncVentureDetail() {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="w-3 h-3 rounded-full" style={{ background: venture.color ?? "#51AF37" }} />
+              <span className="w-3 h-3 rounded-full" style={{ background: venture.color ?? "#56A837" }} />
               <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
                 {venture.name}
               </h1>
@@ -220,8 +220,8 @@ export default function SyncVentureDetail() {
           {latest && (
             <div className="flex gap-4 text-center">
               {[
-                { label: "TRL",      value: latest.trl,                              color: "#3A97D3" },
-                { label: "MRL",      value: latest.mrl,                              color: "#F49C13" },
+                { label: "TRL",      value: latest.trl,                              color: "#3B85BA" },
+                { label: "MRL",      value: latest.mrl,                              color: "#F69111" },
                 { label: "Δ Delta",  value: latest.delta > 0 ? `+${latest.delta}` : latest.delta, color: latest.delta === 0 ? "#16a34a" : Math.abs(latest.delta) >= 3 ? "#dc2626" : "#ea580c" },
                 { label: "η Eta",    value: Number(latest.eta).toFixed(3),           color: "#6b7280" },
               ].map(({ label, value, color }) => (
@@ -350,8 +350,8 @@ export default function SyncVentureDetail() {
                         <td className="px-6 py-3 text-xs text-gray-500">
                           {new Date(a.createdAt).toLocaleString()}
                         </td>
-                        <td className="px-4 py-3 text-center font-mono font-bold text-[#3A97D3]">{a.trl}</td>
-                        <td className="px-4 py-3 text-center font-mono font-bold text-[#F49C13]">{a.mrl}</td>
+                        <td className="px-4 py-3 text-center font-mono font-bold text-[#3B85BA]">{a.trl}</td>
+                        <td className="px-4 py-3 text-center font-mono font-bold text-[#F69111]">{a.mrl}</td>
                         <td className="px-4 py-3 text-center font-mono font-bold">
                           <span className={a.delta === 0 ? "text-green-600" : Math.abs(a.delta) >= 3 ? "text-red-600" : "text-orange-500"}>
                             {a.delta > 0 ? `+${a.delta}` : a.delta}

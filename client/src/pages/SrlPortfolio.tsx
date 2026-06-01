@@ -31,14 +31,14 @@ const SRL_LEVELS = [
   { level: 1, label: "Aware",       color: "#f59e0b", bg: "#fef3c7" },
   { level: 2, label: "Committed",   color: "#f97316", bg: "#ffedd5" },
   { level: 3, label: "Measured",    color: "#3b82f6", bg: "#dbeafe" },
-  { level: 4, label: "Optimising",  color: "#51AF37", bg: "#e8f7e3" },
-  { level: 5, label: "Exemplary",   color: "#2d9856", bg: "#d1fae5" },
+  { level: 4, label: "Optimising",  color: "#56A837", bg: "#E9F6E3" },
+  { level: 5, label: "Exemplary",   color: "#3D8526", bg: "#d1fae5" },
 ];
 
 const DIM_COLORS: Record<string, string> = {
-  ENV: "#51AF37",
-  LCA: "#3A97D3",
-  SMF: "#F49C13",
+  ENV: "#56A837",
+  LCA: "#3B85BA",
+  SMF: "#F69111",
   SOC: "#8b5cf6",
   ESG: "#ec4899",
 };
@@ -68,8 +68,8 @@ function ScoreBar({ score, color }: { score: number; color: string }) {
 
 function DimCell({ code, score }: { code: string; score: number }) {
   const color = DIM_COLORS[code] ?? "#9ca3af";
-  const bg = score >= 60 ? "#e8f7e3" : score >= 40 ? "#fef3c7" : "#fee2e2";
-  const textColor = score >= 60 ? "#2d9856" : score >= 40 ? "#b45309" : "#dc2626";
+  const bg = score >= 60 ? "#E9F6E3" : score >= 40 ? "#fef3c7" : "#fee2e2";
+  const textColor = score >= 60 ? "#3D8526" : score >= 40 ? "#b45309" : "#dc2626";
   return (
     <div className="text-center px-2 py-1 rounded" style={{ background: bg }}>
       <div className="text-xs font-bold" style={{ color: textColor }}>{score.toFixed(0)}</div>
@@ -92,7 +92,7 @@ export default function SrlPortfolio() {
   if (isLoading) {
     return (
       <div className="flex-1 flex items-center justify-center min-h-screen">
-        <Loader2 className="animate-spin text-[#51AF37]" size={32} />
+        <Loader2 className="animate-spin text-[#56A837]" size={32} />
       </div>
     );
   }
@@ -129,7 +129,7 @@ export default function SrlPortfolio() {
     datasets: [{
       label: "Avg SRL Score",
       data: sectorGroups.map(s => s.avg),
-      backgroundColor: "#51AF37",
+      backgroundColor: "#56A837",
       borderRadius: 6,
     }],
   };
@@ -141,8 +141,8 @@ export default function SrlPortfolio() {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <Leaf size={16} className="text-[#51AF37]" />
-              <span className="text-xs font-semibold uppercase tracking-widest text-[#51AF37]">SRL Module</span>
+              <Leaf size={16} className="text-[#56A837]" />
+              <span className="text-xs font-semibold uppercase tracking-widest text-[#56A837]">SRL Module</span>
               <span className="text-xs text-gray-300">·</span>
               <span className="text-xs text-gray-400 font-mono">BEBUS-SRL-PIPE-001</span>
             </div>
@@ -172,7 +172,7 @@ export default function SrlPortfolio() {
             </Button>
             <Button
               size="sm"
-              className="gap-1.5 text-xs bg-[#51AF37] hover:bg-[#2d9856] text-white"
+              className="gap-1.5 text-xs bg-[#56A837] hover:bg-[#3D8526] text-white"
               onClick={() => navigate("/srl-venture")}
             >
               <TrendingUp size={12} />
@@ -187,7 +187,7 @@ export default function SrlPortfolio() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
             <div className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Portfolio Avg Score</div>
-            <div className="text-3xl font-bold text-[#51AF37]" style={{ fontFamily: "'Prompt', sans-serif" }}>{avgScore.toFixed(1)}</div>
+            <div className="text-3xl font-bold text-[#56A837]" style={{ fontFamily: "'Prompt', sans-serif" }}>{avgScore.toFixed(1)}</div>
             <div className="text-xs text-gray-400 mt-1">out of 100</div>
           </div>
           <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
@@ -202,7 +202,7 @@ export default function SrlPortfolio() {
           </div>
           <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
             <div className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">SRL-4+ Ventures</div>
-            <div className="text-3xl font-bold text-[#2d9856]" style={{ fontFamily: "'Prompt', sans-serif" }}>
+            <div className="text-3xl font-bold text-[#3D8526]" style={{ fontFamily: "'Prompt', sans-serif" }}>
               {levelDist.filter(l => l.level >= 4).reduce((s, l) => s + l.count, 0)}
             </div>
             <div className="text-xs text-gray-400 mt-1">Optimising or Exemplary</div>
@@ -273,7 +273,7 @@ export default function SrlPortfolio() {
                   onClick={() => setSelectedSector(s)}
                   className={`text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
                     selectedSector === s
-                      ? "bg-[#51AF37] text-white"
+                      ? "bg-[#56A837] text-white"
                       : "bg-gray-100 text-gray-500 hover:bg-gray-200"
                   }`}
                 >
@@ -353,8 +353,8 @@ export default function SrlPortfolio() {
                             </div>
                           ) : score >= 60 ? (
                             <div className="flex items-center justify-center gap-1">
-                              <ShieldCheck size={12} className="text-[#51AF37]" />
-                              <span className="text-xs font-semibold text-[#51AF37]">Clear</span>
+                              <ShieldCheck size={12} className="text-[#56A837]" />
+                              <span className="text-xs font-semibold text-[#56A837]">Clear</span>
                             </div>
                           ) : (
                             <div className="flex items-center justify-center gap-1">

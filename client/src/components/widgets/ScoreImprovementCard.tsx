@@ -42,7 +42,7 @@ export default function ScoreImprovementCard({
   if (!data) return null;
 
   const scoreColor =
-    data.currentScore >= threshold ? "#51AF37" : data.currentScore >= threshold * 0.7 ? "#F49C13" : "#ef4444";
+    data.currentScore >= threshold ? "#56A837" : data.currentScore >= threshold * 0.7 ? "#F69111" : "#ef4444";
 
   return (
     <div className="flex flex-col gap-4">
@@ -71,7 +71,7 @@ export default function ScoreImprovementCard({
           </div>
           <span
             className="text-xl font-bold"
-            style={{ color: data.highRisks > 0 ? "#ef4444" : "#51AF37", fontFamily: "'Prompt', sans-serif" }}
+            style={{ color: data.highRisks > 0 ? "#ef4444" : "#56A837", fontFamily: "'Prompt', sans-serif" }}
           >
             {data.highRisks}
           </span>
@@ -84,7 +84,7 @@ export default function ScoreImprovementCard({
           <span
             className="text-xl font-bold"
             style={{
-              color: data.evidenceConfidence >= 70 ? "#51AF37" : data.evidenceConfidence >= 50 ? "#F49C13" : "#ef4444",
+              color: data.evidenceConfidence >= 70 ? "#56A837" : data.evidenceConfidence >= 50 ? "#F69111" : "#ef4444",
               fontFamily: "'Prompt', sans-serif",
             }}
           >

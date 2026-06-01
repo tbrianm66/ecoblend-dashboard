@@ -24,21 +24,21 @@ const VRL_STAGES = [
     stage: 2,
     label: "Validation",
     description: "Customer discovery complete, MVP defined, early adopters identified",
-    color: "#3A97D3",
+    color: "#3B85BA",
     templates: ["Customer interviews", "MVP specification", "TRL assessment", "Competitive analysis", "Business model canvas"],
   },
   {
     stage: 3,
     label: "Build",
     description: "Product in development, pilot customers engaged, team assembled",
-    color: "#F49C13",
+    color: "#F69111",
     templates: ["Sprint planning", "Pilot customer onboarding", "MRL baseline", "Investment deck", "Team OKRs"],
   },
   {
     stage: 4,
     label: "Launch & Scale",
     description: "Product live, revenue generating, scaling operations",
-    color: "#51AF37",
+    color: "#56A837",
     templates: ["Revenue tracking", "CAC/LTV monitoring", "Scale readiness", "Series A prep", "Impact reporting"],
   },
 ];
@@ -89,13 +89,13 @@ export default function CoachingOnboardingModal({ founderId, founderName, open, 
 
         {step === "done" ? (
           <div className="flex flex-col items-center gap-4 py-8">
-            <CheckCircle2 className="w-16 h-16 text-[#51AF37]" />
+            <CheckCircle2 className="w-16 h-16 text-[#56A837]" />
             <p className="text-lg font-semibold text-white">Onboarding Complete</p>
             <p className="text-sm text-[#8ba3c0] text-center">
               Your VRL Stage {selectedStage} commitment templates have been applied.
               Your coach will review and activate them before your first session.
             </p>
-            <Button onClick={onClose} className="bg-[#51AF37] hover:bg-[#3d8a29] text-white mt-2">
+            <Button onClick={onClose} className="bg-[#56A837] hover:bg-[#3d8a29] text-white mt-2">
               Go to My Dashboard
             </Button>
           </div>
@@ -134,7 +134,7 @@ export default function CoachingOnboardingModal({ founderId, founderName, open, 
               <Button
                 onClick={handleConfirm}
                 disabled={completeMutation.isPending}
-                className="flex-1 bg-[#51AF37] hover:bg-[#3d8a29] text-white"
+                className="flex-1 bg-[#56A837] hover:bg-[#3d8a29] text-white"
               >
                 {completeMutation.isPending ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Applying Templates...</>
@@ -157,8 +157,8 @@ export default function CoachingOnboardingModal({ founderId, founderName, open, 
                   onClick={() => setSelectedStage(s.stage)}
                   className={`w-full text-left rounded-xl border p-4 transition-all duration-150 ${
                     selectedStage === s.stage
-                      ? "border-[#51AF37] bg-[#51AF3710]"
-                      : "border-[#1e3a5f] bg-[#0a1628] hover:border-[#3A97D3]"
+                      ? "border-[#56A837] bg-[#56A83710]"
+                      : "border-[#1e3a5f] bg-[#0a1628] hover:border-[#3B85BA]"
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -173,7 +173,7 @@ export default function CoachingOnboardingModal({ founderId, founderName, open, 
                       <p className="text-xs text-[#8ba3c0] mt-0.5">{s.description}</p>
                     </div>
                     {selectedStage === s.stage && (
-                      <CheckCircle2 className="w-5 h-5 text-[#51AF37] shrink-0" />
+                      <CheckCircle2 className="w-5 h-5 text-[#56A837] shrink-0" />
                     )}
                   </div>
                 </button>
@@ -182,7 +182,7 @@ export default function CoachingOnboardingModal({ founderId, founderName, open, 
             <Button
               onClick={() => setStep("confirm")}
               disabled={!selectedStage}
-              className="mt-2 bg-[#3A97D3] hover:bg-[#2a7ab5] text-white w-full"
+              className="mt-2 bg-[#3B85BA] hover:bg-[#2a7ab5] text-white w-full"
             >
               Continue <ChevronRight className="w-4 h-4 ml-1" />
             </Button>

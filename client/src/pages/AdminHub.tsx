@@ -17,7 +17,7 @@ const ADMIN_SECTIONS = [
     icon: BookOpenCheck,
     label: "Playbook Library",
     description: "Create, manage, version, and publish operational playbooks. Assign to modules, workflow stages, and user roles.",
-    color: "#51AF37",
+    color: "#56A837",
     count: "20 playbooks",
   },
   {
@@ -26,7 +26,7 @@ const ADMIN_SECTIONS = [
     icon: Users,
     label: "Users & Roles",
     description: "Manage platform users, assign roles (Admin, Founder, Coach, Advisor, Investor), and control access.",
-    color: "#3A97D3",
+    color: "#3B85BA",
     count: "Coming soon",
   },
   {
@@ -35,7 +35,7 @@ const ADMIN_SECTIONS = [
     icon: ShieldCheck,
     label: "Permissions",
     description: "Configure granular permissions per role and module. Set read, write, approve, and export rights.",
-    color: "#F49C13",
+    color: "#F69111",
     count: "Coming soon",
   },
   {
@@ -107,7 +107,7 @@ const ADMIN_SECTIONS = [
     icon: GitBranch,
     label: "Context Rules",
     description: "Manage context-matching rules that determine which playbooks appear automatically based on module, VRL/TRL stage, and venture state.",
-    color: "#51AF37",
+    color: "#56A837",
     count: "Live",
   },
   {
@@ -116,7 +116,7 @@ const ADMIN_SECTIONS = [
     icon: BarChart3,
     label: "Widget Analytics",
     description: "View usage metrics, engagement rates, completion rates, and top recommendations for all contextual widget cards.",
-    color: "#3A97D3",
+    color: "#3B85BA",
     count: "Live",
   },
   {
@@ -134,7 +134,7 @@ const ADMIN_SECTIONS = [
     icon: CheckSquare,
     label: "Production Readiness",
     description: "Pre-launch verification checklist covering all Phase 3C hardening areas: DB schema, permissions, thresholds, QA tests, and more.",
-    color: "#F49C13",
+    color: "#F69111",
     count: "Live",
   },
 ];
@@ -147,8 +147,8 @@ export default function AdminHub() {
       {/* Header */}
       <div className="px-8 py-6 border-b" style={{ borderColor: "#1e2d3d" }}>
         <div className="flex items-center gap-2 mb-1">
-          <SlidersHorizontal size={16} style={{ color: "#51AF37" }} />
-          <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#51AF37" }}>
+          <SlidersHorizontal size={16} style={{ color: "#56A837" }} />
+          <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#56A837" }}>
             Admin
           </span>
         </div>

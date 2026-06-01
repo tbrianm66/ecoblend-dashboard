@@ -369,7 +369,7 @@ export default function OfferingDetail() {
   }
 
   const latestKpi = kpiSnapshots[0];
-  const offeringColor = offering.color ?? "#51AF37";
+  const offeringColor = offering.color ?? "#56A837";
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -432,7 +432,7 @@ export default function OfferingDetail() {
             {offering.trl && (
               <div className="text-center">
                 <p className="text-xs text-gray-400">TRL</p>
-                <p className="text-xl font-bold" style={{ color: "#3A97D3", fontFamily: "'Prompt', sans-serif" }}>
+                <p className="text-xl font-bold" style={{ color: "#3B85BA", fontFamily: "'Prompt', sans-serif" }}>
                   {offering.trl}
                 </p>
               </div>
@@ -440,7 +440,7 @@ export default function OfferingDetail() {
             {offering.brlScore !== null && offering.brlScore !== undefined && (
               <div className="text-center">
                 <p className="text-xs text-gray-400">BRL</p>
-                <p className="text-xl font-bold" style={{ color: "#51AF37", fontFamily: "'Prompt', sans-serif" }}>
+                <p className="text-xl font-bold" style={{ color: "#56A837", fontFamily: "'Prompt', sans-serif" }}>
                   {offering.brlScore}%
                 </p>
               </div>
@@ -456,13 +456,13 @@ export default function OfferingDetail() {
             Latest KPI Snapshot — {new Date(latestKpi.snapshotDate).toLocaleDateString()}
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-            <MetricCard label="Revenue" value={latestKpi.revenue ? `£${parseFloat(latestKpi.revenue).toLocaleString()}` : null} icon={DollarSign} accent="#51AF37" />
-            <MetricCard label="Gross Margin" value={latestKpi.grossMargin ? `${latestKpi.grossMargin}%` : null} icon={TrendingUp} accent="#3A97D3" />
-            <MetricCard label="Units Sold" value={latestKpi.unitsSold?.toLocaleString()} icon={Package} accent="#F49C13" />
+            <MetricCard label="Revenue" value={latestKpi.revenue ? `£${parseFloat(latestKpi.revenue).toLocaleString()}` : null} icon={DollarSign} accent="#56A837" />
+            <MetricCard label="Gross Margin" value={latestKpi.grossMargin ? `${latestKpi.grossMargin}%` : null} icon={TrendingUp} accent="#3B85BA" />
+            <MetricCard label="Units Sold" value={latestKpi.unitsSold?.toLocaleString()} icon={Package} accent="#F69111" />
             <MetricCard label="Customers" value={latestKpi.activeCustomers?.toLocaleString()} icon={Users} accent="#8B5CF6" />
             <MetricCard label="CAC" value={latestKpi.cac ? `£${parseFloat(latestKpi.cac).toLocaleString()}` : null} icon={Activity} accent="#E05C5C" />
             <MetricCard label="LTV" value={latestKpi.ltv ? `£${parseFloat(latestKpi.ltv).toLocaleString()}` : null} icon={BarChart3} accent="#06B6D4" />
-            <MetricCard label="NPS" value={latestKpi.nps} icon={Star} accent={latestKpi.nps && latestKpi.nps > 0 ? "#51AF37" : "#E05C5C"} />
+            <MetricCard label="NPS" value={latestKpi.nps} icon={Star} accent={latestKpi.nps && latestKpi.nps > 0 ? "#56A837" : "#E05C5C"} />
           </div>
         </div>
       )}
@@ -481,14 +481,14 @@ export default function OfferingDetail() {
             </div>
             <div className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
               <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Risks</p>
-              <p className="text-xl font-bold" style={{ color: analytics.risks.high > 0 ? "#E05C5C" : "#51AF37", fontFamily: "'Prompt', sans-serif" }}>
+              <p className="text-xl font-bold" style={{ color: analytics.risks.high > 0 ? "#E05C5C" : "#56A837", fontFamily: "'Prompt', sans-serif" }}>
                 {analytics.risks.total}
               </p>
               <p className="text-xs text-gray-400">{analytics.risks.high} high · {analytics.risks.medium} medium</p>
             </div>
             <div className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
               <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Experiments</p>
-              <p className="text-xl font-bold" style={{ color: "#3A97D3", fontFamily: "'Prompt', sans-serif" }}>
+              <p className="text-xl font-bold" style={{ color: "#3B85BA", fontFamily: "'Prompt', sans-serif" }}>
                 {analytics.experiments.passRate}%
               </p>
               <p className="text-xs text-gray-400">{analytics.experiments.passing}/{analytics.experiments.total} passing</p>
@@ -692,7 +692,7 @@ export default function OfferingDetail() {
               <Card className="border shadow-sm" style={{ borderColor: "#e5e7eb" }}>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-bold text-gray-700 flex items-center gap-2">
-                    <Workflow size={14} style={{ color: "#51AF37" }} /> Workflow Links
+                    <Workflow size={14} style={{ color: "#56A837" }} /> Workflow Links
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -739,7 +739,7 @@ export default function OfferingDetail() {
               <Card className="border shadow-sm" style={{ borderColor: "#e5e7eb" }}>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-bold text-gray-700 flex items-center gap-2">
-                    <CheckSquare size={14} style={{ color: "#3A97D3" }} /> Milestone Links
+                    <CheckSquare size={14} style={{ color: "#3B85BA" }} /> Milestone Links
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -762,7 +762,7 @@ export default function OfferingDetail() {
               <Card className="border shadow-sm" style={{ borderColor: "#e5e7eb" }}>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-bold text-gray-700 flex items-center gap-2">
-                    <Briefcase size={14} style={{ color: "#F49C13" }} /> CRM Links
+                    <Briefcase size={14} style={{ color: "#F69111" }} /> CRM Links
                   </CardTitle>
                 </CardHeader>
                 <CardContent>

@@ -118,12 +118,12 @@ export default function VentureIntake() {
   return (
     <div className="flex-1 overflow-y-auto">
       {/* Header */}
-      <div className="px-8 py-6 border-b" style={{ borderColor: "#e5e7eb", background: "linear-gradient(135deg, rgba(81,175,55,0.03) 0%, rgba(58,151,211,0.03) 100%)" }}>
+      <div className="px-8 py-6 border-b" style={{ borderColor: "#e5e7eb", background: "linear-gradient(135deg, rgba(86, 168, 55,0.03) 0%, rgba(59, 133, 186,0.03) 100%)" }}>
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <Rocket size={18} style={{ color: "#51AF37" }} />
-              <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#51AF37" }}>Module 2</span>
+              <Rocket size={18} style={{ color: "#56A837" }} />
+              <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#56A837" }}>Module 2</span>
             </div>
             <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
               Venture Intake
@@ -135,7 +135,7 @@ export default function VentureIntake() {
           <Button
             size="sm"
             className="gap-2"
-            style={{ background: "#51AF37" }}
+            style={{ background: "#56A837" }}
             onClick={() => { setShowForm(true); toast.info("Form coming in next build iteration"); }}
           >
             <Plus size={14} />
@@ -161,7 +161,7 @@ export default function VentureIntake() {
             >
               <tab.icon size={14} />
               {tab.label}
-              <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ background: currentTab === tab.key ? "rgba(81,175,55,0.1)" : "#f3f4f6", color: currentTab === tab.key ? "#51AF37" : "#6b7280" }}>
+              <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ background: currentTab === tab.key ? "rgba(86, 168, 55,0.1)" : "#f3f4f6", color: currentTab === tab.key ? "#56A837" : "#6b7280" }}>
                 {tab.count}
               </span>
             </button>
@@ -189,7 +189,7 @@ export default function VentureIntake() {
                       </Badge>
                     </div>
                     {ps.confidenceScore && (
-                      <span className="text-xs font-mono px-2 py-1 rounded" style={{ background: "rgba(81,175,55,0.08)", color: "#51AF37" }}>
+                      <span className="text-xs font-mono px-2 py-1 rounded" style={{ background: "rgba(86, 168, 55,0.08)", color: "#56A837" }}>
                         Confidence: {ps.confidenceScore}/5
                       </span>
                     )}
@@ -218,7 +218,7 @@ export default function VentureIntake() {
                     <span className="text-xs text-gray-400">
                       {SAMPLE_HYPOTHESES.filter(h => h.problemStatementId === ps.id).length} hypotheses linked
                     </span>
-                    <Button variant="ghost" size="sm" className="text-xs gap-1" style={{ color: "#51AF37" }}>
+                    <Button variant="ghost" size="sm" className="text-xs gap-1" style={{ color: "#56A837" }}>
                       View Hypotheses <ChevronRight size={12} />
                     </Button>
                   </div>
@@ -250,7 +250,7 @@ export default function VentureIntake() {
                         {h.evidenceCount} evidence
                       </span>
                       {h.confidenceScore && (
-                        <span className="text-xs font-mono px-2 py-1 rounded" style={{ background: "rgba(81,175,55,0.08)", color: "#51AF37" }}>
+                        <span className="text-xs font-mono px-2 py-1 rounded" style={{ background: "rgba(86, 168, 55,0.08)", color: "#56A837" }}>
                           {h.confidenceScore}/5
                         </span>
                       )}

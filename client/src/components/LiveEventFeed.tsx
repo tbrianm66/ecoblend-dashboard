@@ -22,20 +22,20 @@ const EVENT_CONFIG: Record<SSEEventType, {
   workflow_trigger: {
     label: "Workflow",
     icon: Zap,
-    color: "#51AF37",
-    bg: "rgba(81,175,55,0.08)",
+    color: "#56A837",
+    bg: "rgba(86, 168, 55,0.08)",
   },
   milestone_update: {
     label: "Milestone",
     icon: TrendingUp,
-    color: "#3A97D3",
-    bg: "rgba(58,151,211,0.08)",
+    color: "#3B85BA",
+    bg: "rgba(59, 133, 186,0.08)",
   },
   risk_alert: {
     label: "Risk Alert",
     icon: AlertTriangle,
-    color: "#F49C13",
-    bg: "rgba(244,156,19,0.08)",
+    color: "#F69111",
+    bg: "rgba(246, 145, 17,0.08)",
   },
   data_quality_alert: {
     label: "Data Quality",
@@ -52,8 +52,8 @@ const EVENT_CONFIG: Record<SSEEventType, {
   connected: {
     label: "Connected",
     icon: Wifi,
-    color: "#51AF37",
-    bg: "rgba(81,175,55,0.08)",
+    color: "#56A837",
+    bg: "rgba(86, 168, 55,0.08)",
   },
 };
 
@@ -84,14 +84,14 @@ function getSeverityColor(event: LiveEvent): string {
   if (event.type === "risk_alert") {
     const sev = String(event.data.severity || "");
     if (sev === "critical") return "#ef4444";
-    if (sev === "high") return "#F49C13";
+    if (sev === "high") return "#F69111";
     if (sev === "medium") return "#eab308";
     return "#6b7280";
   }
   if (event.type === "workflow_trigger") {
     const sev = String(event.data.severity || "info");
-    if (sev === "critical" || sev === "warning") return "#F49C13";
-    return "#51AF37";
+    if (sev === "critical" || sev === "warning") return "#F69111";
+    return "#56A837";
   }
   return EVENT_CONFIG[event.type]?.color || "#6b7280";
 }
@@ -147,7 +147,7 @@ export default function LiveEventFeed({
         <div className="flex items-center gap-2">
           <span
             className="w-2 h-2 rounded-full animate-pulse"
-            style={{ background: connected ? "#51AF37" : "#ef4444" }}
+            style={{ background: connected ? "#56A837" : "#ef4444" }}
           />
           <span
             className="text-sm font-semibold"
@@ -159,9 +159,9 @@ export default function LiveEventFeed({
             variant="outline"
             className="text-xs"
             style={{
-              borderColor: connected ? "#51AF37" : "#ef4444",
-              color: connected ? "#51AF37" : "#ef4444",
-              background: connected ? "rgba(81,175,55,0.06)" : "rgba(239,68,68,0.06)",
+              borderColor: connected ? "#56A837" : "#ef4444",
+              color: connected ? "#56A837" : "#ef4444",
+              background: connected ? "rgba(86, 168, 55,0.06)" : "rgba(239,68,68,0.06)",
             }}
           >
             {connected ? "LIVE" : "OFFLINE"}

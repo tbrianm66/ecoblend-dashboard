@@ -26,9 +26,9 @@ import {
 
 // ─── Colour palette (matches platform design tokens) ─────────────────────────
 const C = {
-  green: "#51AF37",
-  blue: "#3A97D3",
-  amber: "#F49C13",
+  green: "#56A837",
+  blue: "#3B85BA",
+  amber: "#F69111",
   red: "#ef4444",
   gray: "#6b7280",
 };

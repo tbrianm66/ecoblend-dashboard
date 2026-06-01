@@ -29,7 +29,7 @@ import {
   Lightbulb,
 } from "lucide-react";
 
-const GREEN = "#51AF37";
+const GREEN = "#56A837";
 
 interface FormState {
   ventureId: string;
@@ -79,7 +79,7 @@ function FormSection({
       <div className="flex items-start gap-3 mb-4">
         <div
           className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-          style={{ background: "rgba(81,175,55,0.1)" }}
+          style={{ background: "rgba(86, 168, 55,0.1)" }}
         >
           <Icon size={18} style={{ color: GREEN }} />
         </div>
@@ -232,7 +232,7 @@ export default function ProblemStatement() {
         style={{
           borderColor: "#e5e7eb",
           background:
-            "linear-gradient(135deg, rgba(81,175,55,0.04) 0%, rgba(58,151,211,0.04) 100%)",
+            "linear-gradient(135deg, rgba(86, 168, 55,0.04) 0%, rgba(59, 133, 186,0.04) 100%)",
         }}
       >
         <button
@@ -410,7 +410,7 @@ export default function ProblemStatement() {
             </div>
             <div
               className="flex items-center justify-between mt-4 px-4 py-3 rounded-lg"
-              style={{ background: "rgba(81,175,55,0.06)" }}
+              style={{ background: "rgba(86, 168, 55,0.06)" }}
             >
               <span className="text-sm font-medium text-gray-600">Composite pain index</span>
               <span className="text-sm font-bold font-mono" style={{ color: GREEN }}>

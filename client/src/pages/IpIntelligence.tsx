@@ -22,13 +22,13 @@ import {
 } from "lucide-react";
 
 // ─── Colour helpers ───────────────────────────────────────────────────────────
-const BRAND = { green: "#51AF37", blue: "#3A97D3", amber: "#F49C13", red: "#EF4444", navy: "#1a2332" };
+const BRAND = { green: "#56A837", blue: "#3B85BA", amber: "#F69111", red: "#EF4444", navy: "#1a2332" };
 
 const riskColor = (v: string) =>
   v === "LOW" ? BRAND.green : v === "MED" ? BRAND.amber : BRAND.red;
 
 const riskBg = (v: string) =>
-  v === "LOW" ? "#51AF3715" : v === "MED" ? "#F49C1315" : "#EF444415";
+  v === "LOW" ? "#56A83715" : v === "MED" ? "#F6911115" : "#EF444415";
 
 const recColor = (v: string) =>
   v === "PROCEED" ? BRAND.green : v === "MODIFY" ? BRAND.amber : BRAND.red;
@@ -290,7 +290,7 @@ function NewAnalysisTab({ onSuccess }: { onSuccess: (id: number) => void }) {
     <div className="max-w-2xl mx-auto">
       <div className="bg-white rounded-2xl border shadow-sm p-6" style={{ borderColor: "#e5e7eb" }}>
         <div className="flex items-center gap-2 mb-5">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "#3A97D315" }}>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "#3B85BA15" }}>
             <FlaskConical size={16} style={{ color: BRAND.blue }} />
           </div>
           <div>
@@ -423,7 +423,7 @@ function NewAnalysisTab({ onSuccess }: { onSuccess: (id: number) => void }) {
       </div>
 
       {/* API Integration note */}
-      <div className="mt-4 rounded-xl border px-4 py-3 flex items-start gap-3" style={{ borderColor: "#3A97D330", background: "#3A97D308" }}>
+      <div className="mt-4 rounded-xl border px-4 py-3 flex items-start gap-3" style={{ borderColor: "#3B85BA30", background: "#3B85BA08" }}>
         <Zap size={14} style={{ color: BRAND.blue, marginTop: 2 }} />
         <div>
           <p className="text-xs font-semibold" style={{ color: BRAND.blue }}>API-Ready Architecture</p>
@@ -710,7 +710,7 @@ export default function IpIntelligence() {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#3A97D315", color: BRAND.blue }}>
+              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#3B85BA15", color: BRAND.blue }}>
                 IP Intelligence
               </span>
               <span className="text-xs text-gray-400">·</span>

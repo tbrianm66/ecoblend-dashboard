@@ -33,9 +33,9 @@ import {
 import { toast } from "sonner";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const ECOBLEND_GREEN = "#51AF37";
-const ECOBLEND_BLUE  = "#3A97D3";
-const ECOBLEND_AMBER = "#F49C13";
+const ECOBLEND_GREEN = "#56A837";
+const ECOBLEND_BLUE  = "#3B85BA";
+const ECOBLEND_AMBER = "#F69111";
 const ECOBLEND_RED   = "#e53e3e";
 const ECOBLEND_PURPLE = "#805ad5";
 

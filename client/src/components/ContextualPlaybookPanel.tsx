@@ -139,12 +139,12 @@ export default function ContextualPlaybookPanel({
           onClick={() => setExpanded(!expanded)}
         >
           <div className="flex items-center gap-2">
-            <Sparkles size={16} style={{ color: "#51AF37" }} />
+            <Sparkles size={16} style={{ color: "#56A837" }} />
             <span className="text-sm font-semibold text-gray-700">Playbook Guidance</span>
             {count > 0 && (
               <Badge
                 className="text-xs px-1.5 py-0"
-                style={{ background: "#51AF3720", color: "#51AF37", border: "none", fontSize: "10px" }}
+                style={{ background: "#56A83720", color: "#56A837", border: "none", fontSize: "10px" }}
               >
                 {count}
               </Badge>

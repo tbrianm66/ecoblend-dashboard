@@ -32,15 +32,15 @@ const GATE_CONFIG: Record<GateStatus, { label: string; color: string; bg: string
   not_ready:       { label: "Not Ready",       color: "#ef4444", bg: "#fef2f2", icon: AlertCircle },
   approaching:     { label: "Approaching",     color: "#f59e0b", bg: "#fffbeb", icon: Clock },
   ready_to_review: { label: "Ready to Review", color: "#3b82f6", bg: "#eff6ff", icon: Eye },
-  approved:        { label: "Approved",        color: "#51AF37", bg: "#f0fdf4", icon: CheckCircle2 },
+  approved:        { label: "Approved",        color: "#56A837", bg: "#f0fdf4", icon: CheckCircle2 },
   launched:        { label: "Launched",        color: "#8b5cf6", bg: "#f5f3ff", icon: Rocket },
 };
 
 const DOMAIN_CONFIG: Record<Domain, { label: string; icon: React.ElementType; color: string; weight: string }> = {
   talent:       { label: "Talent",       icon: Users,       color: "#3b82f6", weight: "20%" },
   supply_chain: { label: "Supply Chain", icon: Truck,       color: "#f59e0b", weight: "15%" },
-  finance:      { label: "Finance",      icon: DollarSign,  color: "#51AF37", weight: "20%" },
-  market:       { label: "Market",       icon: BarChart2,   color: "#3A97D3", weight: "20%" },
+  finance:      { label: "Finance",      icon: DollarSign,  color: "#56A837", weight: "20%" },
+  market:       { label: "Market",       icon: BarChart2,   color: "#3B85BA", weight: "20%" },
   ip:           { label: "IP",           icon: Shield,      color: "#8b5cf6", weight: "—" },
   legal:        { label: "Legal",        icon: FileText,    color: "#6b7280", weight: "—" },
   university:   { label: "University",   icon: Building2,   color: "#ec4899", weight: "—" },
@@ -52,8 +52,8 @@ const DOMAIN_CONFIG: Record<Domain, { label: string; icon: React.ElementType; co
 const READINESS_DOMAINS: { key: "talentScore" | "supplyChainScore" | "financeScore" | "marketScore" | "technologyScore" | "governanceScore"; label: string; icon: React.ElementType; color: string; weight: string }[] = [
   { key: "talentScore",       label: "Talent",       icon: Users,      color: "#3b82f6", weight: "20%" },
   { key: "supplyChainScore",  label: "Supply Chain", icon: Truck,      color: "#f59e0b", weight: "15%" },
-  { key: "financeScore",      label: "Finance",      icon: DollarSign, color: "#51AF37", weight: "20%" },
-  { key: "marketScore",       label: "Market",       icon: BarChart2,  color: "#3A97D3", weight: "20%" },
+  { key: "financeScore",      label: "Finance",      icon: DollarSign, color: "#56A837", weight: "20%" },
+  { key: "marketScore",       label: "Market",       icon: BarChart2,  color: "#3B85BA", weight: "20%" },
   { key: "technologyScore",   label: "Technology",   icon: Cpu,        color: "#8b5cf6", weight: "15%" },
   { key: "governanceScore",   label: "Governance",   icon: Shield,     color: "#6b7280", weight: "10%" },
 ];
@@ -77,7 +77,7 @@ function ScoreRing({ score, size = 80 }: { score: number; size?: number }) {
   const radius = (size - 12) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
-  const color = score >= 80 ? "#51AF37" : score >= 60 ? "#3b82f6" : score >= 40 ? "#f59e0b" : "#ef4444";
+  const color = score >= 80 ? "#56A837" : score >= 60 ? "#3b82f6" : score >= 40 ? "#f59e0b" : "#ef4444";
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: "rotate(-90deg)" }}>
       <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#f3f4f6" strokeWidth={8} />
@@ -102,7 +102,7 @@ function ScoreRing({ score, size = 80 }: { score: number; size?: number }) {
 const LINK_STATUS_COLORS: Record<string, { color: string; bg: string }> = {
   proposed:    { color: "#6b7280", bg: "#f9fafb" },
   confirmed:   { color: "#3b82f6", bg: "#eff6ff" },
-  contracted:  { color: "#51AF37", bg: "#f0fdf4" },
+  contracted:  { color: "#56A837", bg: "#f0fdf4" },
   unavailable: { color: "#ef4444", bg: "#fef2f2" },
 };
 
@@ -212,8 +212,8 @@ export default function SpinOutBlueprint() {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <GitBranch size={18} style={{ color: "#51AF37" }} />
-              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#51AF3715", color: "#51AF37" }}>
+              <GitBranch size={18} style={{ color: "#56A837" }} />
+              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#56A83715", color: "#56A837" }}>
                 Spin-Out Blueprint
               </span>
             </div>
@@ -227,7 +227,7 @@ export default function SpinOutBlueprint() {
           <Button
             size="sm"
             className="gap-1.5 text-xs text-white"
-            style={{ background: "#51AF37" }}
+            style={{ background: "#56A837" }}
             onClick={() => setShowCreateDialog(true)}
             disabled={!selectedOfferingId}
           >
@@ -289,7 +289,7 @@ export default function SpinOutBlueprint() {
                     className="w-full text-left p-3 rounded-lg transition-all duration-150 hover:bg-gray-50"
                     style={{
                       background: selectedBlueprintId === b.id ? "#f0fdf4" : "transparent",
-                      border: selectedBlueprintId === b.id ? "1px solid #51AF3730" : "1px solid transparent",
+                      border: selectedBlueprintId === b.id ? "1px solid #56A83730" : "1px solid transparent",
                     }}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -359,8 +359,8 @@ export default function SpinOutBlueprint() {
                     onClick={() => setActiveTab(tab)}
                     className="px-4 py-2 text-xs font-semibold capitalize transition-all"
                     style={{
-                      color: activeTab === tab ? "#51AF37" : "#6b7280",
-                      borderBottom: activeTab === tab ? "2px solid #51AF37" : "2px solid transparent",
+                      color: activeTab === tab ? "#56A837" : "#6b7280",
+                      borderBottom: activeTab === tab ? "2px solid #56A837" : "2px solid transparent",
                     }}
                   >
                     {tab === "overview" ? "Readiness" : tab === "libraries" ? "Libraries" : tab === "blueprint" ? "AI Blueprint" : "Launch"}
@@ -390,7 +390,7 @@ export default function SpinOutBlueprint() {
                     <div className="relative flex-shrink-0">
                       <ScoreRing score={blueprint.overallScore ?? 0} size={80} />
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-base font-bold" style={{ color: (blueprint.overallScore ?? 0) >= 80 ? "#51AF37" : (blueprint.overallScore ?? 0) >= 60 ? "#3b82f6" : (blueprint.overallScore ?? 0) >= 40 ? "#f59e0b" : "#ef4444" }}>
+                        <span className="text-base font-bold" style={{ color: (blueprint.overallScore ?? 0) >= 80 ? "#56A837" : (blueprint.overallScore ?? 0) >= 60 ? "#3b82f6" : (blueprint.overallScore ?? 0) >= 40 ? "#f59e0b" : "#ef4444" }}>
                           {blueprint.overallScore ?? 0}%
                         </span>
                       </div>
@@ -457,7 +457,7 @@ export default function SpinOutBlueprint() {
                     <Button
                       size="sm"
                       className="gap-1.5 text-xs text-white"
-                      style={{ background: "#3A97D3" }}
+                      style={{ background: "#3B85BA" }}
                       onClick={() => setShowAddLinkDialog(true)}
                     >
                       <Link2 size={12} /> Link Resource
@@ -544,7 +544,7 @@ export default function SpinOutBlueprint() {
                     <Button
                       size="sm"
                       className="gap-1.5 text-xs text-white"
-                      style={{ background: "#3A97D3" }}
+                      style={{ background: "#3B85BA" }}
                       onClick={() => generateBlueprint.mutate({ id: blueprint.id })}
                       disabled={generateBlueprint.isPending}
                     >
@@ -562,7 +562,7 @@ export default function SpinOutBlueprint() {
                       <Button
                         size="sm"
                         className="gap-1.5 text-xs text-white"
-                        style={{ background: "#51AF37" }}
+                        style={{ background: "#56A837" }}
                         onClick={() => generateBlueprint.mutate({ id: blueprint.id })}
                         disabled={generateBlueprint.isPending}
                       >
@@ -586,8 +586,8 @@ export default function SpinOutBlueprint() {
                   <h3 className="text-sm font-bold text-gray-700 mb-4">Launch to Spin-Off OS</h3>
                   <div className="bg-white rounded-xl border p-6 mb-4" style={{ borderColor: "#e5e7eb" }}>
                     <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#51AF3715" }}>
-                        <Rocket size={18} style={{ color: "#51AF37" }} />
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#56A83715" }}>
+                        <Rocket size={18} style={{ color: "#56A837" }} />
                       </div>
                       <div>
                         <h4 className="text-sm font-bold text-gray-800 mb-1">Convert to Execution Platform</h4>
@@ -601,8 +601,8 @@ export default function SpinOutBlueprint() {
                             { label: "Gate Status", value: gateConfig?.label ?? "—", ok: blueprint.gateStatus !== "not_ready" },
                           ].map((check) => (
                             <div key={check.label} className="rounded-lg p-3 text-center" style={{ background: check.ok ? "#f0fdf4" : "#fef2f2" }}>
-                              {check.ok ? <CheckCircle2 size={16} className="mx-auto mb-1" style={{ color: "#51AF37" }} /> : <AlertCircle size={16} className="mx-auto mb-1" style={{ color: "#ef4444" }} />}
-                              <p className="text-xs font-semibold" style={{ color: check.ok ? "#51AF37" : "#ef4444" }}>{check.value}</p>
+                              {check.ok ? <CheckCircle2 size={16} className="mx-auto mb-1" style={{ color: "#56A837" }} /> : <AlertCircle size={16} className="mx-auto mb-1" style={{ color: "#ef4444" }} />}
+                              <p className="text-xs font-semibold" style={{ color: check.ok ? "#56A837" : "#ef4444" }}>{check.value}</p>
                               <p className="text-xs text-gray-400">{check.label}</p>
                             </div>
                           ))}
@@ -619,7 +619,7 @@ export default function SpinOutBlueprint() {
                         </div>
                         <Button
                           className="gap-1.5 text-white w-full"
-                          style={{ background: "#51AF37" }}
+                          style={{ background: "#56A837" }}
                           disabled={(blueprint.overallScore ?? 0) < 40 || launchToSpinoff.isPending}
                           onClick={() => {
                             const ids = launchFounderIds.split(",").map(s => parseInt(s.trim())).filter(n => !isNaN(n));
@@ -655,7 +655,7 @@ export default function SpinOutBlueprint() {
                               <div
                                 className="w-8 h-8 rounded-full flex items-center justify-center"
                                 style={{
-                                  background: step.done ? "#51AF37" : "#f3f4f6",
+                                  background: step.done ? "#56A837" : "#f3f4f6",
                                   border: step.done ? "none" : "2px solid #e5e7eb",
                                 }}
                               >
@@ -664,7 +664,7 @@ export default function SpinOutBlueprint() {
                               <span className="text-xs text-gray-500 whitespace-nowrap">{step.label}</span>
                             </div>
                             {i < arr.length - 1 && (
-                              <div className="w-8 h-0.5 mb-4 mx-1" style={{ background: step.done ? "#51AF37" : "#e5e7eb" }} />
+                              <div className="w-8 h-0.5 mb-4 mx-1" style={{ background: step.done ? "#56A837" : "#e5e7eb" }} />
                             )}
                           </div>
                         );
@@ -699,7 +699,7 @@ export default function SpinOutBlueprint() {
             <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Cancel</Button>
             <Button
               className="text-white"
-              style={{ background: "#51AF37" }}
+              style={{ background: "#56A837" }}
               disabled={createBlueprint.isPending}
               onClick={() => {
                 const titleInput = document.getElementById("blueprint-title") as HTMLInputElement;
@@ -779,7 +779,7 @@ export default function SpinOutBlueprint() {
             <Button variant="outline" onClick={() => setShowAddLinkDialog(false)}>Cancel</Button>
             <Button
               className="text-white"
-              style={{ background: "#3A97D3" }}
+              style={{ background: "#3B85BA" }}
               disabled={!addLinkRecordId || addLink.isPending}
               onClick={() => {
                 if (!selectedBlueprintId) return;

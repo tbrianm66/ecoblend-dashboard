@@ -23,10 +23,10 @@ interface RDStageGuidanceCardProps {
 }
 
 const STAGE_COLORS: Record<string, string> = {
-  Concept: "#3A97D3",
-  Simulation: "#F49C13",
+  Concept: "#3B85BA",
+  Simulation: "#F69111",
   Prototyping: "#8b5cf6",
-  "Track / Platform Integration": "#51AF37",
+  "Track / Platform Integration": "#56A837",
 };
 
 export default function RDStageGuidanceCard({ ventureId, rdProjectId }: RDStageGuidanceCardProps) {
@@ -42,9 +42,9 @@ export default function RDStageGuidanceCard({ ventureId, rdProjectId }: RDStageG
   if (error) return <WidgetErrorState message={error.message} />;
   if (!data) return null;
 
-  const stageColor = STAGE_COLORS[data.currentStage] || "#3A97D3";
+  const stageColor = STAGE_COLORS[data.currentStage] || "#3B85BA";
   const progressColor =
-    data.completedCount === data.totalCount ? "#51AF37" : data.completedCount >= data.totalCount * 0.5 ? "#F49C13" : "#ef4444";
+    data.completedCount === data.totalCount ? "#56A837" : data.completedCount >= data.totalCount * 0.5 ? "#F69111" : "#ef4444";
 
   return (
     <div className="flex flex-col gap-4">

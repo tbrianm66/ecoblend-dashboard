@@ -246,9 +246,9 @@ const VENTURE_LABELS: Record<string, string> = {
 };
 
 const CONTRACT_STATUS_COLOURS: Record<string, string> = {
-  Active:         "#51AF37",
+  Active:         "#56A837",
   Draft:          "#9ca3af",
-  "Under Review": "#F49C13",
+  "Under Review": "#F69111",
   Expired:        "#ef4444",
   Terminated:     "#dc2626",
 };
@@ -273,18 +273,18 @@ export function exportInvestorPack(ventures: Venture[]) {
           <div style="font-weight:600;color:#1a2332;">Stage ${v.vrl}/4</div>
           <div style="font-size:10px;color:#9ca3af;">${vrlStage?.label}</div>
           <div style="margin-top:4px;height:4px;background:#e5e7eb;border-radius:2px;overflow:hidden;">
-            <div style="height:100%;width:${vrlPct}%;background:#51AF37;border-radius:2px;"></div>
+            <div style="height:100%;width:${vrlPct}%;background:#56A837;border-radius:2px;"></div>
           </div>
         </td>
         <td style="padding:10px 12px;font-size:11px;">
           <div style="font-weight:600;color:#1a2332;">Level ${v.trl}/9</div>
           <div style="font-size:10px;color:#9ca3af;">${trlLevel?.label}</div>
           <div style="margin-top:4px;height:4px;background:#e5e7eb;border-radius:2px;overflow:hidden;">
-            <div style="height:100%;width:${trlPct}%;background:#3A97D3;border-radius:2px;"></div>
+            <div style="height:100%;width:${trlPct}%;background:#3B85BA;border-radius:2px;"></div>
           </div>
         </td>
         <td style="padding:10px 12px;text-align:center;">
-          <span style="display:inline-block;padding:3px 10px;border-radius:9999px;font-size:10px;font-weight:700;background:${ready ? "#f0fdf4" : "#f9fafb"};color:${ready ? "#51AF37" : "#9ca3af"};border:1px solid ${ready ? "#bbf7d0" : "#e5e7eb"};">
+          <span style="display:inline-block;padding:3px 10px;border-radius:9999px;font-size:10px;font-weight:700;background:${ready ? "#f0fdf4" : "#f9fafb"};color:${ready ? "#56A837" : "#9ca3af"};border:1px solid ${ready ? "#bbf7d0" : "#e5e7eb"};">
             ${ready ? "✓ Ready" : "Not Yet"}
           </span>
         </td>
@@ -346,10 +346,10 @@ export function exportInvestorPack(ventures: Venture[]) {
     <body>
 
       <!-- ── Cover Page ── -->
-      <div style="border-bottom:4px solid #51AF37;padding-bottom:24px;margin-bottom:32px;">
+      <div style="border-bottom:4px solid #56A837;padding-bottom:24px;margin-bottom:32px;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;">
           <div>
-            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;color:#51AF37;margin-bottom:8px;">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;color:#56A837;margin-bottom:8px;">
               © 2026 EcoRace Studio · Confidential
             </div>
             <h1 style="font-size:30px;font-weight:700;color:#1a2332;margin-bottom:6px;line-height:1.2;">
@@ -371,11 +371,11 @@ export function exportInvestorPack(ventures: Venture[]) {
       <!-- ── Portfolio KPIs ── -->
       <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:36px;">
         ${[
-          { label: "Ventures", value: ventures.length.toString(), color: "#51AF37", bg: "#f0fdf4" },
-          { label: "Avg VRL", value: avgVrl, color: "#51AF37", bg: "#f0fdf4" },
-          { label: "Avg TRL", value: avgTrl, color: "#3A97D3", bg: "#eff6ff" },
-          { label: "Inv. Ready", value: investmentReady.toString(), color: "#51AF37", bg: "#f0fdf4" },
-          { label: "Milestones", value: `${milestonePct}%`, color: "#F49C13", bg: "#fffbeb" },
+          { label: "Ventures", value: ventures.length.toString(), color: "#56A837", bg: "#f0fdf4" },
+          { label: "Avg VRL", value: avgVrl, color: "#56A837", bg: "#f0fdf4" },
+          { label: "Avg TRL", value: avgTrl, color: "#3B85BA", bg: "#eff6ff" },
+          { label: "Inv. Ready", value: investmentReady.toString(), color: "#56A837", bg: "#f0fdf4" },
+          { label: "Milestones", value: `${milestonePct}%`, color: "#F69111", bg: "#fffbeb" },
           { label: "Active Contracts", value: activeContracts.toString(), color: "#8b5cf6", bg: "#f5f3ff" },
         ].map(k => `
           <div style="background:${k.bg};border-radius:10px;padding:14px;text-align:center;">
@@ -388,7 +388,7 @@ export function exportInvestorPack(ventures: Venture[]) {
       <!-- ── Section 1: Investment Readiness ── -->
       <div style="margin-bottom:36px;">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid #e5e7eb;">
-          <div style="width:28px;height:28px;border-radius:8px;background:#51AF3715;display:flex;align-items:center;justify-content:center;font-size:14px;">📈</div>
+          <div style="width:28px;height:28px;border-radius:8px;background:#56A83715;display:flex;align-items:center;justify-content:center;font-size:14px;">📈</div>
           <div>
             <h2 style="font-size:16px;font-weight:700;color:#1a2332;">Section 1 — Investment Readiness & VRL/TRL Progress</h2>
             <p style="font-size:11px;color:#9ca3af;margin-top:2px;">Ventures reach investment readiness at VRL Stage 3 and TRL Level 6 or above.</p>
@@ -412,7 +412,7 @@ export function exportInvestorPack(ventures: Venture[]) {
       <!-- ── Section 2: Legal Contracts Register ── -->
       <div class="page-break" style="margin-bottom:36px;">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid #e5e7eb;">
-          <div style="width:28px;height:28px;border-radius:8px;background:#3A97D315;display:flex;align-items:center;justify-content:center;font-size:14px;">📄</div>
+          <div style="width:28px;height:28px;border-radius:8px;background:#3B85BA15;display:flex;align-items:center;justify-content:center;font-size:14px;">📄</div>
           <div>
             <h2 style="font-size:16px;font-weight:700;color:#1a2332;">Section 2 — Legal Contracts Register</h2>
             <p style="font-size:11px;color:#9ca3af;margin-top:2px;">Founder agreements, IP licences, OEM partnerships, charity MoUs, and investor term sheets.</p>
@@ -440,7 +440,7 @@ export function exportInvestorPack(ventures: Venture[]) {
       <!-- ── Section 3: Dual-Canvas Summary ── -->
       <div style="margin-bottom:36px;">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid #e5e7eb;">
-          <div style="width:28px;height:28px;border-radius:8px;background:#F49C1315;display:flex;align-items:center;justify-content:center;font-size:14px;">🗺️</div>
+          <div style="width:28px;height:28px;border-radius:8px;background:#F6911115;display:flex;align-items:center;justify-content:center;font-size:14px;">🗺️</div>
           <div>
             <h2 style="font-size:16px;font-weight:700;color:#1a2332;">Section 3 — Dual-Canvas Model Summary</h2>
             <p style="font-size:11px;color:#9ca3af;margin-top:2px;">Business Model Canvas (commercial) and Mission Model Canvas (social impact) per venture.</p>
@@ -479,7 +479,7 @@ export function exportInvestorPack(ventures: Venture[]) {
 
       <!-- Print button -->
       <div class="no-print" style="margin-top:28px;text-align:center;">
-        <button onclick="window.print()" style="background:#51AF37;color:white;border:none;padding:12px 32px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;margin-right:12px;">
+        <button onclick="window.print()" style="background:#56A837;color:white;border:none;padding:12px 32px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;margin-right:12px;">
           🖨️ Print / Save as PDF
         </button>
         <button onclick="window.close()" style="background:#f3f4f6;color:#6b7280;border:none;padding:12px 24px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Nunito',sans-serif;">

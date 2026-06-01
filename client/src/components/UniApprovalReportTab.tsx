@@ -91,9 +91,9 @@ function SummaryCards({ ventureId }: { ventureId: VentureId }) {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       {[
-        { label: "Total Reports", value: summary.total, icon: FileText, color: "#3A97D3" },
-        { label: "Approved", value: summary.approved, icon: CheckCircle2, color: "#51AF37" },
-        { label: "Under Review", value: summary.underReview, icon: Clock, color: "#F49C13" },
+        { label: "Total Reports", value: summary.total, icon: FileText, color: "#3B85BA" },
+        { label: "Approved", value: summary.approved, icon: CheckCircle2, color: "#56A837" },
+        { label: "Under Review", value: summary.underReview, icon: Clock, color: "#F69111" },
         { label: "Approval Rate", value: `${summary.approvalRate}%`, icon: BarChart3, color: "#8B5CF6" },
       ].map(({ label, value, icon: Icon, color }) => (
         <div key={label} className="bg-white rounded-xl border p-4 flex items-center gap-3 shadow-sm">
@@ -303,12 +303,12 @@ function ReportViewDialog({ reportId, onClose }: { reportId: number; onClose: ()
         <div className="flex-1 overflow-y-auto p-6">
           {/* Dual Risk Model Banner */}
           <div className="grid grid-cols-2 gap-3 mb-6">
-            <div className="rounded-lg p-3 border" style={{ background: "#51AF3710", borderColor: "#51AF3730" }}>
+            <div className="rounded-lg p-3 border" style={{ background: "#56A83710", borderColor: "#56A83730" }}>
               <div className="text-xs font-semibold text-gray-500 mb-0.5">Product Risk Owner</div>
               <div className="text-sm font-bold text-gray-800">{report.productRiskOwner ?? "Founder"}</div>
               <div className="text-xs text-gray-400 mt-0.5">Technology · Engineering · Product</div>
             </div>
-            <div className="rounded-lg p-3 border" style={{ background: "#3A97D310", borderColor: "#3A97D330" }}>
+            <div className="rounded-lg p-3 border" style={{ background: "#3B85BA10", borderColor: "#3B85BA30" }}>
               <div className="text-xs font-semibold text-gray-500 mb-0.5">Business Risk Owner</div>
               <div className="text-sm font-bold text-gray-800">{report.businessRiskOwner ?? "University Partner"}</div>
               <div className="text-xs text-gray-400 mt-0.5">Market · Strategy · Commercialisation</div>

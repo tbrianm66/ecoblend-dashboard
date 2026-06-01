@@ -343,14 +343,14 @@ function NavGroupSection({ group, location }: { group: NavGroup; location: strin
                 <div
                   className="flex items-center gap-2.5 px-3 py-2 rounded-lg mb-0.5 transition-all duration-100"
                   style={{
-                    background: isActive ? "rgba(81,175,55,0.13)" : "transparent",
-                    borderLeft: isActive ? "2px solid #51AF37" : "2px solid transparent",
+                    background: isActive ? "rgba(86, 168, 55,0.13)" : "transparent",
+                    borderLeft: isActive ? "2px solid #56A837" : "2px solid transparent",
                     color: isActive ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.48)",
                     paddingLeft: isActive ? "calc(0.75rem - 2px)" : "0.75rem",
                   }}
                 >
                   {Icon && (
-                    <span style={{ color: isActive ? "#51AF37" : "rgba(255,255,255,0.35)", flexShrink: 0, display: "flex" }}>
+                    <span style={{ color: isActive ? "#56A837" : "rgba(255,255,255,0.35)", flexShrink: 0, display: "flex" }}>
                       <Icon size={14} />
                     </span>
                   )}
@@ -360,7 +360,7 @@ function NavGroupSection({ group, location }: { group: NavGroup; location: strin
                   >
                     {item.label}
                   </span>
-                  {isActive && <ChevronRight size={11} style={{ color: "#51AF37", flexShrink: 0 }} />}
+                  {isActive && <ChevronRight size={11} style={{ color: "#56A837", flexShrink: 0 }} />}
                 </div>
               </Link>
             );
@@ -405,9 +405,9 @@ export default function Sidebar() {
           onClick={() => setAlertsOpen(o => !o)}
           className="w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-150"
           style={{
-            background: alertsOpen ? "rgba(244,156,19,0.10)" : "rgba(255,255,255,0.04)",
-            border: `1px solid ${alerts.length > 0 ? "rgba(244,156,19,0.28)" : "rgba(255,255,255,0.07)"}`,
-            color: alerts.length > 0 ? "#F49C13" : "rgba(255,255,255,0.35)",
+            background: alertsOpen ? "rgba(246, 145, 17,0.10)" : "rgba(255,255,255,0.04)",
+            border: `1px solid ${alerts.length > 0 ? "rgba(246, 145, 17,0.28)" : "rgba(255,255,255,0.07)"}`,
+            color: alerts.length > 0 ? "#F69111" : "rgba(255,255,255,0.35)",
           }}
         >
           <Bell size={13} />
@@ -417,7 +417,7 @@ export default function Sidebar() {
           {alerts.length > 0 && (
             <span
               className="text-xs font-bold px-1.5 py-0.5 rounded-full"
-              style={{ background: "#F49C13", color: "white", fontSize: "9px" }}
+              style={{ background: "#F69111", color: "white", fontSize: "9px" }}
             >
               {alerts.length}
             </span>
@@ -446,7 +446,7 @@ export default function Sidebar() {
                 {alerts.map((a: SyncAlert, i: number) => (
                   <div key={i} className="px-3 py-2.5 border-b last:border-0" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
                     <div className="flex items-center gap-1.5 mb-1">
-                      <AlertTriangle size={10} style={{ color: a.severity === "high" ? "#ef4444" : "#F49C13", flexShrink: 0 }} />
+                      <AlertTriangle size={10} style={{ color: a.severity === "high" ? "#ef4444" : "#F69111", flexShrink: 0 }} />
                       <span className="text-xs font-semibold" style={{ color: a.ventureColor, fontFamily: "'Inter', sans-serif" }}>
                         {a.ventureName}
                       </span>
@@ -476,7 +476,7 @@ export default function Sidebar() {
         <div className="flex items-center gap-2">
           <div
             className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold"
-            style={{ background: "rgba(81,175,55,0.15)", color: "#51AF37" }}
+            style={{ background: "rgba(86, 168, 55,0.15)", color: "#56A837" }}
           >
             E
           </div>

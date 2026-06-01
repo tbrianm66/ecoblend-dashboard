@@ -1,7 +1,7 @@
 /**
  * Shared Widget Primitives
  * Reusable sub-components for all specialised widget cards.
- * Design: Precision Industrial — white/gray-50 bg, green #51AF37 accent, Prompt font headings
+ * Design: Precision Industrial — white/gray-50 bg, green #56A837 accent, Prompt font headings
  */
 import React from "react";
 import { Loader2, AlertTriangle, BookOpen, ChevronRight, Info } from "lucide-react";
@@ -93,8 +93,8 @@ export function WidgetActionButton({
       className="gap-1.5 text-xs"
       style={
         variant === "default"
-          ? { background: "#51AF37", borderColor: "#51AF37", color: "#fff" }
-          : { borderColor: "#51AF37", color: "#51AF37" }
+          ? { background: "#56A837", borderColor: "#56A837", color: "#fff" }
+          : { borderColor: "#56A837", color: "#56A837" }
       }
     >
       {icon}
@@ -138,7 +138,7 @@ export function RecommendedPlaybookLink({
 export function WidgetProgressBar({
   value,
   max = 100,
-  color = "#51AF37",
+  color = "#56A837",
   label,
 }: {
   value: number;
@@ -192,8 +192,8 @@ export function WidgetSectionHeader({
         <span
           className="text-xs font-semibold px-2 py-0.5 rounded-full"
           style={{
-            background: `${badgeColor || "#51AF37"}18`,
-            color: badgeColor || "#51AF37",
+            background: `${badgeColor || "#56A837"}18`,
+            color: badgeColor || "#56A837",
           }}
         >
           {badge}
@@ -213,8 +213,8 @@ export function WidgetBlockerItem({
 }) {
   const colors = {
     error: { bg: "bg-red-50", border: "border-red-100", text: "text-red-700", dot: "#ef4444" },
-    warning: { bg: "bg-amber-50", border: "border-amber-100", text: "text-amber-700", dot: "#F49C13" },
-    info: { bg: "bg-blue-50", border: "border-blue-100", text: "text-blue-700", dot: "#3A97D3" },
+    warning: { bg: "bg-amber-50", border: "border-amber-100", text: "text-amber-700", dot: "#F69111" },
+    info: { bg: "bg-blue-50", border: "border-blue-100", text: "text-blue-700", dot: "#3B85BA" },
   };
   const c = colors[severity];
   return (

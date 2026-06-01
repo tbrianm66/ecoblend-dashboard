@@ -37,7 +37,7 @@ export default function MissingEvidenceCard({ ventureId, module }: MissingEviden
   if (!data) return null;
 
   const progressColor =
-    data.confidenceScore >= 80 ? "#51AF37" : data.confidenceScore >= 50 ? "#F49C13" : "#ef4444";
+    data.confidenceScore >= 80 ? "#56A837" : data.confidenceScore >= 50 ? "#F69111" : "#ef4444";
 
   return (
     <div className="flex flex-col gap-4">
@@ -46,7 +46,7 @@ export default function MissingEvidenceCard({ ventureId, module }: MissingEviden
         <WidgetSectionHeader
           title="Evidence Gaps"
           badge={data.missing.length > 0 ? `${data.missing.length} missing` : "Complete"}
-          badgeColor={data.missing.length > 0 ? "#F49C13" : "#51AF37"}
+          badgeColor={data.missing.length > 0 ? "#F69111" : "#56A837"}
           icon={<FileSearch size={14} />}
         />
         <WidgetProgressBar

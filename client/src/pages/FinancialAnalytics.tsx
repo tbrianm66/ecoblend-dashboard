@@ -160,7 +160,7 @@ export default function FinancialAnalytics() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {[
                 { label: "Active P&L Models", value: finModelStats.totalPlModels ?? 0, color: "#22c55e" },
-                { label: "Runway Scenarios", value: finModelStats.totalRunwayScenarios ?? 0, color: "#3A97D3" },
+                { label: "Runway Scenarios", value: finModelStats.totalRunwayScenarios ?? 0, color: "#3B85BA" },
                 { label: "Exit Waterfall Models", value: finModelStats.totalWaterfallModels ?? 0, color: "#7c3aed" },
                 { label: "Investor Reports", value: finModelStats.totalReports ?? 0, color: "#f59e0b" },
               ].map(s => (

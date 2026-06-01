@@ -74,15 +74,15 @@ function OverviewTab() {
   const { data: summary } = trpc.commercialCrm.summary.get.useQuery({});
 
   const kpis = [
-    { label: "Total Contacts", value: summary?.totalContacts ?? 0, icon: Users, color: "#3A97D3" },
-    { label: "Qualified Leads", value: summary?.qualifiedLeads ?? 0, sub: `of ${summary?.totalLeads ?? 0} total`, icon: Target, color: "#51AF37" },
-    { label: "Pipeline Value", value: fmt(summary?.totalPipelineValue), icon: DollarSign, color: "#F49C13" },
+    { label: "Total Contacts", value: summary?.totalContacts ?? 0, icon: Users, color: "#3B85BA" },
+    { label: "Qualified Leads", value: summary?.qualifiedLeads ?? 0, sub: `of ${summary?.totalLeads ?? 0} total`, icon: Target, color: "#56A837" },
+    { label: "Pipeline Value", value: fmt(summary?.totalPipelineValue), icon: DollarSign, color: "#F69111" },
     { label: "Win Rate", value: `${summary?.winRate ?? 0}%`, sub: `Avg deal ${fmt(summary?.avgDealSize)}`, icon: TrendingUp, color: "#8b5cf6" },
   ];
 
   const stages = [
-    { label: "Open Deals", value: summary?.openDeals ?? 0, color: "#3A97D3" },
-    { label: "Won", value: summary?.wonDeals ?? 0, color: "#51AF37" },
+    { label: "Open Deals", value: summary?.openDeals ?? 0, color: "#3B85BA" },
+    { label: "Won", value: summary?.wonDeals ?? 0, color: "#56A837" },
     { label: "Lost", value: summary?.lostDeals ?? 0, color: "#ef4444" },
   ];
 
@@ -386,7 +386,7 @@ function DealPipelineTab() {
   // Group deals by status for a Kanban-style view
   const stages = ["open", "won", "lost", "on_hold"];
   const stageLabels: Record<string, string> = { open: "Open", won: "Won", lost: "Lost", on_hold: "On Hold" };
-  const stageColors: Record<string, string> = { open: "#3A97D3", won: "#51AF37", lost: "#ef4444", on_hold: "#6b7280" };
+  const stageColors: Record<string, string> = { open: "#3B85BA", won: "#56A837", lost: "#ef4444", on_hold: "#6b7280" };
 
   return (
     <div className="space-y-4">
@@ -618,7 +618,7 @@ export default function CommercialCRM() {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#3A97D315", color: "#3A97D3" }}>Commercial</span>
+              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#3B85BA15", color: "#3B85BA" }}>Commercial</span>
               <span className="text-xs text-gray-400">·</span>
               <span className="text-xs text-gray-400 font-mono">Go-to-Market Execution</span>
             </div>

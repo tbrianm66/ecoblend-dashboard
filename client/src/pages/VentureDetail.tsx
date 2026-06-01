@@ -229,10 +229,10 @@ export default function VentureDetail() {
                 <div className="ml-auto flex flex-col items-end">
                   <span className="text-xs text-gray-400 mb-0.5">Computed VRL</span>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-bold font-mono" style={{ color: "#51AF37" }}>{vrlComputedScore.vrlScore.toFixed(1)}</span>
+                    <span className="text-3xl font-bold font-mono" style={{ color: "#56A837" }}>{vrlComputedScore.vrlScore.toFixed(1)}</span>
                     <span className="text-sm text-gray-400">/9</span>
                   </div>
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded" style={{ background: "#51AF3715", color: "#51AF37" }}>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded" style={{ background: "#56A83715", color: "#56A837" }}>
                     L{vrlComputedScore.vrlLevel}: {vrlComputedScore.vrlLevelLabel}
                   </span>
                 </div>
@@ -405,11 +405,11 @@ export default function VentureDetail() {
 
         {/* BMC / MMC */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb", borderTop: "3px solid #51AF37" }}>
+          <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb", borderTop: "3px solid #56A837" }}>
             <h3 className="font-bold text-gray-900 mb-2">Business Model Canvas (BMC)</h3>
             <p className="text-sm text-gray-600">{venture.bmc}</p>
           </div>
-          <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb", borderTop: "3px solid #3A97D3" }}>
+          <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb", borderTop: "3px solid #3B85BA" }}>
             <h3 className="font-bold text-gray-900 mb-2">Mission Model Canvas (MMC)</h3>
             <p className="text-sm text-gray-600">{venture.mmc}</p>
           </div>
@@ -523,9 +523,9 @@ const BMC_BLOCKS: BmcBlock[] = ["Key Partners","Key Activities","Key Resources",
 const MMC_BLOCKS: MmcBlock[] = ["Mission","Beneficiaries","Value Created","Key Partners (Mission)","Key Activities (Mission)","Key Resources (Mission)","Channels (Mission)","Cost Structure (Mission)","Funding Streams"];
 
 const STATUS_COLOUR: Record<HypothesisStatus, string> = {
-  Validated: "#51AF37",
+  Validated: "#56A837",
   Invalidated: "#ef4444",
-  Partial: "#F49C13",
+  Partial: "#F69111",
   Pending: "#9ca3af",
 };
 
@@ -601,8 +601,8 @@ function CanvasEvidenceSummary({ ventureId, ventureColor }: { ventureId: string;
       <div className="grid grid-cols-4 divide-x" style={{ borderBottom: "1px solid #f3f4f6" }}>
         {[
           { label: "Total Blocks", value: blocks.length, color: "#6b7280" },
-          { label: "Validated", value: validatedCount, color: "#51AF37" },
-          { label: "Partial", value: partialCount, color: "#F49C13" },
+          { label: "Validated", value: validatedCount, color: "#56A837" },
+          { label: "Partial", value: partialCount, color: "#F69111" },
           { label: "Invalidated", value: invalidatedCount, color: "#ef4444" },
         ].map(s => (
           <div key={s.label} className="px-4 py-3 text-center">

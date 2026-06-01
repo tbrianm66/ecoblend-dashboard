@@ -24,15 +24,15 @@ import {
 
 // ── Colour helpers ─────────────────────────────────────────────────────────────
 const STATUS_COLORS: Record<string, string> = {
-  draft: "#6b7280", ingested: "#3A97D3", validated: "#51AF37",
+  draft: "#6b7280", ingested: "#3B85BA", validated: "#56A837",
   published: "#22c55e", archived: "#9ca3af", error: "#ef4444",
-  active: "#51AF37", paused: "#F49C13", deprecated: "#6b7280",
-  ready: "#51AF37", indexing: "#3A97D3", stale: "#F49C13",
-  running: "#3A97D3", success: "#51AF37", failed: "#ef4444",
-  cancelled: "#6b7280", timeout: "#F49C13",
-  open: "#F49C13", reviewed: "#3A97D3", actioned: "#51AF37", dismissed: "#6b7280",
-  training: "#3A97D3", evaluating: "#F49C13", completed: "#51AF37",
-  preparing: "#6b7280", labelling: "#F49C13",
+  active: "#56A837", paused: "#F69111", deprecated: "#6b7280",
+  ready: "#56A837", indexing: "#3B85BA", stale: "#F69111",
+  running: "#3B85BA", success: "#56A837", failed: "#ef4444",
+  cancelled: "#6b7280", timeout: "#F69111",
+  open: "#F69111", reviewed: "#3B85BA", actioned: "#56A837", dismissed: "#6b7280",
+  training: "#3B85BA", evaluating: "#F69111", completed: "#56A837",
+  preparing: "#6b7280", labelling: "#F69111",
 };
 
 function StatusBadge({ status }: { status: string }) {
@@ -59,7 +59,7 @@ function KpiCard({ label, value, sub, accent, icon: Icon }: { label: string; val
 
 // ── Quality Gauge ──────────────────────────────────────────────────────────────
 function QualityGauge({ score }: { score: number }) {
-  const color = score >= 80 ? "#51AF37" : score >= 60 ? "#F49C13" : "#ef4444";
+  const color = score >= 80 ? "#56A837" : score >= 60 ? "#F69111" : "#ef4444";
   const circumference = 2 * Math.PI * 40;
   const offset = circumference - (score / 100) * circumference;
   return (
@@ -87,16 +87,16 @@ function OverviewTab() {
     <div className="space-y-6">
       {/* KPI Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard label="Data Assets" value={overview?.totalAssets ?? 0} sub="registered" accent="#3A97D3" icon={Database} />
-        <KpiCard label="Avg Quality Score" value={`${overview?.avgDataQuality ?? 0}%`} sub="across all assets" accent={overview?.avgDataQuality ?? 0 >= 80 ? "#51AF37" : "#F49C13"} icon={BarChart2} />
-        <KpiCard label="Active AI Pipelines" value={overview?.activePipelines ?? 0} sub={`of ${overview?.totalPipelines ?? 0} total`} accent="#51AF37" icon={Cpu} />
+        <KpiCard label="Data Assets" value={overview?.totalAssets ?? 0} sub="registered" accent="#3B85BA" icon={Database} />
+        <KpiCard label="Avg Quality Score" value={`${overview?.avgDataQuality ?? 0}%`} sub="across all assets" accent={overview?.avgDataQuality ?? 0 >= 80 ? "#56A837" : "#F69111"} icon={BarChart2} />
+        <KpiCard label="Active AI Pipelines" value={overview?.activePipelines ?? 0} sub={`of ${overview?.totalPipelines ?? 0} total`} accent="#56A837" icon={Cpu} />
         <KpiCard label="RAG Pipelines Ready" value={overview?.readyRagPipelines ?? 0} sub={`of ${overview?.totalRagPipelines ?? 0} total`} accent="#22c55e" icon={Search} />
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard label="Total Pipeline Runs" value={overview?.totalRuns ?? 0} sub="all time" accent="#3A97D3" icon={Activity} />
+        <KpiCard label="Total Pipeline Runs" value={overview?.totalRuns ?? 0} sub="all time" accent="#3B85BA" icon={Activity} />
         <KpiCard label="RAG Documents" value={overview?.totalDocuments ?? 0} sub="indexed" accent="#6b7280" icon={FileText} />
-        <KpiCard label="Fine-Tuning Jobs" value={overview?.completedFineTuningJobs ?? 0} sub="completed" accent="#51AF37" icon={Layers} />
-        <KpiCard label="Feedback Satisfaction" value={`${overview?.feedbackSatisfaction ?? 0}%`} sub={`${overview?.openFeedback ?? 0} open items`} accent="#F49C13" icon={MessageSquare} />
+        <KpiCard label="Fine-Tuning Jobs" value={overview?.completedFineTuningJobs ?? 0} sub="completed" accent="#56A837" icon={Layers} />
+        <KpiCard label="Feedback Satisfaction" value={`${overview?.feedbackSatisfaction ?? 0}%`} sub={`${overview?.openFeedback ?? 0} open items`} accent="#F69111" icon={MessageSquare} />
       </div>
 
       {/* Asset breakdown */}
@@ -147,7 +147,7 @@ function OverviewTab() {
             The overall quality score is the average of all assessed data assets across completeness, accuracy, freshness, consistency, uniqueness, and validity dimensions.
           </p>
           <div className="flex gap-4 mt-3">
-            {[["≥ 80", "#51AF37", "Good"], ["60–79", "#F49C13", "Fair"], ["< 60", "#ef4444", "Poor"]].map(([range, color, label]) => (
+            {[["≥ 80", "#56A837", "Good"], ["60–79", "#F69111", "Fair"], ["< 60", "#ef4444", "Poor"]].map(([range, color, label]) => (
               <div key={range} className="flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full inline-block" style={{ background: color }} />
                 <span className="text-xs text-gray-500">{range} — {label}</span>
@@ -214,7 +214,7 @@ function DataAssetsTab() {
             </SelectContent>
           </Select>
         </div>
-        <Button size="sm" className="gap-1.5 text-xs" style={{ background: "#3A97D3", color: "#fff" }} onClick={openNew}><Plus size={13} /> Register Asset</Button>
+        <Button size="sm" className="gap-1.5 text-xs" style={{ background: "#3B85BA", color: "#fff" }} onClick={openNew}><Plus size={13} /> Register Asset</Button>
       </div>
 
       <div className="bg-white rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: "#e5e7eb" }}>
@@ -239,7 +239,7 @@ function DataAssetsTab() {
                 <td className="px-4 py-3 text-gray-500">{a.rowCount?.toLocaleString() ?? "—"}</td>
                 <td className="px-4 py-3">
                   {a.overallQuality != null ? (
-                    <span className="font-mono font-semibold" style={{ color: a.overallQuality >= 80 ? "#51AF37" : a.overallQuality >= 60 ? "#F49C13" : "#ef4444" }}>
+                    <span className="font-mono font-semibold" style={{ color: a.overallQuality >= 80 ? "#56A837" : a.overallQuality >= 60 ? "#F69111" : "#ef4444" }}>
                       {a.overallQuality.toFixed(1)}%
                     </span>
                   ) : <span className="text-gray-400">—</span>}
@@ -367,7 +367,7 @@ function QualityScoringTab() {
         {selectedAsset && (
           <>
             <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={handleAiAssess} disabled={aiAssess.isPending}><Zap size={12} />{aiAssess.isPending ? "Assessing…" : "AI Assess"}</Button>
-            <Button size="sm" className="gap-1.5 text-xs" style={{ background: "#3A97D3", color: "#fff" }} onClick={() => { setForm({ assetId: selectedAsset.id, assessedBy: "manual" }); setOpen(true); }}><Plus size={13} /> Manual Score</Button>
+            <Button size="sm" className="gap-1.5 text-xs" style={{ background: "#3B85BA", color: "#fff" }} onClick={() => { setForm({ assetId: selectedAsset.id, assessedBy: "manual" }); setOpen(true); }}><Plus size={13} /> Manual Score</Button>
           </>
         )}
       </div>
@@ -394,7 +394,7 @@ function QualityScoringTab() {
               <div className="grid grid-cols-3 lg:grid-cols-6 gap-3">
                 {dims.map(dim => {
                   const val = (scores[0] as any)[dim] ?? 0;
-                  const color = val >= 80 ? "#51AF37" : val >= 60 ? "#F49C13" : "#ef4444";
+                  const color = val >= 80 ? "#56A837" : val >= 60 ? "#F69111" : "#ef4444";
                   return (
                     <div key={dim} className="text-center">
                       <div className="text-lg font-bold" style={{ color }}>{val.toFixed(0)}%</div>
@@ -421,7 +421,7 @@ function QualityScoringTab() {
                 {scores.map(s => (
                   <tr key={s.id} className="border-b hover:bg-gray-50" style={{ borderColor: "#f3f4f6" }}>
                     <td className="px-3 py-2 text-gray-500">{new Date(s.createdAt).toLocaleDateString()}</td>
-                    <td className="px-3 py-2 font-bold" style={{ color: (s.overallScore ?? 0) >= 80 ? "#51AF37" : (s.overallScore ?? 0) >= 60 ? "#F49C13" : "#ef4444" }}>{s.overallScore?.toFixed(1) ?? "—"}%</td>
+                    <td className="px-3 py-2 font-bold" style={{ color: (s.overallScore ?? 0) >= 80 ? "#56A837" : (s.overallScore ?? 0) >= 60 ? "#F69111" : "#ef4444" }}>{s.overallScore?.toFixed(1) ?? "—"}%</td>
                     {dims.map(d => <td key={d} className="px-3 py-2 text-gray-500">{((s as any)[d] ?? "—").toString()}{(s as any)[d] != null ? "%" : ""}</td>)}
                     <td className="px-3 py-2"><StatusBadge status={s.assessedBy} /></td>
                     <td className="px-3 py-2"><button onClick={() => del.mutate({ id: s.id })} className="w-6 h-6 rounded flex items-center justify-center hover:bg-red-50"><Trash2 size={11} className="text-red-400" /></button></td>
@@ -505,7 +505,7 @@ function AiPipelinesTab() {
             <span key={label} className="text-xs text-gray-500">{label}: <strong>{count}</strong></span>
           ))}
         </div>
-        <Button size="sm" className="gap-1.5 text-xs" style={{ background: "#51AF37", color: "#fff" }} onClick={openNew}><Plus size={13} /> New Pipeline</Button>
+        <Button size="sm" className="gap-1.5 text-xs" style={{ background: "#56A837", color: "#fff" }} onClick={openNew}><Plus size={13} /> New Pipeline</Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -533,9 +533,9 @@ function AiPipelinesTab() {
             {p.description && <p className="text-xs text-gray-500 mb-3">{p.description}</p>}
             <div className="grid grid-cols-4 gap-2">
               {[
-                ["Runs", p.totalRuns ?? 0, "#3A97D3"],
-                ["Success %", p.successRate != null ? `${p.successRate.toFixed(0)}%` : "—", "#51AF37"],
-                ["Avg Latency", p.avgLatencyMs != null ? `${p.avgLatencyMs}ms` : "—", "#F49C13"],
+                ["Runs", p.totalRuns ?? 0, "#3B85BA"],
+                ["Success %", p.successRate != null ? `${p.successRate.toFixed(0)}%` : "—", "#56A837"],
+                ["Avg Latency", p.avgLatencyMs != null ? `${p.avgLatencyMs}ms` : "—", "#F69111"],
                 ["Avg Tokens", p.avgTokensUsed ?? "—", "#6b7280"],
               ].map(([label, val, color]) => (
                 <div key={label as string} className="text-center">
@@ -685,7 +685,7 @@ function RagPipelinesTab() {
               </div>
             </div>
             <div className="grid grid-cols-3 gap-2 mt-3">
-              {[["Docs", r.documentCount ?? 0, "#3A97D3"], ["Chunks", r.chunkCount ?? 0, "#6b7280"], ["Queries", r.totalQueries ?? 0, "#51AF37"]].map(([l, v, c]) => (
+              {[["Docs", r.documentCount ?? 0, "#3B85BA"], ["Chunks", r.chunkCount ?? 0, "#6b7280"], ["Queries", r.totalQueries ?? 0, "#56A837"]].map(([l, v, c]) => (
                 <div key={l as string} className="text-center">
                   <div className="text-sm font-bold" style={{ color: c as string }}>{v}</div>
                   <div className="text-xs text-gray-400">{l}</div>
@@ -701,7 +701,7 @@ function RagPipelinesTab() {
         <div className="bg-white rounded-xl border p-5 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-bold text-gray-700">Documents in "{selectedRag.name}"</h3>
-            <Button size="sm" className="gap-1.5 text-xs" style={{ background: "#3A97D3", color: "#fff" }} onClick={() => { setDocForm({ ragPipelineId: selectedRag.id, contentType: "text" }); setDocOpen(true); }}><Plus size={13} /> Add Document</Button>
+            <Button size="sm" className="gap-1.5 text-xs" style={{ background: "#3B85BA", color: "#fff" }} onClick={() => { setDocForm({ ragPipelineId: selectedRag.id, contentType: "text" }); setDocOpen(true); }}><Plus size={13} /> Add Document</Button>
           </div>
           <table className="w-full text-xs">
             <thead>
@@ -821,7 +821,7 @@ function FineTuningTab() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-bold text-gray-700">Training Datasets</h3>
-          <Button size="sm" className="gap-1.5 text-xs" style={{ background: "#3A97D3", color: "#fff" }} onClick={() => { setEditingDs(null); setDsForm({ format: "jsonl", status: "draft", trainSplit: 0.8, valSplit: 0.1, testSplit: 0.1, totalSamples: 0, labelledSamples: 0 }); setDsOpen(true); }}><Plus size={13} /> New Dataset</Button>
+          <Button size="sm" className="gap-1.5 text-xs" style={{ background: "#3B85BA", color: "#fff" }} onClick={() => { setEditingDs(null); setDsForm({ format: "jsonl", status: "draft", trainSplit: 0.8, valSplit: 0.1, testSplit: 0.1, totalSamples: 0, labelledSamples: 0 }); setDsOpen(true); }}><Plus size={13} /> New Dataset</Button>
         </div>
         <div className="bg-white rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: "#e5e7eb" }}>
           <table className="w-full text-xs">
@@ -841,7 +841,7 @@ function FineTuningTab() {
                   <td className="px-3 py-2 text-gray-500">{d.totalSamples}</td>
                   <td className="px-3 py-2 text-gray-500">{d.labelledSamples} ({d.totalSamples > 0 ? Math.round((d.labelledSamples / d.totalSamples) * 100) : 0}%)</td>
                   <td className="px-3 py-2 text-gray-500 uppercase">{d.format}</td>
-                  <td className="px-3 py-2">{d.qualityScore != null ? <span className="font-mono" style={{ color: d.qualityScore >= 80 ? "#51AF37" : "#F49C13" }}>{d.qualityScore.toFixed(0)}%</span> : "—"}</td>
+                  <td className="px-3 py-2">{d.qualityScore != null ? <span className="font-mono" style={{ color: d.qualityScore >= 80 ? "#56A837" : "#F69111" }}>{d.qualityScore.toFixed(0)}%</span> : "—"}</td>
                   <td className="px-3 py-2"><StatusBadge status={d.status} /></td>
                   <td className="px-3 py-2">
                     <div className="flex gap-1">
@@ -860,7 +860,7 @@ function FineTuningTab() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-bold text-gray-700">Fine-Tuning Jobs</h3>
-          <Button size="sm" className="gap-1.5 text-xs" style={{ background: "#51AF37", color: "#fff" }} onClick={() => { setEditingJob(null); setJobForm({ status: "draft" }); setJobOpen(true); }}><Plus size={13} /> New Job</Button>
+          <Button size="sm" className="gap-1.5 text-xs" style={{ background: "#56A837", color: "#fff" }} onClick={() => { setEditingJob(null); setJobForm({ status: "draft" }); setJobOpen(true); }}><Plus size={13} /> New Job</Button>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {jobs.length === 0 && (
@@ -882,7 +882,7 @@ function FineTuningTab() {
                 </div>
               </div>
               <div className="grid grid-cols-4 gap-2 mt-2">
-                {[["Train Loss", j.trainLoss?.toFixed(4) ?? "—", "#3A97D3"], ["Val Loss", j.valLoss?.toFixed(4) ?? "—", "#F49C13"], ["Accuracy", j.accuracy != null ? `${j.accuracy.toFixed(1)}%` : "—", "#51AF37"], ["Cost", j.actualCostUsd != null ? `$${j.actualCostUsd.toFixed(2)}` : "—", "#6b7280"]].map(([l, v, c]) => (
+                {[["Train Loss", j.trainLoss?.toFixed(4) ?? "—", "#3B85BA"], ["Val Loss", j.valLoss?.toFixed(4) ?? "—", "#F69111"], ["Accuracy", j.accuracy != null ? `${j.accuracy.toFixed(1)}%` : "—", "#56A837"], ["Cost", j.actualCostUsd != null ? `$${j.actualCostUsd.toFixed(2)}` : "—", "#6b7280"]].map(([l, v, c]) => (
                   <div key={l as string} className="text-center">
                     <div className="text-sm font-bold" style={{ color: c as string }}>{v}</div>
                     <div className="text-xs text-gray-400">{l}</div>
@@ -1018,9 +1018,9 @@ function FeedbackLoopsTab() {
     <div className="space-y-4">
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-4">
-        <KpiCard label="Total Feedback" value={feedback.length} accent="#3A97D3" icon={MessageSquare} />
-        <KpiCard label="Open Items" value={openFeedback} sub="awaiting review" accent="#F49C13" icon={AlertCircle} />
-        <KpiCard label="Satisfaction" value={`${satisfaction}%`} sub="positive ratings" accent={satisfaction >= 70 ? "#51AF37" : "#F49C13"} icon={Star} />
+        <KpiCard label="Total Feedback" value={feedback.length} accent="#3B85BA" icon={MessageSquare} />
+        <KpiCard label="Open Items" value={openFeedback} sub="awaiting review" accent="#F69111" icon={AlertCircle} />
+        <KpiCard label="Satisfaction" value={`${satisfaction}%`} sub="positive ratings" accent={satisfaction >= 70 ? "#56A837" : "#F69111"} icon={Star} />
       </div>
 
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -1031,7 +1031,7 @@ function FeedbackLoopsTab() {
             {["open", "reviewed", "actioned", "dismissed"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Button size="sm" className="gap-1.5 text-xs" style={{ background: "#F49C13", color: "#fff" }} onClick={() => { setForm({ feedbackType: "rating", rating: 3 }); setOpen(true); }}><Plus size={13} /> Submit Feedback</Button>
+        <Button size="sm" className="gap-1.5 text-xs" style={{ background: "#F69111", color: "#fff" }} onClick={() => { setForm({ feedbackType: "rating", rating: 3 }); setOpen(true); }}><Plus size={13} /> Submit Feedback</Button>
       </div>
 
       <div className="bg-white rounded-xl border overflow-hidden shadow-sm" style={{ borderColor: "#e5e7eb" }}>
@@ -1193,7 +1193,7 @@ export default function DataManagement() {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#3A97D315", color: "#3A97D3" }}>
+              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#3B85BA15", color: "#3B85BA" }}>
                 Venture OS · Sections 8 & 9
               </span>
             </div>

@@ -251,7 +251,7 @@ export default function AdminWidgetAnalytics() {
             <div className="flex items-center gap-2 mb-1">
               <span
                 className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded"
-                style={{ background: "#51AF3715", color: "#51AF37" }}
+                style={{ background: "#56A83715", color: "#56A837" }}
               >
                 Admin
               </span>
@@ -284,7 +284,7 @@ export default function AdminWidgetAnalytics() {
               size="sm"
               variant="outline"
               className="gap-1.5 text-xs"
-              style={{ borderColor: "#3A97D3", color: "#3A97D3" }}
+              style={{ borderColor: "#3B85BA", color: "#3B85BA" }}
               onClick={() =>
                 csvData?.rows && exportCsv(csvData.rows, `widget-analytics-${days}d.csv`)
               }
@@ -361,21 +361,21 @@ export default function AdminWidgetAnalytics() {
                 label="Total Widget Views"
                 value={fmt(ov.totalViews)}
                 icon={Eye}
-                accent="#51AF37"
+                accent="#56A837"
               />
               <KpiCard
                 label="Playbook Opens"
                 value={fmt(ov.playbookOpens)}
                 sub={`Open rate: ${openRate}`}
                 icon={BookOpenCheck}
-                accent="#3A97D3"
+                accent="#3B85BA"
               />
               <KpiCard
                 label="Playbook Completions"
                 value={fmt(ov.playbookCompletions)}
                 sub={`Completion rate: ${completionRate}`}
                 icon={CheckCircle2}
-                accent="#51AF37"
+                accent="#56A837"
               />
               <KpiCard
                 label="Dismissals"
@@ -395,13 +395,13 @@ export default function AdminWidgetAnalytics() {
                 label="Approvals Supported"
                 value={fmt(ov.approvalsSupported)}
                 icon={CheckCircle2}
-                accent="#F49C13"
+                accent="#F69111"
               />
               <KpiCard
                 label="Investor Warnings"
                 value={fmt(ov.investorWarnings)}
                 icon={AlertTriangle}
-                accent="#F49C13"
+                accent="#F69111"
               />
               <KpiCard
                 label="Draft Packs w/ Warnings"
@@ -422,8 +422,8 @@ export default function AdminWidgetAnalytics() {
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
             {[
               { label: "Displayed", value: fmt(recPerf.displayed), accent: "#6b7280" },
-              { label: "Opened", value: fmt(recPerf.opened), accent: "#3A97D3" },
-              { label: "Completed", value: fmt(recPerf.completed), accent: "#51AF37" },
+              { label: "Opened", value: fmt(recPerf.opened), accent: "#3B85BA" },
+              { label: "Completed", value: fmt(recPerf.completed), accent: "#56A837" },
               { label: "Dismissed", value: fmt(recPerf.dismissed), accent: "#ef4444" },
               { label: "Evidence Linked", value: fmt(recPerf.evidenceLinked), accent: "#8b5cf6" },
             ].map((item) => (
@@ -559,7 +559,7 @@ export default function AdminWidgetAnalytics() {
                   key={r.status}
                   variant="outline"
                   className="text-xs"
-                  style={{ color: "#51AF37", borderColor: "#51AF37" }}
+                  style={{ color: "#56A837", borderColor: "#56A837" }}
                 >
                   {r.status}
                 </Badge>,
@@ -622,7 +622,7 @@ export default function AdminWidgetAnalytics() {
               label="Open Rate Threshold"
               value={`${qualityData?.thresholds?.lowOpenRate ?? 20}%`}
               sub="Flag below this rate"
-              accent="#3A97D3"
+              accent="#3B85BA"
               icon={TrendingDown}
             />
           </div>

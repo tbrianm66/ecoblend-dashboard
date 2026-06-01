@@ -165,9 +165,9 @@ const CATEGORY_ICONS: Record<ServiceCategory, React.ComponentType<{ size?: numbe
 const CATEGORY_COLOURS: Record<ServiceCategory, string> = {
   "Legal & IP":             "#8b5cf6",
   "Branding & Design":      "#ec4899",
-  "Engineering & R&D":      "#3A97D3",
+  "Engineering & R&D":      "#3B85BA",
   "Finance & Investment":   "#f59e0b",
-  "Marketing & PR":         "#51AF37",
+  "Marketing & PR":         "#56A837",
   "Strategy & Research":    "#06b6d4",
   "Technology & Dev":       "#6366f1",
   "People & HR":            "#f97316",
@@ -177,9 +177,9 @@ const CATEGORY_COLOURS: Record<ServiceCategory, string> = {
 const PRIORITY_COLOURS = { High: "#ef4444", Medium: "#f59e0b", Low: "#9ca3af" };
 const STATUS_COLOURS: Record<CommissionStatus, { bg: string; text: string }> = {
   Open:         { bg: "#f3f4f6", text: "#6b7280" },
-  Commissioned: { bg: "#eff6ff", text: "#3A97D3" },
+  Commissioned: { bg: "#eff6ff", text: "#3B85BA" },
   "In Review":  { bg: "#fffbeb", text: "#d97706" },
-  Complete:     { bg: "#f0fdf4", text: "#51AF37" },
+  Complete:     { bg: "#f0fdf4", text: "#56A837" },
   Cancelled:    { bg: "#fef2f2", text: "#ef4444" },
 };
 
@@ -197,7 +197,7 @@ function StarRating({ rating }: { rating: number }) {
 }
 
 function AvailabilityBadge({ status }: { status: Specialist["availability"] }) {
-  const c = status === "Available" ? "#51AF37" : status === "Limited" ? "#f59e0b" : "#ef4444";
+  const c = status === "Available" ? "#56A837" : status === "Limited" ? "#f59e0b" : "#ef4444";
   return (
     <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: `${c}15`, color: c }}>
       {status}
@@ -268,7 +268,7 @@ function CommissionModal({
 
         {/* Revenue note */}
         <div className="rounded-lg p-3 mb-4 text-xs" style={{ background: "#f0fdf4", border: "1px solid #bbf7d0" }}>
-          <span className="font-semibold" style={{ color: "#51AF37" }}>EcoRace Studio earns {platformFee}% referral fee</span>
+          <span className="font-semibold" style={{ color: "#56A837" }}>EcoRace Studio earns {platformFee}% referral fee</span>
           <span className="text-gray-500"> on this engagement. Revenue is recognised on commission confirmation.</span>
         </div>
 
@@ -417,9 +417,9 @@ export default function SpecialistServices() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
           {[
             { label: "Open Tasks", value: openTasks, sub: "awaiting specialist", color: "#8b5cf6" },
-            { label: "Specialists", value: SPECIALISTS.length, sub: "vetted & available", color: "#3A97D3" },
+            { label: "Specialists", value: SPECIALISTS.length, sub: "vetted & available", color: "#3B85BA" },
             { label: "Commissioned", value: totalCommissioned, sub: "engagements active", color: "#f59e0b" },
-            { label: "Completed", value: totalComplete, sub: "jobs delivered", color: "#51AF37" },
+            { label: "Completed", value: totalComplete, sub: "jobs delivered", color: "#56A837" },
           ].map(k => (
             <div key={k.label} className="vos-metric">
               <span className="vos-metric-label">{k.label}</span>
@@ -691,7 +691,7 @@ export default function SpecialistServices() {
                             </Button>
                           )}
                           {c.status === "Complete" && (
-                            <span className="flex items-center gap-1 text-xs font-semibold" style={{ color: "#51AF37" }}>
+                            <span className="flex items-center gap-1 text-xs font-semibold" style={{ color: "#56A837" }}>
                               <CheckCircle2 size={14} /> Delivered
                             </span>
                           )}

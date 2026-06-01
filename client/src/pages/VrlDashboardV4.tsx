@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { CheckCircle, XCircle, Clock, AlertTriangle, Plus, TrendingUp, Target, Zap } from "lucide-react";
 
 const STAGE_COLORS: Record<string, string> = {
-  discover: "#3A97D3", define: "#8B5CF6", build: "#F49C13", launch: "#51AF37", spinout: "#EC4899",
+  discover: "#3B85BA", define: "#8B5CF6", build: "#F69111", launch: "#56A837", spinout: "#EC4899",
 };
 const GATE_STATUS_ICON: Record<string, React.ReactNode> = {
   complete:    <CheckCircle size={14} className="text-green-500" />,
@@ -68,7 +68,7 @@ export default function VrlDashboardV4() {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#3A97D315", color: "#3A97D3" }}>Sprint 73</span>
+              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#3B85BA15", color: "#3B85BA" }}>Sprint 73</span>
               <span className="text-xs text-gray-400">·</span>
               <span className="text-xs text-gray-400 font-mono">VRL Dashboard V4 — Spin-Out Readiness</span>
             </div>
@@ -86,7 +86,7 @@ export default function VrlDashboardV4() {
         <div className="grid grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
             <div className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">VRL Score</div>
-            <div className="text-3xl font-bold" style={{ color: "#3A97D3", fontFamily: "'Prompt', sans-serif" }}>{s?.overallVrlScore ?? 0}%</div>
+            <div className="text-3xl font-bold" style={{ color: "#3B85BA", fontFamily: "'Prompt', sans-serif" }}>{s?.overallVrlScore ?? 0}%</div>
           </div>
           <div className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
             <div className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Spin-Out Score</div>
@@ -149,7 +149,7 @@ export default function VrlDashboardV4() {
             ))}
             {/* Edit form */}
             {editGate && (
-              <Card className="border-2" style={{ borderColor: "#3A97D3" }}>
+              <Card className="border-2" style={{ borderColor: "#3B85BA" }}>
                 <CardHeader><CardTitle className="text-sm capitalize">Edit {editGate.stage} Gate</CardTitle></CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4 mb-4">
@@ -212,7 +212,7 @@ export default function VrlDashboardV4() {
             </div>
             <div className="space-y-3">
               {(checklist.data?.items ?? []).map((item: any) => (
-                <div key={item.gateKey} className="bg-white rounded-xl border p-4" style={{ borderColor: "#e5e7eb", borderLeft: `4px solid ${item.met ? "#51AF37" : "#e5e7eb"}` }}>
+                <div key={item.gateKey} className="bg-white rounded-xl border p-4" style={{ borderColor: "#e5e7eb", borderLeft: `4px solid ${item.met ? "#56A837" : "#e5e7eb"}` }}>
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-3">
                       {item.met ? <CheckCircle size={16} className="text-green-500 mt-0.5" /> : <XCircle size={16} className="text-gray-300 mt-0.5" />}
@@ -245,7 +245,7 @@ export default function VrlDashboardV4() {
               </Button>
             </div>
             {showActionForm && (
-              <Card className="mb-4 border-2" style={{ borderColor: "#51AF37" }}>
+              <Card className="mb-4 border-2" style={{ borderColor: "#56A837" }}>
                 <CardContent className="pt-4">
                   <div className="grid grid-cols-3 gap-3 mb-3">
                     <div className="col-span-2"><Label className="text-xs mb-1 block">Action</Label><Input value={newAction.action} onChange={e => setNewAction(a => ({ ...a, action: e.target.value }))} className="h-8 text-xs" placeholder="e.g. Complete ICP validation interviews" /></div>

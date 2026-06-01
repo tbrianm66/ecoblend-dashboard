@@ -54,7 +54,7 @@ const SOURCE_TYPES = [
 ] as const;
 
 const DOMAIN_COLORS: Record<Domain, string> = {
-  VRL:      "#51AF37",
+  VRL:      "#56A837",
   TRL:      "#1d4ed8",
   BRL:      "#7c3aed",
   IRL:      "#0891b2",
@@ -181,7 +181,7 @@ function UploadForm({ onSuccess }: { onSuccess: () => void }) {
   return (
     <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
       <div className="flex items-center gap-2 mb-5">
-        <Upload size={16} style={{ color: "#51AF37" }} />
+        <Upload size={16} style={{ color: "#56A837" }} />
         <h3 className="text-sm font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
           Add Document to Knowledge Base
         </h3>
@@ -200,7 +200,7 @@ function UploadForm({ onSuccess }: { onSuccess: () => void }) {
                 onClick={() => setSourceType(value)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                   sourceType === value
-                    ? "border-[#51AF37] bg-[#51AF3715] text-[#51AF37]"
+                    ? "border-[#56A837] bg-[#56A83715] text-[#56A837]"
                     : "border-gray-200 text-gray-500 hover:border-gray-300"
                 }`}
               >
@@ -325,13 +325,13 @@ function UploadForm({ onSuccess }: { onSuccess: () => void }) {
               PDF File *
             </label>
             <div
-              className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-[#51AF37] transition-colors"
-              style={{ borderColor: file ? "#51AF37" : "#e5e7eb" }}
+              className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-[#56A837] transition-colors"
+              style={{ borderColor: file ? "#56A837" : "#e5e7eb" }}
               onClick={() => fileInputRef.current?.click()}
             >
               {file ? (
                 <div className="flex items-center justify-center gap-2">
-                  <FileText size={16} style={{ color: "#51AF37" }} />
+                  <FileText size={16} style={{ color: "#56A837" }} />
                   <span className="text-sm font-medium text-gray-700">{file.name}</span>
                   <span className="text-xs text-gray-400">({(file.size / 1024 / 1024).toFixed(1)} MB)</span>
                 </div>
@@ -381,7 +381,7 @@ function UploadForm({ onSuccess }: { onSuccess: () => void }) {
         <Button
           onClick={handleSubmit}
           disabled={uploading}
-          style={{ background: "#51AF37", color: "white" }}
+          style={{ background: "#56A837", color: "white" }}
           className="gap-2"
         >
           {uploading ? (
@@ -542,7 +542,7 @@ function SearchPanel() {
   return (
     <div className="bg-white rounded-xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
       <div className="flex items-center gap-2 mb-5">
-        <Search size={16} style={{ color: "#3A97D3" }} />
+        <Search size={16} style={{ color: "#3B85BA" }} />
         <h3 className="text-sm font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
           Search Knowledge Base
         </h3>
@@ -578,7 +578,7 @@ function SearchPanel() {
         </Select>
         <Button
           onClick={handleSearch}
-          style={{ background: "#3A97D3", color: "white" }}
+          style={{ background: "#3B85BA", color: "white" }}
           className="gap-1.5"
         >
           <Search size={14} /> Search
@@ -673,7 +673,7 @@ export default function KnowledgeBase() {
             <div className="flex items-center gap-2 mb-1">
               <span
                 className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded"
-                style={{ background: "#51AF3715", color: "#51AF37" }}
+                style={{ background: "#56A83715", color: "#56A837" }}
               >
                 RAG Engine
               </span>
@@ -695,8 +695,8 @@ export default function KnowledgeBase() {
         {/* Stats row */}
         <div className="flex items-center gap-6 mt-4">
           {[
-            { label: "Documents", value: stats.documentCount, icon: BookOpen, color: "#51AF37" },
-            { label: "Chunks Indexed", value: stats.totalChunks.toLocaleString(), icon: Layers, color: "#3A97D3" },
+            { label: "Documents", value: stats.documentCount, icon: BookOpen, color: "#56A837" },
+            { label: "Chunks Indexed", value: stats.totalChunks.toLocaleString(), icon: Layers, color: "#3B85BA" },
             { label: "Words Indexed", value: stats.totalWords > 0 ? `${(stats.totalWords / 1000).toFixed(0)}k` : "0", icon: AlignLeft, color: "#7c3aed" },
             { label: "Domains Covered", value: stats.domainCount, icon: Database, color: "#d97706" },
           ].map(({ label, value, icon: Icon, color }) => (

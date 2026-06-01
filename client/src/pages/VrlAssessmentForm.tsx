@@ -163,7 +163,7 @@ export default function VrlAssessmentForm() {
       {/* Header */}
       <div className="px-8 py-6 border-b border-gray-800">
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#51AF3715", color: "#51AF37" }}>
+          <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#56A83715", color: "#56A837" }}>
             VRL Weighted Gating Model
           </span>
           <span className="text-xs text-gray-500">BEBUS-VRL-UPDATE-001</span>
@@ -185,7 +185,7 @@ export default function VrlAssessmentForm() {
             <select
               value={ventureId}
               onChange={e => setVentureId(e.target.value)}
-              className="w-full bg-[#0D1117] border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#51AF37]"
+              className="w-full bg-[#0D1117] border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#56A837]"
             >
               <option value="bebus">BEBUS</option>
               <option value="ecoblend">EcoComp</option>
@@ -261,7 +261,7 @@ export default function VrlAssessmentForm() {
             onClick={handleSubmit}
             disabled={submitMutation.isPending}
             className="w-full h-12 text-base font-semibold"
-            style={{ background: "#51AF37", color: "#fff" }}
+            style={{ background: "#56A837", color: "#fff" }}
           >
             {submitMutation.isPending ? "Submitting…" : "Submit VRL Assessment"}
             <ChevronRight size={18} className="ml-1" />
