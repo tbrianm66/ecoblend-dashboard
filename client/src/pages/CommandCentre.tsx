@@ -515,7 +515,7 @@ export default function CommandCentre() {
           </div>
         </div>
 
-        {/* ── Row 2: Financial — per-venture sparkline cards + ESG KPIs ── */}}
+        {/* ── Row 2: Financial — per-venture sparkline cards + ESG KPIs ── */}
         <div className="space-y-3">
           {/* Section label */}
           <div className="flex items-center justify-between">

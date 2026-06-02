@@ -36,6 +36,7 @@ import {
   governanceComplianceRouter,
   advancedStakeholderRouter,
 } from "./institutionalMemory.router";
+import { peopleIntelligenceRouter } from "./peopleIntelligence.router";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -255,6 +256,7 @@ export const appRouter = router({
   institutionalMemory: institutionalMemoryRouter,
   governanceCompliance: governanceComplianceRouter,
   advancedStakeholder: advancedStakeholderRouter,
+  peopleIntelligence: peopleIntelligenceRouter,
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

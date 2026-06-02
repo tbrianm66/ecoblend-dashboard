@@ -283,8 +283,144 @@ function SeverityBadge({ severity }: { severity: string }) {
   );
 }
 
+// ── Portfolio Dashboard Panel ─────────────────────────────────────────────────
+function PortfolioDashboard() {
+  const { data: summary, isLoading, refetch } = trpc.peopleIntelligence["dashboard.summary"].useQuery();
+  const { data: topRankings = [] } = trpc.peopleIntelligence["talent.topRankings"].useQuery({ limit: 8 });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-sm text-gray-500">Loading portfolio intelligence...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!summary) return null;
+
+  return (
+    <div className="space-y-6">
+      {/* KPI row */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        {[
+          { label: "Total Talent",    value: summary.totalTalent,    sub: "profiles",         color: "#3A97D3", icon: Users },
+          { label: "Available Now",   value: summary.availableTalent, sub: "ready to engage",  color: "#51AF37", icon: UserCheck },
+          { label: "Open Roles",      value: summary.openRoles,       sub: "unfilled positions",color: "#F49C13", icon: Briefcase },
+          { label: "Critical Gaps",   value: summary.criticalGaps,    sub: "need attention",   color: "#ef4444", icon: AlertTriangle },
+          { label: "Avg PVF Score",   value: `${summary.avgPvfScore}%`, sub: "portfolio fit",  color: "#8b5cf6", icon: TrendingUp },
+        ].map(({ label, value, sub, color, icon: Icon }) => (
+          <div key={label} className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
+            <div className="flex items-center gap-2 mb-1">
+              <Icon size={14} style={{ color }} />
+              <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">{label}</span>
+            </div>
+            <span className="text-3xl font-bold" style={{ color, fontFamily: "'Prompt', sans-serif" }}>{value}</span>
+            <p className="text-xs text-gray-400 mt-0.5">{sub}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        {/* Top Talent Rankings */}
+        <div className="bg-white rounded-xl border p-5 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>Top Talent by Capability</h3>
+            <button onClick={() => refetch()} className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1">
+              <RefreshCw size={11} /> Refresh
+            </button>
+          </div>
+          {topRankings.length === 0 ? (
+            <div className="py-8 text-center">
+              <Users size={24} className="mx-auto mb-2 text-gray-300" />
+              <p className="text-sm text-gray-400">No talent profiles yet</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {(topRankings as any[]).map((t: any, idx: number) => (
+                <div key={t.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
+                  <span className="text-lg font-bold text-gray-200 font-mono w-6 text-center">#{idx + 1}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm text-gray-900 truncate">{t.name}</p>
+                    <p className="text-xs text-gray-500 truncate">{t.currentRole ?? t.profileType}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                      style={{
+                        background: t.availability === 'Available' ? '#51AF3715' : '#F49C1315',
+                        color: t.availability === 'Available' ? '#51AF37' : '#F49C13',
+                      }}
+                    >
+                      {t.availability ?? 'Unknown'}
+                    </span>
+                    <div className="text-right">
+                      <p className="text-sm font-bold" style={{ color: "#3A97D3" }}>{Math.round(Number(t.avgCapScore) || 0)}</p>
+                      <p className="text-xs text-gray-400">cap</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Critical Gaps */}
+        <div className="bg-white rounded-xl border p-5 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
+          <h3 className="font-bold text-gray-900 mb-4" style={{ fontFamily: "'Prompt', sans-serif" }}>Critical & High Gaps</h3>
+          {summary.criticalGapsDetail.length === 0 ? (
+            <div className="py-8 text-center">
+              <Target size={24} className="mx-auto mb-2 text-gray-300" />
+              <p className="text-sm text-gray-400">No critical gaps detected</p>
+              <p className="text-xs text-gray-400 mt-1">Run gap analysis per venture to populate this view.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {summary.criticalGapsDetail.map((gap: any, idx: number) => (
+                <div key={idx} className="flex items-center gap-3 p-2 rounded-lg" style={{ borderLeft: `3px solid ${SEVERITY_COLORS[gap.severity]}`, paddingLeft: '10px' }}>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-gray-900">{gap.gapArea}</p>
+                      <span className="text-xs font-semibold px-1.5 py-0.5 rounded" style={{ background: `${SEVERITY_COLORS[gap.severity]}15`, color: SEVERITY_COLORS[gap.severity] }}>
+                        {gap.severity}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-400">{gap.ventureId}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold" style={{ color: SEVERITY_COLORS[gap.severity] }}>−{gap.gapScore}</p>
+                    <p className="text-xs text-gray-400">gap</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Role Matrix */}
+      {summary.roleMatrix.length > 0 && (
+        <div className="bg-white rounded-xl border p-5 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
+          <h3 className="font-bold text-gray-900 mb-4" style={{ fontFamily: "'Prompt', sans-serif" }}>Open Roles by Venture</h3>
+          <div className="flex flex-wrap gap-3">
+            {summary.roleMatrix.map((row: any) => (
+              <div key={row.ventureId} className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: '#F49C1308', border: '1px solid #F49C1320' }}>
+                <span className="text-sm font-semibold text-gray-700">{row.ventureId}</span>
+                <span className="text-xs font-bold px-1.5 py-0.5 rounded-full" style={{ background: '#F49C13', color: 'white' }}>{row.openRoles}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 const TABS = [
+  { id: "dashboard",   label: "Portfolio Dashboard", icon: BarChart3 },
   { id: "talent",     label: "Talent Pool",       icon: Users },
   { id: "pvf",        label: "PVF Rankings",       icon: Star },
   { id: "team",       label: "Team Composition",   icon: Briefcase },
@@ -419,7 +555,12 @@ export default function PeopleIntelligence() {
 
       <div className="p-8">
 
-        {/* ── TALENT POOL TAB ─────────────────────────────────────────────────── */}
+        {/* ── PORTFOLIO DASHBOARD TAB ──────────────────────────────────────────────────────────── */}
+        {activeTab === "dashboard" && (
+          <PortfolioDashboard />
+        )}
+
+        {/* ── TALENT POOL TAB ─────────────────────────────────────────────────────────────────── */}
         {activeTab === "talent" && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">

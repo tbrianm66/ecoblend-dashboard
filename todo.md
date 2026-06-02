@@ -230,18 +230,18 @@
 
 ## Sprint 20 — People Intelligence Module
 
-- [ ] Add talent_profiles table (name, role, location, availability, expertise, stage experience, functional capabilities, network strength, behavioural attributes)
-- [ ] Add venture_role_requirements table (required skills, experience level, stage, functional area, priority)
-- [ ] Add people_venture_fit table (PVF score cache: skills match, industry match, stage match, network value, availability fit)
-- [ ] Add team_compositions table (recommended team structure per venture)
-- [ ] Add team_gap_analysis table (missing capabilities per venture)
-- [ ] Add talent_venture_assignments table (assigned people to ventures with role)
-- [ ] Push migration 0013
+- [x] Add talent_profiles table (name, role, location, availability, expertise, stage experience, functional capabilities, network strength, behavioural attributes)
+- [x] Add venture_role_requirements table (required skills, experience level, stage, functional area, priority)
+- [x] Add people_venture_fit table (PVF score cache: skills match, industry match, stage match, network value, availability fit)
+- [x] Add team_compositions table (recommended team structure per venture)
+- [x] Add team_gap_analysis table (missing capabilities per venture)
+- [x] Add talent_venture_assignments table (assigned people to ventures with role)
+- [x] Push migration 0013 (tables created directly in TiDB)
 - [x] Add tRPC procedures: talent CRUD, computePVF, getTeamComposition, getTeamGaps, getRoleRankings, getFounderSuitability
-- [ ] Build People Intelligence dashboard page (6 components: talent pool, top rankings, role matrix, team composition, gap heatmap, founder scorecard)
-- [ ] Add People Intelligence to sidebar under Intelligence section
-- [ ] Wire route in App.tsx
-- [ ] Vitest tests for PVF scoring engine
+- [x] Build People Intelligence dashboard page (6 components: talent pool, top rankings, role matrix, team composition, gap heatmap, founder scorecard)
+- [x] Add People Intelligence to sidebar under Intelligence section (section 17)
+- [x] Wire route in App.tsx (/people-intelligence)
+- [x] Vitest tests for PVF scoring engine (43 tests, all passing)
 
 ## Sprint 21 — Product Opportunity Intelligence (POI) Module (Mar 2026)
 
