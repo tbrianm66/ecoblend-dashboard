@@ -15,11 +15,15 @@ import { FormModal, ScoreSelect } from "@/components/command/primitives";
 import {
   humanise,
   EXPERIMENT_STATUSES,
+  EXPERIMENT_TYPES,
   DECISION_RECOMMENDATIONS,
   EVIDENCE_TYPES,
   DECISION_TYPES,
   DECISION_STATUSES,
   PIVOT_TYPES,
+  VENTURE_STAGES,
+  REVIEW_STATUSES,
+  STAGE_LABELS,
 } from "@shared/commandCentre";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -240,6 +244,101 @@ export function PivotModal({ open, onOpenChange, card, onSaved }: {
       <Field label="Previous hypothesis"><Textarea value={previous} onChange={(e) => setPrevious(e.target.value)} rows={2} /></Field>
       <Field label="New hypothesis"><Textarea value={next} onChange={(e) => setNext(e.target.value)} rows={2} placeholder="What are we testing instead?" /></Field>
       <Field label="Reason for pivot"><Textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} /></Field>
+    </FormModal>
+  );
+}
+
+// ─── Spawn a follow-up experiment from a decision ──────────────────────────────
+export function ExperimentSpawnModal({ open, onOpenChange, card, onSaved }: {
+  open: boolean; onOpenChange: (o: boolean) => void;
+  card: any; onSaved?: () => void;
+}) {
+  const [name, setName] = useState<string>("");
+  const [type, setType] = useState<string>("prototype_test");
+  const [owner, setOwner] = useState<string>("");
+  const [method, setMethod] = useState<string>("");
+  const [threshold, setThreshold] = useState<string>("");
+  const [dueDate, setDueDate] = useState<string>("");
+
+  const upsert = trpc.commandCentreLean.experiments.upsert.useMutation({
+    onSuccess: () => { toast.success("Follow-up experiment created"); onOpenChange(false); onSaved?.(); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  function submit() {
+    if (!name.trim()) { toast.error("Experiment name is required"); return; }
+    upsert.mutate({
+      ventureId: card.ventureId,
+      hypothesisId: card.hypothesisId ?? null,
+      experimentName: name,
+      experimentType: type as any,
+      experimentStatus: "proposed",
+      moduleSource: "command_centre",
+      experimentOwner: owner || null,
+      method: method || null,
+      successThreshold: threshold || null,
+      dueDate: dueDate || null,
+    });
+  }
+
+  return (
+    <FormModal open={open} onOpenChange={onOpenChange} title={`Spawn experiment: ${card?.name ?? ""}`}
+      onSubmit={submit} submitting={upsert.isPending} submitLabel="Create experiment">
+      <Field label="Experiment name"><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="What will you test next?" data-testid="input-spawn-experiment-name" /></Field>
+      <SelectField label="Type" value={type} onChange={setType} options={EXPERIMENT_TYPES} testId="select-spawn-experiment-type" />
+      <Field label="Method"><Textarea value={method} onChange={(e) => setMethod(e.target.value)} rows={2} placeholder="How will it be run?" /></Field>
+      <Field label="Success threshold"><Input value={threshold} onChange={(e) => setThreshold(e.target.value)} placeholder="e.g. ≥30% conversion" /></Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Owner"><Input value={owner} onChange={(e) => setOwner(e.target.value)} placeholder="Name" /></Field>
+        <Field label="Due date"><Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} /></Field>
+      </div>
+    </FormModal>
+  );
+}
+
+// ─── Spawn a stage-gate review from a decision ─────────────────────────────────
+export function StageGateReviewModal({ open, onOpenChange, card, onSaved }: {
+  open: boolean; onOpenChange: (o: boolean) => void;
+  card: any; onSaved?: () => void;
+}) {
+  const [toStage, setToStage] = useState<string>(card?.nextStage ?? card?.stage ?? VENTURE_STAGES[0]);
+  const [reviewStatus, setReviewStatus] = useState<string>("scheduled");
+  const [notes, setNotes] = useState<string>("");
+  const [requiredActions, setRequiredActions] = useState<string>("");
+
+  const upsert = trpc.commandCentreLean.reviews.upsert.useMutation({
+    onSuccess: () => { toast.success("Stage-gate review scheduled"); onOpenChange(false); onSaved?.(); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  function submit() {
+    upsert.mutate({
+      ventureId: card.ventureId,
+      fromStage: (card?.stage ?? null) as any,
+      toStage: toStage as any,
+      reviewStatus: reviewStatus as any,
+      evidenceScore: card.evidenceConfidence ?? undefined,
+      marketScore: card.marketValidation ?? undefined,
+      commercialScore: card.commercialValidation ?? undefined,
+      technicalScore: card.technicalValidation ?? undefined,
+      operationalScore: card.operationalReadiness ?? undefined,
+      riskScore: card.riskScore ?? undefined,
+      reviewerNotes: notes || null,
+      requiredActions: requiredActions || null,
+      reviewDate: new Date().toISOString().slice(0, 10),
+    });
+  }
+
+  return (
+    <FormModal open={open} onOpenChange={onOpenChange} title={`Stage-gate review: ${card?.name ?? ""}`}
+      onSubmit={submit} submitting={upsert.isPending} submitLabel="Schedule review">
+      <p className="text-[11px] text-gray-500">
+        Current stage: <span className="font-semibold text-gray-700">{STAGE_LABELS[card?.stage ?? ""] ?? card?.stage ?? "—"}</span>
+      </p>
+      <SelectField label="Target stage" value={toStage} onChange={setToStage} options={VENTURE_STAGES} testId="select-review-to-stage" />
+      <SelectField label="Review status" value={reviewStatus} onChange={setReviewStatus} options={REVIEW_STATUSES} testId="select-review-status" />
+      <Field label="Reviewer notes"><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} /></Field>
+      <Field label="Required actions before progression"><Textarea value={requiredActions} onChange={(e) => setRequiredActions(e.target.value)} rows={2} /></Field>
     </FormModal>
   );
 }

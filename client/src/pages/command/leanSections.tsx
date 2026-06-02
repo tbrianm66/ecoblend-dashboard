@@ -12,13 +12,14 @@ import { useLocation } from "wouter";
 import {
   StatTile, ScoreBar, StageBadge, VentureStatusBadge, DecisionBadge, RiskBadge,
   ExperimentStatusBadge, NextBestActionPanel, EmptyState, SectionHead,
-  toneForHealth, type Tone,
+  SeverityBadge, AlertStatusBadge, toneForHealth, type Tone,
 } from "@/components/command/primitives";
 import { humanise, STAGE_LABELS } from "@shared/commandCentre";
 import { useSelectedVenture } from "@/contexts/SelectedVentureContext";
-import { AlertTriangle, FlaskConical, TrendingUp, Activity, Layers, ArrowUpDown, GitFork, ClipboardCheck, FilePlus2, Settings2 } from "lucide-react";
+import { AlertTriangle, FlaskConical, TrendingUp, Activity, Layers, ArrowUpDown, GitFork, ClipboardCheck, FilePlus2, Settings2, Beaker, FileCheck2, Target, ShieldAlert } from "lucide-react";
 import {
   ExperimentManageModal, EvidenceFromExperimentModal, DecisionActionModal, PivotModal,
+  ExperimentSpawnModal, StageGateReviewModal,
 } from "./leanActions";
 
 const DECISION_COLUMNS: { key: string; label: string; tone: Tone }[] = [
@@ -35,7 +36,7 @@ const EXPERIMENT_COLUMNS = ["proposed", "approved", "running", "blocked", "overd
 function Loading() { return <div className="text-sm text-gray-400 py-10 text-center">Loading…</div>; }
 
 // ─── 1. Lean Portfolio ─────────────────────────────────────────────────────────
-type SortKey = "name" | "stage" | "status" | "evidenceConfidence" | "riskScore" | "portfolioHealth" | "riskAdjustedReadiness";
+type SortKey = "name" | "stage" | "status" | "evidenceConfidence" | "marketValidation" | "commercialValidation" | "technicalValidation" | "operationalReadiness" | "riskScore" | "portfolioHealth" | "riskAdjustedReadiness";
 
 export function LeanPortfolio() {
   const [, navigate] = useLocation();
@@ -120,15 +121,20 @@ export function LeanPortfolio() {
                 <SortableTh k="stage" label="Stage" />
                 <SortableTh k="status" label="Status" />
                 <SortableTh k="evidenceConfidence" label="Evidence" className="text-center" />
+                <SortableTh k="marketValidation" label="Market" className="text-center" />
+                <SortableTh k="commercialValidation" label="Commercial" className="text-center" />
+                <SortableTh k="technicalValidation" label="Technical" className="text-center" />
+                <SortableTh k="operationalReadiness" label="Operational" className="text-center" />
                 <SortableTh k="riskScore" label="Risk" className="text-center" />
                 <SortableTh k="portfolioHealth" label="Health" className="text-center" />
                 <SortableTh k="riskAdjustedReadiness" label="Readiness" className="text-center" />
                 <th className="px-4 py-2.5 font-semibold">Decision</th>
+                <th className="px-4 py-2.5 font-semibold">Next Action</th>
               </tr>
             </thead>
             <tbody>
               {view.length === 0 && (
-                <tr><td colSpan={8} className="px-4 py-8 text-center text-sm text-gray-400">No ventures match the current filters.</td></tr>
+                <tr><td colSpan={12} className="px-4 py-8 text-center text-sm text-gray-400">No ventures match the current filters.</td></tr>
               )}
               {view.map((r) => (
                 <tr key={r.ventureId} className="border-b last:border-0 hover:bg-gray-50 cursor-pointer" onClick={() => { setSelectedVentureId(r.ventureId); navigate(`/venture-status?ventureId=${r.ventureId}`); }} data-testid={`row-portfolio-${r.ventureId}`}>
@@ -142,10 +148,15 @@ export function LeanPortfolio() {
                   <td className="px-4 py-2.5"><StageBadge stage={r.stage} /></td>
                   <td className="px-4 py-2.5"><VentureStatusBadge status={r.status} /></td>
                   <td className="px-4 py-2.5 text-center font-bold text-gray-700">{r.evidenceConfidence}</td>
+                  <td className="px-4 py-2.5 text-center font-semibold" style={{ color: toneFg(toneForHealth(r.marketValidation)) }}>{r.marketValidation}</td>
+                  <td className="px-4 py-2.5 text-center font-semibold" style={{ color: toneFg(toneForHealth(r.commercialValidation)) }}>{r.commercialValidation}</td>
+                  <td className="px-4 py-2.5 text-center font-semibold" style={{ color: toneFg(toneForHealth(r.technicalValidation)) }}>{r.technicalValidation}</td>
+                  <td className="px-4 py-2.5 text-center font-semibold" style={{ color: toneFg(toneForHealth(r.operationalReadiness)) }}>{r.operationalReadiness}</td>
                   <td className="px-4 py-2.5 text-center"><RiskBadge score={r.riskScore} /></td>
                   <td className="px-4 py-2.5 text-center font-bold" style={{ color: toneFg(toneForHealth(r.portfolioHealth)) }}>{r.portfolioHealth}</td>
                   <td className="px-4 py-2.5 text-center font-bold text-gray-700">{r.riskAdjustedReadiness}</td>
                   <td className="px-4 py-2.5"><DecisionBadge decision={r.recommendation} label={r.decisionLabel} /></td>
+                  <td className="px-4 py-2.5 text-[11px] text-gray-600 max-w-[220px]">{r.nextBestAction}</td>
                 </tr>
               ))}
             </tbody>
@@ -163,6 +174,8 @@ export function LeanDecisionBoard() {
   const cards = q.data ?? [];
   const [decisionCard, setDecisionCard] = useState<any>(null);
   const [pivotCard, setPivotCard] = useState<any>(null);
+  const [experimentCard, setExperimentCard] = useState<any>(null);
+  const [reviewCard, setReviewCard] = useState<any>(null);
   const grouped = useMemo(() => {
     const m: Record<string, typeof cards> = {};
     for (const c of cards) (m[c.column] ??= []).push(c);
@@ -171,6 +184,9 @@ export function LeanDecisionBoard() {
   const refresh = () => {
     utils.commandCentreLean.decisionBoard.invalidate();
     utils.commandCentreLean.portfolioSummary.invalidate();
+    utils.commandCentreLean.experimentQueue.invalidate();
+    utils.commandCentreLean.stageGateBoard.invalidate();
+    utils.commandCentreLean.ventureStatus.invalidate();
     utils.commandCentreLean.alerts.list.invalidate();
     utils.commandCentreLean.pivots.list.invalidate();
   };
@@ -210,12 +226,18 @@ export function LeanDecisionBoard() {
                       <div className="text-[11px] text-gray-500 border-t pt-2 mb-2.5">
                         <span className="font-semibold">Next:</span> {c.nextBestAction}
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <Button size="sm" variant="outline" className="h-7 text-[11px] flex-1" onClick={() => setDecisionCard(c)} data-testid={`button-decide-${c.ventureId}`}>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => setDecisionCard(c)} data-testid={`button-decide-${c.ventureId}`}>
                           <ClipboardCheck size={12} className="mr-1" />Decide
                         </Button>
-                        <Button size="sm" variant="outline" className="h-7 text-[11px] flex-1" onClick={() => setPivotCard(c)} data-testid={`button-pivot-${c.ventureId}`}>
+                        <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => setPivotCard(c)} data-testid={`button-pivot-${c.ventureId}`}>
                           <GitFork size={12} className="mr-1" />Pivot
+                        </Button>
+                        <Button size="sm" variant="ghost" className="h-7 text-[11px]" onClick={() => setExperimentCard(c)} data-testid={`button-spawn-experiment-${c.ventureId}`}>
+                          <Beaker size={12} className="mr-1" />Experiment
+                        </Button>
+                        <Button size="sm" variant="ghost" className="h-7 text-[11px]" onClick={() => setReviewCard(c)} data-testid={`button-stage-gate-${c.ventureId}`}>
+                          <FileCheck2 size={12} className="mr-1" />Stage-gate
                         </Button>
                       </div>
                     </CardContent>
@@ -228,6 +250,8 @@ export function LeanDecisionBoard() {
       </div>
       {decisionCard && <DecisionActionModal open={!!decisionCard} onOpenChange={(o) => !o && setDecisionCard(null)} card={decisionCard} onSaved={refresh} />}
       {pivotCard && <PivotModal open={!!pivotCard} onOpenChange={(o) => !o && setPivotCard(null)} card={pivotCard} onSaved={refresh} />}
+      {experimentCard && <ExperimentSpawnModal open={!!experimentCard} onOpenChange={(o) => !o && setExperimentCard(null)} card={experimentCard} onSaved={refresh} />}
+      {reviewCard && <StageGateReviewModal open={!!reviewCard} onOpenChange={(o) => !o && setReviewCard(null)} card={reviewCard} onSaved={refresh} />}
     </div>
   );
 }
@@ -347,6 +371,194 @@ export function EvidenceDashboard() {
           </Card>
         ))}
       </div>
+    </div>
+  );
+}
+
+// ─── 5. Founder Cockpit ────────────────────────────────────────────────────────
+export function FounderCockpit() {
+  const [, navigate] = useLocation();
+  const { setSelectedVentureId } = useSelectedVenture();
+  const status = trpc.commandCentreLean.ventureStatus.useQuery({});
+  const portfolio = trpc.commandCentreLean.portfolioSummary.useQuery();
+  const alertsQ = trpc.commandCentreLean.alerts.list.useQuery({});
+
+  if (status.isLoading || portfolio.isLoading) return <Loading />;
+  const rows = status.data ?? [];
+  const stats = portfolio.data?.stats;
+  if (!rows.length || !stats) return <EmptyState title="No ventures yet" description="Seed ventures to populate the founder cockpit." />;
+
+  const alerts = (alertsQ.data ?? []) as any[];
+  const activeAlerts = alerts.filter((a) => a.status !== "resolved" && a.status !== "dismissed");
+
+  return (
+    <div className="space-y-6">
+      <SectionHead title="Founder Cockpit" description="A single founder-level pane: portfolio vitals, validation progress and the ventures that need your attention now." />
+
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <StatTile label="Ventures" value={stats.total} icon={<Layers size={18} />} />
+        <StatTile label="Avg Health" value={stats.avgHealth} tone={toneForHealth(stats.avgHealth)} icon={<Activity size={18} />} />
+        <StatTile label="Need Decision" value={stats.pivotDecision} tone={stats.pivotDecision ? "red" : "green"} icon={<Target size={18} />} />
+        <StatTile label="Stage-Gate Ready" value={stats.readyForStageGate} tone={stats.readyForStageGate ? "green" : "grey"} icon={<TrendingUp size={18} />} />
+        <StatTile label="Overdue Exp." value={stats.overdueExperiments} tone={stats.overdueExperiments ? "amber" : "green"} icon={<FlaskConical size={18} />} />
+        <StatTile label="Critical Alerts" value={stats.criticalAlerts} tone={stats.criticalAlerts ? "red" : "green"} icon={<ShieldAlert size={18} />} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {rows.map((r) => (
+          <Card key={r.ventureId} className="border shadow-sm cursor-pointer hover:border-gray-300" onClick={() => { setSelectedVentureId(r.ventureId); navigate(`/venture-status?ventureId=${r.ventureId}`); }} data-testid={`cockpit-card-${r.ventureId}`}>
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ background: r.color }} />
+                  <span className="font-semibold text-gray-800">{r.name}</span>
+                  <StageBadge stage={r.stage} />
+                  <VentureStatusBadge status={r.status} />
+                </div>
+                <DecisionBadge decision={r.recommendation} label={r.decisionLabel} />
+              </div>
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                <ScoreBar label="Market" score={r.marketValidation} tone={toneForHealth(r.marketValidation)} />
+                <ScoreBar label="Commercial" score={r.commercialValidation} tone={toneForHealth(r.commercialValidation)} />
+                <ScoreBar label="Technical" score={r.technicalValidation} tone={toneForHealth(r.technicalValidation)} />
+                <ScoreBar label="Operational" score={r.operationalReadiness} tone={toneForHealth(r.operationalReadiness)} />
+              </div>
+              <div className="flex items-center gap-3 text-[11px] text-gray-500 border-t pt-2.5">
+                <span>Evidence <b className="text-gray-700">{r.evidenceConfidence}</b></span>
+                <span>Readiness <b className="text-gray-700">{r.riskAdjustedReadiness}</b></span>
+                <RiskBadge score={r.riskScore} />
+                {r.ready && <span className="ml-auto text-green-700 font-semibold inline-flex items-center gap-1"><TrendingUp size={11} />Stage-gate ready</span>}
+              </div>
+              {r.requiredActions.length > 0 && (
+                <div className="border-t pt-2.5 mt-2.5">
+                  <div className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Before next gate</div>
+                  <ul className="space-y-1">
+                    {r.requiredActions.slice(0, 3).map((a, i) => (
+                      <li key={i} className="flex items-start gap-1.5 text-xs text-gray-600"><AlertTriangle size={11} className="mt-0.5 shrink-0 text-amber-500" />{a}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {activeAlerts.length > 0 && (
+        <Card className="border shadow-sm">
+          <CardContent className="p-5">
+            <div className="text-sm font-semibold text-gray-700 mb-3 inline-flex items-center gap-2"><ShieldAlert size={15} className="text-red-500" />Active alerts</div>
+            <ul className="space-y-2">
+              {activeAlerts.slice(0, 8).map((a) => (
+                <li key={a.id} className="flex items-center gap-2 text-xs text-gray-600" data-testid={`cockpit-alert-${a.id}`}>
+                  <SeverityBadge severity={a.severity} />
+                  <span className="font-medium text-gray-800">{a.alertTitle}</span>
+                  <span className="text-gray-400 truncate">{a.alertDescription}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// ─── 6. Decision Queue ─────────────────────────────────────────────────────────
+export function DecisionQueue() {
+  const utils = trpc.useUtils();
+  const board = trpc.commandCentreLean.decisionBoard.useQuery();
+  const alertsQ = trpc.commandCentreLean.alerts.list.useQuery({});
+  const [decisionCard, setDecisionCard] = useState<any>(null);
+
+  const setAlertStatus = trpc.commandCentreLean.alerts.setStatus.useMutation({
+    onSuccess: () => { utils.commandCentreLean.alerts.list.invalidate(); utils.commandCentreLean.portfolioSummary.invalidate(); },
+  });
+  const refresh = () => {
+    utils.commandCentreLean.decisionBoard.invalidate();
+    utils.commandCentreLean.portfolioSummary.invalidate();
+    utils.commandCentreLean.alerts.list.invalidate();
+  };
+
+  if (board.isLoading || alertsQ.isLoading) return <Loading />;
+  const cards = (board.data ?? []) as any[];
+  const alerts = (alertsQ.data ?? []) as any[];
+
+  const SEV_RANK: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+  const actionAlerts = alerts
+    .filter((a) => a.status !== "resolved" && a.status !== "dismissed")
+    .sort((a, b) => (SEV_RANK[a.severity] ?? 9) - (SEV_RANK[b.severity] ?? 9));
+
+  const REC_RANK: Record<string, number> = { kill: 0, pivot: 1, advance: 2, pause: 3, continue: 4 };
+  const decisionsNeeded = cards
+    .filter((c) => ["pivot", "kill", "advance", "pause"].includes(c.recommendation))
+    .sort((a, b) => (REC_RANK[a.recommendation] ?? 9) - (REC_RANK[b.recommendation] ?? 9));
+
+  if (!actionAlerts.length && !decisionsNeeded.length)
+    return <EmptyState title="Queue is clear" description="No alerts or pending decisions need founder attention right now." />;
+
+  return (
+    <div className="space-y-6">
+      <SectionHead title="Decision Queue" description="The prioritised list of decisions and alerts awaiting a founder call — highest urgency first." />
+
+      {decisionsNeeded.length > 0 && (
+        <div className="space-y-2.5">
+          <div className="text-xs font-bold uppercase tracking-wider text-gray-500">Decisions needed ({decisionsNeeded.length})</div>
+          {decisionsNeeded.map((c) => (
+            <Card key={c.ventureId} className="border shadow-sm" data-testid={`queue-decision-${c.ventureId}`}>
+              <CardContent className="p-4 flex items-center gap-3">
+                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: c.color }} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="font-semibold text-gray-800">{c.name}</span>
+                    <StageBadge stage={c.stage} />
+                    <DecisionBadge decision={c.recommendation} label={c.decisionLabel} />
+                  </div>
+                  <p className="text-[11px] text-gray-500 truncate">{c.rationale}</p>
+                  <p className="text-[11px] text-gray-600 mt-0.5"><span className="font-semibold">Next:</span> {c.nextBestAction}</p>
+                </div>
+                <Button size="sm" variant="outline" className="h-8 text-xs shrink-0" onClick={() => setDecisionCard(c)} data-testid={`queue-decide-${c.ventureId}`}>
+                  <ClipboardCheck size={13} className="mr-1" />Decide
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {actionAlerts.length > 0 && (
+        <div className="space-y-2.5">
+          <div className="text-xs font-bold uppercase tracking-wider text-gray-500">Alerts to action ({actionAlerts.length})</div>
+          {actionAlerts.map((a) => (
+            <Card key={a.id} className="border shadow-sm" data-testid={`queue-alert-${a.id}`}>
+              <CardContent className="p-4 flex items-center gap-3">
+                <SeverityBadge severity={a.severity} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="font-semibold text-gray-800">{a.alertTitle}</span>
+                    <AlertStatusBadge status={a.status} />
+                  </div>
+                  <p className="text-[11px] text-gray-500 truncate">{a.alertDescription}</p>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {a.status !== "acknowledged" && (
+                    <Button size="sm" variant="ghost" className="h-8 text-xs" disabled={setAlertStatus.isPending}
+                      onClick={() => setAlertStatus.mutate({ id: a.id, status: "acknowledged" })} data-testid={`queue-ack-${a.id}`}>
+                      Acknowledge
+                    </Button>
+                  )}
+                  <Button size="sm" variant="outline" className="h-8 text-xs" disabled={setAlertStatus.isPending}
+                    onClick={() => setAlertStatus.mutate({ id: a.id, status: "resolved" })} data-testid={`queue-resolve-${a.id}`}>
+                    Resolve
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {decisionCard && <DecisionActionModal open={!!decisionCard} onOpenChange={(o) => !o && setDecisionCard(null)} card={decisionCard} onSaved={refresh} />}
     </div>
   );
 }

@@ -501,6 +501,7 @@ export interface VentureAlertContext {
   overdueExperiments: Array<{ id: number; experimentName: string }>;
   blockedExperiments: Array<{ id: number; experimentName: string }>;
   stageGateReady: boolean;
+  decisionRecommendation?: (typeof DECISION_RECOMMENDATIONS)[number];
 }
 
 const POST_MVP = new Set(["mvp_validation", "delivery_validation", "gtm_validation", "investment_ready"]);
@@ -538,6 +539,23 @@ export function generateCommandAlerts(c: VentureAlertContext): GeneratedAlert[] 
       alertTitle: "Invalidated hypothesis, no pivot logged", severity: "critical", linkedModule: "command_centre",
       alertDescription: `${c.ventureName} has an invalidated core hypothesis but no pivot decision.`,
       recommendedAction: "Create a pivot decision and log the pivot rationale.",
+    });
+  }
+  // Critical: decision engine recommends kill (unless already actioned by a kill decision)
+  if (c.decisionRecommendation === "kill") {
+    push({
+      dedupeKey: `kill_recommended:${c.ventureId}`, alertType: "kill_recommended",
+      alertTitle: "Kill or major pivot recommended", severity: "critical", linkedModule: "command_centre",
+      alertDescription: `${c.ventureName}'s evidence and risk profile recommends killing or a major pivot.`,
+      recommendedAction: "Review on the Lean Decision Board and log a kill or pivot decision.",
+    });
+  } else if (c.decisionRecommendation === "pivot" && !c.hasPivotDecision) {
+    // High: decision engine recommends pivot (distinct from an invalidated hypothesis)
+    push({
+      dedupeKey: `pivot_recommended_decision:${c.ventureId}`, alertType: "pivot_recommended",
+      alertTitle: "Pivot recommended", severity: "high", linkedModule: "command_centre",
+      alertDescription: `${c.ventureName}'s current evidence recommends a pivot of the value proposition or pricing.`,
+      recommendedAction: "Review on the Lean Decision Board and log a pivot.",
     });
   }
   // High: overdue experiments
