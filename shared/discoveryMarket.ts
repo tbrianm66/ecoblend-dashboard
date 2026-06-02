@@ -541,6 +541,21 @@ export function marketRiskDecisionWarnings(
   return warnings;
 }
 
+/** Market Risk Log lean decision (score-driven, like the other sub-sections). */
+export function generateMarketRiskDecision(openLoad: number, criticalCount: number): string[] {
+  if (criticalCount >= 3)
+    return [
+      "Do not commit to full product build",
+      "Resolve critical risks before scaling capital",
+      "Run decisive de-risking experiments first",
+    ];
+  if (openLoad >= 60)
+    return ["Prioritise mitigation of the top risks", "Run targeted de-risking experiments"];
+  if (openLoad >= 30)
+    return ["Mitigate and monitor moderate risks", "Keep risk evidence current"];
+  return ["Risk load is manageable", "Proceed while actively monitoring"];
+}
+
 /** Normalise the open market-risk load (0–100, higher = more risk) for the overall formula. */
 export function normaliseOpenMarketRisk(
   risks: { marketRiskScore: number; status: string }[],

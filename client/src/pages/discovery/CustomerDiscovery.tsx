@@ -18,7 +18,7 @@ import {
 } from "@/components/discovery/primitives";
 import {
   calculateCustomerDiscoveryScore, interpretDiscoveryScore, bandFor0to100,
-  generateLeanDecision, generateNextExperimentRecommendation,
+  generateLeanDecision, generateNextExperimentRecommendation, avg,
   interpretOverallConfidence, PROBLEM_HYPOTHESIS_STATUSES, WTP_SIGNAL_OPTIONS, INTERVIEW_TYPES,
 } from "@shared/discoveryMarket";
 
@@ -79,6 +79,9 @@ export default function CustomerDiscovery() {
 
   const s = summary.data?.scores;
   const decisions = summary.data?.decision ?? [];
+
+  const interviewRows = interviews.data ?? [];
+  const cdScore = avg(interviewRows.map((it) => it.discoveryScore ?? 0));
 
   if (!ventureId) {
     return (
@@ -186,6 +189,13 @@ export default function CustomerDiscovery() {
 
       {/* ── Customer Interviews ── */}
       <Section title="Customer Interview Log" action={<Button size="sm" onClick={() => openInt()} style={{ background: "#56A837" }} data-testid="button-add-interview"><Plus size={14} className="mr-1" />Log Interview</Button>}>
+        {interviewRows.length > 0 && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+            <ScoreCard label="Customer Discovery" score={cdScore} band={bandFor0to100(cdScore, "positive")} interpretation={interpretDiscoveryScore(cdScore)} />
+            <LeanDecisionPanel title="Recommended Decision" decisions={generateLeanDecision("customer_discovery", cdScore)} />
+            <NextExperimentPanel recommendation={generateNextExperimentRecommendation("customer_discovery", cdScore)} />
+          </div>
+        )}
         {interviews.data && interviews.data.length > 0 ? (
           <Card className="border shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
