@@ -224,9 +224,11 @@ import { marketingBrandRouter } from "./marketingBrand.router";
 import { specialistServicesRouter } from "./specialistServices.router";
 import { portfoliosOfferingsRouter } from "./portfoliosOfferings.router";
 import { discoveryMarketRouter } from "./discoveryMarket.router";
+import { commandCentreLeanRouter } from "./commandCentre.lean.router";
 
 export const appRouter = router({
   discoveryMarket: discoveryMarketRouter,
+  commandCentreLean: commandCentreLeanRouter,
   startupFailureRisk: startupFailureRiskRouter,
   system: systemRouter,
   coaching: coachingRouter,

@@ -64,6 +64,11 @@ export const ventures = pgTable("ventures", {
   experimentPassRate: doublePrecision("experimentPassRate"),    // passing / completed experiments (%)
   learningVelocity: integer("learningVelocity"),           // validated learning cycles last 30 days
   interviewInsightRate: doublePrecision("interviewInsightRate"), // interviews with validated signal (%)
+  // -- Command Centre (Lean OS) extensions — all nullable, additive only ------
+  currentStage: text("currentStage"),         // intake|problem_validation|...|investment_ready
+  validationStatus: text("validationStatus"), // idea|validating|building|piloting|scaling|paused|pivoting|killed|archived
+  ventureType: text("ventureType"),
+  owner: varchar("owner", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
@@ -7147,3 +7152,6 @@ export const leanExperiments = pgTable("lean_experiments", {
 });
 export type LeanExperiment = typeof leanExperiments.$inferSelect;
 export type InsertLeanExperiment = typeof leanExperiments.$inferInsert;
+
+// -- Command Centre (Lean OS) tables -------------------------------------------
+export * from "./schema_cc";

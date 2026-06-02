@@ -87,6 +87,11 @@ import AdminWidgetAnalytics from "./pages/AdminWidgetAnalytics";
 import AdminWidgetSettings from "./pages/AdminWidgetSettings";
 import AdminProductionReadiness from "./pages/AdminProductionReadiness";
 import ModulePlaceholder from "./pages/ModulePlaceholder";
+import PortfolioOverviewTabs from "./pages/command/PortfolioOverviewTabs";
+import CommandCentreTabs from "./pages/command/CommandCentreTabs";
+import PipelineTabs from "./pages/command/PipelineTabs";
+import VentureStatus from "./pages/command/VentureStatus";
+import AlertsApprovals from "./pages/command/AlertsApprovals";
 import VentureIntake from "./pages/VentureIntake";
 import ProblemStatement from "./pages/ProblemStatement";
 import HypothesisRegister from "./pages/HypothesisRegister";
@@ -107,7 +112,7 @@ function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
-      <Route path="/" component={Home} />
+      <Route path="/" component={PortfolioOverviewTabs} />
       <Route path="/venture/:id" component={VentureDetail} />
       <Route path="/vrl" component={VrlAnalytics} />
       <Route path="/trl" component={TrlAnalytics} />
@@ -128,7 +133,7 @@ function Router() {
       <Route path="/legal" component={LegalContracts} />
       <Route path="/pr" component={BrandPR} />
       <Route path="/specialists" component={SpecialistServices} />
-      <Route path="/pipeline" component={OpportunityPipeline} />
+      <Route path="/pipeline" component={PipelineTabs} />
       <Route path="/experiments" component={ExperimentLog} />
       <Route path="/founders" component={FounderProfiles} />
       <Route path="/academic" component={AcademicResearch} />
@@ -139,7 +144,7 @@ function Router() {
       <Route path="/people-intelligence" component={PeopleIntelligence} />
       <Route path="/poi" component={ProductOpportunityIntelligence} />
       <Route path="/project-management" component={VentureProjectManagement} />
-      <Route path="/command-centre" component={CommandCentre} />
+      <Route path="/command-centre" component={CommandCentreTabs} />
       <Route path="/matching" component={FounderMatching} />
       <Route path="/spinoff" component={SpinoffOS} />
       <Route path="/co-founder-matrix" component={CoFounderMatrix} />
@@ -278,8 +283,8 @@ function Router() {
       <Route path="/governance/ip" component={IpManagement} />
       <Route path="/governance/legal" component={LegalContracts} />
       {/* Command Centre extras */}
-      <Route path="/venture-status" component={ModulePlaceholder} />
-      <Route path="/alerts" component={ModulePlaceholder} />
+      <Route path="/venture-status" component={VentureStatus} />
+      <Route path="/alerts" component={AlertsApprovals} />
       {/* ECOBLEND OS Agentic Validation Platform v2 (self-contained namespace) */}
       <Route path="/v2" component={V2App} />
       <Route path="/v2/:rest*" component={V2App} />
