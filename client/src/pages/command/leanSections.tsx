@@ -12,6 +12,7 @@ import {
   toneForHealth, type Tone,
 } from "@/components/command/primitives";
 import { humanise, STAGE_LABELS } from "@shared/commandCentre";
+import { useSelectedVenture } from "@/contexts/SelectedVentureContext";
 import { AlertTriangle, FlaskConical, TrendingUp, Activity, Layers } from "lucide-react";
 
 const DECISION_COLUMNS: { key: string; label: string; tone: Tone }[] = [
@@ -30,6 +31,7 @@ function Loading() { return <div className="text-sm text-gray-400 py-10 text-cen
 // ─── 1. Lean Portfolio ─────────────────────────────────────────────────────────
 export function LeanPortfolio() {
   const [, navigate] = useLocation();
+  const { setSelectedVentureId } = useSelectedVenture();
   const q = trpc.commandCentreLean.portfolioSummary.useQuery();
   if (q.isLoading) return <Loading />;
   const data = q.data;
@@ -65,7 +67,7 @@ export function LeanPortfolio() {
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.ventureId} className="border-b last:border-0 hover:bg-gray-50 cursor-pointer" onClick={() => navigate(`/venture-status?ventureId=${r.ventureId}`)} data-testid={`row-portfolio-${r.ventureId}`}>
+                <tr key={r.ventureId} className="border-b last:border-0 hover:bg-gray-50 cursor-pointer" onClick={() => { setSelectedVentureId(r.ventureId); navigate(`/venture-status?ventureId=${r.ventureId}`); }} data-testid={`row-portfolio-${r.ventureId}`}>
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-2">
                       <span className="w-2.5 h-2.5 rounded-full" style={{ background: r.color }} />
@@ -93,14 +95,14 @@ export function LeanPortfolio() {
 // ─── 2. Lean Decision Board ────────────────────────────────────────────────────
 export function LeanDecisionBoard() {
   const q = trpc.commandCentreLean.decisionBoard.useQuery();
-  if (q.isLoading) return <Loading />;
   const cards = q.data ?? [];
-  if (!cards.length) return <EmptyState title="No ventures to triage" description="Seed ventures to populate the decision board." />;
   const grouped = useMemo(() => {
     const m: Record<string, typeof cards> = {};
     for (const c of cards) (m[c.column] ??= []).push(c);
     return m;
   }, [cards]);
+  if (q.isLoading) return <Loading />;
+  if (!cards.length) return <EmptyState title="No ventures to triage" description="Seed ventures to populate the decision board." />;
 
   return (
     <div className="space-y-5">

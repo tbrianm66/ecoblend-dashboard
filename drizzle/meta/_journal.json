@@ -15,6 +15,13 @@
       "when": 1780414365460,
       "tag": "0001_chunky_miracleman",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1780420559670,
+      "tag": "0002_yummy_prima",
+      "breakpoints": true
     }
   ]
 }

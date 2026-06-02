@@ -6,7 +6,7 @@ import { ExperimentQueue, EvidenceDashboard } from "./leanSections";
 export default function PipelineTabs() {
   const [tab, setTab] = useState("pipeline");
   return (
-    <Tabs value={tab} onValueChange={setTab} className="flex-1 overflow-y-auto gap-0">
+    <Tabs value={tab} onValueChange={setTab} className="block flex-1 overflow-y-auto">
       <div className="sticky top-0 z-20 px-8 pt-5 pb-2 bg-white/95 backdrop-blur border-b">
         <TabsList>
           <TabsTrigger value="pipeline" data-testid="tab-pipeline">Opportunity Pipeline</TabsTrigger>
