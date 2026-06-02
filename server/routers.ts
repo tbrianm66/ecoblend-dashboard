@@ -223,8 +223,10 @@ import { playbookRouter } from "./playbook.router";
 import { marketingBrandRouter } from "./marketingBrand.router";
 import { specialistServicesRouter } from "./specialistServices.router";
 import { portfoliosOfferingsRouter } from "./portfoliosOfferings.router";
+import { discoveryMarketRouter } from "./discoveryMarket.router";
 
 export const appRouter = router({
+  discoveryMarket: discoveryMarketRouter,
   startupFailureRisk: startupFailureRiskRouter,
   system: systemRouter,
   coaching: coachingRouter,

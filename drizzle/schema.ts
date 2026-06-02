@@ -6952,3 +6952,198 @@ export const contingencyPlaybooks = pgTable("contingency_playbooks", {
 });
 export type ContingencyPlaybook = typeof contingencyPlaybooks.$inferSelect;
 export type InsertContingencyPlaybook = typeof contingencyPlaybooks.$inferInsert;
+
+// ============================================================================
+// MODULE 3 — DISCOVERY & MARKET (Lean Startup Evidence Engine)
+// ============================================================================
+
+// -- Customer Segments ---------------------------------------------------------
+export const customerSegments = pgTable("customer_segments", {
+  id:                serial("id").primaryKey(),
+  ventureId:         varchar("ventureId", { length: 64 }).notNull(),
+  segmentName:       varchar("segmentName", { length: 255 }).notNull(),
+  buyerRole:         varchar("buyerRole", { length: 255 }),
+  userRole:          varchar("userRole", { length: 255 }),
+  influencerRole:    varchar("influencerRole", { length: 255 }),
+  decisionMakerRole: varchar("decisionMakerRole", { length: 255 }),
+  problemArea:       text("problemArea"),
+  currentAlternative: text("currentAlternative"),
+  segmentNotes:      text("segmentNotes"),
+  createdAt:         timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:         timestamp("updatedAt").defaultNow().notNull(),
+});
+export type CustomerSegment = typeof customerSegments.$inferSelect;
+export type InsertCustomerSegment = typeof customerSegments.$inferInsert;
+
+// -- Problem Hypotheses --------------------------------------------------------
+export const problemHypotheses = pgTable("problem_hypotheses", {
+  id:                  serial("id").primaryKey(),
+  ventureId:           varchar("ventureId", { length: 64 }).notNull(),
+  customerSegmentId:   integer("customerSegmentId"),
+  hypothesisStatement: text("hypothesisStatement").notNull(),
+  problemType:         varchar("problemType", { length: 128 }),
+  targetCustomer:      varchar("targetCustomer", { length: 255 }),
+  assumedPain:         text("assumedPain"),
+  assumedFrequency:    text("assumedFrequency"),
+  assumedUrgency:      text("assumedUrgency"),
+  assumedBudgetOwner:  text("assumedBudgetOwner"),
+  status:              text("status").default("untested").notNull(),
+  confidenceScore:     integer("confidenceScore").default(0),
+  createdAt:           timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:           timestamp("updatedAt").defaultNow().notNull(),
+});
+export type ProblemHypothesis = typeof problemHypotheses.$inferSelect;
+export type InsertProblemHypothesis = typeof problemHypotheses.$inferInsert;
+
+// -- Customer Interviews -------------------------------------------------------
+export const customerInterviews = pgTable("customer_interviews", {
+  id:                        serial("id").primaryKey(),
+  ventureId:                 varchar("ventureId", { length: 64 }).notNull(),
+  customerSegmentId:         integer("customerSegmentId"),
+  problemHypothesisId:       integer("problemHypothesisId"),
+  contactName:               varchar("contactName", { length: 255 }),
+  organisation:              varchar("organisation", { length: 255 }),
+  roleTitle:                 varchar("roleTitle", { length: 255 }),
+  interviewDate:             varchar("interviewDate", { length: 32 }),
+  interviewType:             varchar("interviewType", { length: 128 }),
+  status:                    text("status").default("logged"),
+  problemMentionedUnprompted: boolean("problemMentionedUnprompted").default(false),
+  currentWorkaround:         text("currentWorkaround"),
+  painScore:                 integer("painScore").default(0),
+  urgencyScore:              integer("urgencyScore").default(0),
+  frequencyScore:            integer("frequencyScore").default(0),
+  budgetSignalScore:         integer("budgetSignalScore").default(0),
+  decisionMakerAccessScore:  integer("decisionMakerAccessScore").default(0),
+  willingnessToTrial:        boolean("willingnessToTrial").default(false),
+  willingnessToPaySignal:    text("willingnessToPaySignal").default("none"),
+  discoveryScore:            integer("discoveryScore").default(0),
+  keyQuote:                  text("keyQuote"),
+  evidenceNotes:             text("evidenceNotes"),
+  contradictionNotes:        text("contradictionNotes"),
+  recommendedDecision:       text("recommendedDecision"),
+  nextAction:                text("nextAction"),
+  createdAt:                 timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:                 timestamp("updatedAt").defaultNow().notNull(),
+});
+export type CustomerInterview = typeof customerInterviews.$inferSelect;
+export type InsertCustomerInterview = typeof customerInterviews.$inferInsert;
+
+// -- Competitors (Discovery & Market) -----------------------------------------
+export const dmCompetitors = pgTable("dm_competitors", {
+  id:                      serial("id").primaryKey(),
+  ventureId:               varchar("ventureId", { length: 64 }).notNull(),
+  problemHypothesisId:     integer("problemHypothesisId"),
+  competitorName:          varchar("competitorName", { length: 255 }).notNull(),
+  competitorType:          text("competitorType").default("direct"),
+  customerSegment:         varchar("customerSegment", { length: 255 }),
+  problemSolved:           text("problemSolved"),
+  strengths:               text("strengths"),
+  weaknesses:              text("weaknesses"),
+  pricingModel:            varchar("pricingModel", { length: 255 }),
+  customerSatisfactionScore: integer("customerSatisfactionScore").default(0),
+  switchingDifficultyScore:  integer("switchingDifficultyScore").default(0),
+  differentiationScore:    integer("differentiationScore").default(0),
+  threatScore:             integer("threatScore").default(0),
+  competitiveRiskScore:    integer("competitiveRiskScore").default(0),
+  notes:                   text("notes"),
+  createdAt:               timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:               timestamp("updatedAt").defaultNow().notNull(),
+});
+export type DmCompetitor = typeof dmCompetitors.$inferSelect;
+export type InsertDmCompetitor = typeof dmCompetitors.$inferInsert;
+
+// -- Demand Signals ------------------------------------------------------------
+export const demandSignals = pgTable("demand_signals", {
+  id:                    serial("id").primaryKey(),
+  ventureId:             varchar("ventureId", { length: 64 }).notNull(),
+  problemHypothesisId:   integer("problemHypothesisId"),
+  signalName:            varchar("signalName", { length: 255 }).notNull(),
+  signalType:            text("signalType").default("customer_pull"),
+  sourceName:            varchar("sourceName", { length: 255 }),
+  sourceUrl:             varchar("sourceUrl", { length: 512 }),
+  signalDate:            varchar("signalDate", { length: 32 }),
+  relevanceScore:        integer("relevanceScore").default(0),
+  evidenceStrengthScore: integer("evidenceStrengthScore").default(0),
+  recencyScore:          integer("recencyScore").default(0),
+  commercialImpactScore: integer("commercialImpactScore").default(0),
+  repeatabilityScore:    integer("repeatabilityScore").default(0),
+  demandSignalScore:     integer("demandSignalScore").default(0),
+  evidenceSummary:       text("evidenceSummary"),
+  linkedExperiment:      text("linkedExperiment"),
+  successThreshold:      text("successThreshold"),
+  createdAt:             timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:             timestamp("updatedAt").defaultNow().notNull(),
+});
+export type DemandSignal = typeof demandSignals.$inferSelect;
+export type InsertDemandSignal = typeof demandSignals.$inferInsert;
+
+// -- WTP Tests -----------------------------------------------------------------
+export const wtpTests = pgTable("wtp_tests", {
+  id:                    serial("id").primaryKey(),
+  ventureId:             varchar("ventureId", { length: 64 }).notNull(),
+  problemHypothesisId:   integer("problemHypothesisId"),
+  customerName:          varchar("customerName", { length: 255 }),
+  buyerRole:             varchar("buyerRole", { length: 255 }),
+  budgetOwnerConfirmed:  boolean("budgetOwnerConfirmed").default(false),
+  currentSpend:          varchar("currentSpend", { length: 255 }),
+  valueDriver:           text("valueDriver"),
+  pricingModelTested:    varchar("pricingModelTested", { length: 255 }),
+  priceTested:           varchar("priceTested", { length: 255 }),
+  responseSummary:       text("responseSummary"),
+  evidenceLevel:         integer("evidenceLevel").default(1),
+  procurementPathway:    text("procurementPathway"),
+  objections:            text("objections"),
+  wtpScore:              integer("wtpScore").default(0),
+  recommendedPricingModel: varchar("recommendedPricingModel", { length: 255 }),
+  nextCommercialAction:  text("nextCommercialAction"),
+  createdAt:             timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:             timestamp("updatedAt").defaultNow().notNull(),
+});
+export type WtpTest = typeof wtpTests.$inferSelect;
+export type InsertWtpTest = typeof wtpTests.$inferInsert;
+
+// -- Market Risks --------------------------------------------------------------
+export const marketRisks = pgTable("market_risks", {
+  id:                    serial("id").primaryKey(),
+  ventureId:             varchar("ventureId", { length: 64 }).notNull(),
+  linkedModule:          varchar("linkedModule", { length: 128 }),
+  linkedRecordId:        integer("linkedRecordId"),
+  riskTitle:             varchar("riskTitle", { length: 255 }).notNull(),
+  riskCategory:          text("riskCategory").default("problem_risk"),
+  riskDescription:       text("riskDescription"),
+  probabilityScore:      integer("probabilityScore").default(1),
+  severityScore:         integer("severityScore").default(1),
+  evidenceConfidenceScore: integer("evidenceConfidenceScore").default(1),
+  marketRiskScore:       integer("marketRiskScore").default(1),
+  evidenceSummary:       text("evidenceSummary"),
+  mitigationPlan:        text("mitigationPlan"),
+  requiredExperiment:    text("requiredExperiment"),
+  owner:                 varchar("owner", { length: 255 }),
+  reviewDate:            varchar("reviewDate", { length: 32 }),
+  status:                text("status").default("open").notNull(),
+  autoGenerated:         boolean("autoGenerated").default(false),
+  createdAt:             timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:             timestamp("updatedAt").defaultNow().notNull(),
+});
+export type MarketRisk = typeof marketRisks.$inferSelect;
+export type InsertMarketRisk = typeof marketRisks.$inferInsert;
+
+// -- Lean Experiments ----------------------------------------------------------
+export const leanExperiments = pgTable("lean_experiments", {
+  id:                  serial("id").primaryKey(),
+  ventureId:           varchar("ventureId", { length: 64 }).notNull(),
+  problemHypothesisId: integer("problemHypothesisId"),
+  experimentName:      varchar("experimentName", { length: 255 }).notNull(),
+  experimentType:      text("experimentType").default("interview"),
+  hypothesisTested:    text("hypothesisTested"),
+  method:              text("method"),
+  successThreshold:    text("successThreshold"),
+  result:             text("result"),
+  learningSummary:     text("learningSummary"),
+  decision:            text("decision"),
+  nextStep:            text("nextStep"),
+  createdAt:           timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:           timestamp("updatedAt").defaultNow().notNull(),
+});
+export type LeanExperiment = typeof leanExperiments.$inferSelect;
+export type InsertLeanExperiment = typeof leanExperiments.$inferInsert;

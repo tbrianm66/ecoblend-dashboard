@@ -90,6 +90,11 @@ import ModulePlaceholder from "./pages/ModulePlaceholder";
 import VentureIntake from "./pages/VentureIntake";
 import ProblemStatement from "./pages/ProblemStatement";
 import HypothesisRegister from "./pages/HypothesisRegister";
+import CustomerDiscovery from "./pages/discovery/CustomerDiscovery";
+import CompetitorMapping from "./pages/discovery/CompetitorMapping";
+import DemandSignals from "./pages/discovery/DemandSignals";
+import WTPAssessment from "./pages/discovery/WTPAssessment";
+import MarketRiskLog from "./pages/discovery/MarketRiskLog";
 import ReadinessScoring from "./pages/ReadinessScoring";
 import RDHub from "./pages/RDHub";
 import RiskIntelligence from "./pages/RiskIntelligence";
@@ -197,11 +202,11 @@ function Router() {
       <Route path="/intake/problem" component={ProblemStatement} />
       <Route path="/intake/hypotheses" component={HypothesisRegister} />
       {/* Module 3: Discovery & Market Validation */}
-      <Route path="/discovery" component={ModulePlaceholder} />
-      <Route path="/discovery/competitors" component={ModulePlaceholder} />
-      <Route path="/discovery/demand" component={ModulePlaceholder} />
-      <Route path="/discovery/wtp" component={ModulePlaceholder} />
-      <Route path="/discovery/market-risk" component={ModulePlaceholder} />
+      <Route path="/discovery" component={CustomerDiscovery} />
+      <Route path="/discovery/competitors" component={CompetitorMapping} />
+      <Route path="/discovery/demand" component={DemandSignals} />
+      <Route path="/discovery/wtp" component={WTPAssessment} />
+      <Route path="/discovery/market-risk" component={MarketRiskLog} />
       {/* Module 4: Proposition & Business Model */}
       <Route path="/proposition" component={ModulePlaceholder} />
       <Route path="/proposition/bmc" component={ModulePlaceholder} />
