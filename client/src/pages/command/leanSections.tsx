@@ -2,9 +2,12 @@
 // COMMAND CENTRE — Lean OS aggregate sections (portfolio-wide, read-first)
 // Reused as tabs inside Portfolio Overview, Command Centre and Pipeline.
 // ============================================================================
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLocation } from "wouter";
 import {
   StatTile, ScoreBar, StageBadge, VentureStatusBadge, DecisionBadge, RiskBadge,
@@ -13,7 +16,10 @@ import {
 } from "@/components/command/primitives";
 import { humanise, STAGE_LABELS } from "@shared/commandCentre";
 import { useSelectedVenture } from "@/contexts/SelectedVentureContext";
-import { AlertTriangle, FlaskConical, TrendingUp, Activity, Layers } from "lucide-react";
+import { AlertTriangle, FlaskConical, TrendingUp, Activity, Layers, ArrowUpDown, GitFork, ClipboardCheck, FilePlus2, Settings2 } from "lucide-react";
+import {
+  ExperimentManageModal, EvidenceFromExperimentModal, DecisionActionModal, PivotModal,
+} from "./leanActions";
 
 const DECISION_COLUMNS: { key: string; label: string; tone: Tone }[] = [
   { key: "evidence_needed", label: "Evidence Needed", tone: "amber" },
@@ -29,14 +35,50 @@ const EXPERIMENT_COLUMNS = ["proposed", "approved", "running", "blocked", "overd
 function Loading() { return <div className="text-sm text-gray-400 py-10 text-center">Loading…</div>; }
 
 // ─── 1. Lean Portfolio ─────────────────────────────────────────────────────────
+type SortKey = "name" | "stage" | "status" | "evidenceConfidence" | "riskScore" | "portfolioHealth" | "riskAdjustedReadiness";
+
 export function LeanPortfolio() {
   const [, navigate] = useLocation();
   const { setSelectedVentureId } = useSelectedVenture();
   const q = trpc.commandCentreLean.portfolioSummary.useQuery();
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [decisionFilter, setDecisionFilter] = useState("all");
+  const [sortKey, setSortKey] = useState<SortKey>("portfolioHealth");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  const rawRows = q.data?.rows ?? [];
+  const view = useMemo(() => {
+    let r = rawRows.filter((row) =>
+      (!search || row.name.toLowerCase().includes(search.toLowerCase())) &&
+      (statusFilter === "all" || row.status === statusFilter) &&
+      (decisionFilter === "all" || row.recommendation === decisionFilter));
+    r = [...r].sort((a, b) => {
+      const av = a[sortKey] ?? "", bv = b[sortKey] ?? "";
+      const cmp = typeof av === "number" && typeof bv === "number" ? av - bv : String(av).localeCompare(String(bv));
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return r;
+  }, [rawRows, search, statusFilter, decisionFilter, sortKey, sortDir]);
+
   if (q.isLoading) return <Loading />;
   const data = q.data;
   if (!data || data.rows.length === 0) return <EmptyState title="No ventures yet" description="Seed or create ventures to populate the Lean portfolio." />;
-  const { rows, stats } = data;
+  const { stats } = data;
+
+  const statusOptions = Array.from(new Set(rawRows.map((r) => r.status).filter(Boolean))) as string[];
+  const decisionOptions = Array.from(new Set(rawRows.map((r) => r.recommendation).filter(Boolean))) as string[];
+  function toggleSort(k: SortKey) {
+    if (sortKey === k) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(k); setSortDir(k === "name" ? "asc" : "desc"); }
+  }
+  function SortableTh({ k, label, className }: { k: SortKey; label: string; className?: string }) {
+    return (
+      <th className={`px-4 py-2.5 font-semibold cursor-pointer select-none hover:text-gray-700 ${className ?? ""}`} onClick={() => toggleSort(k)} data-testid={`sort-${k}`}>
+        <span className="inline-flex items-center gap-1">{label}<ArrowUpDown size={11} className={sortKey === k ? "text-gray-700" : "text-gray-300"} /></span>
+      </th>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -50,23 +92,45 @@ export function LeanPortfolio() {
         <StatTile label="Critical Alerts" value={stats.criticalAlerts} tone={stats.criticalAlerts ? "red" : "green"} icon={<AlertTriangle size={18} />} />
       </div>
 
+      <div className="flex flex-wrap items-center gap-2">
+        <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search ventures…" className="h-9 w-48 text-sm" data-testid="input-portfolio-search" />
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="h-9 w-40 text-sm" data-testid="select-status-filter"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            {statusOptions.map((s) => <SelectItem key={s} value={s}>{humanise(s)}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={decisionFilter} onValueChange={setDecisionFilter}>
+          <SelectTrigger className="h-9 w-48 text-sm" data-testid="select-decision-filter"><SelectValue placeholder="Decision" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All decisions</SelectItem>
+            {decisionOptions.map((s) => <SelectItem key={s} value={s}>{humanise(s)}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <span className="text-xs text-gray-400 ml-auto">{view.length} of {rawRows.length}</span>
+      </div>
+
       <Card className="border shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-gray-50 text-left text-xs text-gray-500">
-                <th className="px-4 py-2.5 font-semibold">Venture</th>
-                <th className="px-4 py-2.5 font-semibold">Stage</th>
-                <th className="px-4 py-2.5 font-semibold">Status</th>
-                <th className="px-4 py-2.5 font-semibold text-center">Evidence</th>
-                <th className="px-4 py-2.5 font-semibold text-center">Risk</th>
-                <th className="px-4 py-2.5 font-semibold text-center">Health</th>
-                <th className="px-4 py-2.5 font-semibold text-center">Readiness</th>
+                <SortableTh k="name" label="Venture" />
+                <SortableTh k="stage" label="Stage" />
+                <SortableTh k="status" label="Status" />
+                <SortableTh k="evidenceConfidence" label="Evidence" className="text-center" />
+                <SortableTh k="riskScore" label="Risk" className="text-center" />
+                <SortableTh k="portfolioHealth" label="Health" className="text-center" />
+                <SortableTh k="riskAdjustedReadiness" label="Readiness" className="text-center" />
                 <th className="px-4 py-2.5 font-semibold">Decision</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
+              {view.length === 0 && (
+                <tr><td colSpan={8} className="px-4 py-8 text-center text-sm text-gray-400">No ventures match the current filters.</td></tr>
+              )}
+              {view.map((r) => (
                 <tr key={r.ventureId} className="border-b last:border-0 hover:bg-gray-50 cursor-pointer" onClick={() => { setSelectedVentureId(r.ventureId); navigate(`/venture-status?ventureId=${r.ventureId}`); }} data-testid={`row-portfolio-${r.ventureId}`}>
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-2">
@@ -94,19 +158,28 @@ export function LeanPortfolio() {
 
 // ─── 2. Lean Decision Board ────────────────────────────────────────────────────
 export function LeanDecisionBoard() {
+  const utils = trpc.useUtils();
   const q = trpc.commandCentreLean.decisionBoard.useQuery();
   const cards = q.data ?? [];
+  const [decisionCard, setDecisionCard] = useState<any>(null);
+  const [pivotCard, setPivotCard] = useState<any>(null);
   const grouped = useMemo(() => {
     const m: Record<string, typeof cards> = {};
     for (const c of cards) (m[c.column] ??= []).push(c);
     return m;
   }, [cards]);
+  const refresh = () => {
+    utils.commandCentreLean.decisionBoard.invalidate();
+    utils.commandCentreLean.portfolioSummary.invalidate();
+    utils.commandCentreLean.alerts.list.invalidate();
+    utils.commandCentreLean.pivots.list.invalidate();
+  };
   if (q.isLoading) return <Loading />;
   if (!cards.length) return <EmptyState title="No ventures to triage" description="Seed ventures to populate the decision board." />;
 
   return (
     <div className="space-y-5">
-      <SectionHead title="Lean Decision Board" description="Every venture sorted into the recommended Lean decision lane, driven by evidence and risk." />
+      <SectionHead title="Lean Decision Board" description="Every venture sorted into the recommended Lean decision lane — approve, reject or pivot from each card." />
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {DECISION_COLUMNS.map((col) => {
           const items = grouped[col.key] ?? [];
@@ -134,8 +207,16 @@ export function LeanDecisionBoard() {
                         <div>Risk <span className="font-bold text-gray-700">{c.riskScore}</span></div>
                         <div>WTP <span className="font-bold text-gray-700">{c.wtpScore}</span></div>
                       </div>
-                      <div className="text-[11px] text-gray-500 border-t pt-2">
+                      <div className="text-[11px] text-gray-500 border-t pt-2 mb-2.5">
                         <span className="font-semibold">Next:</span> {c.nextBestAction}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Button size="sm" variant="outline" className="h-7 text-[11px] flex-1" onClick={() => setDecisionCard(c)} data-testid={`button-decide-${c.ventureId}`}>
+                          <ClipboardCheck size={12} className="mr-1" />Decide
+                        </Button>
+                        <Button size="sm" variant="outline" className="h-7 text-[11px] flex-1" onClick={() => setPivotCard(c)} data-testid={`button-pivot-${c.ventureId}`}>
+                          <GitFork size={12} className="mr-1" />Pivot
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -145,13 +226,25 @@ export function LeanDecisionBoard() {
           );
         })}
       </div>
+      {decisionCard && <DecisionActionModal open={!!decisionCard} onOpenChange={(o) => !o && setDecisionCard(null)} card={decisionCard} onSaved={refresh} />}
+      {pivotCard && <PivotModal open={!!pivotCard} onOpenChange={(o) => !o && setPivotCard(null)} card={pivotCard} onSaved={refresh} />}
     </div>
   );
 }
 
 // ─── 3. Experiment Queue ───────────────────────────────────────────────────────
 export function ExperimentQueue() {
+  const utils = trpc.useUtils();
   const q = trpc.commandCentreLean.experimentQueue.useQuery();
+  const [manage, setManage] = useState<any>(null);
+  const [evidenceFor, setEvidenceFor] = useState<any>(null);
+  const refresh = () => {
+    utils.commandCentreLean.experimentQueue.invalidate();
+    utils.commandCentreLean.evidenceDashboard.invalidate();
+    utils.commandCentreLean.decisionBoard.invalidate();
+    utils.commandCentreLean.portfolioSummary.invalidate();
+    utils.commandCentreLean.alerts.list.invalidate();
+  };
   if (q.isLoading) return <Loading />;
   const all = (q.data ?? []) as any[];
   if (!all.length) return <EmptyState title="No experiments" description="Experiments proposed across ventures will appear here as a kanban." />;
@@ -160,7 +253,7 @@ export function ExperimentQueue() {
 
   return (
     <div className="space-y-5">
-      <SectionHead title="Experiment Queue" description="Every venture's experiments by status — proposed, running, blocked, overdue or completed." />
+      <SectionHead title="Experiment Queue" description="Move experiments through the pipeline, capture results & learning, and turn completed experiments into evidence." />
       <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-3">
         {EXPERIMENT_COLUMNS.map((col) => {
           const items = grouped[col] ?? [];
@@ -180,11 +273,21 @@ export function ExperimentQueue() {
                         <span className="text-[11px] font-semibold text-gray-500">{e.ventureName}</span>
                       </div>
                       <p className="text-xs font-medium text-gray-800 leading-snug mb-1.5">{e.experimentName}</p>
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between mb-2">
                         <ExperimentStatusBadge status={e.effectiveStatus} />
                         {e.dueDate && <span className="text-[10px] text-gray-400">{e.dueDate}</span>}
                       </div>
-                      {e.experimentOwner && <div className="text-[10px] text-gray-400 mt-1">{e.experimentOwner}</div>}
+                      {e.experimentOwner && <div className="text-[10px] text-gray-400 mb-2">{e.experimentOwner}</div>}
+                      <div className="flex items-center gap-1.5 border-t pt-2">
+                        <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[10px] flex-1" onClick={() => setManage(e)} data-testid={`button-manage-experiment-${e.id}`}>
+                          <Settings2 size={11} className="mr-1" />Manage
+                        </Button>
+                        {e.experimentStatus === "completed" && (
+                          <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[10px] flex-1" onClick={() => setEvidenceFor(e)} data-testid={`button-evidence-from-${e.id}`}>
+                            <FilePlus2 size={11} className="mr-1" />Evidence
+                          </Button>
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
@@ -193,6 +296,8 @@ export function ExperimentQueue() {
           );
         })}
       </div>
+      {manage && <ExperimentManageModal open={!!manage} onOpenChange={(o) => !o && setManage(null)} experiment={manage} onSaved={refresh} />}
+      {evidenceFor && <EvidenceFromExperimentModal open={!!evidenceFor} onOpenChange={(o) => !o && setEvidenceFor(null)} experiment={evidenceFor} onSaved={refresh} />}
     </div>
   );
 }

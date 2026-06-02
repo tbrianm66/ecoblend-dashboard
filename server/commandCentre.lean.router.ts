@@ -295,6 +295,56 @@ async function syncAlerts(d: Db, b: VentureBundle, m: ReturnType<typeof deriveVe
   }
 }
 
+/** Recompute + sync auto-alerts for a single venture (called after mutations). */
+async function resyncVentureAlerts(d: Db, ventureId: string) {
+  const b = await loadVentureBundle(d, ventureId);
+  if (b) await syncAlerts(d, b, deriveVentureMetrics(b));
+}
+
+/**
+ * Auto-pivot prompt: when a `pivot` decision is approved/implemented, ensure a
+ * pivot-log entry exists for it (idempotent on decisionId).
+ */
+async function autoPivotFromDecision(d: Db, decisionId: number) {
+  const [dec] = await d.select().from(ccDecisions).where(eq(ccDecisions.id, decisionId));
+  if (!dec || dec.decisionType !== "pivot") return;
+  if (dec.decisionStatus !== "approved" && dec.decisionStatus !== "implemented") return;
+  const existing = await d.select().from(ccPivotLogs)
+    .where(and(eq(ccPivotLogs.ventureId, dec.ventureId), eq(ccPivotLogs.decisionId, decisionId)));
+  if (existing.length) return;
+  await d.insert(ccPivotLogs).values({
+    ventureId: dec.ventureId,
+    decisionId,
+    pivotType: "business_model",
+    reasonForPivot: dec.decisionSummary ?? dec.decisionTitle,
+    evidenceTrigger: `Approved pivot decision: ${dec.decisionTitle}`,
+    dateLogged: new Date().toISOString().slice(0, 10),
+  });
+}
+
+/**
+ * Auto-pivot prompt: when a hypothesis is invalidated / flagged pivot_required,
+ * ensure a pivot-log entry exists for it (idempotent on hypothesisId).
+ */
+async function autoPivotFromHypothesis(d: Db, hypothesisId: number) {
+  const [h] = await d.select().from(ccHypotheses).where(eq(ccHypotheses.id, hypothesisId));
+  if (!h || (h.status !== "invalidated" && h.status !== "pivot_required")) return;
+  const existing = await d.select().from(ccPivotLogs)
+    .where(and(eq(ccPivotLogs.ventureId, h.ventureId), eq(ccPivotLogs.hypothesisId, hypothesisId)));
+  if (existing.length) return;
+  const pivotType = (PIVOT_TYPES as readonly string[]).includes(h.hypothesisType ?? "")
+    ? (h.hypothesisType as (typeof PIVOT_TYPES)[number]) : "problem";
+  await d.insert(ccPivotLogs).values({
+    ventureId: h.ventureId,
+    hypothesisId,
+    pivotType,
+    previousHypothesis: h.hypothesisStatement,
+    reasonForPivot: h.status === "invalidated" ? "Hypothesis invalidated by evidence" : "Hypothesis flagged for pivot",
+    evidenceTrigger: h.evidenceSummary ?? null,
+    dateLogged: new Date().toISOString().slice(0, 10),
+  });
+}
+
 // ─── CRUD helper builders ─────────────────────────────────────────────────────
 const hypothesisFields = {
   ventureId: z.string(),
@@ -410,16 +460,22 @@ export const commandCentreLeanRouter = router({
     upsert: publicProcedure.input(z.object({ id: z.number().optional(), ...hypothesisFields })).mutation(async ({ input }) => {
       const d = await db();
       const { id, ...vals } = input;
+      let hid = id;
       if (id) {
         await d.update(ccHypotheses).set({ ...vals, updatedAt: new Date() }).where(eq(ccHypotheses.id, id));
-        return { id };
+      } else {
+        const [row] = await d.insert(ccHypotheses).values(vals).returning();
+        hid = row.id;
       }
-      const [row] = await d.insert(ccHypotheses).values(vals).returning();
-      return { id: row.id };
+      if (hid) await autoPivotFromHypothesis(d, hid);
+      await resyncVentureAlerts(d, vals.ventureId);
+      return { id: hid };
     }),
     delete: publicProcedure.input(idInput).mutation(async ({ input }) => {
       const d = await db();
+      const [row] = await d.select().from(ccHypotheses).where(eq(ccHypotheses.id, input.id));
       await d.delete(ccHypotheses).where(eq(ccHypotheses.id, input.id));
+      if (row) await resyncVentureAlerts(d, row.ventureId);
       return { success: true };
     }),
   }),
@@ -433,21 +489,28 @@ export const commandCentreLeanRouter = router({
     upsert: publicProcedure.input(z.object({ id: z.number().optional(), ...experimentFields })).mutation(async ({ input }) => {
       const d = await db();
       const { id, ...vals } = input;
+      let eid = id;
       if (id) {
         await d.update(ccExperiments).set({ ...vals, updatedAt: new Date() }).where(eq(ccExperiments.id, id));
-        return { id };
+      } else {
+        const [row] = await d.insert(ccExperiments).values(vals).returning();
+        eid = row.id;
       }
-      const [row] = await d.insert(ccExperiments).values(vals).returning();
-      return { id: row.id };
+      await resyncVentureAlerts(d, vals.ventureId);
+      return { id: eid };
     }),
     setStatus: publicProcedure.input(z.object({ id: z.number(), experimentStatus: z.enum(EXPERIMENT_STATUSES) })).mutation(async ({ input }) => {
       const d = await db();
       await d.update(ccExperiments).set({ experimentStatus: input.experimentStatus, updatedAt: new Date() }).where(eq(ccExperiments.id, input.id));
+      const [row] = await d.select().from(ccExperiments).where(eq(ccExperiments.id, input.id));
+      if (row) await resyncVentureAlerts(d, row.ventureId);
       return { success: true };
     }),
     delete: publicProcedure.input(idInput).mutation(async ({ input }) => {
       const d = await db();
+      const [row] = await d.select().from(ccExperiments).where(eq(ccExperiments.id, input.id));
       await d.delete(ccExperiments).where(eq(ccExperiments.id, input.id));
+      if (row) await resyncVentureAlerts(d, row.ventureId);
       return { success: true };
     }),
   }),
@@ -466,16 +529,21 @@ export const commandCentreLeanRouter = router({
         evidenceRelevanceScore: vals.evidenceRelevanceScore ?? 1,
         evidenceRecencyScore: vals.evidenceRecencyScore ?? 1,
       });
+      let evid = id;
       if (id) {
         await d.update(ccEvidence).set({ ...vals, evidenceConfidenceScore, updatedAt: new Date() }).where(eq(ccEvidence.id, id));
-        return { id, evidenceConfidenceScore };
+      } else {
+        const [row] = await d.insert(ccEvidence).values({ ...vals, evidenceConfidenceScore }).returning();
+        evid = row.id;
       }
-      const [row] = await d.insert(ccEvidence).values({ ...vals, evidenceConfidenceScore }).returning();
-      return { id: row.id, evidenceConfidenceScore };
+      await resyncVentureAlerts(d, vals.ventureId);
+      return { id: evid, evidenceConfidenceScore };
     }),
     delete: publicProcedure.input(idInput).mutation(async ({ input }) => {
       const d = await db();
+      const [row] = await d.select().from(ccEvidence).where(eq(ccEvidence.id, input.id));
       await d.delete(ccEvidence).where(eq(ccEvidence.id, input.id));
+      if (row) await resyncVentureAlerts(d, row.ventureId);
       return { success: true };
     }),
   }),
@@ -489,22 +557,31 @@ export const commandCentreLeanRouter = router({
     upsert: publicProcedure.input(z.object({ id: z.number().optional(), ...decisionFields })).mutation(async ({ input }) => {
       const d = await db();
       const { id, ...vals } = input;
+      let did = id;
       if (id) {
         await d.update(ccDecisions).set({ ...vals, updatedAt: new Date() }).where(eq(ccDecisions.id, id));
-        return { id };
+      } else {
+        const [row] = await d.insert(ccDecisions).values(vals).returning();
+        did = row.id;
       }
-      const [row] = await d.insert(ccDecisions).values(vals).returning();
-      return { id: row.id };
+      if (did) await autoPivotFromDecision(d, did);
+      await resyncVentureAlerts(d, vals.ventureId);
+      return { id: did };
     }),
     setStatus: publicProcedure.input(z.object({ id: z.number(), decisionStatus: z.enum(DECISION_STATUSES), reviewerNotes: z.string().nullable().optional(), approvedBy: z.string().nullable().optional() })).mutation(async ({ input }) => {
       const d = await db();
       const { id, ...vals } = input;
       await d.update(ccDecisions).set({ ...vals, updatedAt: new Date() }).where(eq(ccDecisions.id, id));
+      await autoPivotFromDecision(d, id);
+      const [row] = await d.select().from(ccDecisions).where(eq(ccDecisions.id, id));
+      if (row) await resyncVentureAlerts(d, row.ventureId);
       return { success: true };
     }),
     delete: publicProcedure.input(idInput).mutation(async ({ input }) => {
       const d = await db();
+      const [row] = await d.select().from(ccDecisions).where(eq(ccDecisions.id, input.id));
       await d.delete(ccDecisions).where(eq(ccDecisions.id, input.id));
+      if (row) await resyncVentureAlerts(d, row.ventureId);
       return { success: true };
     }),
   }),
@@ -541,16 +618,21 @@ export const commandCentreLeanRouter = router({
     upsert: publicProcedure.input(z.object({ id: z.number().optional(), ...reviewFields })).mutation(async ({ input }) => {
       const d = await db();
       const { id, ...vals } = input;
+      let rid = id;
       if (id) {
         await d.update(ccStageGateReviews).set({ ...vals, updatedAt: new Date() }).where(eq(ccStageGateReviews.id, id));
-        return { id };
+      } else {
+        const [row] = await d.insert(ccStageGateReviews).values(vals).returning();
+        rid = row.id;
       }
-      const [row] = await d.insert(ccStageGateReviews).values(vals).returning();
-      return { id: row.id };
+      await resyncVentureAlerts(d, vals.ventureId);
+      return { id: rid };
     }),
     delete: publicProcedure.input(idInput).mutation(async ({ input }) => {
       const d = await db();
+      const [row] = await d.select().from(ccStageGateReviews).where(eq(ccStageGateReviews.id, input.id));
       await d.delete(ccStageGateReviews).where(eq(ccStageGateReviews.id, input.id));
+      if (row) await resyncVentureAlerts(d, row.ventureId);
       return { success: true };
     }),
   }),
