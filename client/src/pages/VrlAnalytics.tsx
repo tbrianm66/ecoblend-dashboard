@@ -5,6 +5,7 @@
 // ============================================================
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import MissionIntegrityBadge from "@/components/MissionIntegrityBadge";
 import { ventures as staticVentures } from "@/lib/data";
 import {
   TrendingUp, Calculator, Shield, FlaskConical, Briefcase,
@@ -640,7 +641,10 @@ export default function VrlAnalytics() {
           <span className="text-xs text-gray-400">·</span>
           <span className="text-xs text-gray-400 font-mono">9-Level Scale</span>
         </div>
-        <h1 className="vos-page-title mb-1">Venture Readiness Level Analytics</h1>
+        <div className="flex items-center gap-3 mb-1">
+          <h1 className="vos-page-title">Venture Readiness Level Analytics</h1>
+          <MissionIntegrityBadge variant="chip" />
+        </div>
         <p className="text-sm text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>
           VRL = (alpha x TRL + beta x BRL) x (1 - Risk Index) x Confidence — integrating technology, business, and risk intelligence
         </p>

@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ArrowLeft, CheckCircle2, Circle, AlertTriangle, TrendingUp, FlaskConical, LayoutGrid, Briefcase, GitBranch, Plus, Trash2, RefreshCw, Shield, FileText, Zap, BookOpen, Lock, Palette, ExternalLink, Loader2, Download, BarChart2 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import MissionIntegrityBadge from "@/components/MissionIntegrityBadge";
 
 const riskColors = { Low: "#22c55e", Medium: "#f59e0b", High: "#dc2626" };
 
@@ -102,6 +103,7 @@ export default function VentureDetail() {
               <h1 className="vos-page-title" style={{ color: venture.color }}>{venture.name}</h1>
               <span className="vos-badge" style={{ background: `${venture.color}15`, color: venture.color, fontSize: "0.65rem" }}>{venture.channel}</span>
               <span className="vos-badge" style={{ background: "#f3f4f6", color: "#6b7280", fontSize: "0.65rem" }}>{venture.status}</span>
+              <MissionIntegrityBadge ventureId={venture.id} variant="chip" />
             </div>
             <p className="text-sm text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>{venture.description}</p>
           </div>

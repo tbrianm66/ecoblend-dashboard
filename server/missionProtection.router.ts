@@ -15,7 +15,7 @@ import {
   stakeholderProfiles,
   type MissionIntegrityScore,
 } from "../drizzle/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -285,6 +285,57 @@ export const missionIntegrityRouter = router({
         .update(missionDriftAlerts)
         .set({ status: "Acknowledged", acknowledgedAt: new Date(), updatedAt: new Date() })
         .where(eq(missionDriftAlerts.id, input.alertId));
+      return { success: true };
+    }),
+  /**
+   * Resolve (close) a drift alert.
+   */
+  resolveAlert: publicProcedure
+    .input(z.object({ alertId: z.string() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB unavailable");
+      await db
+        .update(missionDriftAlerts)
+        .set({ status: "Resolved", updatedAt: new Date() })
+        .where(eq(missionDriftAlerts.id, input.alertId));
+      return { success: true };
+    }),
+  /**
+   * Get all active alerts across all ventures (portfolio-wide).
+   */
+  getAllAlerts: publicProcedure
+    .input(z.object({
+      status: z.enum(["Active", "Acknowledged", "Resolved", "All"]).optional().default("Active"),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB unavailable");
+      const query = db
+        .select()
+        .from(missionDriftAlerts)
+        .orderBy(desc(missionDriftAlerts.createdAt));
+      const all = await query;
+      if (input.status === "All") return all;
+      return all.filter((a: any) => a.status === input.status);
+    }),
+  /**
+   * Bulk acknowledge all active alerts for a venture.
+   */
+  acknowledgeAllForVenture: publicProcedure
+    .input(z.object({ ventureId: z.string() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB unavailable");
+      await db
+        .update(missionDriftAlerts)
+        .set({ status: "Acknowledged", acknowledgedAt: new Date(), updatedAt: new Date() })
+        .where(
+          and(
+            eq(missionDriftAlerts.ventureId, input.ventureId),
+            eq(missionDriftAlerts.status, "Active")
+          )
+        );
       return { success: true };
     }),
 
@@ -1023,6 +1074,403 @@ export const stakeholderAlignmentRouter = router({
         { step: 6, title: "Develop Engagement Plans", description: "Create specific strategies to maintain or improve alignment for each stakeholder" },
         { step: 7, title: "Monitor and Re-assess", description: "Track alignment scores quarterly and update after major events" },
       ],
+    };
+  }),
+});
+
+// ── Board Decision Audit Trail Router ────────────────────────────────────────
+export const boardDecisionsRouter = router({
+  /**
+   * List all board decisions (optionally filtered by ventureId).
+   */
+  list: publicProcedure
+    .input(z.object({ ventureId: z.string().optional() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB unavailable");
+      const rows = await db.execute(
+        input.ventureId
+          ? sql`SELECT * FROM board_decisions WHERE venture_id = ${input.ventureId} ORDER BY decision_date DESC`
+          : sql`SELECT * FROM board_decisions ORDER BY decision_date DESC`
+      );
+      return (rows as any).rows ?? rows ?? [];
+    }),
+
+  /**
+   * Create or update a board decision.
+   */
+  upsert: publicProcedure
+    .input(z.object({
+      id: z.string().optional(),
+      ventureId: z.string(),
+      ventureName: z.string(),
+      decisionTitle: z.string(),
+      decisionType: z.string().optional().default("General"),
+      description: z.string().optional(),
+      rationale: z.string().optional(),
+      missionAlignmentScore: z.number().min(0).max(100).optional().default(50),
+      financialImpact: z.string().optional().default("None"),
+      strategicImpact: z.string().optional().default("None"),
+      decisionDate: z.string(),
+      decisionStatus: z.string().optional().default("Pending"),
+      votesFor: z.number().optional().default(0),
+      votesAgainst: z.number().optional().default(0),
+      votesAbstain: z.number().optional().default(0),
+      totalBoardMembers: z.number().optional().default(5),
+      proposedBy: z.string().optional(),
+      approvedBy: z.string().optional(),
+      implementationDeadline: z.string().optional(),
+      implementationStatus: z.string().optional().default("Not Started"),
+      notes: z.string().optional(),
+      tags: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB unavailable");
+      const id = input.id || generateId("bd");
+      const quorumMet = input.totalBoardMembers
+        ? (input.votesFor! + input.votesAgainst! + input.votesAbstain!) >= Math.ceil(input.totalBoardMembers / 2)
+        : false;
+      await db.execute(sql`
+        INSERT INTO board_decisions (
+          id, venture_id, venture_name, decision_title, decision_type,
+          description, rationale, mission_alignment_score, financial_impact,
+          strategic_impact, decision_date, decision_status,
+          votes_for, votes_against, votes_abstain, total_board_members, quorum_met,
+          proposed_by, approved_by, implementation_deadline, implementation_status,
+          notes, tags
+        ) VALUES (
+          ${id}, ${input.ventureId}, ${input.ventureName}, ${input.decisionTitle},
+          ${input.decisionType}, ${input.description ?? null}, ${input.rationale ?? null},
+          ${input.missionAlignmentScore}, ${input.financialImpact}, ${input.strategicImpact},
+          ${input.decisionDate}, ${input.decisionStatus},
+          ${input.votesFor}, ${input.votesAgainst}, ${input.votesAbstain},
+          ${input.totalBoardMembers}, ${quorumMet},
+          ${input.proposedBy ?? null}, ${input.approvedBy ?? null},
+          ${input.implementationDeadline ?? null}, ${input.implementationStatus},
+          ${input.notes ?? null}, ${input.tags ?? null}
+        )
+        ON DUPLICATE KEY UPDATE
+          decision_title = VALUES(decision_title),
+          decision_type = VALUES(decision_type),
+          description = VALUES(description),
+          rationale = VALUES(rationale),
+          mission_alignment_score = VALUES(mission_alignment_score),
+          financial_impact = VALUES(financial_impact),
+          strategic_impact = VALUES(strategic_impact),
+          decision_date = VALUES(decision_date),
+          decision_status = VALUES(decision_status),
+          votes_for = VALUES(votes_for),
+          votes_against = VALUES(votes_against),
+          votes_abstain = VALUES(votes_abstain),
+          total_board_members = VALUES(total_board_members),
+          quorum_met = VALUES(quorum_met),
+          proposed_by = VALUES(proposed_by),
+          approved_by = VALUES(approved_by),
+          implementation_deadline = VALUES(implementation_deadline),
+          implementation_status = VALUES(implementation_status),
+          notes = VALUES(notes),
+          tags = VALUES(tags),
+          updated_at = CURRENT_TIMESTAMP
+      `);
+      return { id, success: true };
+    }),
+
+  /**
+   * Delete a board decision by ID.
+   */
+  delete: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB unavailable");
+      await db.execute(sql`DELETE FROM board_decisions WHERE id = ${input.id}`);
+      return { success: true };
+    }),
+});
+
+// ── Acquisition Readiness Alerts Router ──────────────────────────────────────
+export const acquisitionReadinessRouter = router({
+  /**
+   * Get all acquisition readiness alerts, optionally filtered by venture.
+   */
+  getAlerts: publicProcedure
+    .input(z.object({
+      ventureId: z.string().optional(),
+      status: z.string().optional().default("Active"),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB unavailable");
+      const rows = await db.execute(
+        input.ventureId
+          ? sql`SELECT * FROM acquisition_readiness_alerts WHERE venture_id = ${input.ventureId} AND status = ${input.status} ORDER BY created_at DESC`
+          : sql`SELECT * FROM acquisition_readiness_alerts WHERE status = ${input.status} ORDER BY created_at DESC`
+      );
+      return (rows as any).rows ?? rows ?? [];
+    }),
+
+  /**
+   * Get acquisition readiness score for a venture.
+   */
+  getScore: publicProcedure
+    .input(z.object({ ventureId: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB unavailable");
+      const rows = await db.execute(
+        sql`SELECT * FROM acquisition_readiness_scores WHERE venture_id = ${input.ventureId} ORDER BY recorded_at DESC LIMIT 1`
+      );
+      const data = (rows as any).rows ?? rows ?? [];
+      return data[0] ?? null;
+    }),
+
+  /**
+   * Record an acquisition readiness score and auto-generate alerts.
+   */
+  recordScore: publicProcedure
+    .input(z.object({
+      ventureId: z.string(),
+      ventureName: z.string(),
+      financialAttractiveness: z.number().min(0).max(100),
+      ipValue: z.number().min(0).max(100),
+      marketPosition: z.number().min(0).max(100),
+      teamQuality: z.number().min(0).max(100),
+      missionProtectionStrength: z.number().min(0).max(100),
+      governanceMaturity: z.number().min(0).max(100),
+      notes: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB unavailable");
+
+      // Calculate overall score (weighted)
+      const overall = Math.round(
+        input.financialAttractiveness * 0.20 +
+        input.ipValue * 0.20 +
+        input.marketPosition * 0.15 +
+        input.teamQuality * 0.15 +
+        input.missionProtectionStrength * 0.20 +
+        input.governanceMaturity * 0.10
+      );
+
+      // Determine acquisition risk level
+      // High financial attractiveness + low mission protection = high risk
+      const riskScore = input.financialAttractiveness * 0.4 + input.ipValue * 0.3 + input.marketPosition * 0.3;
+      const protectionScore = input.missionProtectionStrength * 0.5 + input.governanceMaturity * 0.5;
+      const netRisk = riskScore - protectionScore;
+      const riskLevel = netRisk > 30 ? "Critical" : netRisk > 10 ? "High" : netRisk > -10 ? "Medium" : "Low";
+
+      const scoreId = generateId("ars");
+      await db.execute(sql`
+        INSERT INTO acquisition_readiness_scores (
+          id, venture_id, overall_score, financial_attractiveness, ip_value,
+          market_position, team_quality, mission_protection_strength,
+          governance_maturity, acquisition_risk_level, notes
+        ) VALUES (
+          ${scoreId}, ${input.ventureId}, ${overall},
+          ${input.financialAttractiveness}, ${input.ipValue},
+          ${input.marketPosition}, ${input.teamQuality},
+          ${input.missionProtectionStrength}, ${input.governanceMaturity},
+          ${riskLevel}, ${input.notes ?? null}
+        )
+      `);
+
+      // Auto-generate alerts based on trigger conditions
+      const alerts: { type: string; severity: string; title: string; description: string; action: string; trigger: number; threshold: number }[] = [];
+
+      if (input.financialAttractiveness > 75 && input.missionProtectionStrength < 50) {
+        alerts.push({
+          type: "HighValueLowProtection",
+          severity: "Critical",
+          title: "High-Value Target with Weak Mission Protection",
+          description: `${input.ventureName} scores ${input.financialAttractiveness}/100 on financial attractiveness but only ${input.missionProtectionStrength}/100 on mission protection. This combination makes the venture highly vulnerable to predatory acquisition.`,
+          action: "Immediately strengthen constitutional governance: add founder veto rights, mission lock clauses, and poison pill provisions before the next funding round.",
+          trigger: input.financialAttractiveness,
+          threshold: 75,
+        });
+      }
+
+      if (input.ipValue > 70 && input.governanceMaturity < 40) {
+        alerts.push({
+          type: "HighIpLowGovernance",
+          severity: "High",
+          title: "High IP Value with Immature Governance",
+          description: `${input.ventureName} has significant IP value (${input.ipValue}/100) but weak governance structures (${input.governanceMaturity}/100). IP-rich ventures with governance gaps are prime acquisition targets.`,
+          action: "Establish IP holding structure, file defensive patents, and implement board governance protocols before IP portfolio grows further.",
+          trigger: input.ipValue,
+          threshold: 70,
+        });
+      }
+
+      if (input.marketPosition > 65 && input.missionProtectionStrength < 60) {
+        alerts.push({
+          type: "MarketLeaderVulnerable",
+          severity: "High",
+          title: "Market Leadership Without Mission Protection",
+          description: `${input.ventureName} is achieving strong market position (${input.marketPosition}/100) but lacks proportional mission protection (${input.missionProtectionStrength}/100). Market leaders attract strategic acquirers.`,
+          action: "Implement stakeholder governance model and community ownership structure to make mission-hostile acquisition structurally difficult.",
+          trigger: input.marketPosition,
+          threshold: 65,
+        });
+      }
+
+      if (overall > 70 && protectionScore < 50) {
+        alerts.push({
+          type: "OverallAcquisitionRisk",
+          severity: riskLevel as any,
+          title: `Overall Acquisition Risk: ${riskLevel}`,
+          description: `${input.ventureName} has an overall readiness score of ${overall}/100 with a ${riskLevel.toLowerCase()} acquisition risk profile. The venture is becoming increasingly attractive to potential acquirers.`,
+          action: "Conduct a full mission protection audit and implement the Constitutional Governance framework before the next major milestone.",
+          trigger: overall,
+          threshold: 70,
+        });
+      }
+
+      // Insert auto-generated alerts
+      for (const alert of alerts) {
+        const alertId = generateId("ara");
+        await db.execute(sql`
+          INSERT INTO acquisition_readiness_alerts (
+            id, venture_id, venture_name, alert_type, severity, title,
+            description, trigger_value, threshold_value, recommended_action, status
+          ) VALUES (
+            ${alertId}, ${input.ventureId}, ${input.ventureName},
+            ${alert.type}, ${alert.severity}, ${alert.title},
+            ${alert.description}, ${alert.trigger}, ${alert.threshold},
+            ${alert.action}, 'Active'
+          )
+        `);
+      }
+
+      return { scoreId, overall, riskLevel, alertsGenerated: alerts.length };
+    }),
+
+  /**
+   * Acknowledge an acquisition readiness alert.
+   */
+  acknowledgeAlert: publicProcedure
+    .input(z.object({ alertId: z.string() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB unavailable");
+      await db.execute(sql`
+        UPDATE acquisition_readiness_alerts
+        SET status = 'Acknowledged', acknowledged_at = CURRENT_TIMESTAMP
+        WHERE id = ${input.alertId}
+      `);
+      return { success: true };
+    }),
+
+  /**
+   * Resolve an acquisition readiness alert.
+   */
+  resolveAlert: publicProcedure
+    .input(z.object({ alertId: z.string() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB unavailable");
+      await db.execute(sql`
+        UPDATE acquisition_readiness_alerts
+        SET status = 'Resolved', resolved_at = CURRENT_TIMESTAMP
+        WHERE id = ${input.alertId}
+      `);
+      return { success: true };
+    }),
+
+  /**
+   * Get portfolio-wide acquisition risk summary.
+   */
+  getPortfolioRisk: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) throw new Error("DB unavailable");
+    const alertRows = await db.execute(sql`
+      SELECT venture_id, venture_name, severity, COUNT(*) as alert_count
+      FROM acquisition_readiness_alerts
+      WHERE status = 'Active'
+      GROUP BY venture_id, venture_name, severity
+      ORDER BY CASE severity WHEN 'Critical' THEN 1 WHEN 'High' THEN 2 WHEN 'Medium' THEN 3 ELSE 4 END, venture_name
+    `);
+    const scoreRows = await db.execute(sql`
+      SELECT venture_id, overall_score, acquisition_risk_level, recorded_at
+      FROM acquisition_readiness_scores
+      ORDER BY recorded_at DESC
+    `);
+    // De-duplicate to get latest per venture in JS
+    const allScores = (scoreRows as any).rows ?? scoreRows ?? [];
+    const latestByVenture = new Map<string, any>();
+    for (const row of allScores) {
+      if (!latestByVenture.has(row.venture_id)) {
+        latestByVenture.set(row.venture_id, row);
+      }
+    }
+    return {
+      alerts: (alertRows as any).rows ?? alertRows ?? [],
+      scores: Array.from(latestByVenture.values()),
+    };
+  }),
+
+  /**
+   * Return the acquisition readiness assessment framework.
+   */
+  getFramework: publicProcedure.query(() => {
+    return {
+      dimensions: [
+        {
+          key: "financialAttractiveness",
+          label: "Financial Attractiveness",
+          weight: 0.20,
+          description: "Revenue growth, margins, runway, and financial health make the venture attractive to acquirers.",
+          highRiskThreshold: 75,
+          protectiveActions: ["Avoid premature revenue disclosure", "Structure revenue as mission-tied contracts", "Implement revenue sharing with community stakeholders"],
+        },
+        {
+          key: "ipValue",
+          label: "IP & Technology Value",
+          weight: 0.20,
+          description: "Patents, trade secrets, proprietary technology, and data assets that acquirers covet.",
+          highRiskThreshold: 70,
+          protectiveActions: ["Establish IP holding entity separate from operating company", "License IP to mission-aligned organisations", "File defensive patents to create IP moat"],
+        },
+        {
+          key: "marketPosition",
+          label: "Market Position",
+          weight: 0.15,
+          description: "Market share, brand recognition, and competitive positioning that strategic acquirers value.",
+          highRiskThreshold: 65,
+          protectiveActions: ["Build community ownership model", "Establish cooperative or stewardship structure", "Create stakeholder governance to complicate hostile takeover"],
+        },
+        {
+          key: "teamQuality",
+          label: "Team Quality",
+          weight: 0.15,
+          description: "Talent density and expertise that acquirers seek through acqui-hire strategies.",
+          highRiskThreshold: 80,
+          protectiveActions: ["Implement long-term mission-aligned equity vesting", "Create team ownership stake in mission outcomes", "Establish team governance rights in constitutional documents"],
+        },
+        {
+          key: "missionProtectionStrength",
+          label: "Mission Protection Strength",
+          weight: 0.20,
+          description: "Constitutional governance, founder veto rights, and structural protections against mission-hostile acquisition.",
+          highRiskThreshold: 40, // Low score = high risk
+          protectiveActions: ["Implement founder veto rights on mission-critical decisions", "Add mission lock clause to articles of association", "Establish poison pill provisions for hostile acquisition attempts"],
+        },
+        {
+          key: "governanceMaturity",
+          label: "Governance Maturity",
+          weight: 0.10,
+          description: "Board composition, decision-making processes, and governance structures that protect or expose the mission.",
+          highRiskThreshold: 40, // Low score = high risk
+          protectiveActions: ["Establish mission-aligned board majority", "Implement stakeholder advisory council with governance rights", "Create independent mission guardian role"],
+        },
+      ],
+      riskLevels: {
+        Critical: { color: "#dc2626", description: "Immediate action required — venture is highly vulnerable to mission-hostile acquisition" },
+        High: { color: "#ea580c", description: "Significant risk — strengthen mission protection before next funding milestone" },
+        Medium: { color: "#d97706", description: "Moderate risk — implement protective measures within 6 months" },
+        Low: { color: "#16a34a", description: "Well-protected — continue monitoring and maintain governance standards" },
+      },
     };
   }),
 });

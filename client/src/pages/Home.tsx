@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { exportPortfolioPdf, exportInvestorPack } from "@/lib/exportPdf";
 import { trpc } from "@/lib/trpc";
+import MissionIntegrityBadge from "@/components/MissionIntegrityBadge";
 
 const HERO_BG = "https://d2xsxph8kpxj0f.cloudfront.net/310419663031397390/ggmroLG8ezURUZiLzGveTG/ecoblend-hero-bg-4sozsAnSEGXN6NLMPzPbzp.webp";
 
@@ -466,6 +467,8 @@ export default function Home() {
             accent="#10b981"
             icon={Leaf}
           />
+          {/* Mission Integrity Index tile */}
+          <MissionIntegrityBadge variant="tile" className="col-span-1" />
         </div>
 
         {/* ── Main grid: Hub diagram + Venture cards ── */}

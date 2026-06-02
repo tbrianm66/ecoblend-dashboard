@@ -1394,3 +1394,43 @@
 - [x] Phase 5E: Test Mission Integrity Index, Constitutional Governance, Succession Planning, Stakeholder Alignment
 - [x] Phase 5E: Run full test suite — 35 Phase 5 tests passing
 - [x] Phase 5E: Save checkpoint
+
+## Phase 5 Medium-Term (Weeks 9-16) — Mission Protection Integration
+
+### Phase 5F: Mission Integrity Index — Cross-Module Integration
+- [x] Phase 5F: Create compact MissionIntegrityBadge component (score chip + trend arrow)
+- [x] Phase 5F: Integrate MII badge into Portfolio Overview venture cards
+- [x] Phase 5F: Integrate MII badge into Venture Detail page header
+- [x] Phase 5F: Integrate MII badge into VRL Analytics page
+- [x] Phase 5F: Integrate MII badge into Financial Analytics page
+- [x] Phase 5F: Integrate MII badge into Governance Hub header
+- [x] Phase 5F: Integrate MII badge into Risk Intelligence dashboard header
+- [ ] Phase 5F: Add MII portfolio summary tile to Command Centre
+
+### Phase 5G: Automated Mission Drift Alerts
+- [x] Phase 5G: Design mission drift alert engine (threshold rules, severity levels)
+- [x] Phase 5G: Create mission_drift_alerts DB table (already created — verify schema)
+- [x] Phase 5G: Build tRPC alert procedures (generate, list, acknowledge, dismiss, getAllAlerts, resolveAlert)
+- [x] Phase 5G: Create MissionDriftAlertsPanel component (notification panel with severity filtering)
+- [ ] Phase 5G: Add alert bell icon to sidebar with unread count badge
+- [x] Phase 5G: Build alert detail drawer (drift context, recommended actions)
+- [x] Phase 5G: Wire alerts into Risk Intelligence dashboard
+- [x] Phase 5G: Write Vitest tests for alert engine (5 severity classification tests)
+
+### Phase 5H: Board Decision Audit Trail
+- [x] Phase 5H: Create board_decisions DB table (decision, votes, rationale, outcome, mission impact)
+- [x] Phase 5H: Build tRPC procedures for decision CRUD and audit log (list, get, upsert, delete, getDecisionStats)
+- [x] Phase 5H: Create BoardDecisionAuditTrail component (chronological decision timeline with vote recording)
+- [x] Phase 5H: Build vote recording form (board member votes, rationale, mission alignment score)
+- [x] Phase 5H: Add Board Decision Audit Trail tab to Governance Hub
+- [ ] Phase 5H: Build decision impact analysis (how each decision affects MII score)
+- [x] Phase 5H: Write Vitest tests for board decision procedures (5 tests)
+
+### Phase 5I: Acquisition Readiness Alerts
+- [x] Phase 5I: Design acquisition readiness scoring model (financial, IP, team, market, mission risk)
+- [x] Phase 5I: Create acquisition_readiness_scores DB table (+ acquisition_readiness_alerts table)
+- [x] Phase 5I: Build tRPC procedures for readiness scoring and alert generation (getPortfolioRisk, getFramework, upsertScore, generateAlerts, acknowledgeAlert)
+- [x] Phase 5I: Create AcquisitionReadinessAlerts component (score + risk flags + alert management)
+- [x] Phase 5I: Build acquisition alert triggers (mission drift threshold, investor pressure signals)
+- [x] Phase 5I: Add Acquisition Readiness section to Risk Intelligence dashboard
+- [x] Phase 5I: Write Vitest tests for acquisition readiness scoring (8 tests)

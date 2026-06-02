@@ -6,8 +6,10 @@ import ContextualWidgetPanel from "@/components/ContextualWidgetPanel";
 import ConstitutionalGovernanceForm from "@/components/ConstitutionalGovernanceForm";
 import SuccessionPlanningForm from "@/components/SuccessionPlanningForm";
 import StakeholderAlignmentFramework from "@/components/StakeholderAlignmentFramework";
+import BoardDecisionAuditTrail from "@/components/BoardDecisionAuditTrail";
 
 import { useState } from "react";
+import MissionIntegrityBadge from "@/components/MissionIntegrityBadge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -120,7 +122,7 @@ const actionColors: Record<string, string> = {
 };
 
 export default function GovernanceHub() {
-  const [activeTab, setActiveTab] = useState<"gates" | "audit" | "board" | "constitutional" | "succession" | "stakeholders">("gates");
+  const [activeTab, setActiveTab] = useState<"gates" | "audit" | "board" | "constitutional" | "succession" | "stakeholders" | "decisions">("gates");
 
   const pendingCount = STAGE_GATES.filter(g => g.status === "pending").length;
 
@@ -134,9 +136,10 @@ export default function GovernanceHub() {
               <Scale size={18} style={{ color: "#7c3aed" }} />
               <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#7c3aed" }}>Module 15</span>
             </div>
-            <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
-              Governance
-            </h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>Governance</h1>
+              <MissionIntegrityBadge variant="chip" />
+            </div>
             <p className="text-sm text-gray-500 mt-1">
               Stage-gate approvals, audit trail, and board reporting.
             </p>
@@ -157,6 +160,7 @@ export default function GovernanceHub() {
             { key: "constitutional", label: "Constitutional Governance", icon: Scale },
             { key: "succession", label: "Succession Planning", icon: Users },
             { key: "stakeholders", label: "Stakeholder Alignment", icon: Users },
+            { key: "decisions", label: "Board Decisions", icon: Scale },
           ].map(tab => (
             <button
               key={tab.key}
@@ -290,6 +294,13 @@ export default function GovernanceHub() {
         {activeTab === "stakeholders" && (
           <div>
             <StakeholderAlignmentFramework />
+          </div>
+        )}
+
+        {/* Board Decision Audit Trail (Phase 5 Medium-Term) */}
+        {activeTab === "decisions" && (
+          <div>
+            <BoardDecisionAuditTrail />
           </div>
         )}
       </div>

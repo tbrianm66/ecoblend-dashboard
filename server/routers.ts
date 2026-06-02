@@ -28,6 +28,8 @@ import {
   constitutionalGovernanceRouter,
   successionPlanningRouter,
   stakeholderAlignmentRouter,
+  boardDecisionsRouter,
+  acquisitionReadinessRouter,
 } from "./missionProtection.router";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -242,6 +244,8 @@ export const appRouter = router({
   constitutionalGovernance: constitutionalGovernanceRouter,
   successionPlanning: successionPlanningRouter,
   stakeholderAlignment: stakeholderAlignmentRouter,
+  boardDecisions: boardDecisionsRouter,
+  acquisitionReadiness: acquisitionReadinessRouter,
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
