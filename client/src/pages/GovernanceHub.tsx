@@ -7,6 +7,9 @@ import ConstitutionalGovernanceForm from "@/components/ConstitutionalGovernanceF
 import SuccessionPlanningForm from "@/components/SuccessionPlanningForm";
 import StakeholderAlignmentFramework from "@/components/StakeholderAlignmentFramework";
 import BoardDecisionAuditTrail from "@/components/BoardDecisionAuditTrail";
+import InstitutionalMemorySystem from "@/components/InstitutionalMemorySystem";
+import GovernanceComplianceFramework from "@/components/GovernanceComplianceFramework";
+import AdvancedStakeholderManagement from "@/components/AdvancedStakeholderManagement";
 
 import { useState } from "react";
 import MissionIntegrityBadge from "@/components/MissionIntegrityBadge";
@@ -122,7 +125,7 @@ const actionColors: Record<string, string> = {
 };
 
 export default function GovernanceHub() {
-  const [activeTab, setActiveTab] = useState<"gates" | "audit" | "board" | "constitutional" | "succession" | "stakeholders" | "decisions">("gates");
+  const [activeTab, setActiveTab] = useState<"gates" | "audit" | "board" | "constitutional" | "succession" | "stakeholders" | "decisions" | "memory" | "compliance" | "advanced-stakeholders">("gates");
 
   const pendingCount = STAGE_GATES.filter(g => g.status === "pending").length;
 
@@ -161,6 +164,9 @@ export default function GovernanceHub() {
             { key: "succession", label: "Succession Planning", icon: Users },
             { key: "stakeholders", label: "Stakeholder Alignment", icon: Users },
             { key: "decisions", label: "Board Decisions", icon: Scale },
+            { key: "memory", label: "Institutional Memory", icon: History },
+            { key: "compliance", label: "Compliance Framework", icon: CheckCircle2 },
+            { key: "advanced-stakeholders", label: "Stakeholder Management", icon: Users },
           ].map(tab => (
             <button
               key={tab.key}
@@ -301,6 +307,24 @@ export default function GovernanceHub() {
         {activeTab === "decisions" && (
           <div>
             <BoardDecisionAuditTrail />
+          </div>
+        )}
+        {/* Institutional Memory System (Phase 5 Long-Term) */}
+        {activeTab === "memory" && (
+          <div>
+            <InstitutionalMemorySystem />
+          </div>
+        )}
+        {/* Governance Compliance Framework (Phase 5 Long-Term) */}
+        {activeTab === "compliance" && (
+          <div>
+            <GovernanceComplianceFramework />
+          </div>
+        )}
+        {/* Advanced Stakeholder Management (Phase 5 Long-Term) */}
+        {activeTab === "advanced-stakeholders" && (
+          <div>
+            <AdvancedStakeholderManagement />
           </div>
         )}
       </div>

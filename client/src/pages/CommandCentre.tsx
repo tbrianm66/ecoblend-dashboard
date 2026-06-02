@@ -21,7 +21,7 @@ import {
   TrendingUp, TrendingDown, Activity, Package, ClipboardList,
   Leaf, DollarSign, AlertTriangle, CheckCircle2, Clock,
   Target, Zap, Globe, RefreshCw, ArrowRight, BarChart2,
-  Users, Beaker, Award,
+  Users, Beaker, Award, Shield,
 } from "lucide-react";
 
 // ── Colour palette ────────────────────────────────────────────────────────────
@@ -301,6 +301,9 @@ export default function CommandCentre() {
   const { data: sparklines } = trpc.commandCentre.getRevenueSparklines.useQuery(undefined, {
     refetchInterval: REFRESH_INTERVAL,
   });
+  const { data: miiSummary } = trpc.missionIntegrity.getPortfolioSummary.useQuery(undefined, {
+    refetchInterval: REFRESH_INTERVAL,
+  });
 
   // Countdown timer — counts down from 60 to 0, resets on each refetch
   const [countdown, setCountdown] = useState(60);
@@ -467,7 +470,52 @@ export default function CommandCentre() {
           </div>
         </div>
 
-        {/* ── Row 2: Financial — per-venture sparkline cards + ESG KPIs ── */}
+        {/* ── Mission Integrity Index Row ── */}
+        <div>
+          <SectionHeader title="Mission Protection Intelligence" icon={Shield} color="#7c3aed" action="Risk Intelligence" onAction={() => navigate("/risk")} />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white rounded-xl border p-5" style={{ borderColor: "#e5e7eb", borderLeft: "4px solid #7c3aed" }}>
+              <div className="flex items-center gap-2 mb-2">
+                <Shield size={13} style={{ color: "#7c3aed" }} />
+                <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">Portfolio Mission Integrity</span>
+              </div>
+              <div className="flex items-end gap-2">
+                <span className="text-3xl font-bold" style={{ color: (miiSummary as any)?.portfolioAvgScore >= 80 ? "#16a34a" : (miiSummary as any)?.portfolioAvgScore >= 60 ? "#d97706" : "#dc2626", fontFamily: "'Prompt', sans-serif" }}>
+                  {(miiSummary as any)?.portfolioAvgScore ?? "—"}
+                </span>
+                <span className="text-sm text-gray-400 mb-1">/100</span>
+              </div>
+              <p className="text-xs text-gray-400 mt-1">{(miiSummary as any)?.venturesTracked ?? 0} ventures tracked</p>
+            </div>
+            <div className="bg-white rounded-xl border p-5" style={{ borderColor: "#e5e7eb", borderLeft: "4px solid #dc2626" }}>
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle size={13} style={{ color: "#dc2626" }} />
+                <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">Mission Drift Alerts</span>
+              </div>
+              <div className="flex items-end gap-2">
+                <span className="text-3xl font-bold" style={{ color: (miiSummary as any)?.criticalAlerts > 0 ? "#dc2626" : "#16a34a", fontFamily: "'Prompt', sans-serif" }}>
+                  {(miiSummary as any)?.criticalAlerts ?? 0}
+                </span>
+                <span className="text-sm text-gray-400 mb-1">critical</span>
+              </div>
+              <p className="text-xs text-gray-400 mt-1">{(miiSummary as any)?.totalAlerts ?? 0} total active alerts</p>
+            </div>
+            <div className="bg-white rounded-xl border p-5" style={{ borderColor: "#e5e7eb", borderLeft: "4px solid #0891b2" }}>
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle2 size={13} style={{ color: "#0891b2" }} />
+                <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">Acquisition Risk</span>
+              </div>
+              <div className="flex items-end gap-2">
+                <span className="text-3xl font-bold" style={{ color: "#0891b2", fontFamily: "'Prompt', sans-serif" }}>
+                  {(miiSummary as any)?.acquisitionRiskLevel ?? "Low"}
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 mt-1">Mission protection posture</p>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Row 2: Financial — per-venture sparkline cards + ESG KPIs ── */}}
         <div className="space-y-3">
           {/* Section label */}
           <div className="flex items-center justify-between">

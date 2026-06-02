@@ -15,6 +15,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import MissionIntegrityBadge from "@/components/MissionIntegrityBadge";
+
 import {
   Sparkles, Plus, Trash2, TrendingUp, Globe, ExternalLink,
   AlertTriangle, CheckCircle2, ChevronDown, ChevronRight,
@@ -485,7 +487,10 @@ export default function MarketIntelligence() {
       <div className="vos-page-header">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="vos-page-title">Market Intelligence</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="vos-page-title">Market Intelligence</h1>
+              <MissionIntegrityBadge variant="chip" />
+            </div>
             <p className="text-sm text-gray-500 mt-1">TAM/SAM/SOM analysis and competitive landscape per venture</p>
           </div>
           <div className="flex items-center gap-2">

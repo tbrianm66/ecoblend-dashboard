@@ -13,6 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import MissionIntegrityBadge from "@/components/MissionIntegrityBadge";
+
 import {
   Leaf, Users, Building2, FlaskConical, Recycle, BarChart3,
   Award, CheckCircle2, Clock, AlertCircle, RefreshCw, ChevronDown, ChevronUp,
@@ -770,9 +772,12 @@ export default function ImpactGovernance() {
               <span className="text-xs text-gray-400">·</span>
               <span className="text-xs text-gray-400 font-mono">IRL = (ESG + LCA + PCF + CSR + Certification) / 5</span>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
               Impact Readiness Level
             </h1>
+              <MissionIntegrityBadge variant="chip" />
+            </div>
             <p className="text-sm text-gray-500 max-w-xl mt-0.5">
               Measure and improve each venture's environmental, social, and governance performance.
               Combined with VRL to produce the Total Venture Intelligence Score.

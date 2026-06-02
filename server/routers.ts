@@ -31,6 +31,11 @@ import {
   boardDecisionsRouter,
   acquisitionReadinessRouter,
 } from "./missionProtection.router";
+import {
+  institutionalMemoryRouter,
+  governanceComplianceRouter,
+  advancedStakeholderRouter,
+} from "./institutionalMemory.router";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -246,6 +251,10 @@ export const appRouter = router({
   stakeholderAlignment: stakeholderAlignmentRouter,
   boardDecisions: boardDecisionsRouter,
   acquisitionReadiness: acquisitionReadinessRouter,
+  // Phase 5 Long-Term — Institutional Memory, Governance Compliance, Advanced Stakeholders
+  institutionalMemory: institutionalMemoryRouter,
+  governanceCompliance: governanceComplianceRouter,
+  advancedStakeholder: advancedStakeholderRouter,
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

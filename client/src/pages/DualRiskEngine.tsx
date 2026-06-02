@@ -31,6 +31,8 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
 } from "recharts";
 import { toast } from "sonner";
+import MissionIntegrityBadge from "@/components/MissionIntegrityBadge";
+
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const ECOBLEND_GREEN = "#51AF37";
@@ -946,7 +948,10 @@ export default function DualRiskEngine() {
               <span className="text-xs text-gray-400">·</span>
               <span className="text-xs text-gray-400 font-mono">VRL = (α×TRL + β×BRL) × (1−BRI) × (1−PRI) × Confidence</span>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>Dual Risk Venture Creation System</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>Dual Risk Venture Creation System</h1>
+              <MissionIntegrityBadge variant="chip" />
+            </div>
             <p className="text-sm text-gray-500 mt-0.5">Separates Business Risk (University) and Product Risk (Founder) · Decision Outputs: Build / Validate / Partner / Reject</p>
           </div>
         </div>

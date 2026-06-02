@@ -21,6 +21,8 @@ import {
   Plus, Trash2, Edit2, BarChart2, Activity, Lock,
 } from "lucide-react";
 import { toast } from "sonner";
+import MissionIntegrityBadge from "@/components/MissionIntegrityBadge";
+
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const RISK_CATEGORIES = ["Technical","Market","Commercial","Financial","Operational","Strategic"] as const;
@@ -450,9 +452,12 @@ export default function RiskManagement() {
               <span className="text-xs text-gray-400">·</span>
               <span className="text-xs text-gray-400 font-mono">6-Category Register · L×I Scoring · VRL Linkage · Adjusted VRI</span>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-1" style={{ fontFamily: "'Prompt', sans-serif" }}>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-900 mb-1" style={{ fontFamily: "'Prompt', sans-serif" }}>
               Venture Risk Register
             </h1>
+              <MissionIntegrityBadge variant="chip" />
+            </div>
             <p className="text-sm text-gray-500 max-w-xl">
               Track, score, and mitigate risks across Technical, Market, Commercial, Financial, Operational, and Strategic dimensions. Risk scores automatically adjust the Venture Readiness Index (VRI).
             </p>

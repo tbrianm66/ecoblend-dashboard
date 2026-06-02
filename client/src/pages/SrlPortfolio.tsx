@@ -21,6 +21,8 @@ import {
   ArcElement,
 } from "chart.js";
 import { Bar, Doughnut } from "react-chartjs-2";
+import MissionIntegrityBadge from "@/components/MissionIntegrityBadge";
+
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
@@ -146,9 +148,12 @@ export default function SrlPortfolio() {
               <span className="text-xs text-gray-300">·</span>
               <span className="text-xs text-gray-400 font-mono">BEBUS-SRL-PIPE-001</span>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
               Sustainability Readiness Portfolio
             </h1>
+              <MissionIntegrityBadge variant="chip" />
+            </div>
             <p className="text-sm text-gray-500 mt-0.5">
               Portfolio-level SRL snapshot — {ventures.length} ventures tracked
             </p>

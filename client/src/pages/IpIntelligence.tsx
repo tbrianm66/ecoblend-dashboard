@@ -15,6 +15,8 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import MissionIntegrityBadge from "@/components/MissionIntegrityBadge";
+
 import {
   ShieldCheck, Lightbulb, AlertTriangle, CheckCircle2, XCircle,
   RefreshCw, Trash2, Eye, FileJson, TrendingUp, Building2,
@@ -716,9 +718,12 @@ export default function IpIntelligence() {
               <span className="text-xs text-gray-400">·</span>
               <span className="text-xs text-gray-400 font-mono">Lightbringer Engine v1.0</span>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
               IP Intelligence Module
             </h1>
+              <MissionIntegrityBadge variant="chip" />
+            </div>
             <p className="text-sm text-gray-500 max-w-xl mt-0.5">
               Novelty scoring, patent density analysis, FTO risk assessment, and white space opportunity mapping — integrated into VRL calculation.
             </p>

@@ -25,6 +25,8 @@ import { CostCurvePanel }    from "@/components/dashboard/panels/CostCurvePanel"
 import { SustainabilityPanel } from "@/components/dashboard/panels/SustainabilityPanel";
 import "@/components/dashboard/mrl-dashboard.css";
 import type { ViewName } from "@/types/dashboard.types";
+import MissionIntegrityBadge from "@/components/MissionIntegrityBadge";
+
 
 // ── Ticker items ──────────────────────────────────────────────────
 const DEFAULT_TICKER = [

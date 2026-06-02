@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import MissionIntegrityBadge from "@/components/MissionIntegrityBadge";
+
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -255,9 +257,12 @@ export default function BCorpIso() {
           <span className="text-xs text-gray-400">·</span>
           <span className="text-xs text-gray-400 font-mono">B Corp & ISO Standards</span>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+        <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-900 mb-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           B Corp & ISO Tracker
         </h1>
+              <MissionIntegrityBadge variant="chip" />
+            </div>
         <p className="text-sm text-gray-500 max-w-xl">
           Track progress towards B Corp certification (minimum 80 points) and compliance with ISO 14001 and ISO 26000 — all persisted to the database.
         </p>

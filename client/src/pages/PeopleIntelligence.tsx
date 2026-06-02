@@ -20,6 +20,8 @@ import {
   RefreshCw, Target, Briefcase
 } from "lucide-react";
 import { ventures as VENTURES } from "@/lib/data";
+import MissionIntegrityBadge from "@/components/MissionIntegrityBadge";
+
 
 // ── Colour helpers ────────────────────────────────────────────────────────────
 const PVF_COLORS: Record<string, string> = {
@@ -348,9 +350,12 @@ export default function PeopleIntelligence() {
               <span className="text-xs text-gray-400">·</span>
               <span className="text-xs text-gray-400 font-mono">PVF Scoring Engine</span>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
               People Intelligence Module
             </h1>
+              <MissionIntegrityBadge variant="chip" />
+            </div>
             <p className="text-sm text-gray-500 mt-0.5">
               Talent profiling, People-Venture Fit scoring, and team gap analysis across the portfolio.
             </p>

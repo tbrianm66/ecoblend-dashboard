@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS institutional_memory (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  venture_id VARCHAR(64) NOT NULL DEFAULT 'portfolio',\n  title VARCHAR(255) NOT NULL,\n  category VARCHAR(64) NOT NULL DEFAULT 'Mission',\n  content TEXT NOT NULL,\n  tags VARCHAR(500) DEFAULT '',\n  author VARCHAR(128) DEFAULT 'Founder',\n  importance VARCHAR(32) DEFAULT 'Medium',\n  is_founder_legacy TINYINT(1) DEFAULT 0,\n  is_public TINYINT(1) DEFAULT 1,\n  linked_decision_id INT DEFAULT NULL,\n  view_count INT DEFAULT 0,\n  created_at BIGINT NOT NULL,\n  updated_at BIGINT NOT NULL\n)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3HthdpivREJ9B8M.root --database ggmroLG8ezURUZiLzGveTG --execute CREATE TABLE IF NOT EXISTS institutional_memory (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  venture_id VARCHAR(64) NOT NULL DEFAULT 'portfolio',\n  title VARCHAR(255) NOT NULL,\n  category VARCHAR(64) NOT NULL DEFAULT 'Mission',\n  content TEXT NOT NULL,\n  tags VARCHAR(500) DEFAULT '',\n  author VARCHAR(128) DEFAULT 'Founder',\n  importance VARCHAR(32) DEFAULT 'Medium',\n  is_founder_legacy TINYINT(1) DEFAULT 0,\n  is_public TINYINT(1) DEFAULT 1,\n  linked_decision_id INT DEFAULT NULL,\n  view_count INT DEFAULT 0,\n  created_at BIGINT NOT NULL,\n  updated_at BIGINT NOT NULL\n)",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 329
+}

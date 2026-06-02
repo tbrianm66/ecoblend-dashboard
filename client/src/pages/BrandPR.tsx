@@ -17,6 +17,8 @@ import {
   Mail, Radio, TrendingUp, Loader2, Pencil, Eye
 } from "lucide-react";
 import { toast } from "sonner";
+import MissionIntegrityBadge from "@/components/MissionIntegrityBadge";
+
 
 const VENTURES = [
   { id: "ecoblend", name: "EcoRace", color: "#22c55e" },
@@ -125,9 +127,12 @@ export default function BrandPR() {
           <span className="text-xs text-gray-400">·</span>
           <span className="text-xs text-gray-400 font-mono">PR & Newsletter Management</span>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+        <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-900 mb-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           Brand PR & Newsletter
         </h1>
+              <MissionIntegrityBadge variant="chip" />
+            </div>
         <p className="text-sm text-gray-500 max-w-xl">
           Manage press releases, newsletter campaigns, and media coverage across all EcoBlend ventures.
         </p>

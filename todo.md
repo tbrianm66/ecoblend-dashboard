@@ -1434,3 +1434,56 @@
 - [x] Phase 5I: Build acquisition alert triggers (mission drift threshold, investor pressure signals)
 - [x] Phase 5I: Add Acquisition Readiness section to Risk Intelligence dashboard
 - [x] Phase 5I: Write Vitest tests for acquisition readiness scoring (8 tests)
+
+## Phase 5 Long-Term (Weeks 17+) — Mission Protection Maturity
+
+### Phase 5J: Institutional Memory System
+- [ ] Phase 5J: Create institutional_memory DB table (knowledge entries, categories, tags, linked ventures)
+- [ ] Phase 5J: Build tRPC procedures for memory CRUD, search, and tagging
+- [ ] Phase 5J: Create InstitutionalMemoryHub page (/institutional-memory)
+- [ ] Phase 5J: Build knowledge codex editor (rich text, categories: Mission, Process, Decision, Lesson)
+- [ ] Phase 5J: Add founder legacy documentation section (vision statements, non-negotiables, cultural principles)
+- [ ] Phase 5J: Add decision history browser (searchable log of all past decisions with rationale)
+- [ ] Phase 5J: Add knowledge graph view (venture-linked knowledge entries)
+- [ ] Phase 5J: Wire InstitutionalMemoryHub into sidebar navigation
+- [ ] Phase 5J: Write Vitest tests for institutional memory procedures
+
+### Phase 5K: Comprehensive Governance Compliance Framework
+- [ ] Phase 5K: Create compliance_frameworks DB table (B Corp, ISO 14001, GRI, SDG, CIC Articles)
+- [ ] Phase 5K: Create compliance_requirements DB table (per-framework requirements with status tracking)
+- [ ] Phase 5K: Build tRPC procedures for compliance CRUD, scoring, and gap analysis
+- [ ] Phase 5K: Create GovernanceComplianceFramework page (/governance-compliance)
+- [ ] Phase 5K: Build compliance audit engine (auto-score based on governance structures + board decisions)
+- [ ] Phase 5K: Build regulatory mapping panel (which frameworks apply to which ventures)
+- [ ] Phase 5K: Add compliance gap analysis view (what's missing, priority actions)
+- [ ] Phase 5K: Add compliance timeline tracker (deadlines, renewal dates, certification status)
+- [ ] Phase 5K: Wire GovernanceComplianceFramework into Governance Hub as a tab
+- [ ] Phase 5K: Write Vitest tests for compliance framework procedures
+
+### Phase 5L: Advanced Stakeholder Management Tools
+- [ ] Phase 5L: Extend stakeholder_profiles DB table (communication log, engagement history, influence score)
+- [ ] Phase 5L: Create stakeholder_interactions DB table (meeting notes, commitments, follow-ups)
+- [ ] Phase 5L: Build tRPC procedures for interaction CRUD, engagement scoring, and influence mapping
+- [ ] Phase 5L: Create AdvancedStakeholderManager component (full stakeholder CRM)
+- [ ] Phase 5L: Build influence-interest matrix (2x2 grid: power vs alignment)
+- [ ] Phase 5L: Add stakeholder communication log (meeting notes, action items, sentiment tracking)
+- [ ] Phase 5L: Add stakeholder engagement scoring (frequency, depth, alignment trend)
+- [ ] Phase 5L: Add stakeholder risk radar (misaligned high-influence stakeholders flagged)
+- [ ] Phase 5L: Upgrade StakeholderAlignmentFramework tab in Governance Hub with advanced tools
+- [ ] Phase 5L: Write Vitest tests for advanced stakeholder procedures
+
+### Phase 5M: Mission Metrics Integration — All KPI Dashboards
+- [ ] Phase 5M: Add Mission Integrity tile to Command Centre KPI summary
+- [ ] Phase 5M: Add Mission Drift Alert count to Command Centre alerts section
+- [ ] Phase 5M: Add Mission Integrity score to Venture Detail mission section
+- [ ] Phase 5M: Add mission alignment indicator to VRL Analytics per-venture cards
+- [ ] Phase 5M: Add mission risk score to Financial Analytics financial health section
+- [ ] Phase 5M: Add governance compliance score to Governance Hub KPI header
+- [ ] Phase 5M: Add acquisition risk score to Risk Intelligence KPI header
+- [ ] Phase 5M: Build Mission Health Report (exportable PDF with all mission metrics)
+- [ ] Phase 5M: Add mission metrics to Investor Pack export
+
+### Phase 5N: Testing & Delivery
+- [ ] Phase 5N: Write comprehensive Phase 5 long-term QA tests
+- [ ] Phase 5N: Run full test suite
+- [ ] Phase 5N: Save checkpoint
