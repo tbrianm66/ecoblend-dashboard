@@ -1,0 +1,1288 @@
+You are acting as a senior full-stack product engineer and venture studio systems architect.
+
+I am building **EcoBLEND IO**, a Venture Validation OS used by **EcoRACE Studio** to manage and validate multiple portfolio ventures using Lean Startup methodology, venture readiness scoring, evidence capture, and stage-gate decision-making.
+
+The current application has a sidebar module:
+
+**1. Command Centre**
+
+It currently includes the following sub-sections:
+
+1. Portfolio Overview
+2. Command Centre
+3. Opportunity Pipeline
+4. Venture Status
+5. Alerts & Approvals
+
+Your task is to update the **Command Centre module** so it becomes the central Lean Startup decision cockpit for all ventures.
+
+The Command Centre must not be a static dashboard. It must aggregate evidence from Venture Intake, Discovery & Market, Proposition & Model, R&D Hub, Operations & MFG, Brand & GTM, and Market Risk Log.
+
+Its purpose is to help the venture studio answer:
+
+**“Which ventures should persevere, pivot, pause, kill, or advance to the next validation stage?”**
+
+---
+
+# 1. Core Product Principle
+
+The Command Centre should operate around the Lean Startup loop:
+
+**Hypothesis → Experiment → Evidence → Learning → Decision → Next Action**
+
+Every venture should have:
+
+* Active hypotheses
+* Active experiments
+* Evidence scores
+* Risk scores
+* Stage-gate status
+* Decision recommendations
+* Alerts requiring founder or operator action
+
+Do not optimise for visual dashboard theatre. Optimise for decision quality.
+
+---
+
+# 2. Update Module Structure
+
+Update the Command Centre module so it has the following sub-sections:
+
+1. **Portfolio Overview**
+2. **Lean Decision Board**
+3. **Experiment Queue**
+4. **Evidence Confidence Dashboard**
+5. **Venture Status**
+6. **Pivot Log**
+7. **Stage-Gate Review**
+8. **Alerts & Approvals**
+
+If the current sidebar only allows five items, retain the existing five but place the new functionality inside them as tabs. Preferred structure:
+
+## Existing: Portfolio Overview
+
+Add tabs:
+
+* Portfolio Snapshot
+* Validation Health
+* Venture Comparison
+* Risk Exposure
+* Next Best Actions
+
+## Existing: Command Centre
+
+Rename internally or display as:
+
+* Lean Decision Board
+* Founder Cockpit
+* Decision Queue
+
+## Existing: Opportunity Pipeline
+
+Add tabs:
+
+* Intake Pipeline
+* Hypothesis Pipeline
+* Experiment Pipeline
+* Conversion to Active Venture
+
+## Existing: Venture Status
+
+Add tabs:
+
+* Venture Readiness
+* Validation Stage
+* Evidence Summary
+* Stage-Gate Position
+
+## Existing: Alerts & Approvals
+
+Add tabs:
+
+* Critical Alerts
+* Stage-Gate Approvals
+* Pivot Approvals
+* Blocked Experiments
+* Overdue Reviews
+
+---
+
+# 3. Database Requirements
+
+Use the existing database conventions. If the app uses Supabase/PostgreSQL, create SQL migrations. If it uses local state, adapt cleanly but preserve the intended data model.
+
+Reuse existing venture tables if already present.
+
+Create or extend the following tables.
+
+---
+
+## ventures
+
+Use existing table if present.
+
+Required fields:
+
+* id
+* name
+* description
+* venture_type
+* current_stage
+* status
+* owner
+* created_at
+* updated_at
+
+Suggested status values:
+
+* idea
+* validating
+* building
+* piloting
+* scaling
+* paused
+* pivoting
+* killed
+* archived
+
+Suggested current_stage values:
+
+* intake
+* problem_validation
+* market_validation
+* commercial_validation
+* mvp_validation
+* delivery_validation
+* gtm_validation
+* investment_ready
+
+---
+
+## venture_hypotheses
+
+Fields:
+
+* id
+* venture_id
+* module_source
+* hypothesis_type
+* hypothesis_statement
+* assumption_risk_level
+* status
+* confidence_score
+* evidence_summary
+* created_at
+* updated_at
+
+Hypothesis type options:
+
+* customer_segment
+* problem
+* value_proposition
+* solution
+* business_model
+* pricing
+* channel
+* operational
+* manufacturing
+* sustainability
+* data_access
+* regulatory
+
+Status options:
+
+* untested
+* testing
+* validated
+* invalidated
+* pivot_required
+* paused
+
+---
+
+## lean_experiments
+
+Fields:
+
+* id
+* venture_id
+* hypothesis_id
+* experiment_name
+* experiment_type
+* module_source
+* experiment_owner
+* experiment_status
+* method
+* success_threshold
+* start_date
+* due_date
+* result
+* learning_summary
+* decision_recommendation
+* next_step
+* created_at
+* updated_at
+
+Experiment type options:
+
+* customer_interview
+* survey
+* landing_page
+* prototype_test
+* concierge_mvp
+* paid_pilot
+* loi_test
+* pricing_test
+* supplier_test
+* manufacturing_test
+* channel_test
+* data_access_test
+* procurement_test
+
+Experiment status options:
+
+* proposed
+* approved
+* running
+* completed
+* blocked
+* overdue
+* cancelled
+
+Decision recommendation options:
+
+* persevere
+* pivot
+* run_more_experiments
+* pause
+* kill
+* advance_stage
+
+---
+
+## evidence_records
+
+Fields:
+
+* id
+* venture_id
+* hypothesis_id
+* experiment_id
+* module_source
+* evidence_type
+* evidence_title
+* evidence_summary
+* evidence_strength_score
+* evidence_relevance_score
+* evidence_recency_score
+* evidence_confidence_score
+* contradicts_hypothesis
+* source_reference
+* created_at
+* updated_at
+
+Evidence type options:
+
+* interview
+* survey
+* customer_commitment
+* budget_signal
+* procurement_signal
+* demand_signal
+* competitor_signal
+* prototype_result
+* pilot_result
+* supplier_result
+* manufacturing_result
+* gtm_result
+* academic_research
+* regulatory_evidence
+* financial_model
+
+Scores should use a 1–5 scale.
+
+---
+
+## lean_decisions
+
+Fields:
+
+* id
+* venture_id
+* decision_type
+* decision_title
+* decision_summary
+* evidence_confidence_score
+* risk_score
+* recommended_action
+* decision_status
+* approved_by
+* decision_date
+* next_review_date
+* created_at
+* updated_at
+
+Decision type options:
+
+* pivot
+* persevere
+* pause
+* kill
+* advance_stage
+* request_more_evidence
+
+Decision status options:
+
+* recommended
+* pending_approval
+* approved
+* rejected
+* implemented
+* archived
+
+---
+
+## pivot_logs
+
+Fields:
+
+* id
+* venture_id
+* previous_hypothesis
+* new_hypothesis
+* pivot_type
+* reason_for_pivot
+* evidence_trigger
+* decision_id
+* date_logged
+* created_at
+* updated_at
+
+Pivot type options:
+
+* customer_segment
+* problem
+* value_proposition
+* solution
+* business_model
+* pricing
+* channel
+* operational
+* manufacturing
+
+---
+
+## stage_gate_reviews
+
+Fields:
+
+* id
+* venture_id
+* from_stage
+* to_stage
+* review_status
+* evidence_score
+* market_score
+* commercial_score
+* technical_score
+* operational_score
+* risk_score
+* investment_readiness_score
+* reviewer_notes
+* approval_decision
+* required_actions
+* review_date
+* next_review_date
+* created_at
+* updated_at
+
+Review status options:
+
+* not_started
+* ready_for_review
+* under_review
+* approved
+* rejected
+* conditional_approval
+* paused
+
+Approval decision options:
+
+* approve_progression
+* reject_progression
+* request_more_evidence
+* pivot_required
+* pause_venture
+* kill_venture
+
+---
+
+## command_alerts
+
+Fields:
+
+* id
+* venture_id
+* alert_type
+* alert_title
+* alert_description
+* severity
+* linked_module
+* linked_record_id
+* recommended_action
+* status
+* owner
+* due_date
+* created_at
+* updated_at
+
+Severity options:
+
+* low
+* medium
+* high
+* critical
+
+Status options:
+
+* open
+* acknowledged
+* in_progress
+* resolved
+* dismissed
+
+Alert type options:
+
+* weak_evidence
+* overdue_experiment
+* high_market_risk
+* high_technical_risk
+* low_wtp
+* procurement_blocker
+* data_access_blocker
+* stage_gate_required
+* pivot_recommended
+* kill_recommended
+* approval_required
+
+---
+
+# 4. Portfolio Overview
+
+Update the Portfolio Overview page so it gives an executive view of all ventures.
+
+## Required UI cards
+
+Display the following cards:
+
+1. Total ventures
+2. Ventures validating
+3. Ventures building
+4. Ventures piloting
+5. Ventures paused
+6. Ventures requiring pivot decision
+7. Critical alerts
+8. Experiments overdue
+9. Ventures ready for stage-gate review
+
+## Required table
+
+Create a portfolio table with columns:
+
+* Venture
+* Current stage
+* Status
+* Evidence confidence
+* Market validation score
+* Commercial validation score
+* Technical validation score
+* Operational readiness score
+* Risk score
+* Recommended decision
+* Next best action
+
+## Required functionality
+
+The user should be able to:
+
+* Filter ventures by status
+* Filter ventures by stage
+* Sort by evidence confidence
+* Sort by risk score
+* Sort by overdue experiments
+* Click into a venture
+* See the latest Lean decision recommendation
+
+## Scoring logic
+
+Portfolio Health Score should be calculated as:
+
+Evidence Confidence × 25%
+
+* Market Validation × 20%
+* Commercial Validation × 20%
+* Technical Validation × 15%
+* Operational Readiness × 10%
+* inverse Risk Score × 10%
+
+Display categories:
+
+* 0–39 = Weak
+* 40–59 = Needs validation
+* 60–79 = Promising
+* 80–100 = Strong
+
+---
+
+# 5. Lean Decision Board
+
+Create or update the Command Centre page to include a **Lean Decision Board**.
+
+## Purpose
+
+This is the central decision-making screen. It should show which ventures need a decision and why.
+
+## Required UI
+
+Create decision columns:
+
+1. Evidence needed
+2. Continue testing
+3. Pivot recommended
+4. Pause recommended
+5. Kill recommended
+6. Ready to advance
+
+Each card should show:
+
+* Venture name
+* Current hypothesis
+* Evidence confidence score
+* Top supporting evidence
+* Top contradicting evidence
+* Risk score
+* Recommended decision
+* Required next action
+
+## Decision logic
+
+Generate recommendations using the following rules:
+
+If evidence confidence is below 40:
+
+* Recommend: Evidence needed
+
+If evidence confidence is 40–59:
+
+* Recommend: Continue testing
+
+If evidence confidence is 60 or above but WTP score is below 40:
+
+* Recommend: Pivot value proposition or pricing
+
+If evidence confidence is 60 or above and risk score is above 75:
+
+* Recommend: Pause until risk is mitigated
+
+If evidence confidence is below 30 and risk score is above 75:
+
+* Recommend: Kill or major pivot
+
+If evidence confidence is above 75 and risk score is below 50:
+
+* Recommend: Ready to advance
+
+If a hypothesis is invalidated:
+
+* Recommend: Pivot
+
+## Required actions
+
+The user should be able to:
+
+* Open decision details
+* Approve recommendation
+* Reject recommendation
+* Add reviewer notes
+* Create follow-up experiment
+* Create pivot log
+* Create stage-gate review
+* Mark decision as implemented
+
+---
+
+# 6. Experiment Queue
+
+Create an Experiment Queue view.
+
+## Purpose
+
+This should show all Lean Startup experiments across the portfolio.
+
+## Required UI
+
+Experiment status columns:
+
+1. Proposed
+2. Approved
+3. Running
+4. Blocked
+5. Overdue
+6. Completed
+
+Each experiment card should show:
+
+* Venture name
+* Hypothesis tested
+* Experiment name
+* Experiment type
+* Owner
+* Due date
+* Success threshold
+* Status
+* Decision recommendation if completed
+
+## Required filters
+
+* Venture
+* Experiment type
+* Owner
+* Status
+* Due date
+* Module source
+
+## Required actions
+
+The user should be able to:
+
+* Approve experiment
+* Mark experiment as running
+* Mark experiment as blocked
+* Complete experiment
+* Add result
+* Add learning summary
+* Add decision recommendation
+* Create evidence record from completed experiment
+* Create alert if experiment is overdue
+
+## Auto-alert logic
+
+If an experiment due date has passed and status is not completed, create:
+
+Alert type: overdue_experiment
+Severity: high
+Recommended action: Review experiment owner and update status
+
+If an experiment is blocked, create:
+
+Alert type: approval_required or blocker
+Severity: medium or high depending on risk
+
+---
+
+# 7. Evidence Confidence Dashboard
+
+Create an Evidence Confidence Dashboard inside the Command Centre module.
+
+## Purpose
+
+This screen should show whether venture progression is based on strong evidence or weak assumptions.
+
+## Required UI
+
+Display evidence strength by:
+
+* Venture
+* Hypothesis type
+* Module source
+* Evidence type
+* Evidence confidence
+* Supporting versus contradicting evidence
+
+## Evidence confidence score
+
+For each evidence record:
+
+Evidence Confidence Score =
+Evidence Strength × 40%
+
+* Evidence Relevance × 35%
+* Evidence Recency × 25%
+
+Convert from 1–5 into 0–100.
+
+## Venture-level evidence confidence
+
+For each venture:
+
+Average all evidence confidence scores, but apply the following penalty:
+
+* Subtract 10 points if no customer interview evidence exists
+* Subtract 10 points if no WTP evidence exists
+* Subtract 10 points if no technical/prototype evidence exists after MVP stage
+* Subtract 10 points if no risk mitigation evidence exists when risk score is high
+
+Cap between 0 and 100.
+
+## Required visual components
+
+* Evidence confidence scorecard
+* Evidence by module chart
+* Supporting versus contradicting evidence ratio
+* Weak evidence alerts
+* Missing evidence warnings
+
+## Missing evidence alerts
+
+Create alerts when:
+
+* A venture has no customer discovery evidence
+* A venture has no WTP evidence
+* A venture has no active experiment
+* A venture is marked as building but has weak market evidence
+* A venture is marked as piloting but has no commercial validation evidence
+
+---
+
+# 8. Venture Status
+
+Update Venture Status so it becomes a stage-gate readiness view.
+
+## Required UI
+
+For each venture, show:
+
+* Current stage
+* Current status
+* Latest decision
+* Evidence confidence
+* Market validation score
+* Commercial validation score
+* Technical validation score
+* Operational readiness score
+* GTM validation score
+* Risk score
+* Readiness to progress
+* Required actions before next stage
+
+## Stage definitions
+
+Use these stages:
+
+1. Intake
+2. Problem Validation
+3. Market Validation
+4. Commercial Validation
+5. MVP Validation
+6. Delivery Validation
+7. GTM Validation
+8. Investment Ready
+
+## Stage-gate rules
+
+A venture may not progress from Intake to Problem Validation unless:
+
+* At least one problem hypothesis exists
+* At least one customer segment hypothesis exists
+* At least one riskiest assumption is defined
+
+A venture may not progress from Problem Validation to Market Validation unless:
+
+* Customer Discovery Score is 60 or above
+* At least five customer interviews exist
+* At least one current workaround is identified
+
+A venture may not progress from Market Validation to Commercial Validation unless:
+
+* Competitor Mapping is completed
+* Demand Signal Score is 60 or above
+* Market Risk Log has no unresolved critical market risk
+
+A venture may not progress from Commercial Validation to MVP Validation unless:
+
+* WTP Score is 60 or above
+* Budget owner status is known
+* Pricing model hypothesis exists
+
+A venture may not progress from MVP Validation to Delivery Validation unless:
+
+* MVP experiment completed
+* Prototype or concierge MVP result captured
+* Solution hypothesis updated with learning
+
+A venture may not progress from Delivery Validation to GTM Validation unless:
+
+* Supplier or operational readiness is assessed
+* Cost-to-deliver is estimated
+* Major operational risks have mitigation plans
+
+A venture may not progress from GTM Validation to Investment Ready unless:
+
+* GTM experiment evidence exists
+* Repeatable channel hypothesis exists
+* Commercial model is validated
+* Critical risks are mitigated
+* Evidence summary is exportable
+
+## Required actions
+
+The user should be able to:
+
+* Open stage-gate checklist
+* Request review
+* Approve progression
+* Reject progression
+* Add conditional approval
+* Create required actions
+* Generate stage-gate decision summary
+
+---
+
+# 9. Pivot Log
+
+Create a Pivot Log view.
+
+## Purpose
+
+This records why venture assumptions changed.
+
+A pivot should not happen informally. It should be linked to evidence.
+
+## Required UI
+
+Display a table with:
+
+* Venture
+* Pivot type
+* Previous hypothesis
+* New hypothesis
+* Evidence trigger
+* Reason for pivot
+* Date logged
+* Linked decision
+
+## Required actions
+
+The user should be able to:
+
+* Create pivot record
+* Link pivot to Lean decision
+* Link pivot to hypothesis
+* Link pivot to evidence record
+* View pivot history by venture
+* Export pivot summary
+
+## Pivot creation rules
+
+When a Lean decision is approved as “pivot”, prompt the user to create a Pivot Log entry.
+
+When a hypothesis status changes to invalidated or pivot_required, prompt the user to create a Pivot Log entry.
+
+---
+
+# 10. Stage-Gate Review
+
+Create a Stage-Gate Review screen.
+
+## Purpose
+
+This should govern whether a venture progresses to the next validation stage.
+
+## Required UI
+
+For each pending review, show:
+
+* Venture
+* From stage
+* To stage
+* Evidence score
+* Market score
+* Commercial score
+* Technical score
+* Operational score
+* Risk score
+* Required checklist
+* Reviewer notes
+* Approval decision
+
+## Review checklist
+
+For each stage transition, show checklist items based on the stage-gate rules above.
+
+Each checklist item should show:
+
+* Complete / incomplete
+* Linked evidence
+* Missing evidence
+* Required action
+
+## Approval options
+
+The reviewer should be able to select:
+
+* Approve progression
+* Conditional approval
+* Request more evidence
+* Pivot required
+* Pause venture
+* Kill venture
+
+## Auto-alert logic
+
+If a venture meets stage progression criteria, create:
+
+Alert type: stage_gate_required
+Severity: medium
+Recommended action: Review venture for progression
+
+If a venture has incomplete criteria but is manually advanced, create:
+
+Alert type: weak_evidence
+Severity: high
+Recommended action: Review stage-gate exception
+
+---
+
+# 11. Alerts & Approvals
+
+Update Alerts & Approvals into an active control system.
+
+## Alert types
+
+Support:
+
+* Weak evidence
+* Overdue experiment
+* High market risk
+* High technical risk
+* Low WTP
+* Procurement blocker
+* Data access blocker
+* Stage-gate required
+* Pivot recommended
+* Kill recommended
+* Approval required
+
+## Required UI
+
+Display alert cards with:
+
+* Alert title
+* Venture
+* Severity
+* Linked module
+* Description
+* Recommended action
+* Owner
+* Due date
+* Status
+
+## Required filters
+
+* Venture
+* Severity
+* Alert type
+* Owner
+* Status
+* Due date
+
+## Required actions
+
+The user should be able to:
+
+* Acknowledge alert
+* Assign owner
+* Add action note
+* Resolve alert
+* Dismiss alert with reason
+* Link alert to experiment
+* Link alert to stage-gate review
+* Link alert to decision
+
+## Severity rules
+
+Critical alert examples:
+
+* Venture has WTP score below 40 but is in MVP Validation or later
+* Venture has critical market risk and is marked ready to progress
+* Venture has no active experiment but is in validating status
+* Venture has invalidated core hypothesis and no pivot decision
+* Venture is being advanced without required evidence
+
+High alert examples:
+
+* Experiment overdue
+* Evidence confidence below 40
+* Budget owner unknown
+* Procurement pathway unclear
+* No customer interviews
+* No WTP test
+
+Medium alert examples:
+
+* Risk review overdue
+* Experiment blocked
+* Missing competitor mapping
+* Missing demand signal
+* Pivot log incomplete
+
+---
+
+# 12. Shared Scoring Utilities
+
+Create reusable scoring utilities.
+
+Required functions:
+
+* calculateEvidenceConfidenceScore()
+* calculateVentureEvidenceConfidence()
+* calculatePortfolioHealthScore()
+* calculateStageGateReadiness()
+* calculateRiskAdjustedReadiness()
+* generateLeanDecisionRecommendation()
+* generateNextBestAction()
+* generateCommandAlerts()
+* generateStageGateChecklist()
+* generateMissingEvidenceWarnings()
+
+These utilities should be reusable across the application.
+
+---
+
+# 13. Suggested Scoring Logic
+
+## Evidence Confidence Score
+
+Evidence Confidence =
+Evidence Strength × 40%
+
+* Evidence Relevance × 35%
+* Evidence Recency × 25%
+
+Convert 1–5 scale into 0–100.
+
+## Risk-Adjusted Readiness
+
+Risk-Adjusted Readiness =
+Evidence Confidence × 40%
+
+* Market Validation × 20%
+* Commercial Validation × 20%
+* Technical Validation × 10%
+* Operational Readiness × 10%
+
+- Risk Penalty
+
+Risk penalty:
+
+* Low risk = subtract 0
+* Moderate risk = subtract 10
+* High risk = subtract 20
+* Critical risk = subtract 30
+
+Cap between 0 and 100.
+
+## Recommended Decision
+
+If Risk-Adjusted Readiness is 80 or above:
+
+* Recommend advance stage
+
+If 60–79:
+
+* Recommend persevere and run next validation experiment
+
+If 40–59:
+
+* Recommend run more experiments
+
+If 20–39:
+
+* Recommend pivot or pause
+
+If below 20:
+
+* Recommend kill or major pivot
+
+---
+
+# 14. Required Seed Data
+
+Create realistic seed/test data for at least four ventures:
+
+1. BEBUS
+2. ECOCOMP
+3. REAL
+4. TONE
+
+Each venture should have:
+
+* At least two hypotheses
+* At least two experiments
+* At least two evidence records
+* At least one Lean decision
+* At least one alert
+* At least one stage-gate review record
+
+Use realistic venture examples.
+
+Example BEBUS hypothesis:
+
+“UK bus operators experience avoidable downtime because reliability data is fragmented across OEMs, suppliers, and maintenance teams.”
+
+Example ECOCOMP hypothesis:
+
+“Manufacturers need validated sustainable composite material formulations that can meet performance and compliance requirements without increasing production risk.”
+
+Example REAL hypothesis:
+
+“Combat sports customers will pay for protective equipment made from sustainable materials if performance, durability, and brand credibility are not compromised.”
+
+Example TONE hypothesis:
+
+“Creative industry operators will adopt modular sustainable equipment systems if they reduce production cost, storage burden, and environmental impact.”
+
+---
+
+# 15. UI Design Requirements
+
+Match the existing EcoBLEND IO visual language:
+
+* Dark left sidebar
+* Premium venture studio / enterprise SaaS aesthetic
+* Clean white or light main content area
+* Rounded cards
+* Subtle borders
+* Minimal icons
+* Status badges
+* Clear hierarchy
+* Executive dashboard feel
+* Avoid clutter
+
+Use status colours consistently:
+
+* Green = validated / approved / strong
+* Amber = caution / needs evidence
+* Red = high risk / blocked / invalidated
+* Grey = untested / incomplete
+* Blue = active / running / in progress
+
+Each Command Centre screen should have:
+
+* Header
+* Short explanatory description
+* Venture filter
+* Key scorecards
+* Main table or board
+* Decision output
+* Next action recommendation
+
+---
+
+# 16. Implementation Sequence
+
+Implement in this order:
+
+1. Audit current Command Centre module structure and routes.
+2. Identify existing data models and avoid duplication.
+3. Add or update required database schema.
+4. Create shared scoring utilities.
+5. Create seed data for BEBUS, ECOCOMP, REAL, and TONE.
+6. Update Portfolio Overview.
+7. Build Lean Decision Board.
+8. Build Experiment Queue.
+9. Build Evidence Confidence Dashboard.
+10. Update Venture Status with stage-gate readiness.
+11. Build Pivot Log.
+12. Build Stage-Gate Review.
+13. Update Alerts & Approvals.
+14. Add auto-alert generation logic.
+15. Add QA tests and fix route/state bugs.
+
+Do not attempt to build everything as one monolithic component. Use reusable components.
+
+---
+
+# 17. Reusable Components
+
+Create or reuse the following components:
+
+* VentureSelector
+* StageBadge
+* StatusBadge
+* DecisionBadge
+* RiskBadge
+* EvidenceScoreCard
+* PortfolioHealthCard
+* LeanDecisionCard
+* ExperimentCard
+* ExperimentKanbanBoard
+* EvidenceTable
+* AlertsTable
+* StageGateChecklist
+* PivotLogTable
+* NextBestActionPanel
+* EmptyState
+* FormDrawer
+* ConfirmationModal
+
+---
+
+# 18. Acceptance Criteria
+
+The update is complete when:
+
+* The Command Centre clearly shows the status of every venture.
+* The user can see which ventures need decisions.
+* The user can see which experiments are proposed, running, blocked, overdue, or completed.
+* Evidence confidence is calculated and visible.
+* Stage-gate readiness is calculated and visible.
+* Weak evidence creates alerts.
+* Overdue experiments create alerts.
+* Pivot decisions create pivot log prompts.
+* Ventures cannot appear ready to progress without required evidence warnings.
+* Alerts can be acknowledged, assigned, resolved, or dismissed.
+* The UI remains consistent with the existing EcoBLEND IO design.
+* Seed data demonstrates the full workflow for BEBUS, ECOCOMP, REAL, and TONE.
+
+---
+
+# 19. Critical Failure Modes to Avoid
+
+Avoid these implementation mistakes:
+
+1. **Dashboard theatre**
+   Do not create attractive cards without operational decision logic.
+
+2. **Disconnected forms**
+   Hypotheses, experiments, evidence, decisions, risks, and alerts must link together.
+
+3. **Premature progression**
+   Ventures should not advance stages without evidence warnings.
+
+4. **False validation**
+   Positive customer comments should not equal commercial validation.
+
+5. **No pivot memory**
+   Every pivot must be recorded with evidence and rationale.
+
+6. **No cross-module integration**
+   The Command Centre must aggregate from Discovery & Market, Proposition & Model, R&D Hub, Operations & MFG, Brand & GTM, and Venture Intake.
+
+7. **Overbuilding before testing**
+   Build the Command Centre as an evidence and decision system first, not as a complex reporting suite.
+
+---
+
+# 20. Final Instruction
+
+After implementation, provide:
+
+1. A summary of what was changed.
+2. A list of files modified.
+3. Any new database tables or migrations added.
+4. Any assumptions made.
+5. Any features not completed.
+6. Recommended next development step.
+
+The strategic objective is to turn the Command Centre into the control layer for Lean Startup venture validation across EcoBLEND IO.
