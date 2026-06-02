@@ -1487,3 +1487,19 @@
 - [ ] Phase 5N: Write comprehensive Phase 5 long-term QA tests
 - [ ] Phase 5N: Run full test suite
 - [ ] Phase 5N: Save checkpoint
+
+## Venture Intake Module 2 — Full Rebuild (Sprint 21)
+
+- [x] Audit existing VentureIntake.tsx (276 lines, 100% hard-coded, zero tRPC calls)
+- [x] Create 6 new DB tables: venture_ideas, founder_assumptions, venture_hypotheses, riskiest_assumptions, lean_canvas_records, intake_decisions, lean_experiments
+- [x] Build ventureIntake.router.ts (26 tRPC procedures + scoring engines)
+- [x] Wire ventureIntakeRouter into routers.ts
+- [x] Rebuild VentureIntake.tsx as 6-tab page (1,100+ lines):
+  - [x] Tab 1: Idea Capture (origin source, sector, customer, problem, solution, why now, strategic/sustainability/data moat relevance)
+  - [x] Tab 2: Founder Assumptions (risk matrix, importance x uncertainty scoring, evidence tracking, convert-to-hypothesis)
+  - [x] Tab 3: Hypotheses Register (12 hypothesis types, status tracking, risk level, test method, success metric)
+  - [x] Tab 4: Riskiest Assumption Test (priority score engine, lean experiment creation)
+  - [x] Tab 5: Lean Canvas (11-block canvas, versioning, completeness score, visual completeness indicators)
+  - [x] Tab 6: Intake Decision (readiness score 0-100, 6 sub-scores, recommendation engine, approve/reject workflow)
+- [x] Vitest tests for all scoring engines (39 tests, all passing)
+- [x] Sidebar section 2 already wired at /intake
