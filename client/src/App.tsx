@@ -88,6 +88,7 @@ import AdminWidgetSettings from "./pages/AdminWidgetSettings";
 import AdminProductionReadiness from "./pages/AdminProductionReadiness";
 import ModulePlaceholder from "./pages/ModulePlaceholder";
 import VentureIntake from "./pages/VentureIntake";
+import WTPAssessment from "./pages/WTPAssessment";
 import ReadinessScoring from "./pages/ReadinessScoring";
 import RDHub from "./pages/RDHub";
 import RiskIntelligence from "./pages/RiskIntelligence";
@@ -198,7 +199,7 @@ function Router() {
       <Route path="/discovery" component={ModulePlaceholder} />
       <Route path="/discovery/competitors" component={ModulePlaceholder} />
       <Route path="/discovery/demand" component={ModulePlaceholder} />
-      <Route path="/discovery/wtp" component={ModulePlaceholder} />
+      <Route path="/discovery/wtp" component={WTPAssessment} />
       <Route path="/discovery/market-risk" component={ModulePlaceholder} />
       {/* Module 4: Proposition & Business Model */}
       <Route path="/proposition" component={ModulePlaceholder} />

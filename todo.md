@@ -1503,3 +1503,15 @@
   - [x] Tab 6: Intake Decision (readiness score 0-100, 6 sub-scores, recommendation engine, approve/reject workflow)
 - [x] Vitest tests for all scoring engines (39 tests, all passing)
 - [x] Sidebar section 2 already wired at /intake
+
+## Sprint 22 — WTP Assessment Module
+
+- [x] Audit existing WTP module (route /discovery/wtp was ModulePlaceholder)
+- [x] Create 5 WTP DB tables: wtp_tests, wtp_commitments, pricing_experiments, budget_validations, procurement_pathways
+- [x] Build wtpAssessment.router.ts with 20+ tRPC procedures
+- [x] Scoring engines: EvidenceLevel 7-ladder (10/25/40/55/70/85/100), BudgetOwner, ProcurementPathway, PricingResponse, composite WTPScore (50/20/15/15 weights)
+- [x] Auto-risk/alert logic: generateWTPWarnings, generateWTPDecisionRecommendation (4 tiers: Proceed/Strengthen/Run Tests/Do Not Build)
+- [x] EVIDENCE_LADDER constant: 7 levels, isWTP flag, score, label, description
+- [x] Build WTPAssessment.tsx — 9-tab page (Overview, Commitment Log, Pricing Test, Budget Owner, Procurement, Objections, Evidence Ladder, Scorecard, Next Action)
+- [x] Wire /discovery/wtp route in App.tsx (replaced ModulePlaceholder)
+- [x] Vitest tests: 59 tests, all passing (evidence ladder, scoring engines, BEBUS/ECOCOMP/REAL/TONE scenarios, warnings, recommendations, friction scoring)

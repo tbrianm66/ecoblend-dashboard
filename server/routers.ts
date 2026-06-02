@@ -38,6 +38,7 @@ import {
 } from "./institutionalMemory.router";
 import { peopleIntelligenceRouter } from "./peopleIntelligence.router";
 import { ventureIntakeRouter } from "./ventureIntake.router";
+import { wtpAssessmentRouter } from "./wtpAssessment.router";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -259,6 +260,7 @@ export const appRouter = router({
   advancedStakeholder: advancedStakeholderRouter,
   peopleIntelligence: peopleIntelligenceRouter,
   ventureIntake: ventureIntakeRouter,
+  wtpAssessment: wtpAssessmentRouter,
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
