@@ -95,6 +95,7 @@ import CompetitorMapping from "./pages/discovery/CompetitorMapping";
 import DemandSignals from "./pages/discovery/DemandSignals";
 import WTPAssessment from "./pages/discovery/WTPAssessment";
 import MarketRiskLog from "./pages/discovery/MarketRiskLog";
+import DiscoveryExperimentLog from "./pages/discovery/ExperimentLog";
 import ReadinessScoring from "./pages/ReadinessScoring";
 import RDHub from "./pages/RDHub";
 import RiskIntelligence from "./pages/RiskIntelligence";
@@ -207,6 +208,7 @@ function Router() {
       <Route path="/discovery/demand" component={DemandSignals} />
       <Route path="/discovery/wtp" component={WTPAssessment} />
       <Route path="/discovery/market-risk" component={MarketRiskLog} />
+      <Route path="/discovery/experiments" component={DiscoveryExperimentLog} />
       {/* Module 4: Proposition & Business Model */}
       <Route path="/proposition" component={ModulePlaceholder} />
       <Route path="/proposition/bmc" component={ModulePlaceholder} />

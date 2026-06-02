@@ -96,6 +96,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: "disc-demand",      label: "Demand Signals",       icon: "TrendingUp",      href: "/discovery/demand" },
       { id: "disc-wtp",         label: "WTP Assessment",       icon: "DollarSign",      href: "/discovery/wtp" },
       { id: "disc-market-risk", label: "Market Risk Log",      icon: "ShieldAlert",     href: "/discovery/market-risk" },
+      { id: "disc-experiments", label: "Experiment Log",       icon: "FlaskConical",    href: "/discovery/experiments" },
     ],
   },
   {
