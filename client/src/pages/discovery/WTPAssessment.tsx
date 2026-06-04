@@ -107,7 +107,7 @@ export default function WTPAssessment() {
                         <td className="px-4 py-2.5"><div className="flex items-center gap-2"><span className="font-bold text-gray-700">{r.wtpScore}</span><ToneBadge band={band} /></div></td>
                         <td className="px-4 py-2.5 text-right whitespace-nowrap">
                           <button onClick={() => openForm(r)} className="text-gray-400 hover:text-gray-700 mr-2"><Pencil size={13} /></button>
-                          <button onClick={() => del.mutate({ id: r.id })} className="text-gray-400 hover:text-red-600"><Trash2 size={13} /></button>
+                          <button onClick={() => del.mutate({ id: r.id, ventureId: v })} className="text-gray-400 hover:text-red-600"><Trash2 size={13} /></button>
                         </td>
                       </tr>
                     );

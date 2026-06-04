@@ -3,10 +3,14 @@
  * CRUD + scoring + server-side auto-risk creation + module summary.
  */
 import { z } from "zod";
-import { router, publicProcedure } from "./_core/trpc";
+import { TRPCError } from "@trpc/server";
+import { router, publicProcedure, protectedProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import { and, eq, desc } from "drizzle-orm";
+import type { User } from "../drizzle/schema";
 import {
+  ventures,
+  ventureMembers,
   customerSegments,
   problemHypotheses,
   customerInterviews,
@@ -49,6 +53,91 @@ function db() {
     return d;
   });
 }
+
+// ─── Auth / venture access ──────────────────────────────────────────────────────
+// App auth model: read paths stay public (anyone may view evidence), but every
+// create/update/delete on venture evidence and risks requires an authenticated
+// user who is authorised for the target venture.
+//
+// Authorisation rules (see `assertVentureAccess`):
+//   1. The target venture must exist (else NOT_FOUND).
+//   2. Admins (user.role === "admin") may edit any venture.
+//   3. A user listed in `venture_members` for that venture may edit it.
+//   4. An "unclaimed" venture (no members yet) is claimed by the first
+//      authenticated editor on first write; everyone else is then FORBIDDEN.
+//      This keeps legacy ventures (created before access control existed) usable
+//      without locking everyone out, while still scoping access per user.
+//
+// Writes are additionally scoped with a combined `id + ventureId` predicate so a
+// caller cannot reach another venture's records by guessing internal ids
+// (cross-venture IDOR). `assertVentureAccess` is the single seam to extend this
+// model across the rest of the app (see follow-up tasks).
+const recordInput = z.object({ id: z.number(), ventureId: z.string() });
+
+async function assertVentureExists(
+  d: Awaited<ReturnType<typeof db>>,
+  ventureId: string,
+) {
+  const [row] = await d
+    .select({ id: ventures.id })
+    .from(ventures)
+    .where(eq(ventures.id, ventureId))
+    .limit(1);
+  if (!row) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Venture not found" });
+  }
+}
+
+export async function assertVentureAccess(
+  d: Awaited<ReturnType<typeof db>>,
+  user: Pick<User, "id" | "role">,
+  ventureId: string,
+) {
+  await assertVentureExists(d, ventureId);
+
+  if (user.role === "admin") return;
+
+  const [membership] = await d
+    .select({ id: ventureMembers.id })
+    .from(ventureMembers)
+    .where(and(eq(ventureMembers.ventureId, ventureId), eq(ventureMembers.userId, user.id)))
+    .limit(1);
+  if (membership) return;
+
+  // Unclaimed venture: the first authenticated editor claims ownership.
+  const [anyMember] = await d
+    .select({ id: ventureMembers.id })
+    .from(ventureMembers)
+    .where(eq(ventureMembers.ventureId, ventureId))
+    .limit(1);
+  if (!anyMember) {
+    await d
+      .insert(ventureMembers)
+      .values({ ventureId, userId: user.id, role: "owner" })
+      .onConflictDoNothing();
+    return;
+  }
+
+  throw new TRPCError({
+    code: "FORBIDDEN",
+    message: "You do not have access to this venture",
+  });
+}
+
+// Authenticated procedure that verifies the caller is authorised for the target
+// venture (from the mutation input's `ventureId`) before the handler runs.
+const ventureProcedure = protectedProcedure.use(async ({ ctx, next, getRawInput }) => {
+  const raw = await getRawInput();
+  const ventureId = (raw as { ventureId?: unknown } | null)?.ventureId;
+  if (typeof ventureId !== "string" || ventureId.length === 0) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "ventureId is required",
+    });
+  }
+  await assertVentureAccess(await db(), ctx.user, ventureId);
+  return next();
+});
 
 // ─── Auto-risk helper ──────────────────────────────────────────────────────────
 async function syncAutoRisks(
@@ -128,7 +217,7 @@ export const discoveryMarketRouter = router({
       const d = await db();
       return d.select().from(customerSegments).where(eq(customerSegments.ventureId, input.ventureId)).orderBy(desc(customerSegments.createdAt));
     }),
-    upsert: publicProcedure
+    upsert: ventureProcedure
       .input(
         z.object({
           id: z.number().optional(),
@@ -147,15 +236,17 @@ export const discoveryMarketRouter = router({
         const d = await db();
         const { id, ...vals } = input;
         if (id) {
-          await d.update(customerSegments).set({ ...vals, updatedAt: new Date() }).where(eq(customerSegments.id, id));
+          const [updated] = await d.update(customerSegments).set({ ...vals, updatedAt: new Date() }).where(and(eq(customerSegments.id, id), eq(customerSegments.ventureId, input.ventureId))).returning({ id: customerSegments.id });
+          if (!updated) throw new TRPCError({ code: "NOT_FOUND", message: "Record not found" });
           return { id };
         }
         const [row] = await d.insert(customerSegments).values(vals).returning();
         return { id: row.id };
       }),
-    delete: publicProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
+    delete: ventureProcedure.input(recordInput).mutation(async ({ input }) => {
       const d = await db();
-      await d.delete(customerSegments).where(eq(customerSegments.id, input.id));
+      const [row] = await d.delete(customerSegments).where(and(eq(customerSegments.id, input.id), eq(customerSegments.ventureId, input.ventureId))).returning({ id: customerSegments.id });
+      if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Record not found" });
       return { success: true };
     }),
   }),
@@ -166,7 +257,7 @@ export const discoveryMarketRouter = router({
       const d = await db();
       return d.select().from(problemHypotheses).where(eq(problemHypotheses.ventureId, input.ventureId)).orderBy(desc(problemHypotheses.createdAt));
     }),
-    upsert: publicProcedure
+    upsert: ventureProcedure
       .input(
         z.object({
           id: z.number().optional(),
@@ -186,15 +277,17 @@ export const discoveryMarketRouter = router({
         const d = await db();
         const { id, ...vals } = input;
         if (id) {
-          await d.update(problemHypotheses).set({ ...vals, updatedAt: new Date() }).where(eq(problemHypotheses.id, id));
+          const [updated] = await d.update(problemHypotheses).set({ ...vals, updatedAt: new Date() }).where(and(eq(problemHypotheses.id, id), eq(problemHypotheses.ventureId, input.ventureId))).returning({ id: problemHypotheses.id });
+          if (!updated) throw new TRPCError({ code: "NOT_FOUND", message: "Record not found" });
           return { id };
         }
         const [row] = await d.insert(problemHypotheses).values(vals).returning();
         return { id: row.id };
       }),
-    delete: publicProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
+    delete: ventureProcedure.input(recordInput).mutation(async ({ input }) => {
       const d = await db();
-      await d.delete(problemHypotheses).where(eq(problemHypotheses.id, input.id));
+      const [row] = await d.delete(problemHypotheses).where(and(eq(problemHypotheses.id, input.id), eq(problemHypotheses.ventureId, input.ventureId))).returning({ id: problemHypotheses.id });
+      if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Record not found" });
       return { success: true };
     }),
   }),
@@ -208,7 +301,7 @@ export const discoveryMarketRouter = router({
         const rows = await d.select().from(customerInterviews).where(eq(customerInterviews.ventureId, input.ventureId)).orderBy(desc(customerInterviews.createdAt));
         return input.problemHypothesisId ? rows.filter((r) => r.problemHypothesisId === input.problemHypothesisId) : rows;
       }),
-    upsert: publicProcedure
+    upsert: ventureProcedure
       .input(
         z.object({
           id: z.number().optional(),
@@ -249,7 +342,8 @@ export const discoveryMarketRouter = router({
         const recommendedDecision = generateLeanDecision("customer_discovery", discoveryScore).join("; ");
         let recordId: number;
         if (id) {
-          await d.update(customerInterviews).set({ ...vals, discoveryScore, recommendedDecision, updatedAt: new Date() }).where(eq(customerInterviews.id, id));
+          const [updated] = await d.update(customerInterviews).set({ ...vals, discoveryScore, recommendedDecision, updatedAt: new Date() }).where(and(eq(customerInterviews.id, id), eq(customerInterviews.ventureId, input.ventureId))).returning({ id: customerInterviews.id });
+          if (!updated) throw new TRPCError({ code: "NOT_FOUND", message: "Record not found" });
           recordId = id;
         } else {
           const [row] = await d.insert(customerInterviews).values({ ...vals, discoveryScore, recommendedDecision }).returning();
@@ -258,13 +352,11 @@ export const discoveryMarketRouter = router({
         await syncAutoRisks(d, input.ventureId, "customer_discovery", recordId, autoRisksForInterview(scoreInput));
         return { id: recordId, discoveryScore };
       }),
-    delete: publicProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
+    delete: ventureProcedure.input(recordInput).mutation(async ({ input }) => {
       const d = await db();
-      const [row] = await d.select().from(customerInterviews).where(eq(customerInterviews.id, input.id));
-      await d.delete(customerInterviews).where(eq(customerInterviews.id, input.id));
-      if (row) {
-        await d.delete(marketRisks).where(and(eq(marketRisks.linkedModule, "customer_discovery"), eq(marketRisks.linkedRecordId, input.id), eq(marketRisks.autoGenerated, true)));
-      }
+      const [row] = await d.delete(customerInterviews).where(and(eq(customerInterviews.id, input.id), eq(customerInterviews.ventureId, input.ventureId))).returning({ id: customerInterviews.id });
+      if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Record not found" });
+      await d.delete(marketRisks).where(and(eq(marketRisks.ventureId, input.ventureId), eq(marketRisks.linkedModule, "customer_discovery"), eq(marketRisks.linkedRecordId, input.id), eq(marketRisks.autoGenerated, true)));
       return { success: true };
     }),
   }),
@@ -278,7 +370,7 @@ export const discoveryMarketRouter = router({
         const rows = await d.select().from(dmCompetitors).where(eq(dmCompetitors.ventureId, input.ventureId)).orderBy(desc(dmCompetitors.createdAt));
         return input.problemHypothesisId ? rows.filter((r) => r.problemHypothesisId === input.problemHypothesisId) : rows;
       }),
-    upsert: publicProcedure
+    upsert: ventureProcedure
       .input(
         z.object({
           id: z.number().optional(),
@@ -309,7 +401,8 @@ export const discoveryMarketRouter = router({
         });
         let recordId: number;
         if (id) {
-          await d.update(dmCompetitors).set({ ...vals, competitiveRiskScore, updatedAt: new Date() }).where(eq(dmCompetitors.id, id));
+          const [updated] = await d.update(dmCompetitors).set({ ...vals, competitiveRiskScore, updatedAt: new Date() }).where(and(eq(dmCompetitors.id, id), eq(dmCompetitors.ventureId, input.ventureId))).returning({ id: dmCompetitors.id });
+          if (!updated) throw new TRPCError({ code: "NOT_FOUND", message: "Record not found" });
           recordId = id;
         } else {
           const [row] = await d.insert(dmCompetitors).values({ ...vals, competitiveRiskScore }).returning();
@@ -323,10 +416,11 @@ export const discoveryMarketRouter = router({
         }));
         return { id: recordId, competitiveRiskScore };
       }),
-    delete: publicProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
+    delete: ventureProcedure.input(recordInput).mutation(async ({ input }) => {
       const d = await db();
-      await d.delete(dmCompetitors).where(eq(dmCompetitors.id, input.id));
-      await d.delete(marketRisks).where(and(eq(marketRisks.linkedModule, "competitor"), eq(marketRisks.linkedRecordId, input.id), eq(marketRisks.autoGenerated, true)));
+      const [row] = await d.delete(dmCompetitors).where(and(eq(dmCompetitors.id, input.id), eq(dmCompetitors.ventureId, input.ventureId))).returning({ id: dmCompetitors.id });
+      if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Record not found" });
+      await d.delete(marketRisks).where(and(eq(marketRisks.ventureId, input.ventureId), eq(marketRisks.linkedModule, "competitor"), eq(marketRisks.linkedRecordId, input.id), eq(marketRisks.autoGenerated, true)));
       return { success: true };
     }),
   }),
@@ -340,7 +434,7 @@ export const discoveryMarketRouter = router({
         const rows = await d.select().from(demandSignals).where(eq(demandSignals.ventureId, input.ventureId)).orderBy(desc(demandSignals.createdAt));
         return input.problemHypothesisId ? rows.filter((r) => r.problemHypothesisId === input.problemHypothesisId) : rows;
       }),
-    upsert: publicProcedure
+    upsert: ventureProcedure
       .input(
         z.object({
           id: z.number().optional(),
@@ -373,7 +467,8 @@ export const discoveryMarketRouter = router({
         });
         let recordId: number;
         if (id) {
-          await d.update(demandSignals).set({ ...vals, demandSignalScore, updatedAt: new Date() }).where(eq(demandSignals.id, id));
+          const [updated] = await d.update(demandSignals).set({ ...vals, demandSignalScore, updatedAt: new Date() }).where(and(eq(demandSignals.id, id), eq(demandSignals.ventureId, input.ventureId))).returning({ id: demandSignals.id });
+          if (!updated) throw new TRPCError({ code: "NOT_FOUND", message: "Record not found" });
           recordId = id;
         } else {
           const [row] = await d.insert(demandSignals).values({ ...vals, demandSignalScore }).returning();
@@ -386,10 +481,11 @@ export const discoveryMarketRouter = router({
         }));
         return { id: recordId, demandSignalScore };
       }),
-    delete: publicProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
+    delete: ventureProcedure.input(recordInput).mutation(async ({ input }) => {
       const d = await db();
-      await d.delete(demandSignals).where(eq(demandSignals.id, input.id));
-      await d.delete(marketRisks).where(and(eq(marketRisks.linkedModule, "demand"), eq(marketRisks.linkedRecordId, input.id), eq(marketRisks.autoGenerated, true)));
+      const [row] = await d.delete(demandSignals).where(and(eq(demandSignals.id, input.id), eq(demandSignals.ventureId, input.ventureId))).returning({ id: demandSignals.id });
+      if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Record not found" });
+      await d.delete(marketRisks).where(and(eq(marketRisks.ventureId, input.ventureId), eq(marketRisks.linkedModule, "demand"), eq(marketRisks.linkedRecordId, input.id), eq(marketRisks.autoGenerated, true)));
       return { success: true };
     }),
   }),
@@ -403,7 +499,7 @@ export const discoveryMarketRouter = router({
         const rows = await d.select().from(wtpTests).where(eq(wtpTests.ventureId, input.ventureId)).orderBy(desc(wtpTests.createdAt));
         return input.problemHypothesisId ? rows.filter((r) => r.problemHypothesisId === input.problemHypothesisId) : rows;
       }),
-    upsert: publicProcedure
+    upsert: ventureProcedure
       .input(
         z.object({
           id: z.number().optional(),
@@ -434,7 +530,8 @@ export const discoveryMarketRouter = router({
         });
         let recordId: number;
         if (id) {
-          await d.update(wtpTests).set({ ...vals, wtpScore, updatedAt: new Date() }).where(eq(wtpTests.id, id));
+          const [updated] = await d.update(wtpTests).set({ ...vals, wtpScore, updatedAt: new Date() }).where(and(eq(wtpTests.id, id), eq(wtpTests.ventureId, input.ventureId))).returning({ id: wtpTests.id });
+          if (!updated) throw new TRPCError({ code: "NOT_FOUND", message: "Record not found" });
           recordId = id;
         } else {
           const [row] = await d.insert(wtpTests).values({ ...vals, wtpScore }).returning();
@@ -447,10 +544,11 @@ export const discoveryMarketRouter = router({
         }));
         return { id: recordId, wtpScore };
       }),
-    delete: publicProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
+    delete: ventureProcedure.input(recordInput).mutation(async ({ input }) => {
       const d = await db();
-      await d.delete(wtpTests).where(eq(wtpTests.id, input.id));
-      await d.delete(marketRisks).where(and(eq(marketRisks.linkedModule, "wtp"), eq(marketRisks.linkedRecordId, input.id), eq(marketRisks.autoGenerated, true)));
+      const [row] = await d.delete(wtpTests).where(and(eq(wtpTests.id, input.id), eq(wtpTests.ventureId, input.ventureId))).returning({ id: wtpTests.id });
+      if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Record not found" });
+      await d.delete(marketRisks).where(and(eq(marketRisks.ventureId, input.ventureId), eq(marketRisks.linkedModule, "wtp"), eq(marketRisks.linkedRecordId, input.id), eq(marketRisks.autoGenerated, true)));
       return { success: true };
     }),
   }),
@@ -461,7 +559,7 @@ export const discoveryMarketRouter = router({
       const d = await db();
       return d.select().from(marketRisks).where(eq(marketRisks.ventureId, input.ventureId)).orderBy(desc(marketRisks.marketRiskScore));
     }),
-    upsert: publicProcedure
+    upsert: ventureProcedure
       .input(
         z.object({
           id: z.number().optional(),
@@ -491,15 +589,17 @@ export const discoveryMarketRouter = router({
           evidenceConfidenceScore: vals.evidenceConfidenceScore ?? 1,
         });
         if (id) {
-          await d.update(marketRisks).set({ ...vals, marketRiskScore, updatedAt: new Date() }).where(eq(marketRisks.id, id));
+          const [updated] = await d.update(marketRisks).set({ ...vals, marketRiskScore, updatedAt: new Date() }).where(and(eq(marketRisks.id, id), eq(marketRisks.ventureId, input.ventureId))).returning({ id: marketRisks.id });
+          if (!updated) throw new TRPCError({ code: "NOT_FOUND", message: "Record not found" });
           return { id, marketRiskScore };
         }
         const [row] = await d.insert(marketRisks).values({ ...vals, marketRiskScore, autoGenerated: false }).returning();
         return { id: row.id, marketRiskScore };
       }),
-    delete: publicProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
+    delete: ventureProcedure.input(recordInput).mutation(async ({ input }) => {
       const d = await db();
-      await d.delete(marketRisks).where(eq(marketRisks.id, input.id));
+      const [row] = await d.delete(marketRisks).where(and(eq(marketRisks.id, input.id), eq(marketRisks.ventureId, input.ventureId))).returning({ id: marketRisks.id });
+      if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Record not found" });
       return { success: true };
     }),
   }),
@@ -510,7 +610,7 @@ export const discoveryMarketRouter = router({
       const d = await db();
       return d.select().from(leanExperiments).where(eq(leanExperiments.ventureId, input.ventureId)).orderBy(desc(leanExperiments.createdAt));
     }),
-    upsert: publicProcedure
+    upsert: ventureProcedure
       .input(
         z.object({
           id: z.number().optional(),
@@ -531,15 +631,17 @@ export const discoveryMarketRouter = router({
         const d = await db();
         const { id, ...vals } = input;
         if (id) {
-          await d.update(leanExperiments).set({ ...vals, updatedAt: new Date() }).where(eq(leanExperiments.id, id));
+          const [updated] = await d.update(leanExperiments).set({ ...vals, updatedAt: new Date() }).where(and(eq(leanExperiments.id, id), eq(leanExperiments.ventureId, input.ventureId))).returning({ id: leanExperiments.id });
+          if (!updated) throw new TRPCError({ code: "NOT_FOUND", message: "Record not found" });
           return { id };
         }
         const [row] = await d.insert(leanExperiments).values(vals).returning();
         return { id: row.id };
       }),
-    delete: publicProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
+    delete: ventureProcedure.input(recordInput).mutation(async ({ input }) => {
       const d = await db();
-      await d.delete(leanExperiments).where(eq(leanExperiments.id, input.id));
+      const [row] = await d.delete(leanExperiments).where(and(eq(leanExperiments.id, input.id), eq(leanExperiments.ventureId, input.ventureId))).returning({ id: leanExperiments.id });
+      if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Record not found" });
       return { success: true };
     }),
   }),

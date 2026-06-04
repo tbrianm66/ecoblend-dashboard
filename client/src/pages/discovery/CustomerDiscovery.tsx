@@ -138,7 +138,7 @@ export default function CustomerDiscovery() {
                     </div>
                     <div className="flex gap-1">
                       <button onClick={() => openSeg(seg)} className="text-gray-400 hover:text-gray-700"><Pencil size={13} /></button>
-                      <button onClick={() => segDelete.mutate({ id: seg.id })} className="text-gray-400 hover:text-red-600"><Trash2 size={13} /></button>
+                      <button onClick={() => segDelete.mutate({ id: seg.id, ventureId: v })} className="text-gray-400 hover:text-red-600"><Trash2 size={13} /></button>
                     </div>
                   </div>
                   <div className="mt-2 space-y-1 text-xs text-gray-500">
@@ -176,7 +176,7 @@ export default function CustomerDiscovery() {
                   <div className="flex items-center gap-2 shrink-0">
                     <StatusBadge status={h.status} />
                     <button onClick={() => openHyp(h)} className="text-gray-400 hover:text-gray-700"><Pencil size={13} /></button>
-                    <button onClick={() => hypDelete.mutate({ id: h.id })} className="text-gray-400 hover:text-red-600"><Trash2 size={13} /></button>
+                    <button onClick={() => hypDelete.mutate({ id: h.id, ventureId: v })} className="text-gray-400 hover:text-red-600"><Trash2 size={13} /></button>
                   </div>
                 </CardContent>
               </Card>
@@ -235,7 +235,7 @@ export default function CustomerDiscovery() {
                         </td>
                         <td className="px-4 py-2.5 text-right whitespace-nowrap">
                           <button onClick={() => openInt(it)} className="text-gray-400 hover:text-gray-700 mr-2"><Pencil size={13} /></button>
-                          <button onClick={() => intDelete.mutate({ id: it.id })} className="text-gray-400 hover:text-red-600"><Trash2 size={13} /></button>
+                          <button onClick={() => intDelete.mutate({ id: it.id, ventureId: v })} className="text-gray-400 hover:text-red-600"><Trash2 size={13} /></button>
                         </td>
                       </tr>
                     );

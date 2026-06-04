@@ -103,7 +103,7 @@ export default function ExperimentLog() {
                     </div>
                     <div className="flex gap-1 shrink-0">
                       <button onClick={() => openForm(ex)} className="text-gray-400 hover:text-gray-700"><Pencil size={13} /></button>
-                      <button onClick={() => del.mutate({ id: ex.id })} className="text-gray-400 hover:text-red-600"><Trash2 size={13} /></button>
+                      <button onClick={() => del.mutate({ id: ex.id, ventureId: v })} className="text-gray-400 hover:text-red-600"><Trash2 size={13} /></button>
                     </div>
                   </div>
 

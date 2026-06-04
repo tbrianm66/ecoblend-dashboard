@@ -9,6 +9,7 @@ import {
   serial,
   text,
   timestamp,
+  unique,
   varchar,
 } from "drizzle-orm/pg-core";
 
@@ -75,6 +76,24 @@ export const ventures = pgTable("ventures", {
 
 export type Venture = typeof ventures.$inferSelect;
 export type InsertVenture = typeof ventures.$inferInsert;
+
+// -- Venture members (access control) -----------------------------------------
+// Maps users to the ventures they may edit. Venture-scoped write operations
+// authorise the caller against this table (admins bypass it). A venture with no
+// members is "unclaimed" — the first authenticated editor claims it (see the
+// server auth model in discoveryMarket.router.ts).
+export const ventureMembers = pgTable("venture_members", {
+  id: serial("id").primaryKey(),
+  ventureId: varchar("ventureId", { length: 64 }).notNull().references(() => ventures.id),
+  userId: integer("userId").notNull().references(() => users.id),
+  role: text("role").default("editor").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (t) => ({
+  ventureUserUnique: unique("venture_members_venture_user_unique").on(t.ventureId, t.userId),
+}));
+
+export type VentureMember = typeof ventureMembers.$inferSelect;
+export type InsertVentureMember = typeof ventureMembers.$inferInsert;
 
 // -- Milestones ----------------------------------------------------------------
 export const milestones = pgTable("milestones", {
