@@ -92,6 +92,7 @@ export async function assertVentureAccess(
   d: Awaited<ReturnType<typeof db>>,
   user: Pick<User, "id" | "role">,
   ventureId: string,
+  opts: { allowClaim?: boolean } = {},
 ) {
   await assertVentureExists(d, ventureId);
 
@@ -104,18 +105,22 @@ export async function assertVentureAccess(
     .limit(1);
   if (membership) return;
 
-  // Unclaimed venture: the first authenticated editor claims ownership.
-  const [anyMember] = await d
-    .select({ id: ventureMembers.id })
-    .from(ventureMembers)
-    .where(eq(ventureMembers.ventureId, ventureId))
-    .limit(1);
-  if (!anyMember) {
-    await d
-      .insert(ventureMembers)
-      .values({ ventureId, userId: user.id, role: "owner" })
-      .onConflictDoNothing();
-    return;
+  // Unclaimed venture: only claim ownership when the caller explicitly opts in.
+  // New callers should leave allowClaim as false (the default) to prevent any
+  // authenticated user from silently hijacking an unclaimed venture.
+  if (opts.allowClaim) {
+    const [anyMember] = await d
+      .select({ id: ventureMembers.id })
+      .from(ventureMembers)
+      .where(eq(ventureMembers.ventureId, ventureId))
+      .limit(1);
+    if (!anyMember) {
+      await d
+        .insert(ventureMembers)
+        .values({ ventureId, userId: user.id, role: "owner" })
+        .onConflictDoNothing();
+      return;
+    }
   }
 
   throw new TRPCError({
@@ -135,7 +140,7 @@ const ventureProcedure = protectedProcedure.use(async ({ ctx, next, getRawInput 
       message: "ventureId is required",
     });
   }
-  await assertVentureAccess(await db(), ctx.user, ventureId);
+  await assertVentureAccess(await db(), ctx.user, ventureId, { allowClaim: true });
   return next();
 });
 
