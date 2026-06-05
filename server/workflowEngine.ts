@@ -49,6 +49,7 @@ export interface TriggerResult {
   logId: number;
   targetRecordId?: number;
   message: string;
+  ventureId?: string;
 }
 
 // ── Helper: log a trigger event ───────────────────────────────────────────────
@@ -190,6 +191,7 @@ export async function triggerResearchCompleted(
       logId,
       targetRecordId: experimentId,
       message: `Created TRL evidence experiment #${experimentId} for research "${research.title}"`,
+      ventureId: research.ventureId,
     };
   } catch (err: any) {
     const logId = await logTrigger({
@@ -299,6 +301,7 @@ export async function triggerAuditFailed(
       logId,
       targetRecordId: taskId,
       message: `Created CAPA task #${taskId} for audit at "${audit.supplierName}" (failed: ${failedNames})`,
+      ventureId: audit.ventureId,
     };
   } catch (err: any) {
     const logId = await logTrigger({
@@ -403,6 +406,7 @@ export async function triggerSupplierApproved(
       logId,
       targetRecordId: aslId,
       message: `Created ASL entry #${aslId} for supplier "${supplier.companyName}"`,
+      ventureId: supplier.ventureId,
     };
   } catch (err: any) {
     const logId = await logTrigger({
@@ -485,6 +489,7 @@ export async function triggerDealClosedWon(
       logId,
       targetRecordId: taskId,
       message: `Created customer onboarding task #${taskId} for deal "${deal.title}"`,
+      ventureId,
     };
   } catch (err: any) {
     const logId = await logTrigger({
@@ -564,6 +569,7 @@ export async function triggerFundingRoundClosed(
       logId,
       targetRecordId: taskId,
       message: `Created cap table update task #${taskId} for round "${round.name}"`,
+      ventureId: round.ventureId,
     };
   } catch (err: any) {
     const logId = await logTrigger({
@@ -662,6 +668,7 @@ export async function triggerMilestoneOverdue(
       logId,
       targetRecordId: taskId,
       message: `Created escalation task #${taskId} for overdue milestone "${milestone.title}" (${daysOverdue} days overdue)`,
+      ventureId: milestone.ventureId,
     };
   } catch (err: any) {
     const logId = await logTrigger({
@@ -757,6 +764,7 @@ export async function triggerDataQualityDegraded(
       logId,
       targetRecordId: taskId,
       message: `Created data review task #${taskId} for asset "${assetName}" (score: ${score.overallScore?.toFixed(1) ?? "?"})`,
+      ventureId,
     };
   } catch (err: any) {
     const logId = await logTrigger({
@@ -799,10 +807,11 @@ export async function dispatchTrigger(
     default:
       return { success: false, logId: 0, message: `Unknown trigger type: ${triggerType}` };
   }
-  // Broadcast real-time SSE event to all connected clients
+  // Broadcast real-time SSE event to authorized clients only
   try {
     emitWorkflowTrigger({
       triggerType,
+      ventureId: result.ventureId,
       description: result.message || `Trigger ${triggerType} fired (record #${sourceRecordId})`,
       severity: result.success ? "info" : "warning",
     });

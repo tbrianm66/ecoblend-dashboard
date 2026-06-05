@@ -26,19 +26,36 @@ export interface SSEEvent {
 
 // ── Client Registry ───────────────────────────────────────────────────────────
 const MAX_CONNECTIONS = 100;
+const MAX_CONNECTIONS_PER_USER = 5;
 
 interface SSEClient {
   id: string;
   res: Response;
   connectedAt: Date;
-  userId?: string;
+  userId: string;
+  isAdmin: boolean;
+  authorizedVentureIds: Set<string> | null; // null = admin, can see all ventures
 }
 
 const clients = new Map<string, SSEClient>();
+const userConnectionCounts = new Map<string, number>();
 let eventIdCounter = 0;
 
-// ── Broadcast to all connected clients ───────────────────────────────────────
-export function broadcastSSEEvent(event: Omit<SSEEvent, "timestamp" | "id">) {
+function incrementUserCount(userId: string): void {
+  userConnectionCounts.set(userId, (userConnectionCounts.get(userId) ?? 0) + 1);
+}
+
+function decrementUserCount(userId: string): void {
+  const n = (userConnectionCounts.get(userId) ?? 1) - 1;
+  if (n <= 0) userConnectionCounts.delete(userId);
+  else userConnectionCounts.set(userId, n);
+}
+
+// ── Broadcast to authorized clients only ─────────────────────────────────────
+export function broadcastSSEEvent(
+  event: Omit<SSEEvent, "timestamp" | "id">,
+  eventVentureId?: string
+) {
   if (clients.size === 0) return;
   const fullEvent: SSEEvent = {
     ...event,
@@ -46,21 +63,43 @@ export function broadcastSSEEvent(event: Omit<SSEEvent, "timestamp" | "id">) {
     id: String(++eventIdCounter),
   };
   const payload = `id: ${fullEvent.id}\nevent: ${fullEvent.type}\ndata: ${JSON.stringify(fullEvent)}\n\n`;
+
   for (const [clientId, client] of Array.from(clients.entries())) {
+    // Venture-level authorization: admins see everything;
+    // non-admins only receive events for their authorized ventures.
+    if (eventVentureId && !client.isAdmin) {
+      if (!client.authorizedVentureIds?.has(eventVentureId)) continue;
+    }
     try {
       client.res.write(payload);
     } catch {
-      // Client disconnected — remove from registry
       clients.delete(clientId);
+      decrementUserCount(client.userId);
     }
   }
 }
 
 // ── SSE Connection Handler ────────────────────────────────────────────────────
-export function handleSSEConnection(req: Request, res: Response) {
-  // Enforce connection cap to prevent resource exhaustion
+export interface SSEUserContext {
+  userId: string;
+  isAdmin: boolean;
+  authorizedVentureIds: Set<string> | null;
+}
+
+export function handleSSEConnection(
+  req: Request,
+  res: Response,
+  userCtx: SSEUserContext
+) {
+  // Enforce global connection cap
   if (clients.size >= MAX_CONNECTIONS) {
     res.status(503).json({ error: "Too many connections" });
+    return;
+  }
+
+  // Enforce per-user connection cap
+  if ((userConnectionCounts.get(userCtx.userId) ?? 0) >= MAX_CONNECTIONS_PER_USER) {
+    res.status(429).json({ error: "Too many connections for this user" });
     return;
   }
 
@@ -71,15 +110,17 @@ export function handleSSEConnection(req: Request, res: Response) {
   res.setHeader("X-Accel-Buffering", "no");
   res.flushHeaders();
 
-  // Generate client ID
   const clientId = `client_${Date.now()}_${Math.random().toString(36).slice(2)}`;
   const client: SSEClient = {
     id: clientId,
     res,
     connectedAt: new Date(),
-    userId: (req as any).user?.id,
+    userId: userCtx.userId,
+    isAdmin: userCtx.isAdmin,
+    authorizedVentureIds: userCtx.authorizedVentureIds,
   };
   clients.set(clientId, client);
+  incrementUserCount(userCtx.userId);
 
   // Send connected event (no sensitive data)
   const connectedEvent: SSEEvent = {
@@ -90,7 +131,7 @@ export function handleSSEConnection(req: Request, res: Response) {
   };
   res.write(`id: ${connectedEvent.id}\nevent: connected\ndata: ${JSON.stringify(connectedEvent)}\n\n`);
 
-  // Heartbeat every 30 seconds to keep connection alive (no operational data)
+  // Heartbeat every 30 seconds — no operational data
   const heartbeatInterval = setInterval(() => {
     try {
       const heartbeat: SSEEvent = {
@@ -103,6 +144,7 @@ export function handleSSEConnection(req: Request, res: Response) {
     } catch {
       clearInterval(heartbeatInterval);
       clients.delete(clientId);
+      decrementUserCount(userCtx.userId);
     }
   }, 30000);
 
@@ -110,11 +152,13 @@ export function handleSSEConnection(req: Request, res: Response) {
   req.on("close", () => {
     clearInterval(heartbeatInterval);
     clients.delete(clientId);
+    decrementUserCount(userCtx.userId);
   });
 
   req.on("error", () => {
     clearInterval(heartbeatInterval);
     clients.delete(clientId);
+    decrementUserCount(userCtx.userId);
   });
 }
 
@@ -126,10 +170,13 @@ export function emitWorkflowTrigger(payload: {
   description: string;
   severity?: "info" | "warning" | "critical";
 }) {
-  broadcastSSEEvent({
-    type: "workflow_trigger",
-    data: { ...payload, severity: payload.severity || "info" },
-  });
+  broadcastSSEEvent(
+    {
+      type: "workflow_trigger",
+      data: { triggerType: payload.triggerType, severity: payload.severity || "info" },
+    },
+    payload.ventureId
+  );
 }
 
 export function emitMilestoneUpdate(payload: {
@@ -139,10 +186,13 @@ export function emitMilestoneUpdate(payload: {
   status: string;
   daysOverdue?: number;
 }) {
-  broadcastSSEEvent({
-    type: "milestone_update",
-    data: payload,
-  });
+  broadcastSSEEvent(
+    {
+      type: "milestone_update",
+      data: { milestoneName: payload.milestoneName, status: payload.status, daysOverdue: payload.daysOverdue },
+    },
+    payload.ventureId
+  );
 }
 
 export function emitRiskAlert(payload: {
@@ -152,33 +202,35 @@ export function emitRiskAlert(payload: {
   severity: "low" | "medium" | "high" | "critical";
   message: string;
 }) {
-  broadcastSSEEvent({
-    type: "risk_alert",
-    data: payload,
-  });
+  broadcastSSEEvent(
+    {
+      type: "risk_alert",
+      data: { riskType: payload.riskType, severity: payload.severity },
+    },
+    payload.ventureId
+  );
 }
 
 export function emitDataQualityAlert(payload: {
+  ventureId?: string;
   datasetName: string;
   dimension: string;
   score: number;
   threshold: number;
 }) {
-  broadcastSSEEvent({
-    type: "data_quality_alert",
-    data: payload,
-  });
+  broadcastSSEEvent(
+    {
+      type: "data_quality_alert",
+      data: { dimension: payload.dimension, score: payload.score, threshold: payload.threshold },
+    },
+    payload.ventureId
+  );
 }
 
 // ── Client stats (for admin/monitoring) ──────────────────────────────────────
 export function getSSEStats() {
   return {
     connectedClients: clients.size,
-    clients: Array.from(clients.values()).map(c => ({
-      id: c.id,
-      connectedAt: c.connectedAt.toISOString(),
-      userId: c.userId,
-    })),
     totalEventsEmitted: eventIdCounter,
   };
 }

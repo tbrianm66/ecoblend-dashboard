@@ -7,8 +7,11 @@ import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
-import { handleSSEConnection } from "../sse";
+import { handleSSEConnection, type SSEUserContext } from "../sse";
 import { sdk } from "./sdk";
+import { getDb } from "../db";
+import { ventureMembers } from "../../drizzle/schema";
+import { eq } from "drizzle-orm";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -90,13 +93,37 @@ async function startServer() {
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
   // SSE endpoint for real-time event streaming (authenticated users only)
-  app.get("/api/events", async (req, res, next) => {
+  app.get("/api/events", async (req, res, _next) => {
+    let user;
     try {
-      await sdk.authenticateRequest(req);
-      handleSSEConnection(req, res);
+      user = await sdk.authenticateRequest(req);
     } catch {
       res.status(401).json({ error: "Unauthorized" });
+      return;
     }
+
+    const isAdmin = user.role === "admin";
+    let authorizedVentureIds: Set<string> | null = null;
+
+    if (!isAdmin) {
+      try {
+        const db = (await getDb())!;
+        const memberships = await db
+          .select({ ventureId: ventureMembers.ventureId })
+          .from(ventureMembers)
+          .where(eq(ventureMembers.userId, user.id));
+        authorizedVentureIds = new Set(memberships.map((m) => m.ventureId));
+      } catch {
+        authorizedVentureIds = new Set(); // deny-safe fallback
+      }
+    }
+
+    const userCtx: SSEUserContext = {
+      userId: String(user.id),
+      isAdmin,
+      authorizedVentureIds,
+    };
+    handleSSEConnection(req, res, userCtx);
   });
   // tRPC API
   app.use(
