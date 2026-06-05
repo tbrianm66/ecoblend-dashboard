@@ -326,7 +326,7 @@ export async function collectContext(
   // Get venture details
   try {
     const [ventures] = await db.execute(
-      sql.raw(`SELECT stage, venture_type, spv_brand FROM ventures WHERE id = '${ventureId}' LIMIT 1`)
+      sql`SELECT stage, venture_type, spv_brand FROM ventures WHERE id = ${ventureId} LIMIT 1`
     );
     const v = (ventures as any[])[0];
     if (v) {
@@ -339,7 +339,7 @@ export async function collectContext(
   // Get high risk categories
   try {
     const [risks] = await db.execute(
-      sql.raw(`SELECT DISTINCT category FROM venture_risks WHERE venture_id = '${ventureId}' AND risk_score >= 12 AND status = 'Open'`)
+      sql`SELECT DISTINCT category FROM venture_risks WHERE venture_id = ${ventureId} AND risk_score >= 12 AND status = 'Open'`
     );
     context.highRiskCategories = (risks as any[]).map(r => r.category);
   } catch { context.highRiskCategories = []; }
@@ -452,7 +452,7 @@ export async function getContextualPlaybooks(
   // Get widget configs for this module
   const db = await getDb();
   const [configs] = await db.execute(
-    sql.raw(`SELECT * FROM playbook_widget_configs WHERE module = '${module}' AND enabled = 1`)
+    sql`SELECT * FROM playbook_widget_configs WHERE module = ${module} AND enabled = 1`
   );
 
   return rankByWidgetType(scored, configs as WidgetConfig[]);

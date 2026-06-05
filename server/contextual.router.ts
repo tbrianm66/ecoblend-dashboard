@@ -8,7 +8,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "./_core/trpc";
 import { getDb } from "./db";
-import { sql } from "drizzle-orm";
+import { sql, SQL } from "drizzle-orm";
 import {
   getContextualPlaybooks,
   collectContext,
@@ -49,7 +49,7 @@ export const contextualRouter = router({
     .query(async ({ input }) => {
       const db = await getDb();
       const [rows] = await db.execute(
-        sql.raw(`SELECT * FROM playbook_library WHERE id = '${input.playbookId}' LIMIT 1`)
+        sql`SELECT * FROM playbook_library WHERE id = ${input.playbookId} LIMIT 1`
       );
       const playbook = (rows as any[])[0];
       if (!playbook) throw new TRPCError({ code: "NOT_FOUND", message: "Playbook not found" });
@@ -67,7 +67,7 @@ export const contextualRouter = router({
     .query(async ({ ctx, input }) => {
       const db = await getDb();
       const [rows] = await db.execute(
-        sql.raw(`SELECT * FROM playbook_completions WHERE playbook_id = '${input.playbookId}' AND venture_id = '${input.ventureId}' AND user_id = '${ctx.user.id}' ORDER BY updated_at DESC LIMIT 1`)
+        sql`SELECT * FROM playbook_completions WHERE playbook_id = ${input.playbookId} AND venture_id = ${input.ventureId} AND user_id = ${ctx.user.id} ORDER BY updated_at DESC LIMIT 1`
       );
       return (rows as any[])[0] || null;
     }),
@@ -87,7 +87,7 @@ export const contextualRouter = router({
       const id = uuid();
       const now = Date.now();
       await db.execute(
-        sql.raw(`INSERT INTO playbook_completions (id, playbook_id, user_id, venture_id, module, workflow_stage, completion_status, completed_steps, evidence_links, created_at, updated_at) VALUES ('${id}', '${input.playbookId}', '${ctx.user.id}', '${input.ventureId}', '${input.module}', '${input.workflowStage}', 'In_Progress', '[]', '[]', ${now}, ${now})`)
+        sql`INSERT INTO playbook_completions (id, playbook_id, user_id, venture_id, module, workflow_stage, completion_status, completed_steps, evidence_links, created_at, updated_at) VALUES (${id}, ${input.playbookId}, ${ctx.user.id}, ${input.ventureId}, ${input.module}, ${input.workflowStage}, 'In_Progress', '[]', '[]', ${now}, ${now})`
       );
       return { id, status: "In_Progress" };
     }),
@@ -105,15 +105,15 @@ export const contextualRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       const now = Date.now();
-      const sets: string[] = [`updated_at = ${now}`];
-      if (input.completedSteps) sets.push(`completed_steps = '${JSON.stringify(input.completedSteps)}'`);
-      if (input.evidenceLinks) sets.push(`evidence_links = '${JSON.stringify(input.evidenceLinks)}'`);
+      const sets: SQL[] = [sql`updated_at = ${now}`];
+      if (input.completedSteps) sets.push(sql`completed_steps = ${JSON.stringify(input.completedSteps)}`);
+      if (input.evidenceLinks) sets.push(sql`evidence_links = ${JSON.stringify(input.evidenceLinks)}`);
       if (input.completionStatus) {
-        sets.push(`completion_status = '${input.completionStatus}'`);
-        if (input.completionStatus === "Completed") sets.push(`completed_at = ${now}`);
+        sets.push(sql`completion_status = ${input.completionStatus}`);
+        if (input.completionStatus === "Completed") sets.push(sql`completed_at = ${now}`);
       }
       await db.execute(
-        sql.raw(`UPDATE playbook_completions SET ${sets.join(", ")} WHERE id = '${input.completionId}'`)
+        sql`UPDATE playbook_completions SET ${sql.join(sets, sql.raw(", "))} WHERE id = ${input.completionId}`
       );
       return { success: true };
     }),
@@ -124,7 +124,7 @@ export const contextualRouter = router({
     .query(async ({ input }) => {
       const db = await getDb();
       const [rows] = await db.execute(
-        sql.raw(`SELECT pc.*, pl.title, pl.category FROM playbook_completions pc JOIN playbook_library pl ON pc.playbook_id = pl.id WHERE pc.venture_id = '${input.ventureId}' ORDER BY pc.updated_at DESC`)
+        sql`SELECT pc.*, pl.title, pl.category FROM playbook_completions pc JOIN playbook_library pl ON pc.playbook_id = pl.id WHERE pc.venture_id = ${input.ventureId} ORDER BY pc.updated_at DESC`
       );
       return rows as any[];
     }),
@@ -148,7 +148,7 @@ export const contextualRouter = router({
       const id = uuid();
       const now = Date.now();
       await db.execute(
-        sql.raw(`INSERT INTO playbook_usage_events (id, playbook_id, user_id, venture_id, module, page, widget_type, action_type, context_snapshot, outcome, created_at) VALUES ('${id}', '${input.playbookId}', '${ctx.user.id}', ${input.ventureId ? `'${input.ventureId}'` : "NULL"}, '${input.module}', ${input.page ? `'${input.page}'` : "NULL"}, '${input.widgetType}', '${input.actionType}', ${input.contextSnapshot ? `'${input.contextSnapshot}'` : "NULL"}, ${input.outcome ? `'${input.outcome}'` : "NULL"}, ${now})`)
+        sql`INSERT INTO playbook_usage_events (id, playbook_id, user_id, venture_id, module, page, widget_type, action_type, context_snapshot, outcome, created_at) VALUES (${id}, ${input.playbookId}, ${ctx.user.id}, ${input.ventureId ?? null}, ${input.module}, ${input.page ?? null}, ${input.widgetType}, ${input.actionType}, ${input.contextSnapshot ?? null}, ${input.outcome ?? null}, ${now})`
       );
       return { id };
     }),
@@ -165,11 +165,16 @@ export const contextualRouter = router({
     )
     .query(async ({ input }) => {
       const db = await getDb();
-      const conditions = [`status = 'Published'`, `(title LIKE '%${input.query}%' OR purpose LIKE '%${input.query}%' OR step_by_step_guidance LIKE '%${input.query}%' OR category LIKE '%${input.query}%')`];
-      if (input.module) conditions.push(`related_module = '${input.module}'`);
-      if (input.category) conditions.push(`category = '${input.category}'`);
+      const likeQuery = `%${input.query}%`;
+      const conditions: SQL[] = [
+        sql`status = 'Published'`,
+        sql`(title LIKE ${likeQuery} OR purpose LIKE ${likeQuery} OR step_by_step_guidance LIKE ${likeQuery} OR category LIKE ${likeQuery})`,
+      ];
+      if (input.module) conditions.push(sql`related_module = ${input.module}`);
+      if (input.category) conditions.push(sql`category = ${input.category}`);
+      const whereClause = sql.join(conditions, sql.raw(" AND "));
       const [rows] = await db.execute(
-        sql.raw(`SELECT id, title, category, related_module, purpose, when_to_use, access_level, status FROM playbook_library WHERE ${conditions.join(" AND ")} ORDER BY title LIMIT ${input.limit}`)
+        sql`SELECT id, title, category, related_module, purpose, when_to_use, access_level, status FROM playbook_library WHERE ${whereClause} ORDER BY title LIMIT ${input.limit}`
       );
       return rows as any[];
     }),
@@ -180,7 +185,7 @@ export const contextualRouter = router({
     .query(async ({ input }) => {
       const db = await getDb();
       const [rows] = await db.execute(
-        sql.raw(`SELECT * FROM playbook_widget_configs WHERE module = '${input.module}' ORDER BY widget_type`)
+        sql`SELECT * FROM playbook_widget_configs WHERE module = ${input.module} ORDER BY widget_type`
       );
       return rows as any[];
     }),
@@ -195,10 +200,11 @@ export const contextualRouter = router({
     )
     .query(async ({ input }) => {
       const db = await getDb();
-      const conditions = [`venture_id = '${input.ventureId}'`, `status = 'Active'`];
-      if (input.module) conditions.push(`module = '${input.module}'`);
+      const conditions: SQL[] = [sql`venture_id = ${input.ventureId}`, sql`status = 'Active'`];
+      if (input.module) conditions.push(sql`module = ${input.module}`);
+      const whereClause = sql.join(conditions, sql.raw(" AND "));
       const [rows] = await db.execute(
-        sql.raw(`SELECT * FROM contextual_guidance_events WHERE ${conditions.join(" AND ")} ORDER BY created_at DESC LIMIT 20`)
+        sql`SELECT * FROM contextual_guidance_events WHERE ${whereClause} ORDER BY created_at DESC LIMIT 20`
       );
       return rows as any[];
     }),
@@ -209,7 +215,7 @@ export const contextualRouter = router({
     .mutation(async ({ input }) => {
       const db = await getDb();
       await db.execute(
-        sql.raw(`UPDATE contextual_guidance_events SET status = 'Resolved', resolved_at = ${Date.now()} WHERE id = '${input.eventId}'`)
+        sql`UPDATE contextual_guidance_events SET status = 'Resolved', resolved_at = ${Date.now()} WHERE id = ${input.eventId}`
       );
       return { success: true };
     }),
@@ -238,7 +244,7 @@ export const contextualRouter = router({
       const db = await getDb();
       // Fetch evidence items for this venture
       const [evidenceRows] = await db.execute(
-        sql.raw(`SELECT id, evidence_type, title, status, confidence_score, module FROM evidence_items WHERE venture_id = '${input.ventureId}' ORDER BY created_at DESC LIMIT 50`)
+        sql`SELECT id, evidence_type, title, status, confidence_score, module FROM evidence_items WHERE venture_id = ${input.ventureId} ORDER BY created_at DESC LIMIT 50`
       ).catch(() => [[]]);
       const evidence = evidenceRows as any[];
 
@@ -289,19 +295,19 @@ export const contextualRouter = router({
       const db = await getDb();
       // Fetch latest VRL score
       const [scoreRows] = await db.execute(
-        sql.raw(`SELECT * FROM vrl_scores WHERE venture_id = '${input.ventureId}' ORDER BY created_at DESC LIMIT 1`)
+        sql`SELECT * FROM vrl_scores WHERE venture_id = ${input.ventureId} ORDER BY created_at DESC LIMIT 1`
       ).catch(() => [[]]);
       const latestScore = (scoreRows as any[])[0];
 
       // Fetch risk count
       const [riskRows] = await db.execute(
-        sql.raw(`SELECT COUNT(*) as cnt FROM risk_register WHERE venture_id = '${input.ventureId}' AND risk_level IN ('High','Critical') AND status = 'Open'`)
+        sql`SELECT COUNT(*) as cnt FROM risk_register WHERE venture_id = ${input.ventureId} AND risk_level IN ('High','Critical') AND status = 'Open'`
       ).catch(() => [[{ cnt: 0 }]]);
       const highRisks = (riskRows as any[])[0]?.cnt || 0;
 
       // Fetch evidence confidence
       const [evRows] = await db.execute(
-        sql.raw(`SELECT COUNT(*) as total, SUM(CASE WHEN status IN ('Approved','Verified') THEN 1 ELSE 0 END) as approved FROM evidence_items WHERE venture_id = '${input.ventureId}'`)
+        sql`SELECT COUNT(*) as total, SUM(CASE WHEN status IN ('Approved','Verified') THEN 1 ELSE 0 END) as approved FROM evidence_items WHERE venture_id = ${input.ventureId}`
       ).catch(() => [[{ total: 0, approved: 0 }]]);
       const evData = (evRows as any[])[0];
       const evidenceConfidence = evData?.total > 0 ? Math.round((evData.approved / evData.total) * 100) : 0;
@@ -341,7 +347,7 @@ export const contextualRouter = router({
       const db = await getDb();
       // Fetch latest R&D project
       const [projectRows] = await db.execute(
-        sql.raw(`SELECT * FROM rd_projects WHERE venture_id = '${input.ventureId}' ORDER BY created_at DESC LIMIT 1`)
+        sql`SELECT * FROM rd_projects WHERE venture_id = ${input.ventureId} ORDER BY created_at DESC LIMIT 1`
       ).catch(() => [[]]);
       const project = (projectRows as any[])[0];
       const currentStage = project?.current_stage || project?.trl_stage || "Concept";
@@ -356,7 +362,7 @@ export const contextualRouter = router({
       const required = stageRequirements[currentStage] || stageRequirements["Concept"];
       // Check evidence for this stage
       const [evRows] = await db.execute(
-        sql.raw(`SELECT evidence_type, status FROM evidence_items WHERE venture_id = '${input.ventureId}' AND module = 'Research & Technical Validation'`)
+        sql`SELECT evidence_type, status FROM evidence_items WHERE venture_id = ${input.ventureId} AND module = 'Research & Technical Validation'`
       ).catch(() => [[]]);
       const evidence = evRows as any[];
       const completedEv = evidence.filter(e => e.status === "Approved" || e.status === "Verified").map(e => e.evidence_type);
@@ -385,19 +391,19 @@ export const contextualRouter = router({
       const db = await getDb();
       // Fetch VRL score
       const [scoreRows] = await db.execute(
-        sql.raw(`SELECT composite_score, vrl_score, brl_score FROM vrl_scores WHERE venture_id = '${input.ventureId}' ORDER BY created_at DESC LIMIT 1`)
+        sql`SELECT composite_score, vrl_score, brl_score FROM vrl_scores WHERE venture_id = ${input.ventureId} ORDER BY created_at DESC LIMIT 1`
       ).catch(() => [[]]);
       const score = (scoreRows as any[])[0];
 
       // Fetch high risks
       const [riskRows] = await db.execute(
-        sql.raw(`SELECT COUNT(*) as cnt FROM risk_register WHERE venture_id = '${input.ventureId}' AND risk_level IN ('High','Critical') AND status = 'Open'`)
+        sql`SELECT COUNT(*) as cnt FROM risk_register WHERE venture_id = ${input.ventureId} AND risk_level IN ('High','Critical') AND status = 'Open'`
       ).catch(() => [[{ cnt: 0 }]]);
       const highRisks = (riskRows as any[])[0]?.cnt || 0;
 
       // Fetch evidence confidence
       const [evRows] = await db.execute(
-        sql.raw(`SELECT COUNT(*) as total, SUM(CASE WHEN status IN ('Approved','Verified') THEN 1 ELSE 0 END) as approved FROM evidence_items WHERE venture_id = '${input.ventureId}'`)
+        sql`SELECT COUNT(*) as total, SUM(CASE WHEN status IN ('Approved','Verified') THEN 1 ELSE 0 END) as approved FROM evidence_items WHERE venture_id = ${input.ventureId}`
       ).catch(() => [[{ total: 0, approved: 0 }]]);
       const evData = (evRows as any[])[0];
       const evidenceConfidence = evData?.total > 0 ? Math.round((evData.approved / evData.total) * 100) : 0;
@@ -447,7 +453,7 @@ export const contextualRouter = router({
     .query(async ({ ctx, input }) => {
       const db = await getDb();
       const [riskRows] = await db.execute(
-        sql.raw(`SELECT id, risk_category, risk_title, risk_level, status, mitigation_status, risk_score, owner FROM risk_register WHERE venture_id = '${input.ventureId}' AND risk_level IN ('High','Critical') AND status IN ('Open','Escalated') ORDER BY risk_score DESC LIMIT 10`)
+        sql`SELECT id, risk_category, risk_title, risk_level, status, mitigation_status, risk_score, owner FROM risk_register WHERE venture_id = ${input.ventureId} AND risk_level IN ('High','Critical') AND status IN ('Open','Escalated') ORDER BY risk_score DESC LIMIT 10`
       ).catch(() => [[]]);
       const risks = riskRows as any[];
 
@@ -481,14 +487,14 @@ export const contextualRouter = router({
       const db = await getDb();
       // Fetch venture stage info
       const [ventureRows] = await db.execute(
-        sql.raw(`SELECT id, name, status, vrl_stage FROM ventures WHERE id = '${input.ventureId}' LIMIT 1`)
+        sql`SELECT id, name, status, vrl_stage FROM ventures WHERE id = ${input.ventureId} LIMIT 1`
       ).catch(() => [[]]);
       const venture = (ventureRows as any[])[0];
       const currentStage = input.currentStage || venture?.vrl_stage || "Validation";
 
       // Fetch pending approvals
       const [approvalRows] = await db.execute(
-        sql.raw(`SELECT id, gate_name, status, decision, blockers FROM stage_gate_decisions WHERE venture_id = '${input.ventureId}' AND status IN ('Pending','Blocked') ORDER BY created_at DESC LIMIT 5`)
+        sql`SELECT id, gate_name, status, decision, blockers FROM stage_gate_decisions WHERE venture_id = ${input.ventureId} AND status IN ('Pending','Blocked') ORDER BY created_at DESC LIMIT 5`
       ).catch(() => [[]]);
       const pendingApprovals = approvalRows as any[];
 
@@ -587,9 +593,8 @@ export const contextualRouter = router({
       const db = await getDb();
       const id = uuid();
       const now = Date.now();
-      const esc = (v: string | null | undefined) => v ? `'${v.replace(/'/g, "''")}'` : "NULL";
       await db.execute(
-        sql.raw(`INSERT INTO playbook_context_rules (id, rule_name, description, playbook_id, module, page, workflow_stage, venture_stage, venture_type, spv_brand, user_roles, risk_categories, scoring_frameworks, evidence_types, approval_gate, rd_stage, investment_pack_status, missing_evidence_trigger, score_threshold_trigger, risk_threshold_trigger, approval_gate_trigger, rd_stage_trigger, investment_pack_status_trigger, priority, active, created_by, updated_by, created_at, updated_at) VALUES ('${id}', ${esc(input.ruleName)}, ${esc(input.description)}, '${input.playbookId}', '${input.module}', '${input.page}', '${input.workflowStage}', '${input.ventureStage}', '${input.ventureType}', '${input.spvBrand}', ${esc(input.userRoles)}, ${esc(input.riskCategories)}, ${esc(input.scoringFrameworks)}, ${esc(input.evidenceTypes)}, ${esc(input.approvalGate)}, ${esc(input.rdStage)}, ${esc(input.investmentPackStatus)}, ${esc(input.missingEvidenceTrigger)}, ${esc(input.scoreThresholdTrigger)}, ${esc(input.riskThresholdTrigger)}, ${esc(input.approvalGateTrigger)}, ${esc(input.rdStageTrigger)}, ${esc(input.investmentPackStatusTrigger)}, '${input.priority}', 1, '${ctx.user.id}', '${ctx.user.id}', ${now}, ${now})`)
+        sql`INSERT INTO playbook_context_rules (id, rule_name, description, playbook_id, module, page, workflow_stage, venture_stage, venture_type, spv_brand, user_roles, risk_categories, scoring_frameworks, evidence_types, approval_gate, rd_stage, investment_pack_status, missing_evidence_trigger, score_threshold_trigger, risk_threshold_trigger, approval_gate_trigger, rd_stage_trigger, investment_pack_status_trigger, priority, active, created_by, updated_by, created_at, updated_at) VALUES (${id}, ${input.ruleName}, ${input.description ?? null}, ${input.playbookId}, ${input.module}, ${input.page}, ${input.workflowStage}, ${input.ventureStage}, ${input.ventureType}, ${input.spvBrand}, ${input.userRoles ?? null}, ${input.riskCategories ?? null}, ${input.scoringFrameworks ?? null}, ${input.evidenceTypes ?? null}, ${input.approvalGate ?? null}, ${input.rdStage ?? null}, ${input.investmentPackStatus ?? null}, ${input.missingEvidenceTrigger ?? null}, ${input.scoreThresholdTrigger ?? null}, ${input.riskThresholdTrigger ?? null}, ${input.approvalGateTrigger ?? null}, ${input.rdStageTrigger ?? null}, ${input.investmentPackStatusTrigger ?? null}, ${input.priority}, 1, ${ctx.user.id}, ${ctx.user.id}, ${now}, ${now})`
       );
       return { id };
     }),
@@ -629,34 +634,33 @@ export const contextualRouter = router({
       if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
       const db = await getDb();
       const now = Date.now();
-      const esc = (v: string) => v.replace(/'/g, "''");
-      const sets: string[] = [`updated_by = '${ctx.user.id}'`, `updated_at = ${now}`];
-      if (input.ruleName !== undefined) sets.push(`rule_name = '${esc(input.ruleName)}'`);
-      if (input.description !== undefined) sets.push(`description = '${esc(input.description)}'`);
-      if (input.playbookId !== undefined) sets.push(`playbook_id = '${input.playbookId}'`);
-      if (input.module !== undefined) sets.push(`module = '${input.module}'`);
-      if (input.page !== undefined) sets.push(`page = '${input.page}'`);
-      if (input.workflowStage !== undefined) sets.push(`workflow_stage = '${esc(input.workflowStage)}'`);
-      if (input.ventureStage !== undefined) sets.push(`venture_stage = '${esc(input.ventureStage)}'`);
-      if (input.ventureType !== undefined) sets.push(`venture_type = '${esc(input.ventureType)}'`);
-      if (input.spvBrand !== undefined) sets.push(`spv_brand = '${esc(input.spvBrand)}'`);
-      if (input.userRoles !== undefined) sets.push(input.userRoles ? `user_roles = '${esc(input.userRoles)}'` : `user_roles = NULL`);
-      if (input.riskCategories !== undefined) sets.push(input.riskCategories ? `risk_categories = '${esc(input.riskCategories)}'` : `risk_categories = NULL`);
-      if (input.scoringFrameworks !== undefined) sets.push(input.scoringFrameworks ? `scoring_frameworks = '${esc(input.scoringFrameworks)}'` : `scoring_frameworks = NULL`);
-      if (input.evidenceTypes !== undefined) sets.push(input.evidenceTypes ? `evidence_types = '${esc(input.evidenceTypes)}'` : `evidence_types = NULL`);
-      if (input.approvalGate !== undefined) sets.push(input.approvalGate ? `approval_gate = '${esc(input.approvalGate)}'` : `approval_gate = NULL`);
-      if (input.rdStage !== undefined) sets.push(input.rdStage ? `rd_stage = '${esc(input.rdStage)}'` : `rd_stage = NULL`);
-      if (input.investmentPackStatus !== undefined) sets.push(input.investmentPackStatus ? `investment_pack_status = '${esc(input.investmentPackStatus)}'` : `investment_pack_status = NULL`);
-      if (input.missingEvidenceTrigger !== undefined) sets.push(input.missingEvidenceTrigger ? `missing_evidence_trigger = '${esc(input.missingEvidenceTrigger)}'` : `missing_evidence_trigger = NULL`);
-      if (input.scoreThresholdTrigger !== undefined) sets.push(input.scoreThresholdTrigger ? `score_threshold_trigger = '${esc(input.scoreThresholdTrigger)}'` : `score_threshold_trigger = NULL`);
-      if (input.riskThresholdTrigger !== undefined) sets.push(input.riskThresholdTrigger ? `risk_threshold_trigger = '${esc(input.riskThresholdTrigger)}'` : `risk_threshold_trigger = NULL`);
-      if (input.approvalGateTrigger !== undefined) sets.push(input.approvalGateTrigger ? `approval_gate_trigger = '${esc(input.approvalGateTrigger)}'` : `approval_gate_trigger = NULL`);
-      if (input.rdStageTrigger !== undefined) sets.push(input.rdStageTrigger ? `rd_stage_trigger = '${esc(input.rdStageTrigger)}'` : `rd_stage_trigger = NULL`);
-      if (input.investmentPackStatusTrigger !== undefined) sets.push(input.investmentPackStatusTrigger ? `investment_pack_status_trigger = '${esc(input.investmentPackStatusTrigger)}'` : `investment_pack_status_trigger = NULL`);
-      if (input.priority !== undefined) sets.push(`priority = '${input.priority}'`);
-      if (input.active !== undefined) sets.push(`active = ${input.active ? 1 : 0}`);
+      const sets: SQL[] = [sql`updated_by = ${ctx.user.id}`, sql`updated_at = ${now}`];
+      if (input.ruleName !== undefined) sets.push(sql`rule_name = ${input.ruleName}`);
+      if (input.description !== undefined) sets.push(sql`description = ${input.description}`);
+      if (input.playbookId !== undefined) sets.push(sql`playbook_id = ${input.playbookId}`);
+      if (input.module !== undefined) sets.push(sql`module = ${input.module}`);
+      if (input.page !== undefined) sets.push(sql`page = ${input.page}`);
+      if (input.workflowStage !== undefined) sets.push(sql`workflow_stage = ${input.workflowStage}`);
+      if (input.ventureStage !== undefined) sets.push(sql`venture_stage = ${input.ventureStage}`);
+      if (input.ventureType !== undefined) sets.push(sql`venture_type = ${input.ventureType}`);
+      if (input.spvBrand !== undefined) sets.push(sql`spv_brand = ${input.spvBrand}`);
+      if (input.userRoles !== undefined) sets.push(sql`user_roles = ${input.userRoles ?? null}`);
+      if (input.riskCategories !== undefined) sets.push(sql`risk_categories = ${input.riskCategories ?? null}`);
+      if (input.scoringFrameworks !== undefined) sets.push(sql`scoring_frameworks = ${input.scoringFrameworks ?? null}`);
+      if (input.evidenceTypes !== undefined) sets.push(sql`evidence_types = ${input.evidenceTypes ?? null}`);
+      if (input.approvalGate !== undefined) sets.push(sql`approval_gate = ${input.approvalGate ?? null}`);
+      if (input.rdStage !== undefined) sets.push(sql`rd_stage = ${input.rdStage ?? null}`);
+      if (input.investmentPackStatus !== undefined) sets.push(sql`investment_pack_status = ${input.investmentPackStatus ?? null}`);
+      if (input.missingEvidenceTrigger !== undefined) sets.push(sql`missing_evidence_trigger = ${input.missingEvidenceTrigger ?? null}`);
+      if (input.scoreThresholdTrigger !== undefined) sets.push(sql`score_threshold_trigger = ${input.scoreThresholdTrigger ?? null}`);
+      if (input.riskThresholdTrigger !== undefined) sets.push(sql`risk_threshold_trigger = ${input.riskThresholdTrigger ?? null}`);
+      if (input.approvalGateTrigger !== undefined) sets.push(sql`approval_gate_trigger = ${input.approvalGateTrigger ?? null}`);
+      if (input.rdStageTrigger !== undefined) sets.push(sql`rd_stage_trigger = ${input.rdStageTrigger ?? null}`);
+      if (input.investmentPackStatusTrigger !== undefined) sets.push(sql`investment_pack_status_trigger = ${input.investmentPackStatusTrigger ?? null}`);
+      if (input.priority !== undefined) sets.push(sql`priority = ${input.priority}`);
+      if (input.active !== undefined) sets.push(sql`active = ${input.active ? 1 : 0}`);
       await db.execute(
-        sql.raw(`UPDATE playbook_context_rules SET ${sets.join(", ")} WHERE id = '${input.id}'`)
+        sql`UPDATE playbook_context_rules SET ${sql.join(sets, sql.raw(", "))} WHERE id = ${input.id}`
       );
       return { success: true };
     }),
@@ -667,7 +671,7 @@ export const contextualRouter = router({
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
       const db = await getDb();
-      await db.execute(sql.raw(`DELETE FROM playbook_context_rules WHERE id = '${input.id}'`));
+      await db.execute(sql`DELETE FROM playbook_context_rules WHERE id = ${input.id}`);
       return { success: true };
     }),
 
@@ -690,17 +694,17 @@ export const contextualRouter = router({
       if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
       const db = await getDb();
       const now = Date.now();
-      const sets: string[] = [`updated_by = '${ctx.user.id}'`, `updated_at = ${now}`];
-      if (input.enabled !== undefined) sets.push(`enabled = ${input.enabled ? 1 : 0}`);
-      if (input.maxItems !== undefined) sets.push(`max_items = ${input.maxItems}`);
-      if (input.displayMode !== undefined) sets.push(`display_mode = '${input.displayMode}'`);
-      if (input.minRecommendationScore !== undefined) sets.push(`min_recommendation_score = ${input.minRecommendationScore}`);
-      if (input.showCompletionStatus !== undefined) sets.push(`show_completion_status = ${input.showCompletionStatus ? 1 : 0}`);
-      if (input.showEvidenceLinks !== undefined) sets.push(`show_evidence_links = ${input.showEvidenceLinks ? 1 : 0}`);
-      if (input.showScoreImpact !== undefined) sets.push(`show_score_impact = ${input.showScoreImpact ? 1 : 0}`);
-      if (input.showRiskImpact !== undefined) sets.push(`show_risk_impact = ${input.showRiskImpact ? 1 : 0}`);
+      const sets: SQL[] = [sql`updated_by = ${ctx.user.id}`, sql`updated_at = ${now}`];
+      if (input.enabled !== undefined) sets.push(sql`enabled = ${input.enabled ? 1 : 0}`);
+      if (input.maxItems !== undefined) sets.push(sql`max_items = ${input.maxItems}`);
+      if (input.displayMode !== undefined) sets.push(sql`display_mode = ${input.displayMode}`);
+      if (input.minRecommendationScore !== undefined) sets.push(sql`min_recommendation_score = ${input.minRecommendationScore}`);
+      if (input.showCompletionStatus !== undefined) sets.push(sql`show_completion_status = ${input.showCompletionStatus ? 1 : 0}`);
+      if (input.showEvidenceLinks !== undefined) sets.push(sql`show_evidence_links = ${input.showEvidenceLinks ? 1 : 0}`);
+      if (input.showScoreImpact !== undefined) sets.push(sql`show_score_impact = ${input.showScoreImpact ? 1 : 0}`);
+      if (input.showRiskImpact !== undefined) sets.push(sql`show_risk_impact = ${input.showRiskImpact ? 1 : 0}`);
       await db.execute(
-        sql.raw(`UPDATE playbook_widget_configs SET ${sets.join(", ")} WHERE id = '${input.id}'`)
+        sql`UPDATE playbook_widget_configs SET ${sql.join(sets, sql.raw(", "))} WHERE id = ${input.id}`
       );
       return { success: true };
     }),
@@ -711,9 +715,13 @@ export const contextualRouter = router({
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
       const db = await getDb();
-      const where = input.module ? `WHERE module = '${input.module}'` : "";
+      const conditions: SQL[] = [];
+      if (input.module) conditions.push(sql`module = ${input.module}`);
+      const whereClause = conditions.length > 0
+        ? sql`WHERE ${sql.join(conditions, sql.raw(" AND "))}`
+        : sql.raw("");
       const [rows] = await db.execute(
-        sql.raw(`SELECT * FROM playbook_widget_configs ${where} ORDER BY module, widget_type`)
+        sql`SELECT * FROM playbook_widget_configs ${whereClause} ORDER BY module, widget_type`
       );
       return rows as any[];
     }),
@@ -730,31 +738,34 @@ export const contextualRouter = router({
       if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
       const db = await getDb();
       const cutoff = Date.now() - input.days * 24 * 60 * 60 * 1000;
-      const moduleFilter = input.module ? ` AND module = '${input.module}'` : "";
+      const baseConditions: SQL[] = [sql`created_at >= ${cutoff}`];
+      if (input.module) baseConditions.push(sql`module = ${input.module}`);
+      const whereClause = sql.join(baseConditions, sql.raw(" AND "));
 
       // Total events
       const [totalRows] = await db.execute(
-        sql.raw(`SELECT COUNT(*) as total FROM playbook_usage_events WHERE created_at >= ${cutoff}${moduleFilter}`)
+        sql`SELECT COUNT(*) as total FROM playbook_usage_events WHERE ${whereClause}`
       );
 
       // By action type
       const [byAction] = await db.execute(
-        sql.raw(`SELECT action_type, COUNT(*) as count FROM playbook_usage_events WHERE created_at >= ${cutoff}${moduleFilter} GROUP BY action_type ORDER BY count DESC`)
+        sql`SELECT action_type, COUNT(*) as count FROM playbook_usage_events WHERE ${whereClause} GROUP BY action_type ORDER BY count DESC`
       );
 
       // Top playbooks
       const [topPlaybooks] = await db.execute(
-        sql.raw(`SELECT pue.playbook_id, pl.title, COUNT(*) as views FROM playbook_usage_events pue JOIN playbook_library pl ON pue.playbook_id = pl.id WHERE pue.created_at >= ${cutoff}${moduleFilter} GROUP BY pue.playbook_id, pl.title ORDER BY views DESC LIMIT 10`)
+        sql`SELECT pue.playbook_id, pl.title, COUNT(*) as views FROM playbook_usage_events pue JOIN playbook_library pl ON pue.playbook_id = pl.id WHERE ${whereClause} GROUP BY pue.playbook_id, pl.title ORDER BY views DESC LIMIT 10`
       );
 
-      // By module
+      // By module (no module filter here — always show all modules)
+      const cutoffOnly = sql`created_at >= ${cutoff}`;
       const [byModule] = await db.execute(
-        sql.raw(`SELECT module, COUNT(*) as count FROM playbook_usage_events WHERE created_at >= ${cutoff} GROUP BY module ORDER BY count DESC`)
+        sql`SELECT module, COUNT(*) as count FROM playbook_usage_events WHERE ${cutoffOnly} GROUP BY module ORDER BY count DESC`
       );
 
       // Completion rate
       const [completions] = await db.execute(
-        sql.raw(`SELECT completion_status, COUNT(*) as count FROM playbook_completions WHERE created_at >= ${cutoff} GROUP BY completion_status`)
+        sql`SELECT completion_status, COUNT(*) as count FROM playbook_completions WHERE ${cutoffOnly} GROUP BY completion_status`
       );
 
       return {
@@ -781,14 +792,14 @@ export const contextualRouter = router({
       if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
       const db = await getDb();
       const cutoff = Date.now() - input.days * 24 * 60 * 60 * 1000;
-      const filters: string[] = [`created_at >= ${cutoff}`];
-      if (input.module) filters.push(`module = '${input.module}'`);
-      if (input.widgetType) filters.push(`widget_type = '${input.widgetType}'`);
-      if (input.ventureId) filters.push(`venture_id = '${input.ventureId}'`);
-      if (input.playbookId) filters.push(`playbook_id = '${input.playbookId}'`);
-      const where = filters.join(" AND ");
+      const filterParts: SQL[] = [sql`created_at >= ${cutoff}`];
+      if (input.module) filterParts.push(sql`module = ${input.module}`);
+      if (input.widgetType) filterParts.push(sql`widget_type = ${input.widgetType}`);
+      if (input.ventureId) filterParts.push(sql`venture_id = ${input.ventureId}`);
+      if (input.playbookId) filterParts.push(sql`playbook_id = ${input.playbookId}`);
+      const where = sql.join(filterParts, sql.raw(" AND "));
 
-      const [overview] = await db.execute(sql.raw(`
+      const [overview] = await db.execute(sql`
         SELECT
           COUNT(*) as totalViews,
           SUM(CASE WHEN action_type = 'PlaybookOpened' THEN 1 ELSE 0 END) as playbookOpens,
@@ -799,24 +810,24 @@ export const contextualRouter = router({
           SUM(CASE WHEN action_type = 'InvestorWarningDisplayed' THEN 1 ELSE 0 END) as investorWarnings,
           SUM(CASE WHEN action_type = 'DraftInvestorPackGeneratedWithWarnings' THEN 1 ELSE 0 END) as draftPacksWithWarnings
         FROM playbook_usage_events WHERE ${where}
-      `)).catch(() => [[{}]]);
+      `).catch(() => [[{}]]);
 
-      const [byModule] = await db.execute(sql.raw(`
+      const [byModule] = await db.execute(sql`
         SELECT module, COUNT(*) as views,
           SUM(CASE WHEN action_type = 'PlaybookOpened' THEN 1 ELSE 0 END) as opens,
           SUM(CASE WHEN action_type = 'PlaybookCompleted' THEN 1 ELSE 0 END) as completions
         FROM playbook_usage_events WHERE ${where}
         GROUP BY module ORDER BY views DESC
-      `)).catch(() => [[]]);
+      `).catch(() => [[]]);
 
-      const [byWidget] = await db.execute(sql.raw(`
+      const [byWidget] = await db.execute(sql`
         SELECT widget_type, COUNT(*) as views,
           SUM(CASE WHEN action_type = 'PlaybookOpened' THEN 1 ELSE 0 END) as opens
         FROM playbook_usage_events WHERE ${where}
         GROUP BY widget_type ORDER BY views DESC
-      `)).catch(() => [[]]);
+      `).catch(() => [[]]);
 
-      const [topPlaybooks] = await db.execute(sql.raw(`
+      const [topPlaybooks] = await db.execute(sql`
         SELECT pue.playbook_id, pl.title, pl.category,
           COUNT(*) as views,
           SUM(CASE WHEN pue.action_type = 'PlaybookOpened' THEN 1 ELSE 0 END) as opens,
@@ -827,9 +838,9 @@ export const contextualRouter = router({
         WHERE ${where}
         GROUP BY pue.playbook_id, pl.title, pl.category
         ORDER BY views DESC LIMIT 20
-      `)).catch(() => [[]]);
+      `).catch(() => [[]]);
 
-      const [recPerf] = await db.execute(sql.raw(`
+      const [recPerf] = await db.execute(sql`
         SELECT
           COUNT(*) as displayed,
           SUM(CASE WHEN action_type = 'PlaybookOpened' THEN 1 ELSE 0 END) as opened,
@@ -837,14 +848,14 @@ export const contextualRouter = router({
           SUM(CASE WHEN action_type IN ('PlaybookDismissed','RecommendationDismissed') THEN 1 ELSE 0 END) as dismissed,
           SUM(CASE WHEN action_type = 'EvidenceLinked' THEN 1 ELSE 0 END) as evidenceLinked
         FROM playbook_usage_events WHERE ${where}
-      `)).catch(() => [[{}]]);
+      `).catch(() => [[{}]]);
 
-      const [dismissReasons] = await db.execute(sql.raw(`
+      const [dismissReasons] = await db.execute(sql`
         SELECT dismissed_reason, COUNT(*) as count
         FROM playbook_usage_events
         WHERE ${where} AND dismissed_reason IS NOT NULL
         GROUP BY dismissed_reason ORDER BY count DESC
-      `)).catch(() => [[]]);
+      `).catch(() => [[]]);
 
       const [orphanPlaybooks] = await db.execute(sql.raw(`
         SELECT pl.id, pl.title, pl.category, pl.status
@@ -899,18 +910,18 @@ export const contextualRouter = router({
       if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
       const db = await getDb();
       const updater = ctx.user.name || ctx.user.openId;
-      const sets: string[] = [`updatedBy = '${updater}'`];
-      if (input.enableWidgetsGlobally !== undefined) sets.push(`enableWidgetsGlobally = ${input.enableWidgetsGlobally ? 1 : 0}`);
-      if (input.showAsSidePanel !== undefined) sets.push(`showAsSidePanel = ${input.showAsSidePanel ? 1 : 0}`);
-      if (input.showInline !== undefined) sets.push(`showInline = ${input.showInline ? 1 : 0}`);
-      if (input.maxRecommendedPlaybooks !== undefined) sets.push(`maxRecommendedPlaybooks = ${input.maxRecommendedPlaybooks}`);
-      if (input.defaultRecommendationThreshold !== undefined) sets.push(`defaultRecommendationThreshold = ${input.defaultRecommendationThreshold}`);
-      if (input.enableUsageTracking !== undefined) sets.push(`enableUsageTracking = ${input.enableUsageTracking ? 1 : 0}`);
-      if (input.enableDismissalReasons !== undefined) sets.push(`enableDismissalReasons = ${input.enableDismissalReasons ? 1 : 0}`);
-      if (input.enableCompletionTracking !== undefined) sets.push(`enableCompletionTracking = ${input.enableCompletionTracking ? 1 : 0}`);
-      if (input.enableInvestorWarningGates !== undefined) sets.push(`enableInvestorWarningGates = ${input.enableInvestorWarningGates ? 1 : 0}`);
-      if (input.enableStageGateWarningGates !== undefined) sets.push(`enableStageGateWarningGates = ${input.enableStageGateWarningGates ? 1 : 0}`);
-      await db.execute(sql.raw(`INSERT INTO widget_global_settings (id) VALUES (1) ON DUPLICATE KEY UPDATE ${sets.join(", ")}`) );
+      const sets: SQL[] = [sql`updatedBy = ${updater}`];
+      if (input.enableWidgetsGlobally !== undefined) sets.push(sql`enableWidgetsGlobally = ${input.enableWidgetsGlobally ? 1 : 0}`);
+      if (input.showAsSidePanel !== undefined) sets.push(sql`showAsSidePanel = ${input.showAsSidePanel ? 1 : 0}`);
+      if (input.showInline !== undefined) sets.push(sql`showInline = ${input.showInline ? 1 : 0}`);
+      if (input.maxRecommendedPlaybooks !== undefined) sets.push(sql`maxRecommendedPlaybooks = ${input.maxRecommendedPlaybooks}`);
+      if (input.defaultRecommendationThreshold !== undefined) sets.push(sql`defaultRecommendationThreshold = ${input.defaultRecommendationThreshold}`);
+      if (input.enableUsageTracking !== undefined) sets.push(sql`enableUsageTracking = ${input.enableUsageTracking ? 1 : 0}`);
+      if (input.enableDismissalReasons !== undefined) sets.push(sql`enableDismissalReasons = ${input.enableDismissalReasons ? 1 : 0}`);
+      if (input.enableCompletionTracking !== undefined) sets.push(sql`enableCompletionTracking = ${input.enableCompletionTracking ? 1 : 0}`);
+      if (input.enableInvestorWarningGates !== undefined) sets.push(sql`enableInvestorWarningGates = ${input.enableInvestorWarningGates ? 1 : 0}`);
+      if (input.enableStageGateWarningGates !== undefined) sets.push(sql`enableStageGateWarningGates = ${input.enableStageGateWarningGates ? 1 : 0}`);
+      await db.execute(sql`INSERT INTO widget_global_settings (id) VALUES (1) ON DUPLICATE KEY UPDATE ${sql.join(sets, sql.raw(", "))}`);
       return { ok: true };
     }),
 
@@ -928,14 +939,14 @@ export const contextualRouter = router({
       if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
       const db = await getDb();
       const updater = ctx.user.name || ctx.user.openId;
-      const sets: string[] = [`updatedBy = '${updater}'`];
-      if (input.evidenceConfidenceWarning !== undefined) sets.push(`evidenceConfidenceWarning = ${input.evidenceConfidenceWarning}`);
-      if (input.readinessScoreWarning !== undefined) sets.push(`readinessScoreWarning = ${input.readinessScoreWarning}`);
-      if (input.highRiskThreshold !== undefined) sets.push(`highRiskThreshold = ${input.highRiskThreshold}`);
-      if (input.investorPackWarning !== undefined) sets.push(`investorPackWarning = ${input.investorPackWarning}`);
-      if (input.stageGateMinEvidence !== undefined) sets.push(`stageGateMinEvidence = ${input.stageGateMinEvidence}`);
-      if (input.maxUnresolvedHighRisks !== undefined) sets.push(`maxUnresolvedHighRisks = ${input.maxUnresolvedHighRisks}`);
-      await db.execute(sql.raw(`INSERT INTO widget_threshold_settings (id) VALUES (1) ON DUPLICATE KEY UPDATE ${sets.join(", ")}`) );
+      const sets: SQL[] = [sql`updatedBy = ${updater}`];
+      if (input.evidenceConfidenceWarning !== undefined) sets.push(sql`evidenceConfidenceWarning = ${input.evidenceConfidenceWarning}`);
+      if (input.readinessScoreWarning !== undefined) sets.push(sql`readinessScoreWarning = ${input.readinessScoreWarning}`);
+      if (input.highRiskThreshold !== undefined) sets.push(sql`highRiskThreshold = ${input.highRiskThreshold}`);
+      if (input.investorPackWarning !== undefined) sets.push(sql`investorPackWarning = ${input.investorPackWarning}`);
+      if (input.stageGateMinEvidence !== undefined) sets.push(sql`stageGateMinEvidence = ${input.stageGateMinEvidence}`);
+      if (input.maxUnresolvedHighRisks !== undefined) sets.push(sql`maxUnresolvedHighRisks = ${input.maxUnresolvedHighRisks}`);
+      await db.execute(sql`INSERT INTO widget_threshold_settings (id) VALUES (1) ON DUPLICATE KEY UPDATE ${sql.join(sets, sql.raw(", "))}`);
       return { ok: true };
     }),
 
@@ -955,23 +966,24 @@ export const contextualRouter = router({
       const updater = ctx.user.name || ctx.user.openId;
       const now = Date.now();
       const id = uuid();
-      const sets: string[] = [`updated_by = '${updater}'`, `updated_at = ${now}`];
-      if (input.isEnabled !== undefined) sets.push(`enabled = ${input.isEnabled ? 1 : 0}`);
-      if (input.maxPlaybooks !== undefined) sets.push(`max_items = ${input.maxPlaybooks}`);
-      if (input.threshold !== undefined) sets.push(`min_recommendation_score = ${input.threshold}`);
-      if (input.position !== undefined) sets.push(`placement = '${input.position}'`);
-      await db.execute(sql.raw(`
+      const sets: SQL[] = [sql`updated_by = ${updater}`, sql`updated_at = ${now}`];
+      if (input.isEnabled !== undefined) sets.push(sql`enabled = ${input.isEnabled ? 1 : 0}`);
+      if (input.maxPlaybooks !== undefined) sets.push(sql`max_items = ${input.maxPlaybooks}`);
+      if (input.threshold !== undefined) sets.push(sql`min_recommendation_score = ${input.threshold}`);
+      if (input.position !== undefined) sets.push(sql`placement = ${input.position}`);
+      await db.execute(sql`
         INSERT INTO playbook_widget_configs
           (id, module, widget_type, page, placement, enabled, max_items, display_mode,
            show_completion_status, show_evidence_links, show_score_impact, show_risk_impact,
            min_recommendation_score, created_by, updated_by, created_at, updated_at)
         VALUES
-          ('${id}', '${input.module}', '${input.widgetType}', 'ALL', 'RightPanel', 1, 5, 'Standard',
-           1, 1, 0, 0, 30, '${updater}', '${updater}', ${now}, ${now})
-        ON DUPLICATE KEY UPDATE ${sets.join(", ")}
-      `));
+          (${id}, ${input.module}, ${input.widgetType}, 'ALL', 'RightPanel', 1, 5, 'Standard',
+           1, 1, 0, 0, 30, ${updater}, ${updater}, ${now}, ${now})
+        ON DUPLICATE KEY UPDATE ${sql.join(sets, sql.raw(", "))}
+      `);
       return { ok: true };
     }),
+
   // A13. adminUpdateRoleVisibility
   adminUpdateRoleVisibility: protectedProcedure
     .input(z.object({
@@ -983,11 +995,11 @@ export const contextualRouter = router({
       if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
       const db = await getDb();
       const updater = ctx.user.name || ctx.user.openId;
-      await db.execute(sql.raw(`
+      await db.execute(sql`
         INSERT INTO widget_role_settings (role, widget_type, isVisible, updatedBy)
-        VALUES ('${input.role}', '${input.widgetType}', ${input.isVisible ? 1 : 0}, '${updater}')
-        ON DUPLICATE KEY UPDATE isVisible = ${input.isVisible ? 1 : 0}, updatedBy = '${updater}'
-      `));
+        VALUES (${input.role}, ${input.widgetType}, ${input.isVisible ? 1 : 0}, ${updater})
+        ON DUPLICATE KEY UPDATE isVisible = ${input.isVisible ? 1 : 0}, updatedBy = ${updater}
+      `);
       return { ok: true };
     }),
 
@@ -1002,16 +1014,16 @@ export const contextualRouter = router({
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
       const db = await getDb();
-      const [allRules] = await db.execute(sql.raw(`
+      const [allRules] = await db.execute(sql`
         SELECT pcr.*, pl.title as playbook_title, pl.status as playbook_status
         FROM playbook_context_rules pcr
         LEFT JOIN playbook_library pl ON pcr.playbook_id = pl.id
-        WHERE pcr.module = '${input.module}' OR pcr.module IS NULL
+        WHERE pcr.module = ${input.module} OR pcr.module IS NULL
         ORDER BY pcr.priority DESC
-      `)).catch(() => [[]]);
+      `).catch(() => [[]]);
       let ventureInfo: any = null;
       if (input.ventureId) {
-        const [vRows] = await db.execute(sql.raw(`SELECT id, name, vrl, trl, status FROM ventures WHERE id = '${input.ventureId}' LIMIT 1`)).catch(() => [[]]);
+        const [vRows] = await db.execute(sql`SELECT id, name, vrl, trl, status FROM ventures WHERE id = ${input.ventureId} LIMIT 1`).catch(() => [[]]);
         ventureInfo = (vRows as any[])[0] || null;
       }
       const rules = allRules as any[];
@@ -1058,14 +1070,16 @@ export const contextualRouter = router({
       if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
       const db = await getDb();
       const cutoff = Date.now() - input.days * 24 * 60 * 60 * 1000;
-      const moduleFilter = input.module ? ` AND module = '${input.module}'` : "";
-      const [rows] = await db.execute(sql.raw(`
+      const conditions: SQL[] = [sql`created_at >= ${cutoff}`];
+      if (input.module) conditions.push(sql`module = ${input.module}`);
+      const whereClause = sql.join(conditions, sql.raw(" AND "));
+      const [rows] = await db.execute(sql`
         SELECT id, event_type, playbook_id, widget_type, user_id, venture_id, module, page,
                action_type, outcome, dismissed_reason, created_at
         FROM playbook_usage_events
-        WHERE created_at >= ${cutoff}${moduleFilter}
+        WHERE ${whereClause}
         ORDER BY created_at DESC LIMIT 5000
-      `)).catch(() => [[]]);
+      `).catch(() => [[]]);
       return { rows: rows as any[] };
     }),
 
@@ -1082,10 +1096,12 @@ export const contextualRouter = router({
       if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
       const db = await getDb();
       const cutoff = Date.now() - input.days * 24 * 60 * 60 * 1000;
-      const moduleFilter = input.module ? ` AND pue.module = '${input.module}'` : "";
-      const widgetFilter = input.widgetType ? ` AND pue.widget_type = '${input.widgetType}'` : "";
+      const filterParts: SQL[] = [sql`pue.created_at >= ${cutoff}`];
+      if (input.module) filterParts.push(sql`pue.module = ${input.module}`);
+      if (input.widgetType) filterParts.push(sql`pue.widget_type = ${input.widgetType}`);
+      const where = sql.join(filterParts, sql.raw(" AND "));
 
-      const [playbookRows] = await db.execute(sql.raw(`
+      const [playbookRows] = await db.execute(sql`
         SELECT
           pue.playbook_id,
           p.title AS playbook_title,
@@ -1101,20 +1117,21 @@ export const contextualRouter = router({
           ROUND(100.0 * SUM(CASE WHEN pue.action_type = 'Complete' THEN 1 ELSE 0 END) / NULLIF(SUM(CASE WHEN pue.action_type = 'Open' THEN 1 ELSE 0 END), 0), 1) AS completion_rate
         FROM playbook_usage_events pue
         LEFT JOIN playbooks p ON p.id = pue.playbook_id
-        WHERE pue.created_at >= ${cutoff}${moduleFilter}${widgetFilter}
+        WHERE ${where}
         GROUP BY pue.playbook_id, p.title, pue.module, pue.widget_type
         ORDER BY dismiss_count DESC, view_count DESC
         LIMIT 100
-      `)).catch(() => [[]]);
+      `).catch(() => [[]]);
 
-      const [dismissalReasons] = await db.execute(sql.raw(`
+      const cutoffOnly = sql`created_at >= ${cutoff}`;
+      const [dismissalReasons] = await db.execute(sql`
         SELECT dismissed_reason, COUNT(*) AS cnt, module, widget_type
         FROM playbook_usage_events
         WHERE action_type = 'Dismiss' AND dismissed_reason IS NOT NULL
-          AND created_at >= ${cutoff}
+          AND ${cutoffOnly}
         GROUP BY dismissed_reason, module, widget_type
         ORDER BY cnt DESC LIMIT 50
-      `)).catch(() => [[]]);
+      `).catch(() => [[]]);
 
       const LOW_OPEN_THRESHOLD = 20;
       const HIGH_DISMISS_THRESHOLD = 40;
@@ -1141,7 +1158,7 @@ export const contextualRouter = router({
       const db = await getDb();
       const cutoff = Date.now() - input.days * 24 * 60 * 60 * 1000;
 
-      const [rules] = await db.execute(sql.raw(`
+      const [rules] = await db.execute(sql`
         SELECT
           pcr.id AS rule_id,
           pcr.rule_name,
@@ -1162,7 +1179,7 @@ export const contextualRouter = router({
         LEFT JOIN playbook_usage_events pue ON pue.playbook_id = pcr.playbook_id AND pue.created_at >= ${cutoff}
         GROUP BY pcr.id, pcr.rule_name, pcr.module, pcr.playbook_id, pcr.active, p.title
         ORDER BY dismiss_count DESC, view_count DESC
-      `)).catch(() => [[]]);
+      `).catch(() => [[]]);
 
       const allRules = rules as any[];
       const LOW_OPEN_THRESHOLD = 15;
@@ -1191,26 +1208,26 @@ export const contextualRouter = router({
       const db = await getDb();
       const now = Date.now();
 
-      const [ruleRows] = await db.execute(sql.raw(`
-        SELECT id, rule_name, module, playbook_id, active FROM playbook_context_rules WHERE id = '${input.ruleId}' LIMIT 1
-      `)).catch(() => [[]]);
+      const [ruleRows] = await db.execute(sql`
+        SELECT id, rule_name, module, playbook_id, active FROM playbook_context_rules WHERE id = ${input.ruleId} LIMIT 1
+      `).catch(() => [[]]);
       const rule = (ruleRows as any[])[0];
       if (!rule) throw new TRPCError({ code: "NOT_FOUND", message: "Context rule not found" });
       if (!rule.active) throw new TRPCError({ code: "BAD_REQUEST", message: "Rule is already archived" });
 
-      await db.execute(sql.raw(`
-        UPDATE playbook_context_rules SET active = 0, updated_by = '${ctx.user.id}', updated_at = ${now} WHERE id = '${input.ruleId}'
-      `));
+      await db.execute(sql`
+        UPDATE playbook_context_rules SET active = 0, updated_by = ${ctx.user.id}, updated_at = ${now} WHERE id = ${input.ruleId}
+      `);
 
       const auditId = uuid();
-      await db.execute(sql.raw(`
+      await db.execute(sql`
         INSERT INTO audit_log (id, user_id, user_name, action, entity_type, entity_id, before_value, after_value, created_at)
-        VALUES ('${auditId}', '${ctx.user.id}', '${(ctx.user.name || ctx.user.id).replace(/'/g, "''")}',
-                'ARCHIVE_CONTEXT_RULE', 'playbook_context_rules', '${input.ruleId}',
-                '${JSON.stringify({ active: true, rule_name: rule.rule_name }).replace(/'/g, "''")}',
-                '${JSON.stringify({ active: false, reason: input.reason }).replace(/'/g, "''")}',
+        VALUES (${auditId}, ${ctx.user.id}, ${ctx.user.name || ctx.user.id},
+                'ARCHIVE_CONTEXT_RULE', 'playbook_context_rules', ${input.ruleId},
+                ${JSON.stringify({ active: true, rule_name: rule.rule_name })},
+                ${JSON.stringify({ active: false, reason: input.reason })},
                 ${now})
-      `)).catch(() => null);
+      `).catch(() => null);
 
       return { ok: true, ruleId: input.ruleId, ruleName: rule.rule_name };
     }),
