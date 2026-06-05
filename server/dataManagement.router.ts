@@ -2,7 +2,7 @@
 // Section 8: Data ingestion, validation, quality scoring, AI integration
 // Section 9: RAG pipelines, fine-tuning, context engineering, feedback loops
 import { z } from "zod";
-import { router, publicProcedure } from "./_core/trpc";
+import { router, protectedProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import { eq as eqOp, desc, and, sql } from "drizzle-orm";
 import { invokeLLM } from "./_core/llm";
@@ -21,7 +21,7 @@ import {
 
 // ── Data Assets ────────────────────────────────────────────────────────────────
 export const dmAssetsRouter = router({
-  list: publicProcedure
+  list: protectedProcedure
     .input(z.object({
       ventureId: z.string().optional(),
       assetType: z.string().optional(),
@@ -38,7 +38,7 @@ export const dmAssetsRouter = router({
       );
     }),
 
-  get: publicProcedure
+  get: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
       const db = (await getDb())!;
@@ -46,7 +46,7 @@ export const dmAssetsRouter = router({
       return row ?? null;
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string().optional(),
@@ -80,7 +80,7 @@ export const dmAssetsRouter = router({
       return { id: (result as any).insertId as number };
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = (await getDb())!;
@@ -88,7 +88,7 @@ export const dmAssetsRouter = router({
       return { success: true };
     }),
 
-  aiAssess: publicProcedure
+  aiAssess: protectedProcedure
     .input(z.object({
       name: z.string(),
       description: z.string().optional(),
@@ -153,7 +153,7 @@ export const dmAssetsRouter = router({
 
 // ── Quality Scores ─────────────────────────────────────────────────────────────
 export const dmQualityRouter = router({
-  listForAsset: publicProcedure
+  listForAsset: protectedProcedure
     .input(z.object({ assetId: z.number() }))
     .query(async ({ input }) => {
       const db = (await getDb())!;
@@ -162,7 +162,7 @@ export const dmQualityRouter = router({
         .orderBy(desc(dmQualityScores.createdAt));
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       assetId: z.number(),
@@ -210,7 +210,7 @@ export const dmQualityRouter = router({
       return { id: newId };
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = (await getDb())!;
@@ -221,7 +221,7 @@ export const dmQualityRouter = router({
 
 // ── AI Pipelines ───────────────────────────────────────────────────────────────
 export const dmPipelinesRouter = router({
-  list: publicProcedure
+  list: protectedProcedure
     .input(z.object({ ventureId: z.string().optional(), status: z.string().optional() }))
     .query(async ({ input }) => {
       const db = (await getDb())!;
@@ -232,7 +232,7 @@ export const dmPipelinesRouter = router({
       );
     }),
 
-  get: publicProcedure
+  get: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
       const db = (await getDb())!;
@@ -240,7 +240,7 @@ export const dmPipelinesRouter = router({
       return row ?? null;
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string().optional(),
@@ -272,7 +272,7 @@ export const dmPipelinesRouter = router({
       return { id: (result as any).insertId as number };
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = (await getDb())!;
@@ -281,7 +281,7 @@ export const dmPipelinesRouter = router({
     }),
 
   // Record a pipeline run
-  recordRun: publicProcedure
+  recordRun: protectedProcedure
     .input(z.object({
       pipelineId: z.number(),
       ventureId: z.string().optional(),
@@ -317,7 +317,7 @@ export const dmPipelinesRouter = router({
       return { id: runId };
     }),
 
-  listRuns: publicProcedure
+  listRuns: protectedProcedure
     .input(z.object({ pipelineId: z.number() }))
     .query(async ({ input }) => {
       const db = (await getDb())!;
@@ -328,7 +328,7 @@ export const dmPipelinesRouter = router({
     }),
 
   // AI-assisted prompt template generation
-  generatePromptTemplate: publicProcedure
+  generatePromptTemplate: protectedProcedure
     .input(z.object({
       pipelineType: z.string(),
       targetTask: z.string(),
@@ -373,7 +373,7 @@ export const dmPipelinesRouter = router({
 
 // ── RAG Pipelines ──────────────────────────────────────────────────────────────
 export const dmRagRouter = router({
-  list: publicProcedure
+  list: protectedProcedure
     .input(z.object({ ventureId: z.string().optional() }))
     .query(async ({ input }) => {
       const db = (await getDb())!;
@@ -381,7 +381,7 @@ export const dmRagRouter = router({
       return rows.filter(r => !input.ventureId || r.ventureId === input.ventureId);
     }),
 
-  get: publicProcedure
+  get: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
       const db = (await getDb())!;
@@ -389,7 +389,7 @@ export const dmRagRouter = router({
       return row ?? null;
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string().optional(),
@@ -420,7 +420,7 @@ export const dmRagRouter = router({
       return { id: (result as any).insertId as number };
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = (await getDb())!;
@@ -429,7 +429,7 @@ export const dmRagRouter = router({
     }),
 
   // Documents within a RAG pipeline
-  listDocuments: publicProcedure
+  listDocuments: protectedProcedure
     .input(z.object({ ragPipelineId: z.number() }))
     .query(async ({ input }) => {
       const db = (await getDb())!;
@@ -438,7 +438,7 @@ export const dmRagRouter = router({
         .orderBy(desc(dmRagDocuments.createdAt));
     }),
 
-  addDocument: publicProcedure
+  addDocument: protectedProcedure
     .input(z.object({
       ragPipelineId: z.number(),
       assetId: z.number().optional(),
@@ -460,7 +460,7 @@ export const dmRagRouter = router({
       return { id: newId };
     }),
 
-  removeDocument: publicProcedure
+  removeDocument: protectedProcedure
     .input(z.object({ id: z.number(), ragPipelineId: z.number() }))
     .mutation(async ({ input }) => {
       const db = (await getDb())!;
@@ -470,7 +470,7 @@ export const dmRagRouter = router({
       return { success: true };
     }),
 
-  markDocumentIndexed: publicProcedure
+  markDocumentIndexed: protectedProcedure
     .input(z.object({ id: z.number(), chunkCount: z.number() }))
     .mutation(async ({ input }) => {
       const db = (await getDb())!;
@@ -479,7 +479,7 @@ export const dmRagRouter = router({
     }),
 
   // AI-assisted context template generation
-  generateContextTemplate: publicProcedure
+  generateContextTemplate: protectedProcedure
     .input(z.object({
       pipelineName: z.string(),
       retrievalStrategy: z.string(),
@@ -524,7 +524,7 @@ export const dmRagRouter = router({
 // ── Fine-Tuning ────────────────────────────────────────────────────────────────
 export const dmFineTuningRouter = router({
   // Datasets
-  listDatasets: publicProcedure
+  listDatasets: protectedProcedure
     .input(z.object({ ventureId: z.string().optional() }))
     .query(async ({ input }) => {
       const db = (await getDb())!;
@@ -532,7 +532,7 @@ export const dmFineTuningRouter = router({
       return rows.filter(r => !input.ventureId || r.ventureId === input.ventureId);
     }),
 
-  upsertDataset: publicProcedure
+  upsertDataset: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string().optional(),
@@ -563,7 +563,7 @@ export const dmFineTuningRouter = router({
       return { id: (result as any).insertId as number };
     }),
 
-  deleteDataset: publicProcedure
+  deleteDataset: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = (await getDb())!;
@@ -572,7 +572,7 @@ export const dmFineTuningRouter = router({
     }),
 
   // Jobs
-  listJobs: publicProcedure
+  listJobs: protectedProcedure
     .input(z.object({ ventureId: z.string().optional(), status: z.string().optional() }))
     .query(async ({ input }) => {
       const db = (await getDb())!;
@@ -583,7 +583,7 @@ export const dmFineTuningRouter = router({
       );
     }),
 
-  upsertJob: publicProcedure
+  upsertJob: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string().optional(),
@@ -617,7 +617,7 @@ export const dmFineTuningRouter = router({
       return { id: (result as any).insertId as number };
     }),
 
-  deleteJob: publicProcedure
+  deleteJob: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = (await getDb())!;
@@ -628,7 +628,7 @@ export const dmFineTuningRouter = router({
 
 // ── Feedback Loops ─────────────────────────────────────────────────────────────
 export const dmFeedbackRouter = router({
-  list: publicProcedure
+  list: protectedProcedure
     .input(z.object({
       ventureId: z.string().optional(),
       pipelineId: z.number().optional(),
@@ -646,7 +646,7 @@ export const dmFeedbackRouter = router({
       );
     }),
 
-  submit: publicProcedure
+  submit: protectedProcedure
     .input(z.object({
       pipelineId: z.number().optional(),
       runId: z.number().optional(),
@@ -668,7 +668,7 @@ export const dmFeedbackRouter = router({
       return { id: (result as any).insertId as number };
     }),
 
-  review: publicProcedure
+  review: protectedProcedure
     .input(z.object({
       id: z.number(),
       status: z.enum(["open", "reviewed", "actioned", "dismissed"]),
@@ -687,7 +687,7 @@ export const dmFeedbackRouter = router({
       return { success: true };
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = (await getDb())!;
@@ -696,7 +696,7 @@ export const dmFeedbackRouter = router({
     }),
 
   // AI-assisted improvement suggestion based on feedback patterns
-  generateImprovementPlan: publicProcedure
+  generateImprovementPlan: protectedProcedure
     .input(z.object({
       pipelineId: z.number(),
       pipelineName: z.string(),
@@ -741,7 +741,7 @@ export const dmFeedbackRouter = router({
 
 // ── Summary / Overview ─────────────────────────────────────────────────────────
 export const dmSummaryRouter = router({
-  overview: publicProcedure
+  overview: protectedProcedure
     .input(z.object({ ventureId: z.string().optional() }))
     .query(async ({ input }) => {
       const db = (await getDb())!;
