@@ -25,6 +25,8 @@ export interface SSEEvent {
 }
 
 // ── Client Registry ───────────────────────────────────────────────────────────
+const MAX_CONNECTIONS = 100;
+
 interface SSEClient {
   id: string;
   res: Response;
@@ -56,6 +58,12 @@ export function broadcastSSEEvent(event: Omit<SSEEvent, "timestamp" | "id">) {
 
 // ── SSE Connection Handler ────────────────────────────────────────────────────
 export function handleSSEConnection(req: Request, res: Response) {
+  // Enforce connection cap to prevent resource exhaustion
+  if (clients.size >= MAX_CONNECTIONS) {
+    res.status(503).json({ error: "Too many connections" });
+    return;
+  }
+
   // Set SSE headers
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
@@ -73,21 +81,21 @@ export function handleSSEConnection(req: Request, res: Response) {
   };
   clients.set(clientId, client);
 
-  // Send connected event
+  // Send connected event (no sensitive data)
   const connectedEvent: SSEEvent = {
     type: "connected",
-    data: { clientId, message: "Connected to EcoBlend Venture OS live event stream" },
+    data: { message: "Connected to EcoBlend Venture OS live event stream" },
     timestamp: new Date().toISOString(),
     id: String(++eventIdCounter),
   };
   res.write(`id: ${connectedEvent.id}\nevent: connected\ndata: ${JSON.stringify(connectedEvent)}\n\n`);
 
-  // Heartbeat every 30 seconds to keep connection alive
+  // Heartbeat every 30 seconds to keep connection alive (no operational data)
   const heartbeatInterval = setInterval(() => {
     try {
       const heartbeat: SSEEvent = {
         type: "heartbeat",
-        data: { clients: clients.size, uptime: process.uptime() },
+        data: {},
         timestamp: new Date().toISOString(),
         id: String(++eventIdCounter),
       };

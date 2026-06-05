@@ -8,6 +8,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { handleSSEConnection } from "../sse";
+import { sdk } from "./sdk";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -88,8 +89,15 @@ async function startServer() {
   });
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
-  // SSE endpoint for real-time event streaming
-  app.get("/api/events", handleSSEConnection);
+  // SSE endpoint for real-time event streaming (authenticated users only)
+  app.get("/api/events", async (req, res, next) => {
+    try {
+      await sdk.authenticateRequest(req);
+      handleSSEConnection(req, res);
+    } catch {
+      res.status(401).json({ error: "Unauthorized" });
+    }
+  });
   // tRPC API
   app.use(
     "/api/trpc",
