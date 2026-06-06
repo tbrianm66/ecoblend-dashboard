@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REAL ImpactShield — Step 2 Synthetic Test Case</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f6f4;color:#1a1a1a;font-size:14px;padding:24px}
+.page{max-width:960px;margin:0 auto}
+
+/* Header */
+.page-title{font-size:22px;font-weight:600;color:#1A3C2A;margin-bottom:2px}
+.page-sub{font-size:13px;color:#666;margin-bottom:20px}
+
+/* Venture header */
+.vc{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;background:#fff;border:1px solid #d8e8d8;border-radius:12px;padding:18px;margin-bottom:20px}
+.vc-wide{grid-column:1/-1}
+.vc label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#0F6E56;display:block;margin-bottom:3px}
+.vc span{font-size:13px;font-weight:500;color:#1a1a1a;line-height:1.5}
+
+/* Step blocks */
+.step{background:#fff;border:1px solid #e0e0e0;border-radius:12px;margin-bottom:12px;overflow:hidden}
+.step-head{padding:14px 18px;display:flex;align-items:center;gap:12px;cursor:pointer}
+.step-head:hover{background:#fafafa}
+.snum{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.sn-green{background:#EAF3DE;color:#3B6D11}
+.sn-teal{background:#E1F5EE;color:#0F6E56}
+.sn-amber{background:#FAEEDA;color:#854F0B}
+.sn-red{background:#FCEBEB;color:#A32D2D}
+.sn-purple{background:#EEEDFE;color:#534AB7}
+.step-title{font-size:15px;font-weight:500;flex:1}
+.sbadge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:6px}
+.sb-green{background:#EAF3DE;color:#3B6D11}
+.sb-amber{background:#FAEEDA;color:#854F0B}
+.sb-red{background:#FCEBEB;color:#A32D2D}
+.sb-purple{background:#EEEDFE;color:#534AB7}
+.sb-teal{background:#E1F5EE;color:#0F6E56}
+.step-body{padding:0 18px 18px;display:none}
+.step-body.open{display:block}
+
+/* Content inside steps */
+.slabel{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#888;margin:14px 0 6px}
+.field-row{background:#f8f9fa;border-radius:8px;padding:10px 14px;margin:6px 0}
+.field-row .fn{font-weight:600;font-size:13px;color:#1a1a1a;margin-bottom:2px}
+.field-row .fv{font-family:monospace;font-size:12px;color:#444;line-height:1.65}
+
+/* Canvas grid */
+.canvas{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.canvas-cell{background:#f8f9fa;border-radius:8px;padding:12px 14px;border-left:3px solid #1D9E75}
+.canvas-cell .cl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#0F6E56;margin-bottom:4px}
+.canvas-cell .cv{font-size:12px;color:#333;line-height:1.6}
+.canvas-wide{grid-column:1/-1}
+
+/* Gate blocks */
+.gate{border-radius:8px;padding:12px 14px;margin:10px 0}
+.g-pass{background:#EAF3DE;border:1px solid #97C459}
+.g-fail{background:#FCEBEB;border:1px solid #F09595}
+.g-warn{background:#FAEEDA;border:1px solid #FAC775}
+.g-info{background:#E1F5EE;border:1px solid #5DCAA5}
+.gt{font-size:13px;font-weight:600;margin-bottom:4px}
+.g-pass .gt{color:#3B6D11}.g-fail .gt{color:#A32D2D}.g-warn .gt{color:#854F0B}.g-info .gt{color:#0F6E56}
+.gb{font-size:12px;color:#444;line-height:1.65}
+
+/* Check items */
+.chk{font-size:13px;padding:4px 0;display:flex;gap:8px;align-items:flex-start}
+.chk i{font-size:16px;margin-top:1px;flex-shrink:0}
+.i-green{color:#3B6D11}.i-amber{color:#854F0B}.i-red{color:#A32D2D}.i-teal{color:#0F6E56}
+
+/* Version diff */
+.vdiff{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.vbox{border-radius:8px;padding:12px 14px}
+.vbox-old{background:#FCEBEB;border:1px solid #F09595}
+.vbox-new{background:#EAF3DE;border:1px solid #97C459}
+.vbox-label{font-size:11px;font-weight:600;margin-bottom:6px}
+.vbox-old .vbox-label{color:#A32D2D}.vbox-new .vbox-label{color:#3B6D11}
+.vbox-val{font-family:monospace;font-size:12px;line-height:1.6;color:#333}
+
+/* Pivot block */
+.pivot{background:#EEEDFE;border:1px solid #AFA9EC;border-radius:8px;padding:12px 14px;margin:10px 0;font-size:12px;color:#534AB7;line-height:1.65}
+
+/* Replit box */
+.rbox{background:#fff;border:1px solid #d0d0d0;border-radius:12px;padding:18px;margin-top:20px}
+.rbox p{font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:10px}
+.copy-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;font-size:13px;cursor:pointer;border-radius:8px;border:1px solid #ccc;background:#fff;color:#1a1a1a;margin-bottom:12px}
+.copy-btn:hover{background:#f5f5f5}
+pre.rcmd{font-family:monospace;font-size:12px;background:#f8f9fa;border:1px solid #e0e0e0;border-radius:8px;padding:14px;line-height:1.75;white-space:pre-wrap;color:#333}
+
+/* Top controls */
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.expand-btn{font-size:13px;color:#0F6E56;cursor:pointer;background:none;border:none;text-decoration:underline;padding:0}
+.focus-tag{font-size:12px;font-weight:600;background:#EEEDFE;color:#534AB7;padding:4px 12px;border-radius:6px}
+
+/* SQL block */
+.sql{background:#1e1e2e;border-radius:8px;padding:14px;margin:10px 0;overflow-x:auto}
+.sql code{font-family:monospace;font-size:12px;color:#cdd6f4;line-height:1.7;display:block;white-space:pre}
+.kw{color:#89b4fa}.fn2{color:#a6e3a1}.str{color:#a6e3a1}.cm{color:#6c7086}.col{color:#cba6f7}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="page-title">REAL ImpactShield — Synthetic Test Case: Step 2</div>
+<div class="page-sub">Lean Canvas &amp; MVP Definition · R&amp;D Hub · Tests <code>lean_canvas</code> table, version control, and <code>product_milestones</code> format enforcement</div>
+
+<div class="vc">
+  <div><label>Venture name</label><span>REAL-001 — ImpactShield</span></div>
+  <div><label>SPV brand</label><span>REAL (Sports protection composites)</span></div>
+  <div><label>Test focus</label><span>Step 2 — R&amp;D Hub &amp; Lean Canvas</span></div>
+  <div class="vc-wide"><label>Hypothesis</label><span>Rugby and contact sport helmet OEMs need a reengineered composite liner that absorbs rotational impact forces 40% more efficiently than current EPS foam — reducing concussion risk while meeting EN 960 and NOCSAE certification standards</span></div>
+  <div><label>Founder</label><span>Priya Okafor (test user)</span></div>
+  <div><label>Arrived from</label><span>Step 1 complete: Problem Validated gate passed (6/7 interviews validated, 86%) · WTP gate passed (conditional LOI from 1 OEM)</span></div>
+  <div><label>Step 2 objective</label><span>Create Lean Canvas v1, define concierge MVP, then test versioning, format enforcement, and milestone linkage</span></div>
+</div>
+
+<div class="top-bar">
+  <button class="expand-btn" onclick="toggleAll()">Expand all steps</button>
+  <span class="focus-tag"><i class="ti ti-focus-2" aria-hidden="true"></i> Step 2 focus: lean_canvas + product_milestones tables</span>
+</div>
+
+<!-- STEP A: LEAN CANVAS V1 -->
+<div class="step">
+  <div class="step-head" onclick="toggle(this)">
+    <div class="snum sn-teal">A</div>
+    <div class="step-title">Create Lean Canvas v1 — enter all nine fields</div>
+    <span class="sbadge sb-teal">Primary entry</span>
+  </div>
+  <div class="step-body">
+    <p class="slabel">What to enter — full Lean Canvas for ImpactShield</p>
+    <div class="canvas">
+      <div class="canvas-cell">
+        <div class="cl">Problem</div>
+        <div class="cv">Current EPS foam helmet liners absorb linear impacts but fail to dissipate rotational forces — the primary biomechanical cause of concussion. OEMs have no certified composite alternative that maintains weight and cost parity.</div>
+      </div>
+      <div class="canvas-cell">
+        <div class="cl">Customer segment</div>
+        <div class="cv">Helmet OEM R&amp;D directors and procurement leads at Tier 1 sports protection manufacturers (Riddell, Schutt, Xenith, UK equivalents). Secondary: sports governing bodies (World Rugby, RFL) who approve certification pathways.</div>
+      </div>
+      <div class="canvas-cell">
+        <div class="cl">Unique value proposition</div>
+        <div class="cv">First composite liner with independently validated 40%+ rotational impact absorption improvement AND EN 960 / NOCSAE dual certification pathway — certified safety, not just performance claims.</div>
+      </div>
+      <div class="canvas-cell">
+        <div class="cl">Solution</div>
+        <div class="cv">Reengineered multi-layer composite liner: outer TPU energy-dispersal shell + inner carbon-fibre honeycomb absorber + bio-resin matrix. REAL proprietary formulation developed in partnership with St Mary's materials lab.</div>
+      </div>
+      <div class="canvas-cell">
+        <div class="cl">Channels</div>
+        <div class="cv">Direct OEM R&amp;D partnership (primary). World Rugby supplier qualification programme (secondary). Sports safety governing body endorsement as commercial trust signal.</div>
+      </div>
+      <div class="canvas-cell">
+        <div class="cl">Revenue streams</div>
+        <div class="cv">B2B composite component supply: £28–£45 per liner unit at OEM volume (10,000+ units/year). IP licensing of formulation for non-competing product categories. Certification testing services (secondary).</div>
+      </div>
+      <div class="canvas-cell">
+        <div class="cl">Cost structure</div>
+        <div class="cv">Materials: ~£9–£14/unit at scale. Certification testing: £40k–£80k one-time per standard. R&amp;D lab partnership: £2k–£5k/month. Manufacturing tooling: £15k–£25k one-time.</div>
+      </div>
+      <div class="canvas-cell">
+        <div class="cl">Key metrics</div>
+        <div class="cv">Rotational impact absorption improvement vs EN 960 baseline (target: ≥40%). Liner weight vs EPS baseline (target: ±5% weight parity). Time to first OEM qualification test (target: &lt;6 months). LOI conversion rate.</div>
+      </div>
+      <div class="canvas-wide canvas-cell" style="border-left-color:#534AB7">
+        <div class="cl" style="color:#534AB7">Unfair advantage</div>
+        <div class="cv">REAL composite formulation is developed within the ECORACE STUDIO IP framework — Lambert Agreement in place, PCT patent filing in progress (ECOCOMP IP pipeline). St Mary's University materials lab as Tier 2 academic partner provides independent TRL validation that no competitor can claim without equivalent institutional arrangement. ECOBLEND OS evidence vault generates independently verifiable TRL progression — investor and OEM-grade audit trail from day one.</div>
+      </div>
+    </div>
+
+    <div class="field-row" style="margin-top:10px">
+      <div class="fn">Database record metadata</div>
+      <div class="fv">venture_id: [REAL-001 UUID] · lean_canvas_version: 1 · created_at: now() · updated_by: priya.okafor@real.group · status: draft</div>
+    </div>
+
+    <p class="slabel">What to assert after entry</p>
+    <div class="chk"><i class="ti ti-circle-check i-green"></i>lean_canvas record created with all 9 fields populated and venture_id foreign key correctly set</div>
+    <div class="chk"><i class="ti ti-circle-check i-green"></i>lean_canvas_version = 1 (not null, not 0)</div>
+    <div class="chk"><i class="ti ti-circle-check i-green"></i>workflow_stage advances from "wtp_validated" to "mvp_definition"</div>
+    <div class="chk"><i class="ti ti-alert-circle i-amber"></i>AUDIT CHECK: if lean_canvas table does not exist, this entry throws a database error — confirms the MISSING gap from Layer 1.10 of the audit. Record the exact error message.</div>
+
+    <div class="gate g-fail" style="margin-top:12px">
+      <div class="gt"><i class="ti ti-x"></i> Enforcement test: attempt to proceed to MVP definition without completing lean_canvas</div>
+      <div class="gb">Leave the "solution" field blank and attempt to save. System must block with field-level validation error: "Solution hypothesis is required before MVP definition can begin." The lean_canvas record must NOT be written to the database with a null solution field. This is a data integrity gate, not just frontend validation.</div>
+    </div>
+  </div>
+</div>
+
+<!-- STEP B: VERSION UPDATE TEST -->
+<div class="step">
+  <div class="step-head" onclick="toggle(this)">
+    <div class="snum sn-amber">B</div>
+    <div class="step-title">Update Lean Canvas — version control enforcement test</div>
+    <span class="sbadge sb-amber">Version test</span>
+  </div>
+  <div class="step-body">
+    <p class="slabel">Simulate a pivot on the customer segment assumption</p>
+    <p style="font-size:13px;color:#444;margin-bottom:10px;line-height:1.6">After entering Canvas v1, intelligence from a new OEM interview reveals that procurement directors, not R&amp;D directors, are the actual decision-makers for liner component sourcing. Update the customer segment field.</p>
+
+    <div class="vdiff">
+      <div class="vbox vbox-old">
+        <div class="vbox-label">Version 1 — customer segment (must be PRESERVED)</div>
+        <div class="vbox-val">"Helmet OEM R&amp;D directors and procurement leads at Tier 1 sports protection manufacturers (Riddell, Schutt, Xenith, UK equivalents). Secondary: sports governing bodies who approve certification pathways."</div>
+      </div>
+      <div class="vbox vbox-new">
+        <div class="vbox-label">Version 2 — customer segment (new record, not overwrite)</div>
+        <div class="vbox-val">"Procurement directors at Tier 1 helmet OEMs — not R&amp;D. R&amp;D acts as technical validator but does not hold budget authority. Target buyer: procurement director with annual components budget &gt;£500k. Secondary: World Rugby preferred supplier programme as qualification gateway."</div>
+      </div>
+    </div>
+
+    <p class="slabel">What to assert after update</p>
+    <div class="chk"><i class="ti ti-circle-check i-green"></i>A NEW lean_canvas record is created with lean_canvas_version = 2 — the version 1 record is NOT overwritten</div>
+    <div class="chk"><i class="ti ti-circle-check i-green"></i>Version 1 record still exists in database with its original customer_segment text intact and updated_at unchanged</div>
+    <div class="chk"><i class="ti ti-circle-check i-green"></i>ventures.current_canvas_version updates to 2</div>
+    <div class="chk"><i class="ti ti-circle-check i-green"></i>assumption record for "customer" type in opportunities table updates status from "untested" to "invalidated" (partially) and creates a new version with status "validated" — same append-only pattern</div>
+    <div class="chk"><i class="ti ti-alert-circle i-red"></i>CRITICAL: query the lean_canvas table and confirm 2 rows exist for this venture_id. If only 1 row exists, the system is overwriting — this is the most common failure mode and breaks the data moat's longitudinal intelligence value</div>
+
+    <div class="pivot">
+      <i class="ti ti-arrows-exchange"></i> <strong>Pivot log trigger:</strong> changing the customer segment is a pivot type = "customer_segment". The system should automatically create a pivot_log entry: venture_id, pivot_type: "customer_segment", previous_hypothesis: [v1 text], new_hypothesis: [v2 text], trigger_event: "canvas_update_v2", logged_by: "priya.okafor@real.group". If pivot_log table does not exist — this confirms the MISSING gap from Layer 1 audit item 1.9. Record the error.
+    </div>
+  </div>
+</div>
+
+<!-- STEP C: MVP DEFINITION -->
+<div class="step">
+  <div class="step-head" onclick="toggle(this)">
+    <div class="snum sn-teal">C</div>
+    <div class="step-title">Define MVP — concierge format with success criteria</div>
+    <span class="sbadge sb-teal">MVP entry</span>
+  </div>
+  <div class="step-body">
+    <p class="slabel">MVP definition record</p>
+    <div class="field-row">
+      <div class="fn">mvp_format</div>
+      <div class="fv">concierge — REAL engineers will manually fabricate the first 5 prototype liners by hand, test them in ISO-accredited lab, and present results directly to OEM R&amp;D and procurement contacts. No automated production line at this stage.</div>
+    </div>
+    <div class="field-row">
+      <div class="fn">hypothesis_to_test</div>
+      <div class="fv">"If we present an OEM procurement director with independent ISO lab results showing ≥40% rotational impact absorption improvement AND a cost model at £32/unit at 10k volume, they will agree to a paid qualification trial of 500 units"</div>
+    </div>
+    <div class="field-row">
+      <div class="fn">success_criteria</div>
+      <div class="fv">"Minimum 2 signed paid qualification trial agreements (500 units each at ≥£28/unit) within 12 weeks of presenting lab results to OEM contacts. At least 1 must be a Tier 1 OEM (Riddell, Schutt, or equivalent). Trial must include OEM's own certification test protocol."</div>
+    </div>
+    <div class="field-row">
+      <div class="fn">failure_criteria (what triggers pivot)</div>
+      <div class="fv">"Zero qualification trials signed after presenting to 5+ qualified OEM procurement contacts. OR: lab results show &lt;30% rotational improvement — below the minimum viable threshold for OEM interest."</div>
+    </div>
+    <div class="field-row">
+      <div class="fn">lean_canvas_version_at_mvp</div>
+      <div class="fv">2 (links MVP to the updated canvas, not the original)</div>
+    </div>
+    <div class="field-row">
+      <div class="fn">trl_level_at_mvp_start</div>
+      <div class="fv">3 (proof of concept in lab — materials science demonstrated, not yet validated in relevant environment)</div>
+    </div>
+
+    <p class="slabel">What to assert</p>
+    <div class="chk"><i class="ti ti-circle-check i-green"></i>product_milestones record created with milestone_type = "mvp_definition"</div>
+    <div class="chk"><i class="ti ti-circle-check i-green"></i>lean_canvas_version_at_mvp = 2, not 1 — system links to current canvas version</div>
+    <div class="chk"><i class="ti ti-circle-check i-green"></i>success_criteria field is NOT null — system must block MVP definition creation without defined success criteria</div>
+    <div class="chk"><i class="ti ti-circle-check i-green"></i>failure_criteria field is NOT null — same block applies</div>
+    <div class="chk"><i class="ti ti-circle-check i-green"></i>workflow_stage advances from "mvp_definition" to "build_prototype"</div>
+
+    <div class="gate g-fail" style="margin-top:12px">
+      <div class="gt"><i class="ti ti-x"></i> Enforcement test: attempt to create MVP without success_criteria</div>
+      <div class="gb">Submit the MVP definition form with success_criteria left blank. System must block: "Success criteria are required to define a testable MVP. Without them, the MVP evidence gate cannot function." Record must NOT be written to product_milestones with a null success_criteria.</div>
+    </div>
+
+    <div class="gate g-warn" style="margin-top:8px">
+      <div class="gt"><i class="ti ti-alert-triangle"></i> TRL sync check: TRL 3 at MVP start should trigger advisory</div>
+      <div class="gb">MVP format = "concierge" with TRL = 3 (proof of concept). System should surface: "TRL 3 concierge MVPs are high-risk — consider lab validation (TRL 4) before OEM presentation. This is advisory only and does not block progression." This tests whether the TRL/MRL sync engine fires advisory warnings, not just hard blocks.</div>
+    </div>
+  </div>
+</div>
+
+<!-- STEP D: PROTOTYPE MILESTONE -->
+<div class="step">
+  <div class="step-head" onclick="toggle(this)">
+    <div class="snum sn-teal">D</div>
+    <div class="step-title">Create prototype milestone — concierge MVP execution record</div>
+    <span class="sbadge sb-teal">Milestone entry</span>
+  </div>
+  <div class="step-body">
+    <p class="slabel">Prototype milestone data</p>
+    <div class="field-row">
+      <div class="fn">milestone_type</div>
+      <div class="fv">concierge_mvp</div>
+    </div>
+    <div class="field-row">
+      <div class="fn">build description</div>
+      <div class="fv">5 prototype liners hand-fabricated by REAL engineering team. TPU outer shell compression-moulded. Carbon honeycomb core cut to EN 960 liner geometry. Bio-resin matrix cured at 80°C for 4 hours. Total build time: 3 days.</div>
+    </div>
+    <div class="field-row">
+      <div class="fn">build_start_date / build_end_date</div>
+      <div class="fv">build_start_date: today · build_end_date: today + 21 days (estimated)</div>
+    </div>
+    <div class="field-row">
+      <div class="fn">user_test_count</div>
+      <div class="fv">5 (each prototype to be independently tested at SATRA Technology Centre, Kettering — ISO 17025 accredited lab)</div>
+    </div>
+    <div class="field-row">
+      <div class="fn">user_response_captured</div>
+      <div class="fv">false (not yet — tests not run)</div>
+    </div>
+    <div class="field-row">
+      <div class="fn">linked_mvp_definition_id</div>
+      <div class="fv">[FK to product_milestones.mvp_definition record created in Step C]</div>
+    </div>
+
+    <p class="slabel">What to assert</p>
+    <div class="chk"><i class="ti ti-circle-check i-green"></i>product_milestones record created with milestone_type = "concierge_mvp"</div>
+    <div class="chk"><i class="ti ti-circle-check i-green"></i>linked_mvp_definition_id correctly references the Step C record — FK constraint holds</div>
+    <div class="chk"><i class="ti ti-circle-check i-green"></i>user_response_captured = false is a valid state (prototype not yet tested)</div>
+    <div class="chk"><i class="ti ti-alert-circle i-amber"></i>AUDIT CHECK: if product_milestones table is MISSING or does not have linked_mvp_definition_id FK, this throws — confirms the gap from Layer 1.11</div>
+
+    <div class="gate g-info" style="margin-top:12px">
+      <div class="gt"><i class="ti ti-info-circle"></i> Data moat capture check</div>
+      <div class="gb">At this point, three intelligence records should now exist in the database that did not before Step 2: (1) lean_canvas v1 record, (2) lean_canvas v2 record with version delta, (3) product_milestones mvp_definition record. Each of these should trigger an embedding job in Weaviate if the intelligence layer is operational. If Weaviate is not yet connected, confirm that the records are at least written to PostgreSQL correctly so embeddings can be backfilled when the intelligence layer is built.</div>
+    </div>
+  </div>
+</div>
+
+<!-- STEP E: SQL REFERENCE -->
+<div class="step">
+  <div class="step-head" onclick="toggle(this)">
+    <div class="snum sn-purple">E</div>
+    <div class="step-title">SQL reference — what the database should look like after Steps A–D</div>
+    <span class="sbadge sb-purple">DB verification</span>
+  </div>
+  <div class="step-body">
+    <p class="slabel">Run these queries to verify the Step 2 data is correct</p>
+
+    <div class="sql"><code>
+<span class="cm">-- 1. Confirm two canvas versions exist (not one overwritten record)</span>
+<span class="kw">SELECT</span> <span class="col">lean_canvas_version</span>, <span class="col">customer_segment</span>, <span class="col">created_at</span>
+<span class="kw">FROM</span> lean_canvas
+<span class="kw">WHERE</span> venture_id = <span class="str">'[REAL-001-UUID]'</span>
+<span class="kw">ORDER BY</span> lean_canvas_version;
+<span class="cm">-- Expected: 2 rows. version=1 has old customer_segment. version=2 has new.</span>
+<span class="cm">-- FAIL if: only 1 row (overwrite bug) or 0 rows (table missing)</span>
+
+<span class="cm">-- 2. Confirm MVP definition links to canvas v2, not v1</span>
+<span class="kw">SELECT</span> <span class="col">milestone_type</span>, <span class="col">lean_canvas_version_at_mvp</span>, 
+       <span class="col">success_criteria</span>, <span class="col">failure_criteria</span>
+<span class="kw">FROM</span> product_milestones
+<span class="kw">WHERE</span> venture_id = <span class="str">'[REAL-001-UUID]'</span>
+  <span class="kw">AND</span> milestone_type = <span class="str">'mvp_definition'</span>;
+<span class="cm">-- Expected: lean_canvas_version_at_mvp = 2. success_criteria NOT NULL. failure_criteria NOT NULL.</span>
+<span class="cm">-- FAIL if: version_at_mvp = 1 (stale link) or either criteria field is NULL</span>
+
+<span class="cm">-- 3. Confirm prototype milestone links back to MVP definition</span>
+<span class="kw">SELECT</span> pm_proto.milestone_type, pm_proto.linked_mvp_definition_id,
+       pm_mvp.milestone_type <span class="kw">as</span> linked_type
+<span class="kw">FROM</span> product_milestones pm_proto
+<span class="kw">JOIN</span> product_milestones pm_mvp 
+  <span class="kw">ON</span> pm_proto.linked_mvp_definition_id = pm_mvp.id
+<span class="kw">WHERE</span> pm_proto.venture_id = <span class="str">'[REAL-001-UUID]'</span>
+  <span class="kw">AND</span> pm_proto.milestone_type = <span class="str">'concierge_mvp'</span>;
+<span class="cm">-- Expected: linked_type = 'mvp_definition'. FK intact.</span>
+<span class="cm">-- FAIL if: NULL linked_mvp_definition_id or FK constraint missing</span>
+
+<span class="cm">-- 4. Confirm pivot_log entry was created on canvas version update</span>
+<span class="kw">SELECT</span> <span class="col">pivot_type</span>, <span class="col">previous_hypothesis</span>, <span class="col">new_hypothesis</span>, <span class="col">trigger_event</span>
+<span class="kw">FROM</span> pivot_log
+<span class="kw">WHERE</span> venture_id = <span class="str">'[REAL-001-UUID]'</span>;
+<span class="cm">-- Expected: 1 row. pivot_type = 'customer_segment'.</span>
+<span class="cm">-- FAIL if: table does not exist (confirms MISSING gap from audit)</span>
+
+<span class="cm">-- 5. Confirm workflow_stage is correct after all Step 2 entries</span>
+<span class="kw">SELECT</span> <span class="col">workflow_stage</span>, <span class="col">current_canvas_version</span>
+<span class="kw">FROM</span> ventures
+<span class="kw">WHERE</span> id = <span class="str">'[REAL-001-UUID]'</span>;
+<span class="cm">-- Expected: workflow_stage = 'build_prototype'. current_canvas_version = 2.</span>
+    </code></div>
+  </div>
+</div>
+
+<!-- REPLIT INSTRUCTION -->
+<div class="rbox">
+  <p>Paste into Replit after completing Step 2 build (lean_canvas + product_milestones tables):</p>
+  <button class="copy-btn" onclick="copyCmd()"><i class="ti ti-copy"></i> Copy Replit instruction</button>
+  <pre class="rcmd" id="rcmd">Create the REAL ImpactShield synthetic venture (REAL-001) and run the Step 2 test case in sequence:
+
+A. Create the full Lean Canvas v1 with all 9 fields populated. Then attempt to save with the "solution" field blank — confirm the system blocks this with a field-level error, not just frontend validation.
+
+B. Update the customer_segment field to the new v2 value. Confirm that lean_canvas_version = 2 is created as a NEW row and version 1 is preserved. Run: SELECT COUNT(*) FROM lean_canvas WHERE venture_id = '[REAL-001-UUID]' — expected result: 2. If result is 1, the system is overwriting and this is a FAIL. Also confirm a pivot_log entry was created automatically with pivot_type = 'customer_segment'.
+
+C. Create the MVP definition record with mvp_format = 'concierge', success_criteria and failure_criteria both populated. Then attempt to save with success_criteria blank — confirm the system blocks. Confirm lean_canvas_version_at_mvp = 2 (not 1). Confirm workflow_stage advances to 'build_prototype'.
+
+D. Create the concierge_mvp prototype milestone and confirm linked_mvp_definition_id FK is correctly set and the FK constraint is enforced.
+
+E. Run the 5 SQL verification queries and report the result of each: PASS or FAIL with the exact output or error message.
+
+Report: total tables MISSING that caused exceptions, total enforcement blocks that correctly fired, total enforcement blocks that failed to fire. Flag any field that was written as NULL when it should have been blocked.</pre>
+</div>
+
+</div>
+
+<script>
+function toggle(h){h.nextElementSibling.classList.toggle('open')}
+function toggleAll(){
+  const b=document.querySelectorAll('.step-body');
+  const all=[...b].every(x=>x.classList.contains('open'));
+  b.forEach(x=>all?x.classList.remove('open'):x.classList.add('open'));
+  document.querySelector('.expand-btn').textContent=all?'Expand all steps':'Collapse all steps';
+}
+function copyCmd(){
+  navigator.clipboard.writeText(document.getElementById('rcmd').innerText.trim()).then(()=>{
+    const btn=document.querySelector('.copy-btn');
+    btn.innerHTML='<i class="ti ti-check"></i> Copied';
+    setTimeout(()=>{btn.innerHTML='<i class="ti ti-copy"></i> Copy Replit instruction';},2000);
+  });
+}
+</script>
+</body>
+</html>

@@ -7265,11 +7265,30 @@ export const productMilestones = pgTable("product_milestones", {
   status:               text("status").default("planned").notNull(), // planned|in_progress|completed|blocked
   evidenceUrl:          text("evidenceUrl"),
   assignedTo:           varchar("assignedTo", { length: 255 }),
+  // MVP linkage fields (added for test-case Step 2 compliance)
+  failureCriteria:         text("failureCriteria"),
+  leanCanvasVersionAtMvp:  integer("leanCanvasVersionAtMvp"),
+  linkedMvpDefinitionId:   integer("linkedMvpDefinitionId"),   // self-referential FK enforced at DB level
   createdAt:            timestamp("createdAt").defaultNow().notNull(),
   updatedAt:            timestamp("updatedAt").defaultNow().notNull(),
 });
 export type ProductMilestone = typeof productMilestones.$inferSelect;
 export type InsertProductMilestone = typeof productMilestones.$inferInsert;
+
+// -- Pivot Log — append-only record of every hypothesis pivot across all canvas fields ---
+export const pivotLog = pgTable("pivot_log", {
+  id:                  serial("id").primaryKey(),
+  ventureId:           varchar("ventureId", { length: 64 }).notNull(),
+  pivotType:           text("pivotType").notNull(), // customer_segment|problem|solution|revenue|channels|…
+  previousHypothesis:  text("previousHypothesis"),
+  newHypothesis:       text("newHypothesis"),
+  triggerEvent:        text("triggerEvent"),
+  loggedBy:            varchar("loggedBy", { length: 255 }),
+  canvasVersion:       integer("canvasVersion"),
+  createdAt:           timestamp("createdAt").defaultNow().notNull(),
+});
+export type PivotLog = typeof pivotLog.$inferSelect;
+export type InsertPivotLog = typeof pivotLog.$inferInsert;
 
 // -- Command Centre (Lean OS) tables -------------------------------------------
 export * from "./schema_cc";
