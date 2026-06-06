@@ -24,6 +24,22 @@ import { flowerRouter } from "./flower.router";
 import { adminRouter } from "./admin.router";
 import { contextualRouter } from "./contextual.router";
 import { startupFailureRiskRouter } from "./startupFailureRisk.router";
+import {
+  missionIntegrityRouter,
+  constitutionalGovernanceRouter,
+  successionPlanningRouter,
+  stakeholderAlignmentRouter,
+  boardDecisionsRouter,
+  acquisitionReadinessRouter,
+} from "./missionProtection.router";
+import {
+  institutionalMemoryRouter,
+  governanceComplianceRouter,
+  advancedStakeholderRouter,
+} from "./institutionalMemory.router";
+import { peopleIntelligenceRouter } from "./peopleIntelligence.router";
+import { ventureIntakeRouter } from "./ventureIntake.router";
+import { wtpAssessmentRouter } from "./wtpAssessment.router";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -245,6 +261,20 @@ export const appRouter = router({
   flower: flowerRouter,
   admin: adminRouter,
   contextual: contextualRouter,
+  // Phase 5 — Mission Protection Framework
+  missionIntegrity: missionIntegrityRouter,
+  constitutionalGovernance: constitutionalGovernanceRouter,
+  successionPlanning: successionPlanningRouter,
+  stakeholderAlignment: stakeholderAlignmentRouter,
+  boardDecisions: boardDecisionsRouter,
+  acquisitionReadiness: acquisitionReadinessRouter,
+  // Phase 5 Long-Term — Institutional Memory, Governance Compliance, Advanced Stakeholders
+  institutionalMemory: institutionalMemoryRouter,
+  governanceCompliance: governanceComplianceRouter,
+  advancedStakeholder: advancedStakeholderRouter,
+  peopleIntelligence: peopleIntelligenceRouter,
+  ventureIntake: ventureIntakeRouter,
+  wtpAssessment: wtpAssessmentRouter,
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

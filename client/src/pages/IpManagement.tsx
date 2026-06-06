@@ -16,6 +16,8 @@ import {
   Loader2, Wand2, FileCode2, RotateCcw, AlertTriangle, Eye, Bell, BellRing,
 } from "lucide-react";
 import { Streamdown } from "streamdown";
+import MissionIntegrityBadge from "@/components/MissionIntegrityBadge";
+
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -1277,9 +1279,12 @@ export default function IpManagement() {
           <span className="text-xs text-gray-400">·</span>
           <span className="text-xs text-gray-400 font-mono">EcoRace Lab</span>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+        <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-900 mb-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           IP Management
         </h1>
+              <MissionIntegrityBadge variant="chip" />
+            </div>
         <p className="text-sm text-gray-500 max-w-2xl">
           Unified IP intelligence covering Patents, Trademarks, Copyrights, Design Rights, and Trade Secrets — with an AI-powered Patent Workspace for hypothesis generation and section-by-section drafting.
         </p>

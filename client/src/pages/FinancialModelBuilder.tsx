@@ -21,6 +21,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import MissionIntegrityBadge from "@/components/MissionIntegrityBadge";
+
 import {
   TrendingUp, DollarSign, BarChart3, FileText, Zap, Calculator,
   Plus, Trash2, Edit, Send, RefreshCw, ArrowUpRight, ArrowDownRight,
@@ -889,9 +891,12 @@ export default function FinancialModelBuilder() {
           </span>
           <span className="text-xs text-gray-400 font-mono">Financial Intelligence</span>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
+        <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
           Financial Model Builder
         </h1>
+              <MissionIntegrityBadge variant="chip" />
+            </div>
         <p className="text-sm text-gray-500 mt-1">
           5-year P&L, runway scenarios, exit waterfall, AI investor reports, and unit economics — all in one place.
         </p>

@@ -11,6 +11,8 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
 } from "recharts";
 import { CheckCircle2, Circle, Edit2, Save, X, Briefcase, ArrowRight, Rocket } from "lucide-react";
+import MissionIntegrityBadge from "@/components/MissionIntegrityBadge";
+
 
 interface BrandDimension {
   key: string;
@@ -247,9 +249,12 @@ export default function BrandReadiness() {
           <span className="text-xs text-gray-400">·</span>
           <span className="text-xs text-gray-400 font-mono">Brand Readiness Level (BRL)</span>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+        <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-900 mb-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           Brand Readiness
         </h1>
+              <MissionIntegrityBadge variant="chip" />
+            </div>
         <p className="text-sm text-gray-500 max-w-xl">
           Multi-dimension brand maturity scoring across visual identity, messaging, digital presence, OEM readiness, consumer readiness, and sustainability story. Scores are weighted differently for B2B and D2C ventures.
         </p>

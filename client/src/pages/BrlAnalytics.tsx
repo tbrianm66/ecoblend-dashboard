@@ -50,6 +50,8 @@ import {
   Info,
 } from "lucide-react";
 import { toast } from "sonner";
+import MissionIntegrityBadge from "@/components/MissionIntegrityBadge";
+
 
 const VRL_STAGE_LABELS: Record<number, { label: string; description: string; color: string; bg: string }> = {
   1: { label: "Stage 1 — Idea", description: "Foundation & Validation Fundamentals", color: "#56A837", bg: "#56A83710" },
@@ -350,9 +352,12 @@ export default function BrlAnalytics() {
               <span className="text-xs text-gray-400">·</span>
               <span className="text-xs text-gray-400 font-mono">TRL × BRL × VRL</span>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
               Business Readiness Level
             </h1>
+              <MissionIntegrityBadge variant="chip" />
+            </div>
             <p className="text-sm text-gray-500 mt-1 max-w-xl">
               100-task framework tracking business fundamentals and kick-off readiness across all VRL stages.
               Go-to-market and scaling tasks (Stage 4) are managed in the Brand Execution Platform.

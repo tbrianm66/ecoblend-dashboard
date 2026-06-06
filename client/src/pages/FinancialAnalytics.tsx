@@ -14,6 +14,7 @@ import {
 import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import MissionIntegrityBadge from "@/components/MissionIntegrityBadge";
 
 function RunwayBadge({ months }: { months: number }) {
   const color = months >= 12 ? "#22c55e" : months >= 6 ? "#f59e0b" : "#ef4444";
@@ -126,7 +127,10 @@ export default function FinancialAnalytics() {
           <DollarSign size={16} style={{ color: "#22c55e" }} />
           <span className="vos-badge vos-badge-success" style={{ fontSize: "0.65rem" }}>Finance</span>
         </div>
-        <h1 className="vos-page-title mb-1">Financial Analytics</h1>
+        <div className="flex items-center gap-3 mb-1">
+          <h1 className="vos-page-title">Financial Analytics</h1>
+          <MissionIntegrityBadge variant="chip" />
+        </div>
         <p className="text-sm text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>
           Portfolio-level financial health: burn rates, cash runway, revenue vs target, and ESOP equity dilution — all from live database snapshots.
         </p>

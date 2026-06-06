@@ -254,8 +254,17 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    id: "people",
+    label: "17. People Intelligence",
+    defaultOpen: false,
+    items: [
+      { id: "people-intelligence", label: "People Intelligence",  icon: "Users",       href: "/people-intelligence" },
+      { id: "people-esop",         label: "ESOP & Equity",        icon: "PieChart",    href: "/people" },
+    ],
+  },
+  {
     id: "admin",
-    label: "16. Admin",
+    label: "18. Admin",
     defaultOpen: false,
     items: [
       { id: "admin-playbooks",    label: "Playbook Library",     icon: "BookOpenCheck",    href: "/admin/playbooks" },

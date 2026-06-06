@@ -3,6 +3,10 @@
 // Architecture Module 9 — Phase 4 MVP
 // ============================================================
 import ContextualWidgetPanel from "@/components/ContextualWidgetPanel";
+import MissionIntegrityCard from "@/components/MissionIntegrityCard";
+import MissionIntegrityBadge from "@/components/MissionIntegrityBadge";
+import MissionDriftAlertsPanel from "@/components/MissionDriftAlertsPanel";
+import AcquisitionReadinessAlerts from "@/components/AcquisitionReadinessAlerts";
 
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -93,9 +97,10 @@ export default function RiskIntelligence() {
               <Shield size={18} style={{ color: "#dc2626" }} />
               <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#dc2626" }}>Module 9</span>
             </div>
-            <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
-              Risk Intelligence
-            </h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>Risk Intelligence</h1>
+              <MissionIntegrityBadge variant="chip" />
+            </div>
             <p className="text-sm text-gray-500 mt-1">
               FMEA-based risk register with RPN scoring (Severity × Probability × Detectability)
             </p>
@@ -219,7 +224,22 @@ export default function RiskIntelligence() {
         {/* RPN Formula note */}
         <div className="mt-4 flex items-center gap-2 text-xs text-gray-400">
           <AlertTriangle size={10} />
-          RPN = Severity (1-10) × Probability (1-10) × Detectability (1-10). Critical ≥ 200, High ≥ 120, Medium ≥ 60, Low &lt; 60.
+          {"RPN = Severity (1–10) × Probability (1–10) × Detectability (1–10). Critical ≥ 200, High ≥ 120, Medium ≥ 60, Low < 60."}
+        </div>
+
+        {/* Mission Integrity Index (Phase 5A) */}
+        <div className="mt-8 mb-6">
+          <MissionIntegrityCard />
+        </div>
+
+        {/* Automated Mission Drift Alerts (Phase 5 Medium-Term) */}
+        <div className="mt-6 mb-6">
+          <MissionDriftAlertsPanel />
+        </div>
+
+        {/* Acquisition Readiness Alerts (Phase 5 Medium-Term) */}
+        <div className="mt-6 mb-6">
+          <AcquisitionReadinessAlerts />
         </div>
       </div>
 

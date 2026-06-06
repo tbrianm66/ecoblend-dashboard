@@ -23,6 +23,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Streamdown } from "streamdown";
+import MissionIntegrityBadge from "@/components/MissionIntegrityBadge";
+
 import {
   GitBranch, ChevronRight, ChevronLeft, Zap, CheckCircle2,
   Target, Users, Settings, Rocket, FileText, RefreshCw,
@@ -376,9 +378,12 @@ export default function SpinoffOS() {
                   Spin-Off OS
                 </span>
               </div>
+              <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
                 New Spin-Off Configuration
               </h1>
+              <MissionIntegrityBadge variant="chip" />
+            </div>
             </div>
             <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => setViewMode("list")}>
               <ChevronLeft size={13} /> Back to List

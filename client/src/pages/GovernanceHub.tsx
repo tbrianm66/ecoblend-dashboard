@@ -3,8 +3,16 @@
 // Architecture Module 15 — Phase 6 MVP
 // ============================================================
 import ContextualWidgetPanel from "@/components/ContextualWidgetPanel";
+import ConstitutionalGovernanceForm from "@/components/ConstitutionalGovernanceForm";
+import SuccessionPlanningForm from "@/components/SuccessionPlanningForm";
+import StakeholderAlignmentFramework from "@/components/StakeholderAlignmentFramework";
+import BoardDecisionAuditTrail from "@/components/BoardDecisionAuditTrail";
+import InstitutionalMemorySystem from "@/components/InstitutionalMemorySystem";
+import GovernanceComplianceFramework from "@/components/GovernanceComplianceFramework";
+import AdvancedStakeholderManagement from "@/components/AdvancedStakeholderManagement";
 
 import { useState } from "react";
+import MissionIntegrityBadge from "@/components/MissionIntegrityBadge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -117,7 +125,7 @@ const actionColors: Record<string, string> = {
 };
 
 export default function GovernanceHub() {
-  const [activeTab, setActiveTab] = useState<"gates" | "audit" | "board">("gates");
+  const [activeTab, setActiveTab] = useState<"gates" | "audit" | "board" | "constitutional" | "succession" | "stakeholders" | "decisions" | "memory" | "compliance" | "advanced-stakeholders">("gates");
 
   const pendingCount = STAGE_GATES.filter(g => g.status === "pending").length;
 
@@ -131,9 +139,10 @@ export default function GovernanceHub() {
               <Scale size={18} style={{ color: "#7c3aed" }} />
               <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#7c3aed" }}>Module 15</span>
             </div>
-            <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
-              Governance
-            </h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>Governance</h1>
+              <MissionIntegrityBadge variant="chip" />
+            </div>
             <p className="text-sm text-gray-500 mt-1">
               Stage-gate approvals, audit trail, and board reporting.
             </p>
@@ -146,16 +155,23 @@ export default function GovernanceHub() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mt-4">
+        <div className="flex gap-1 mt-4 overflow-x-auto pb-2">
           {[
             { key: "gates", label: "Stage Gates", icon: CheckCircle2 },
             { key: "audit", label: "Audit Trail", icon: History },
             { key: "board", label: "Board Reports", icon: FileText },
+            { key: "constitutional", label: "Constitutional Governance", icon: Scale },
+            { key: "succession", label: "Succession Planning", icon: Users },
+            { key: "stakeholders", label: "Stakeholder Alignment", icon: Users },
+            { key: "decisions", label: "Board Decisions", icon: Scale },
+            { key: "memory", label: "Institutional Memory", icon: History },
+            { key: "compliance", label: "Compliance Framework", icon: CheckCircle2 },
+            { key: "advanced-stakeholders", label: "Stakeholder Management", icon: Users },
           ].map(tab => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as any)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap"
               style={{
                 background: activeTab === tab.key ? "white" : "transparent",
                 color: activeTab === tab.key ? "#1a2332" : "#6b7280",
@@ -263,6 +279,52 @@ export default function GovernanceHub() {
             <Button variant="outline" size="sm" className="gap-2" onClick={() => toast.info("Board report generation — coming in next build")}>
               <FileText size={14} /> Generate Q2 2026 Board Report
             </Button>
+          </div>
+        )}
+
+        {/* Constitutional Governance (Phase 5B) */}
+        {activeTab === "constitutional" && (
+          <div>
+            <ConstitutionalGovernanceForm />
+          </div>
+        )}
+
+        {/* Succession Planning (Phase 5C) */}
+        {activeTab === "succession" && (
+          <div>
+            <SuccessionPlanningForm />
+          </div>
+        )}
+
+        {/* Stakeholder Alignment Framework (Phase 5D) */}
+        {activeTab === "stakeholders" && (
+          <div>
+            <StakeholderAlignmentFramework />
+          </div>
+        )}
+
+        {/* Board Decision Audit Trail (Phase 5 Medium-Term) */}
+        {activeTab === "decisions" && (
+          <div>
+            <BoardDecisionAuditTrail />
+          </div>
+        )}
+        {/* Institutional Memory System (Phase 5 Long-Term) */}
+        {activeTab === "memory" && (
+          <div>
+            <InstitutionalMemorySystem />
+          </div>
+        )}
+        {/* Governance Compliance Framework (Phase 5 Long-Term) */}
+        {activeTab === "compliance" && (
+          <div>
+            <GovernanceComplianceFramework />
+          </div>
+        )}
+        {/* Advanced Stakeholder Management (Phase 5 Long-Term) */}
+        {activeTab === "advanced-stakeholders" && (
+          <div>
+            <AdvancedStakeholderManagement />
           </div>
         )}
       </div>

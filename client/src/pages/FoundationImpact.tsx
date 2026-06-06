@@ -8,6 +8,8 @@ import { useState } from "react";
 import { Progress } from "@/components/ui/progress";
 import { Heart, Users, TrendingUp, Globe, CheckCircle2, Circle, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
+import MissionIntegrityBadge from "@/components/MissionIntegrityBadge";
+
 
 interface CharityPartner {
   id: string;
@@ -287,9 +289,12 @@ export default function FoundationImpact() {
           <span className="text-xs text-gray-400">·</span>
           <span className="text-xs text-gray-400 font-mono">Foundation & Charity Partners</span>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+        <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-900 mb-1" style={{ fontFamily: "'DM Sans', sans-serif" }}>
           Foundation Impact
         </h1>
+              <MissionIntegrityBadge variant="chip" />
+            </div>
         <p className="text-sm text-gray-500 max-w-xl">
           Each EcoBlend VBS spin-off nominates a charity aligned to its core activity. This module tracks donation commitments, beneficiary reach, and social impact KPIs across the portfolio.
         </p>

@@ -6,6 +6,8 @@
 import { ventures, TRL_LEVELS } from "@/lib/data";
 import { trpc } from "@/lib/trpc";
 import { FlaskConical, AlertTriangle, ShieldAlert, ShieldCheck, GraduationCap, CheckCircle2 } from "lucide-react";
+import MissionIntegrityBadge from "@/components/MissionIntegrityBadge";
+
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LineChart, Line, Legend
 } from "recharts";
@@ -133,7 +135,10 @@ export default function TrlAnalytics() {
           <FlaskConical size={16} style={{ color: "#3B85BA" }} />
           <span className="vos-badge vos-badge-blue" style={{ fontSize: "0.65rem" }}>TRL Analytics</span>
         </div>
-        <h1 className="vos-page-title mb-1">Technology Readiness Level</h1>
+        <div className="flex items-center gap-3">
+              <h1 className="vos-page-title mb-1">Technology Readiness Level</h1>
+              <MissionIntegrityBadge variant="chip" />
+            </div>
         <p className="text-sm text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>Technical maturity tracking across all EcoRace ventures — NASA/EU Horizon 9-level framework</p>
       </div>
 

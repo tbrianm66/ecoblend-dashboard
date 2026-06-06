@@ -18,6 +18,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import MissionIntegrityBadge from "@/components/MissionIntegrityBadge";
+
 import {
   TrendingUp, FileText, BarChart3, Target, Users, DollarSign,
   Loader2, Sparkles, RefreshCw, Trash2, CheckCircle2, AlertTriangle,
@@ -697,9 +699,12 @@ export default function InvestmentModule() {
               <span className="text-xs text-gray-400">·</span>
               <span className="text-xs text-gray-400 font-mono">Sprint 66</span>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
               Investment Readiness
             </h1>
+              <MissionIntegrityBadge variant="chip" />
+            </div>
             <p className="text-sm text-gray-500 max-w-xl mt-0.5">
               Composite readiness scoring, AI-generated investor outputs, and fundraising pipeline management.
             </p>

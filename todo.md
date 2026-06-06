@@ -230,18 +230,18 @@
 
 ## Sprint 20 — People Intelligence Module
 
-- [ ] Add talent_profiles table (name, role, location, availability, expertise, stage experience, functional capabilities, network strength, behavioural attributes)
-- [ ] Add venture_role_requirements table (required skills, experience level, stage, functional area, priority)
-- [ ] Add people_venture_fit table (PVF score cache: skills match, industry match, stage match, network value, availability fit)
-- [ ] Add team_compositions table (recommended team structure per venture)
-- [ ] Add team_gap_analysis table (missing capabilities per venture)
-- [ ] Add talent_venture_assignments table (assigned people to ventures with role)
-- [ ] Push migration 0013
+- [x] Add talent_profiles table (name, role, location, availability, expertise, stage experience, functional capabilities, network strength, behavioural attributes)
+- [x] Add venture_role_requirements table (required skills, experience level, stage, functional area, priority)
+- [x] Add people_venture_fit table (PVF score cache: skills match, industry match, stage match, network value, availability fit)
+- [x] Add team_compositions table (recommended team structure per venture)
+- [x] Add team_gap_analysis table (missing capabilities per venture)
+- [x] Add talent_venture_assignments table (assigned people to ventures with role)
+- [x] Push migration 0013 (tables created directly in TiDB)
 - [x] Add tRPC procedures: talent CRUD, computePVF, getTeamComposition, getTeamGaps, getRoleRankings, getFounderSuitability
-- [ ] Build People Intelligence dashboard page (6 components: talent pool, top rankings, role matrix, team composition, gap heatmap, founder scorecard)
-- [ ] Add People Intelligence to sidebar under Intelligence section
-- [ ] Wire route in App.tsx
-- [ ] Vitest tests for PVF scoring engine
+- [x] Build People Intelligence dashboard page (6 components: talent pool, top rankings, role matrix, team composition, gap heatmap, founder scorecard)
+- [x] Add People Intelligence to sidebar under Intelligence section (section 17)
+- [x] Wire route in App.tsx (/people-intelligence)
+- [x] Vitest tests for PVF scoring engine (43 tests, all passing)
 
 ## Sprint 21 — Product Opportunity Intelligence (POI) Module (Mar 2026)
 
@@ -1345,3 +1345,173 @@
 - [ ] Phase 4J: Test failure scoring, alerts, playbooks, reports
 - [ ] Phase 4J: Run full test suite
 - [ ] Phase 4J: Save checkpoint
+
+## Phase 5 — Mission Protection Framework (June 2026)
+### Audit Against Incorruptible Framework
+- [x] Completed audit report against Eric Ries' 6 failure patterns
+- [x] Identified 5 critical gaps in mission protection
+- [x] Documented opportunity matrix and implementation roadmap
+
+### Phase 5A: Mission Integrity Index (Risk Intelligence)
+- [x] Phase 5A: Design Mission Integrity Index scoring model (0-100 scale)
+- [x] Phase 5A: Create mission_integrity_scores DB table with trend tracking
+- [x] Phase 5A: Build tRPC procedures for score calculation and history
+- [x] Phase 5A: Create Mission Integrity Index card component for Risk Intelligence dashboard
+- [x] Phase 5A: Add drift detection and automated alerts
+- [x] Phase 5A: Wire Mission Integrity Index into RiskIntelligence.tsx
+- [x] Phase 5A: Write 12 Vitest tests for Mission Integrity scoring (13 tests written)
+
+### Phase 5B: Constitutional Governance Section (Governance Hub)
+- [x] Phase 5B: Design Constitutional Governance module structure
+- [x] Phase 5B: Create governance_structures DB table (founder veto, board composition, stakeholder rights)
+- [x] Phase 5B: Build tRPC procedures for governance CRUD and compliance audit
+- [x] Phase 5B: Create Constitutional Governance tab in Governance Hub
+- [x] Phase 5B: Build governance templates (founder veto, mission-aligned board, stakeholder representation)
+- [x] Phase 5B: Add governance compliance checklist component
+- [x] Phase 5B: Wire Constitutional Governance into GovernanceHub.tsx
+- [x] Phase 5B: Write 15 Vitest tests for governance procedures (7 tests written)
+
+### Phase 5C: Succession Planning Questionnaire (Governance Hub)
+- [x] Phase 5C: Design Succession Planning questionnaire flow
+- [x] Phase 5C: Create succession_plans DB table (leadership pipeline, mission continuity, founder legacy)
+- [x] Phase 5C: Build tRPC procedures for succession plan CRUD and validation
+- [x] Phase 5C: Create SuccessionPlanningQuestionnaire component (multi-step form)
+- [x] Phase 5C: Build Succession Planning tab in Governance Hub
+- [x] Phase 5C: Add founder legacy documentation section
+- [x] Phase 5C: Add institutional memory system (mission codification)
+- [x] Phase 5C: Wire Succession Planning into GovernanceHub.tsx
+- [x] Phase 5C: Write 12 Vitest tests for succession planning procedures (5 tests written)
+
+### Phase 5D: Stakeholder Alignment Framework
+- [x] Phase 5D: Design stakeholder mapping model
+- [x] Phase 5D: Create stakeholder_profiles DB table
+- [x] Phase 5D: Build stakeholder alignment scoring engine
+- [x] Phase 5D: Create Stakeholder Alignment dashboard
+- [ ] Phase 5D: Add stakeholder feedback loops
+
+### Phase 5E: Testing & Delivery
+- [x] Phase 5E: Write comprehensive Phase 5 QA tests (35 tests, all passing)
+- [x] Phase 5E: Test Mission Integrity Index, Constitutional Governance, Succession Planning, Stakeholder Alignment
+- [x] Phase 5E: Run full test suite — 35 Phase 5 tests passing
+- [x] Phase 5E: Save checkpoint
+
+## Phase 5 Medium-Term (Weeks 9-16) — Mission Protection Integration
+
+### Phase 5F: Mission Integrity Index — Cross-Module Integration
+- [x] Phase 5F: Create compact MissionIntegrityBadge component (score chip + trend arrow)
+- [x] Phase 5F: Integrate MII badge into Portfolio Overview venture cards
+- [x] Phase 5F: Integrate MII badge into Venture Detail page header
+- [x] Phase 5F: Integrate MII badge into VRL Analytics page
+- [x] Phase 5F: Integrate MII badge into Financial Analytics page
+- [x] Phase 5F: Integrate MII badge into Governance Hub header
+- [x] Phase 5F: Integrate MII badge into Risk Intelligence dashboard header
+- [ ] Phase 5F: Add MII portfolio summary tile to Command Centre
+
+### Phase 5G: Automated Mission Drift Alerts
+- [x] Phase 5G: Design mission drift alert engine (threshold rules, severity levels)
+- [x] Phase 5G: Create mission_drift_alerts DB table (already created — verify schema)
+- [x] Phase 5G: Build tRPC alert procedures (generate, list, acknowledge, dismiss, getAllAlerts, resolveAlert)
+- [x] Phase 5G: Create MissionDriftAlertsPanel component (notification panel with severity filtering)
+- [ ] Phase 5G: Add alert bell icon to sidebar with unread count badge
+- [x] Phase 5G: Build alert detail drawer (drift context, recommended actions)
+- [x] Phase 5G: Wire alerts into Risk Intelligence dashboard
+- [x] Phase 5G: Write Vitest tests for alert engine (5 severity classification tests)
+
+### Phase 5H: Board Decision Audit Trail
+- [x] Phase 5H: Create board_decisions DB table (decision, votes, rationale, outcome, mission impact)
+- [x] Phase 5H: Build tRPC procedures for decision CRUD and audit log (list, get, upsert, delete, getDecisionStats)
+- [x] Phase 5H: Create BoardDecisionAuditTrail component (chronological decision timeline with vote recording)
+- [x] Phase 5H: Build vote recording form (board member votes, rationale, mission alignment score)
+- [x] Phase 5H: Add Board Decision Audit Trail tab to Governance Hub
+- [ ] Phase 5H: Build decision impact analysis (how each decision affects MII score)
+- [x] Phase 5H: Write Vitest tests for board decision procedures (5 tests)
+
+### Phase 5I: Acquisition Readiness Alerts
+- [x] Phase 5I: Design acquisition readiness scoring model (financial, IP, team, market, mission risk)
+- [x] Phase 5I: Create acquisition_readiness_scores DB table (+ acquisition_readiness_alerts table)
+- [x] Phase 5I: Build tRPC procedures for readiness scoring and alert generation (getPortfolioRisk, getFramework, upsertScore, generateAlerts, acknowledgeAlert)
+- [x] Phase 5I: Create AcquisitionReadinessAlerts component (score + risk flags + alert management)
+- [x] Phase 5I: Build acquisition alert triggers (mission drift threshold, investor pressure signals)
+- [x] Phase 5I: Add Acquisition Readiness section to Risk Intelligence dashboard
+- [x] Phase 5I: Write Vitest tests for acquisition readiness scoring (8 tests)
+
+## Phase 5 Long-Term (Weeks 17+) — Mission Protection Maturity
+
+### Phase 5J: Institutional Memory System
+- [ ] Phase 5J: Create institutional_memory DB table (knowledge entries, categories, tags, linked ventures)
+- [ ] Phase 5J: Build tRPC procedures for memory CRUD, search, and tagging
+- [ ] Phase 5J: Create InstitutionalMemoryHub page (/institutional-memory)
+- [ ] Phase 5J: Build knowledge codex editor (rich text, categories: Mission, Process, Decision, Lesson)
+- [ ] Phase 5J: Add founder legacy documentation section (vision statements, non-negotiables, cultural principles)
+- [ ] Phase 5J: Add decision history browser (searchable log of all past decisions with rationale)
+- [ ] Phase 5J: Add knowledge graph view (venture-linked knowledge entries)
+- [ ] Phase 5J: Wire InstitutionalMemoryHub into sidebar navigation
+- [ ] Phase 5J: Write Vitest tests for institutional memory procedures
+
+### Phase 5K: Comprehensive Governance Compliance Framework
+- [ ] Phase 5K: Create compliance_frameworks DB table (B Corp, ISO 14001, GRI, SDG, CIC Articles)
+- [ ] Phase 5K: Create compliance_requirements DB table (per-framework requirements with status tracking)
+- [ ] Phase 5K: Build tRPC procedures for compliance CRUD, scoring, and gap analysis
+- [ ] Phase 5K: Create GovernanceComplianceFramework page (/governance-compliance)
+- [ ] Phase 5K: Build compliance audit engine (auto-score based on governance structures + board decisions)
+- [ ] Phase 5K: Build regulatory mapping panel (which frameworks apply to which ventures)
+- [ ] Phase 5K: Add compliance gap analysis view (what's missing, priority actions)
+- [ ] Phase 5K: Add compliance timeline tracker (deadlines, renewal dates, certification status)
+- [ ] Phase 5K: Wire GovernanceComplianceFramework into Governance Hub as a tab
+- [ ] Phase 5K: Write Vitest tests for compliance framework procedures
+
+### Phase 5L: Advanced Stakeholder Management Tools
+- [ ] Phase 5L: Extend stakeholder_profiles DB table (communication log, engagement history, influence score)
+- [ ] Phase 5L: Create stakeholder_interactions DB table (meeting notes, commitments, follow-ups)
+- [ ] Phase 5L: Build tRPC procedures for interaction CRUD, engagement scoring, and influence mapping
+- [ ] Phase 5L: Create AdvancedStakeholderManager component (full stakeholder CRM)
+- [ ] Phase 5L: Build influence-interest matrix (2x2 grid: power vs alignment)
+- [ ] Phase 5L: Add stakeholder communication log (meeting notes, action items, sentiment tracking)
+- [ ] Phase 5L: Add stakeholder engagement scoring (frequency, depth, alignment trend)
+- [ ] Phase 5L: Add stakeholder risk radar (misaligned high-influence stakeholders flagged)
+- [ ] Phase 5L: Upgrade StakeholderAlignmentFramework tab in Governance Hub with advanced tools
+- [ ] Phase 5L: Write Vitest tests for advanced stakeholder procedures
+
+### Phase 5M: Mission Metrics Integration — All KPI Dashboards
+- [ ] Phase 5M: Add Mission Integrity tile to Command Centre KPI summary
+- [ ] Phase 5M: Add Mission Drift Alert count to Command Centre alerts section
+- [ ] Phase 5M: Add Mission Integrity score to Venture Detail mission section
+- [ ] Phase 5M: Add mission alignment indicator to VRL Analytics per-venture cards
+- [ ] Phase 5M: Add mission risk score to Financial Analytics financial health section
+- [ ] Phase 5M: Add governance compliance score to Governance Hub KPI header
+- [ ] Phase 5M: Add acquisition risk score to Risk Intelligence KPI header
+- [ ] Phase 5M: Build Mission Health Report (exportable PDF with all mission metrics)
+- [ ] Phase 5M: Add mission metrics to Investor Pack export
+
+### Phase 5N: Testing & Delivery
+- [ ] Phase 5N: Write comprehensive Phase 5 long-term QA tests
+- [ ] Phase 5N: Run full test suite
+- [ ] Phase 5N: Save checkpoint
+
+## Venture Intake Module 2 — Full Rebuild (Sprint 21)
+
+- [x] Audit existing VentureIntake.tsx (276 lines, 100% hard-coded, zero tRPC calls)
+- [x] Create 6 new DB tables: venture_ideas, founder_assumptions, venture_hypotheses, riskiest_assumptions, lean_canvas_records, intake_decisions, lean_experiments
+- [x] Build ventureIntake.router.ts (26 tRPC procedures + scoring engines)
+- [x] Wire ventureIntakeRouter into routers.ts
+- [x] Rebuild VentureIntake.tsx as 6-tab page (1,100+ lines):
+  - [x] Tab 1: Idea Capture (origin source, sector, customer, problem, solution, why now, strategic/sustainability/data moat relevance)
+  - [x] Tab 2: Founder Assumptions (risk matrix, importance x uncertainty scoring, evidence tracking, convert-to-hypothesis)
+  - [x] Tab 3: Hypotheses Register (12 hypothesis types, status tracking, risk level, test method, success metric)
+  - [x] Tab 4: Riskiest Assumption Test (priority score engine, lean experiment creation)
+  - [x] Tab 5: Lean Canvas (11-block canvas, versioning, completeness score, visual completeness indicators)
+  - [x] Tab 6: Intake Decision (readiness score 0-100, 6 sub-scores, recommendation engine, approve/reject workflow)
+- [x] Vitest tests for all scoring engines (39 tests, all passing)
+- [x] Sidebar section 2 already wired at /intake
+
+## Sprint 22 — WTP Assessment Module
+
+- [x] Audit existing WTP module (route /discovery/wtp was ModulePlaceholder)
+- [x] Create 5 WTP DB tables: wtp_tests, wtp_commitments, pricing_experiments, budget_validations, procurement_pathways
+- [x] Build wtpAssessment.router.ts with 20+ tRPC procedures
+- [x] Scoring engines: EvidenceLevel 7-ladder (10/25/40/55/70/85/100), BudgetOwner, ProcurementPathway, PricingResponse, composite WTPScore (50/20/15/15 weights)
+- [x] Auto-risk/alert logic: generateWTPWarnings, generateWTPDecisionRecommendation (4 tiers: Proceed/Strengthen/Run Tests/Do Not Build)
+- [x] EVIDENCE_LADDER constant: 7 levels, isWTP flag, score, label, description
+- [x] Build WTPAssessment.tsx — 9-tab page (Overview, Commitment Log, Pricing Test, Budget Owner, Procurement, Objections, Evidence Ladder, Scorecard, Next Action)
+- [x] Wire /discovery/wtp route in App.tsx (replaced ModulePlaceholder)
+- [x] Vitest tests: 59 tests, all passing (evidence ladder, scoring engines, BEBUS/ECOCOMP/REAL/TONE scenarios, warnings, recommendations, friction scoring)
