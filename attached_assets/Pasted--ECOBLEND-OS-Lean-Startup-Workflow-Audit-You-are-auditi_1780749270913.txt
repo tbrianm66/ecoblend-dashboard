@@ -1,0 +1,186 @@
+# ECOBLEND OS — Lean Startup Workflow Audit
+
+You are auditing the ECOBLEND OS database and codebase against the Lean Startup validation workflow. The workflow runs in this sequence:
+
+VENTURE INTAKE → DEFINE ASSUMPTIONS → CUSTOMER DISCOVERY → PROBLEM VALIDATION GATE → COMPETITOR MAPPING → DEMAND SIGNALS → WTP ASSESSMENT → WTP GATE → R&D HUB / DEFINE MVP → BUILD PROTOTYPE → MEASURE RESPONSE → MVP EVIDENCE GATE → OPERATIONS & MFG → BRAND & GTM → COMMAND CENTRE REVIEW → DECISION GATE (Advance / Hold / Kill → Archive)
+
+## YOUR AUDIT TASK
+
+Work through FOUR audit layers in order. Do not skip any layer.
+
+---
+
+### LAYER 1 — DATABASE SCHEMA AUDIT
+
+Inspect the current database schema. For each workflow step listed below, check whether the required table and fields exist. Report a status for each: EXISTS / PARTIAL / MISSING.
+
+**1.1 VENTURE INTAKE**
+Required: `ventures` table with fields: id (uuid), name, description, tenant_id, stage, status, created_at, updated_at
+Check for: Does each venture record link to a founder (people table)?
+
+**1.2 ASSUMPTION TRACKING**
+Required: `opportunities` table with fields: venture_id, hypothesis_text, assumption_type (ENUM: customer, problem, solution, pricing, channel), assumption_status (ENUM: untested, validated, invalidated, inconclusive), created_at
+Check for: Is there a versioning mechanism when assumptions are updated (append-only, not overwrite)?
+
+**1.3 CUSTOMER DISCOVERY — INTERVIEW LOG**
+Required: `interviews` table with fields: venture_id, interview_date, interviewee_role, pain_score (0-10), urgency_score (0-10), budget_holder (boolean), decision_maker_access (boolean), problem_validated (boolean), notes, experiment_id (nullable FK)
+Check for: Is there a minimum interview count gate before the Problem Validated gate can be passed?
+
+**1.4 PROBLEM VALIDATION GATE**
+Required: A gate record linking interview aggregate scores to a VRL/BRL score advancement decision. Fields: venture_id, gate_type ('problem_validated'), gate_status (ENUM: not_reached, passed, failed, partially_passed), evidence_count, score_at_gate, reviewed_by, reviewed_at
+Check for: Is there a human_review_required flag? Can this gate be auto-passed without a reviewer?
+
+**1.5 COMPETITOR MAPPING**
+Required: `competitors` table (or `market_intelligence` table) with fields: venture_id, competitor_name, competitor_type (ENUM: direct, substitute, status_quo), competitive_risk_score (0-10), switching_friction_score (0-10), notes, created_at
+Check for: Does the current schema have ANY competitor or market intelligence table?
+
+**1.6 DEMAND SIGNALS**
+Required: `demand_signals` table or `experiments` records of type='demand_signal' with fields: venture_id, signal_type (ENUM: market, regulatory, procurement, customer_pull), signal_strength (0-10), source, captured_at
+Check for: Are demand signals linked to a Lean experiment record, or do they exist independently?
+
+**1.7 WTP (WILLINGNESS TO PAY) ASSESSMENT**
+Required: `experiments` records with experiment_type='wtp' or a dedicated `wtp_assessments` table containing: venture_id, pricing_model_tested, budget_owner_confirmed (boolean), procurement_pathway_validated (boolean), wtp_validated (boolean), commitment_type (ENUM: loi, paid_pilot, verbal, none)
+Check for: Is commercial commitment (LOI, paid pilot) captured as a distinct field, not just a free-text note?
+
+**1.8 WTP VALIDATION GATE**
+Required: Same gate pattern as 1.4 but gate_type='wtp_validated'. Check that a failed WTP gate triggers a pivot_required flag on the venture record.
+
+**1.9 PIVOT LOG**
+Required: `pivot_log` table with fields: venture_id, pivot_date, pivot_type (ENUM: problem, solution, customer_segment, pricing, channel, business_model), previous_hypothesis, new_hypothesis, trigger_event, logged_by
+Check for: Is there any mechanism to record a pivot decision and the reason for it?
+
+**1.10 R&D HUB — MVP DEFINITION**
+Required: `product_milestones` records with milestone_type='mvp_definition' containing: venture_id, lean_canvas_version (integer), hypothesis_to_test, success_criteria, mvp_format (ENUM: prototype, concierge, landing_page, wizard_of_oz, technical_demo)
+Check for: Is there a Lean Canvas data structure? Does it version when updated?
+
+**1.11 BUILD PROTOTYPE / CONCIERGE MVP**
+Required: `product_milestones` records with milestone_type IN ('prototype', 'concierge_mvp') and fields: build_start_date, build_end_date, user_test_count, user_response_captured (boolean)
+Check for: Is user/customer response to the prototype captured as structured data, or only in free text?
+
+**1.12 USER RESPONSE MEASUREMENT**
+Required: `experiments` records with experiment_type='solution_validation' containing: venture_id, participants_count, validated_count, invalidated_count, inconclusive_count, outcome (ENUM: validated, invalidated, inconclusive), key_learning
+Check for: Does an invalidated solution experiment automatically trigger a 'revise_hypothesis' flag?
+
+**1.13 MVP EVIDENCE GATE**
+Required: Gate record with gate_type='mvp_evidence_strong' linking: venture_id, experiment_ids (array), aggregate_validation_rate, gate_status, reviewed_by, reviewed_at
+Check for: Is there a minimum validation threshold (e.g. >60% of experiments validated) before this gate can be passed?
+
+**1.14 OPERATIONS & MANUFACTURING (MRL)**
+Required: MRL scoring records with fields: venture_id, mrl_level (1-9), supplier_assumptions_tested (boolean), delivery_assumptions_tested (boolean), cost_assumptions_tested (boolean), quality_assumptions_tested (boolean), operational_readiness_score
+Check for: Does the MRL data link back to the experiment log (i.e. are supplier/cost assumptions tested via formal experiments)?
+
+**1.15 BRAND & GTM**
+Required: `gtm_experiments` table or `experiments` records with experiment_type IN ('positioning', 'channel_test', 'messaging_test', 'conversion_test') containing: venture_id, channel_tested, messaging_variant, conversion_rate, experiment_outcome
+Check for: Is there any brand or GTM tracking at all in the current schema?
+
+**1.16 MARKET RISK LOG**
+Required: `risks` records with risk_category='market' and fields: venture_id, risk_type (ENUM: timing, regulation, competition, demand, channel, pricing), risk_score, review_date, reviewed_by
+Market risk log must be reviewed at the Command Centre stage. Check for: Is there a risk_last_reviewed_at field and a flag if it is stale (>30 days without review)?
+
+**1.17 COMMAND CENTRE REVIEW**
+Required: A `venture_review_sessions` table or equivalent with fields: venture_id, review_date, evidence_confidence_score, vrl_score_at_review, risk_score_at_review, reviewer_id, notes
+Check for: Does the Command Centre produce a structured review record, or is it a read-only dashboard?
+
+**1.18 DECISION GATE (Advance / Hold / Kill)**
+Required: `venture_stages` records with fields: venture_id, decision (ENUM: advance, hold_pending_evidence, kill), decision_date, decision_rationale, decided_by, next_stage (nullable)
+Kill decision must link to: `venture_archive` table with fields: venture_id, archived_at, archive_reason, learnings_captured (text)
+Check for: When a venture is killed, are the learnings captured before archiving?
+
+---
+
+### LAYER 2 — WORKFLOW STATE MACHINE AUDIT
+
+Check whether a workflow state machine exists in the codebase that enforces the sequential progression through the lean startup stages.
+
+**2.1** Is there a `workflow_state` or `venture_stage_status` field that tracks which lean startup stage each venture is currently in?
+
+**2.2** Are there server-side guards that prevent a venture from advancing to the next stage unless the current stage's exit criteria are met? (e.g. Cannot pass Problem Validated gate without minimum 3 validated interviews)
+
+**2.3** Is there a pivot trigger mechanism? When a gate is failed, does the system automatically set a `pivot_required` flag and route the venture back to the appropriate earlier stage?
+
+**2.4** Is the workflow sequence enforced (cannot skip stages), or can a user manually advance a venture without completing prior stages?
+
+**2.5** Is there a human review gate enforcement mechanism — specifically, a field or middleware that blocks any AI-generated score from being written to `venture_scores` without a `human_reviewed_by` and `human_reviewed_at` being set?
+
+---
+
+### LAYER 3 — UI / FEATURE COVERAGE AUDIT
+
+For each lean startup workflow step, check whether there is a UI route or React component that surfaces the step to the user.
+
+Report status as: BUILT / PARTIAL / NOT BUILT
+
+| Step | Expected UI path | Status |
+|------|-----------------|--------|
+| Venture intake form | /ventures/new | ? |
+| Assumption tracker | /ventures/[id]/assumptions | ? |
+| Interview log + scoring | /ventures/[id]/interviews | ? |
+| Problem validated gate review | /ventures/[id]/gates/problem | ? |
+| Competitor mapping | /ventures/[id]/market/competitors | ? |
+| Demand signals capture | /ventures/[id]/market/signals | ? |
+| WTP experiment + commitment capture | /ventures/[id]/experiments/wtp | ? |
+| WTP gate review | /ventures/[id]/gates/wtp | ? |
+| Pivot log entry | /ventures/[id]/pivots | ? |
+| Lean Canvas / MVP definition | /ventures/[id]/product/canvas | ? |
+| Prototype milestone tracker | /ventures/[id]/product/milestones | ? |
+| Solution experiment log | /ventures/[id]/experiments/solution | ? |
+| MVP evidence gate review | /ventures/[id]/gates/mvp | ? |
+| MRL / ops readiness | /ventures/[id]/operations/mrl | ? |
+| Brand & GTM experiment log | /ventures/[id]/gtm | ? |
+| Market risk log | /ventures/[id]/risks?category=market | ? |
+| Command Centre evidence review | /ventures/[id]/command-centre | ? |
+| Decision gate (Advance/Hold/Kill) | /ventures/[id]/decision | ? |
+| Archive with learnings | /ventures/[id]/archive | ? |
+
+---
+
+### LAYER 4 — GAP DEVELOPMENT PLAN
+
+Based on your findings from Layers 1–3, produce a structured development plan.
+
+**Format your output as follows:**
+
+#### CRITICAL GAPS (blocks lean validation workflow — build first)
+List each missing schema table or field with:
+- Table/field name
+- SQL CREATE statement to add it
+- Which workflow step it unblocks
+
+#### HIGH PRIORITY GAPS (materially degrades workflow quality)
+List each partial implementation with:
+- What exists
+- What is missing
+- Recommended fix
+
+#### WORKFLOW STATE MACHINE (if not present — build this)
+Provide a TypeScript/Node.js sketch of a WorkflowStateService with:
+- A `getVentureStage(ventureId)` method
+- A `canAdvanceStage(ventureId, targetStage)` method that checks exit criteria
+- A `triggerPivot(ventureId, pivotType, rationale)` method
+- A `recordDecision(ventureId, decision, rationale)` method
+
+#### UI ROUTES TO BUILD (ordered by workflow sequence)
+List each missing or partial UI component with:
+- Route path
+- Component name
+- Key fields to capture
+- Which database table(s) it writes to
+
+#### HUMAN REVIEW GATE ENFORCEMENT
+If the human review gate is not enforced at the API/middleware level:
+Provide a tRPC middleware sketch that intercepts any mutation writing to venture_scores and checks for human_reviewed_by being set. Block the mutation and return an error if not present.
+
+---
+
+### AUDIT OUTPUT FORMAT
+
+Structure your complete findings as:
+
+1. **Schema gap table** — one row per workflow step: Step | Table Status | Key Missing Fields | Priority
+2. **Workflow state machine** — exists (YES/NO/PARTIAL) + what is missing
+3. **UI coverage table** — one row per route: Route | Status | Blocking Gap
+4. **Development plan** — ordered by priority (Critical → High → Medium)
+5. **Immediate SQL migrations** — ready-to-run CREATE TABLE / ALTER TABLE statements for all CRITICAL gaps
+6. **Total gap count** — X tables missing, Y fields missing, Z UI routes missing
+
+Begin the audit now. Inspect the full codebase and database schema before responding.
