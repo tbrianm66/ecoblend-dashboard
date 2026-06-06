@@ -43,3 +43,37 @@ export const adminProcedure = t.procedure.use(
     });
   }),
 );
+
+// ── Human-review gate for venture scores ────────────────────────────────────
+// Any mutation that writes to venture_scores must either:
+//   (a) be a human-entered score  (aiGenerated absent or false), OR
+//   (b) be AI-generated but carry both humanReviewedBy and humanReviewedAt,
+//       proving a reviewer has approved it before persistence.
+//
+// Usage: swap protectedProcedure → reviewedScoreProcedure on any mutation that
+// calls insertVentureScore / updateVentureScores.
+const requireHumanReviewForAiScores = t.middleware(async ({ ctx, next, rawInput }) => {
+  if (!ctx.user) {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: UNAUTHED_ERR_MSG });
+  }
+
+  const input = rawInput as Record<string, unknown> | null | undefined;
+  if (input && typeof input === "object" && input.aiGenerated === true) {
+    const hasReviewer = typeof input.humanReviewedBy === "string" && input.humanReviewedBy.trim().length > 0;
+    const hasTimestamp = Boolean(input.humanReviewedAt);
+    if (!hasReviewer || !hasTimestamp) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message:
+          "AI-generated scores must be approved by a human reviewer before saving. " +
+          "Provide both humanReviewedBy (reviewer name) and humanReviewedAt (ISO timestamp).",
+      });
+    }
+  }
+
+  return next({
+    ctx: { ...ctx, user: ctx.user },
+  });
+});
+
+export const reviewedScoreProcedure = t.procedure.use(requireHumanReviewForAiScores);

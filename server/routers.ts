@@ -26,7 +26,8 @@ import { startupFailureRiskRouter } from "./startupFailureRisk.router";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, protectedProcedure, adminProcedure, router } from "./_core/trpc";
+import { publicProcedure, protectedProcedure, adminProcedure, reviewedScoreProcedure, router } from "./_core/trpc";
+import { workflowStateRouter } from "./workflowState.router";
 import { z } from "zod";
 import { storagePut } from "./storage";
 import { invokeLLM } from "./_core/llm";
@@ -300,7 +301,7 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    updateScores: protectedProcedure
+    updateScores: reviewedScoreProcedure
       .input(z.object({
         id: z.string(),
         vrl: z.number().min(1).max(4),
@@ -308,14 +309,24 @@ export const appRouter = router({
         trl: z.number().min(1).max(9),
         trlPercent: z.number().min(0).max(100),
         notes: z.string().optional(),
+        // Human review gate fields (required when aiGenerated=true)
+        aiGenerated:     z.boolean().optional(),
+        humanReviewedBy: z.string().optional(),
+        humanReviewedAt: z.string().datetime().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         const db = (await getDb())!;
         await assertVentureAccess(db, ctx.user, input.id);
-        const { id, notes, ...scores } = input;
+        const { id, notes, aiGenerated, humanReviewedBy, humanReviewedAt, ...scores } = input;
         await updateVenture(id, scores);
-        // Record score history
-        await insertVentureScore({ ventureId: id, ...scores, notes: notes ?? null });
+        await insertVentureScore({
+          ventureId: id,
+          ...scores,
+          notes: notes ?? null,
+          aiGenerated: aiGenerated ?? false,
+          humanReviewedBy: humanReviewedBy ?? null,
+          humanReviewedAt: humanReviewedAt ? new Date(humanReviewedAt) : null,
+        } as any);
         return { success: true };
       }),
   }),
@@ -7189,5 +7200,6 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
   sync: syncRouter,
   vrl: vrlRouter,
   mrlScoring: mrlScoringRouter,
+  workflowState: workflowStateRouter,
 });
 export type AppRouter = typeof appRouter;

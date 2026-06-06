@@ -36,6 +36,13 @@
       "when": 1780746144742,
       "tag": "0004_majestic_big_bertha",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1780750332114,
+      "tag": "0005_amazing_callisto",
+      "breakpoints": true
     }
   ]
 }

@@ -138,6 +138,15 @@ export const ccStageGateReviews = pgTable("cc_stage_gate_reviews", {
   requiredActions:          text("requiredActions"),
   reviewDate:               varchar("reviewDate", { length: 32 }),
   nextReviewDate:           varchar("nextReviewDate", { length: 32 }),
+  // -- Lean Startup Workflow gate-type + human review enforcement ---------------
+  // gateType identifies which stage transition this review covers. The
+  // WorkflowStateService.canAdvanceStage() checks that a matching gate with
+  // approvalDecision='approved' AND humanReviewedAt IS NOT NULL exists before
+  // allowing progression past any gate stage.
+  gateType:             text("gateType"),          // problem_validated|wtp_validated|mvp_evidence_strong|investment_ready
+  humanReviewRequired:  boolean("humanReviewRequired").default(true),
+  humanReviewedBy:      varchar("humanReviewedBy", { length: 255 }),
+  humanReviewedAt:      timestamp("humanReviewedAt"),
   createdAt:                timestamp("createdAt").defaultNow().notNull(),
   updatedAt:                timestamp("updatedAt").defaultNow().notNull(),
 });

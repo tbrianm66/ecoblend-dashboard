@@ -70,6 +70,14 @@ export const ventures = pgTable("ventures", {
   validationStatus: text("validationStatus"), // idea|validating|building|piloting|scaling|paused|pivoting|killed|archived
   ventureType: text("ventureType"),
   owner: varchar("owner", { length: 255 }),
+  // -- Lean Startup Workflow State Machine (WorkflowStateService) --------------
+  // workflowStage is the authoritative stage in the sequential lean OS workflow.
+  // Allowed values are enforced at the API layer via LEAN_STAGES enum (see
+  // shared/workflowStages.ts). Never update this column directly — use
+  // WorkflowStateService.advance() or WorkflowStateService.triggerPivot().
+  workflowStage: text("workflowStage"),       // LEAN_STAGE enum: venture_intake → decision_gate
+  pivotRequired: boolean("pivotRequired").default(false),
+  pivotReason: text("pivotReason"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
@@ -134,6 +142,13 @@ export const ventureScores = pgTable("venture_scores", {
   trlPercent: integer("trlPercent").notNull(),
   recordedAt: timestamp("recordedAt").defaultNow().notNull(),
   notes: text("notes"),
+  // -- Human review gate (see server/_core/trpc.ts reviewedScoreProcedure) ----
+  // AI-generated scores must not be persisted without a human reviewer.
+  // The reviewedScoreProcedure middleware blocks writes where aiGenerated=true
+  // but humanReviewedBy / humanReviewedAt are absent.
+  humanReviewedBy: varchar("humanReviewedBy", { length: 255 }),
+  humanReviewedAt: timestamp("humanReviewedAt"),
+  aiGenerated: boolean("aiGenerated").default(false),
 });
 
 export type VentureScore = typeof ventureScores.$inferSelect;
