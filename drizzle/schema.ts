@@ -7106,20 +7106,40 @@ export const wtpTests = pgTable("wtp_tests", {
   id:                    serial("id").primaryKey(),
   ventureId:             varchar("ventureId", { length: 64 }).notNull(),
   problemHypothesisId:   integer("problemHypothesisId"),
+  customerSegmentId:     integer("customerSegmentId"),
   customerName:          varchar("customerName", { length: 255 }),
+  organisation:          varchar("organisation", { length: 255 }),
+  contactRole:           varchar("contactRole", { length: 255 }),
   buyerRole:             varchar("buyerRole", { length: 255 }),
+  economicBuyer:         boolean("economicBuyer").default(false),
   budgetOwnerConfirmed:  boolean("budgetOwnerConfirmed").default(false),
+  budgetOwnerStatus:     text("budgetOwnerStatus").default("unknown"),   // unknown|partial|confirmed
+  budgetOwnerName:       varchar("budgetOwnerName", { length: 255 }),
+  budgetOwnerRole:       varchar("budgetOwnerRole", { length: 255 }),
   currentSpend:          varchar("currentSpend", { length: 255 }),
+  currentSpendCurrency:  varchar("currentSpendCurrency", { length: 8 }).default("GBP"),
+  currentSpendPeriod:    varchar("currentSpendPeriod", { length: 32 }),
   valueDriver:           text("valueDriver"),
   pricingModelTested:    varchar("pricingModelTested", { length: 255 }),
   priceTested:           varchar("priceTested", { length: 255 }),
+  priceCurrency:         varchar("priceCurrency", { length: 8 }).default("GBP"),
+  pricePeriod:           varchar("pricePeriod", { length: 32 }),
+  testMethod:            text("testMethod").default("pricing_interview"),
   responseSummary:       text("responseSummary"),
   evidenceLevel:         integer("evidenceLevel").default(1),
+  evidenceStrengthScore: integer("evidenceStrengthScore").default(0),
+  pricingResponse:       text("pricingResponse").default("none"),         // accepted|negotiating|needs_roi_proof|price_resistance|rejected|none
   procurementPathway:    text("procurementPathway"),
+  procurementPathwayStatus: text("procurementPathwayStatus").default("unknown"), // unknown|mapped|blocked|feasible|high_friction|validated
+  procurementPathwayNotes: text("procurementPathwayNotes"),
+  decisionProcessNotes:  text("decisionProcessNotes"),
   objections:            text("objections"),
+  objectionCategory:     text("objectionCategory"),
   wtpScore:              integer("wtpScore").default(0),
   recommendedPricingModel: varchar("recommendedPricingModel", { length: 255 }),
   nextCommercialAction:  text("nextCommercialAction"),
+  nextActionDueDate:     varchar("nextActionDueDate", { length: 32 }),
+  status:                text("status").default("planned"),               // planned|in_progress|completed|blocked|invalidated|converted_to_pilot|converted_to_loi|converted_to_paid_customer
   createdAt:             timestamp("createdAt").defaultNow().notNull(),
   updatedAt:             timestamp("updatedAt").defaultNow().notNull(),
 });
@@ -7174,3 +7194,6 @@ export type InsertLeanExperiment = typeof leanExperiments.$inferInsert;
 
 // -- Command Centre (Lean OS) tables -------------------------------------------
 export * from "./schema_cc";
+
+// -- WTP Assessment (commercial validation) tables -----------------------------
+export * from "./schema_wtp";

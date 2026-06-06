@@ -225,10 +225,12 @@ import { specialistServicesRouter } from "./specialistServices.router";
 import { portfoliosOfferingsRouter } from "./portfoliosOfferings.router";
 import { discoveryMarketRouter, assertVentureAccess } from "./discoveryMarket.router";
 import { commandCentreLeanRouter } from "./commandCentre.lean.router";
+import { wtpRouter } from "./wtp.router";
 
 export const appRouter = router({
   discoveryMarket: discoveryMarketRouter,
   commandCentreLean: commandCentreLeanRouter,
+  wtp: wtpRouter,
   startupFailureRisk: startupFailureRiskRouter,
   system: systemRouter,
   coaching: coachingRouter,

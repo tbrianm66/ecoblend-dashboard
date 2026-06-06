@@ -26,3 +26,14 @@ first-touch-claim keeps the app usable while still scoping access per user.
 this to other routers. `venture_members` (ventureId, userId, role,
 unique(ventureId,userId)) is the authorization table. There is still no UI to
 manage members; admins (`user.role === "admin"`) are the escape hatch.
+
+**New venture-data routers must venture-scope writes — do NOT use publicProcedure
+for dev-testability.** Define a local `ventureProcedure = protectedProcedure.use(...)`
+that pulls `ventureId` from the raw input and calls `assertVentureAccess`, exactly
+like discoveryMarket. Reads stay `publicProcedure`. Note: writes 401 in dev because
+OAuth is unconfigured (`OAUTH_SERVER_URL` unset, "[Auth] Missing session cookie") —
+this is expected and matches discoveryMarket; OAuth is configured in production. Seed
+demo data via raw SQL (scripts/*.mjs) so read-heavy pages still render in dev.
+**Why:** the WTP router was first built with public writes for dev convenience; that
+violated the threat model (unauthenticated/cross-venture mutation of portfolio data)
+and was corrected to ventureProcedure.
