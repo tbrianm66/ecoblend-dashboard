@@ -23,9 +23,21 @@ import {
 } from "@shared/commandCentre";
 
 export default function VentureStatus() {
-  const { availableVentures: ventures, selectedVentureId, setSelectedVentureId } = useSelectedVenture();
-  const ventureId = selectedVentureId ?? "";
-  const setVentureId = setSelectedVentureId;
+  const { availableVentures: ctxVentures, selectedVentureId, setSelectedVentureId } = useSelectedVenture();
+  // Fallback: when auth context has no ventures (unauthenticated dev mode), use portfolioSummary
+  const summaryQ = trpc.commandCentreLean.portfolioSummary.useQuery(undefined, {
+    enabled: ctxVentures.length === 0,
+  });
+  const ventures = ctxVentures.length > 0
+    ? ctxVentures
+    : (summaryQ.data?.rows ?? []).map((r: any) => ({ id: r.ventureId, name: r.name, color: r.color }));
+
+  const [localVentureId, setLocalVentureId] = useState<string>("");
+  const ventureId = selectedVentureId ?? localVentureId;
+  const setVentureId = (id: string) => {
+    setSelectedVentureId(id);
+    setLocalVentureId(id);
+  };
 
   const statusQ = trpc.commandCentreLean.ventureStatus.useQuery({ ventureId }, { enabled: !!ventureId });
   const reviewsQ = trpc.commandCentreLean.reviews.list.useQuery({ ventureId }, { enabled: !!ventureId });

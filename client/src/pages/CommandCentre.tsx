@@ -292,11 +292,13 @@ function FunnelBar({ label, value, max, color }: { label: string; value: number;
 export default function CommandCentre() {
   const [, navigate] = useLocation();
   const REFRESH_INTERVAL = 60_000;
-  const { data, isLoading, refetch, dataUpdatedAt } = trpc.commandCentre.getLiveMetrics.useQuery(undefined, {
+  const { data, isLoading, isError, refetch, dataUpdatedAt } = trpc.commandCentre.getLiveMetrics.useQuery(undefined, {
     refetchInterval: REFRESH_INTERVAL,
+    retry: 0,
   });
   const { data: ecosystemNodes } = trpc.commandCentre.getEcosystemNodes.useQuery(undefined, {
     refetchInterval: REFRESH_INTERVAL,
+    retry: 0,
   });
   const { data: sparklines } = trpc.commandCentre.getRevenueSparklines.useQuery(undefined, {
     refetchInterval: REFRESH_INTERVAL,
@@ -374,6 +376,18 @@ export default function CommandCentre() {
         <div className="text-center">
           <Activity className="w-10 h-10 animate-pulse mx-auto mb-3" style={{ color: ECOBLEND_GREEN }} />
           <p className="text-sm text-muted-foreground">Loading Command Centre…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center max-w-sm">
+          <Activity className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+          <p className="text-sm font-semibold text-gray-700 mb-1">Command Centre Unavailable</p>
+          <p className="text-xs text-muted-foreground">Sign in to access live portfolio metrics. Use the <span className="font-semibold">Lean Decision Board</span> tab to manage ventures without authentication.</p>
         </div>
       </div>
     );
