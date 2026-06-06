@@ -31,15 +31,15 @@ import {
 
 // ── Colour helpers ────────────────────────────────────────────────────────────
 const scoreColor = (v: number) =>
-  v >= 7 ? "#51AF37" : v >= 4 ? "#F49C13" : "#ef4444";
+  v >= 7 ? "#56A837" : v >= 4 ? "#F69111" : "#ef4444";
 
 const scoreLabel = (v: number) =>
   v >= 7 ? "Strong" : v >= 4 ? "Developing" : "Early Stage";
 
 const certStatusColor: Record<string, string> = {
-  "Certified":     "#51AF37",
-  "Under Review":  "#3A97D3",
-  "In Progress":   "#F49C13",
+  "Certified":     "#56A837",
+  "Under Review":  "#3B85BA",
+  "In Progress":   "#F69111",
   "Gap Analysis":  "#a855f7",
   "Not Started":   "#9ca3af",
   "Lapsed":        "#ef4444",
@@ -171,7 +171,7 @@ function EsgPanel({ ventureId }: { ventureId: string }) {
             <PolarGrid />
             <PolarAngleAxis dataKey="axis" tick={{ fontSize: 11 }} />
             <PolarRadiusAxis domain={[0, 10]} tick={false} />
-            <Radar dataKey="value" stroke="#51AF37" fill="#51AF37" fillOpacity={0.25} />
+            <Radar dataKey="value" stroke="#56A837" fill="#56A837" fillOpacity={0.25} />
             <Tooltip formatter={(v: number) => v.toFixed(1)} />
           </RadarChart>
         </ResponsiveContainer>
@@ -227,7 +227,7 @@ function EsgPanel({ ventureId }: { ventureId: string }) {
         <Button
           size="sm"
           className="gap-1.5 text-xs"
-          style={{ background: "#51AF37" }}
+          style={{ background: "#56A837" }}
           onClick={() => upsert.mutate({ ventureId, ...env, ...soc, ...gov, esgFrameworkUsed: framework })}
           disabled={upsert.isPending}
         >
@@ -242,9 +242,9 @@ function EsgPanel({ ventureId }: { ventureId: string }) {
 // ── LCA Panel ─────────────────────────────────────────────────────────────────
 const LCA_STAGES = [
   { key: "Raw Material Extraction", icon: <TreePine size={14} />, color: "#8b5cf6" },
-  { key: "Manufacturing",           icon: <Factory size={14} />,  color: "#3A97D3" },
-  { key: "Distribution & Logistics",icon: <Truck size={14} />,    color: "#F49C13" },
-  { key: "Use Phase",               icon: <ShoppingCart size={14} />, color: "#51AF37" },
+  { key: "Manufacturing",           icon: <Factory size={14} />,  color: "#3B85BA" },
+  { key: "Distribution & Logistics",icon: <Truck size={14} />,    color: "#F69111" },
+  { key: "Use Phase",               icon: <ShoppingCart size={14} />, color: "#56A837" },
   { key: "End of Life",             icon: <Trash2 size={14} />,   color: "#ef4444" },
 ] as const;
 
@@ -323,7 +323,7 @@ function LcaPanel({ ventureId }: { ventureId: string }) {
           <Button
             size="sm"
             className="gap-1.5 text-xs"
-            style={{ background: "#51AF37" }}
+            style={{ background: "#56A837" }}
             onClick={() => upsert.mutate({
               ventureId,
               stage: activeStage as any,
@@ -367,8 +367,8 @@ function PcfPanel({ ventureId }: { ventureId: string }) {
 
   const scopeData = [
     { scope: "Scope 1", value: s1, color: "#ef4444", desc: "Direct emissions (owned sources)" },
-    { scope: "Scope 2", value: s2, color: "#F49C13", desc: "Indirect — purchased energy" },
-    { scope: "Scope 3", value: s3, color: "#3A97D3", desc: "Value chain emissions" },
+    { scope: "Scope 2", value: s2, color: "#F69111", desc: "Indirect — purchased energy" },
+    { scope: "Scope 3", value: s3, color: "#3B85BA", desc: "Value chain emissions" },
   ];
 
   return (
@@ -448,7 +448,7 @@ function PcfPanel({ ventureId }: { ventureId: string }) {
       <Button
         size="sm"
         className="gap-1.5 text-xs"
-        style={{ background: "#51AF37" }}
+        style={{ background: "#56A837" }}
         onClick={() => upsert.mutate({
           ventureId,
           scope1Emissions: s1, scope2Emissions: s2, scope3Emissions: s3,
@@ -538,7 +538,7 @@ function CsrPanel({ ventureId }: { ventureId: string }) {
       <Button
         size="sm"
         className="gap-1.5 text-xs"
-        style={{ background: "#51AF37" }}
+        style={{ background: "#56A837" }}
         onClick={() => upsert.mutate({ ventureId, ...scores, csrReportPublished: reportPublished, reportingFramework: framework, sdgAlignments: sdgs })}
         disabled={upsert.isPending}
       >
@@ -648,7 +648,7 @@ function CertPanel({ ventureId }: { ventureId: string }) {
                 onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
             </div>
           </div>
-          <Button size="sm" className="gap-1.5 text-xs" style={{ background: "#51AF37" }}
+          <Button size="sm" className="gap-1.5 text-xs" style={{ background: "#56A837" }}
             onClick={() => upsert.mutate({ ventureId, ...form })} disabled={upsert.isPending}>
             {upsert.isPending ? <RefreshCw size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
             Save
@@ -674,7 +674,7 @@ function CertPanel({ ventureId }: { ventureId: string }) {
               <span className="text-xs font-mono text-gray-400">{cert.progressPercent ?? 0}%</span>
             </div>
             {cert.bImpactScore && cert.bImpactScore > 0 && (
-              <Badge variant="outline" className="text-[10px]" style={{ borderColor: "#51AF37", color: "#51AF37" }}>
+              <Badge variant="outline" className="text-[10px]" style={{ borderColor: "#56A837", color: "#56A837" }}>
                 B Impact: {cert.bImpactScore}
               </Badge>
             )}
@@ -703,10 +703,10 @@ function IrlSummaryCard({ ventureId }: { ventureId: string }) {
   });
 
   const components = [
-    { label: "ESG",           value: irl?.esgScore ?? 0,           color: "#51AF37" },
+    { label: "ESG",           value: irl?.esgScore ?? 0,           color: "#56A837" },
     { label: "LCA",           value: irl?.lcaScore ?? 0,           color: "#8b5cf6" },
-    { label: "PCF",           value: irl?.pcfScore ?? 0,           color: "#3A97D3" },
-    { label: "CSR",           value: irl?.csrScore ?? 0,           color: "#F49C13" },
+    { label: "PCF",           value: irl?.pcfScore ?? 0,           color: "#3B85BA" },
+    { label: "CSR",           value: irl?.csrScore ?? 0,           color: "#F69111" },
     { label: "Certification", value: irl?.certificationScore ?? 0, color: "#ec4899" },
   ];
 
@@ -766,7 +766,7 @@ export default function ImpactGovernance() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded"
-                style={{ background: "#51AF3715", color: "#51AF37" }}>
+                style={{ background: "#56A83715", color: "#56A837" }}>
                 Impact Governance Engine
               </span>
               <span className="text-xs text-gray-400">·</span>

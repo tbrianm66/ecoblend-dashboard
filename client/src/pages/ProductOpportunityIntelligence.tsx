@@ -25,35 +25,35 @@ import {
 
 // ── Colour helpers ────────────────────────────────────────────────────────────
 const STATUS_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  "Identified":       { bg: "#3A97D315", text: "#3A97D3", border: "#3A97D340" },
-  "Under Assessment": { bg: "#F49C1315", text: "#F49C13", border: "#F49C1340" },
+  "Identified":       { bg: "#3B85BA15", text: "#3B85BA", border: "#3B85BA40" },
+  "Under Assessment": { bg: "#F6911115", text: "#F69111", border: "#F6911140" },
   "Scored":           { bg: "#8b5cf615", text: "#8b5cf6", border: "#8b5cf640" },
-  "Approved for VRL": { bg: "#51AF3715", text: "#51AF37", border: "#51AF3740" },
+  "Approved for VRL": { bg: "#56A83715", text: "#56A837", border: "#56A83740" },
   "Rejected":         { bg: "#ef444415", text: "#ef4444", border: "#ef444440" },
   "On Hold":          { bg: "#6b728015", text: "#6b7280", border: "#6b728040" },
 };
 
 const POS_COLORS: Record<string, { color: string; bg: string }> = {
-  "Exceptional Opportunity": { color: "#51AF37", bg: "#51AF3715" },
-  "High Opportunity":        { color: "#3A97D3", bg: "#3A97D315" },
-  "Moderate Opportunity":    { color: "#F49C13", bg: "#F49C1315" },
+  "Exceptional Opportunity": { color: "#56A837", bg: "#56A83715" },
+  "High Opportunity":        { color: "#3B85BA", bg: "#3B85BA15" },
+  "Moderate Opportunity":    { color: "#F69111", bg: "#F6911115" },
   "Low Opportunity":         { color: "#6b7280", bg: "#6b728015" },
 };
 
 const STAGE_COLORS: Record<string, string> = {
-  Concept: "#8b5cf6", Prototype: "#3A97D3", Pilot: "#F49C13",
-  Commercial: "#51AF37", Mature: "#6b7280",
+  Concept: "#8b5cf6", Prototype: "#3B85BA", Pilot: "#F69111",
+  Commercial: "#56A837", Mature: "#6b7280",
 };
 
 const DIMENSION_CONFIG = [
-  { key: "cost",           label: "Cost",           icon: DollarSign, color: "#3A97D3",  scoreKey: "costScore" },
-  { key: "performance",    label: "Performance",    icon: Zap,        color: "#F49C13",  scoreKey: "performanceScore" },
+  { key: "cost",           label: "Cost",           icon: DollarSign, color: "#3B85BA",  scoreKey: "costScore" },
+  { key: "performance",    label: "Performance",    icon: Zap,        color: "#F69111",  scoreKey: "performanceScore" },
   { key: "quality",        label: "Quality",        icon: Star,       color: "#8b5cf6",  scoreKey: "qualityScore" },
-  { key: "sustainability", label: "Sustainability", icon: Leaf,       color: "#51AF37",  scoreKey: "sustainabilityScore" },
+  { key: "sustainability", label: "Sustainability", icon: Leaf,       color: "#56A837",  scoreKey: "sustainabilityScore" },
 ];
 
 // ── Score bar ─────────────────────────────────────────────────────────────────
-function ScoreBar({ value, max = 5, color = "#3A97D3" }: { value: number; max?: number; color?: string }) {
+function ScoreBar({ value, max = 5, color = "#3B85BA" }: { value: number; max?: number; color?: string }) {
   return (
     <div className="w-full h-2 rounded-full bg-gray-100 overflow-hidden">
       <div
@@ -461,9 +461,9 @@ function OpportunityDetail({ id, onClose }: { id: number; onClose: () => void })
               onClick={() => setActiveTab(t.id as any)}
               className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150"
               style={{
-                background: activeTab === t.id ? "#51AF3715" : "transparent",
-                color: activeTab === t.id ? "#51AF37" : "#6b7280",
-                borderBottom: activeTab === t.id ? "2px solid #51AF37" : "2px solid transparent",
+                background: activeTab === t.id ? "#56A83715" : "transparent",
+                color: activeTab === t.id ? "#56A837" : "#6b7280",
+                borderBottom: activeTab === t.id ? "2px solid #56A837" : "2px solid transparent",
               }}
             >
               <t.icon size={13} />
@@ -615,11 +615,11 @@ function OpportunityDetail({ id, onClose }: { id: number; onClose: () => void })
             {opp.status !== "Approved for VRL" && opp.status !== "Rejected" && (
               <div
                 className="rounded-xl border-2 p-5 flex items-center justify-between"
-                style={{ borderColor: "#51AF3740", background: "#51AF3708" }}
+                style={{ borderColor: "#56A83740", background: "#56A83708" }}
               >
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "#51AF3715" }}>
-                    <Rocket size={20} style={{ color: "#51AF37" }} />
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "#56A83715" }}>
+                    <Rocket size={20} style={{ color: "#56A837" }} />
                   </div>
                   <div>
                     <p className="text-sm font-bold text-gray-900">Ready to enter the VRL pipeline?</p>
@@ -631,7 +631,7 @@ function OpportunityDetail({ id, onClose }: { id: number; onClose: () => void })
                 </div>
                 <Button
                   className="ml-4 flex-shrink-0 text-white font-semibold"
-                  style={{ background: "#51AF37" }}
+                  style={{ background: "#56A837" }}
                   onClick={() => setShowApproveModal(true)}
                 >
                   <Rocket size={14} className="mr-2" />
@@ -644,11 +644,11 @@ function OpportunityDetail({ id, onClose }: { id: number; onClose: () => void })
             {opp.convertedToVentureId && (
               <div
                 className="rounded-xl border p-4 flex items-center gap-3"
-                style={{ borderColor: "#51AF3740", background: "#51AF3710" }}
+                style={{ borderColor: "#56A83740", background: "#56A83710" }}
               >
-                <CheckCircle2 size={18} style={{ color: "#51AF37" }} />
+                <CheckCircle2 size={18} style={{ color: "#56A837" }} />
                 <div>
-                  <p className="text-sm font-semibold" style={{ color: "#51AF37" }}>Converted to venture</p>
+                  <p className="text-sm font-semibold" style={{ color: "#56A837" }}>Converted to venture</p>
                   <p className="text-xs text-gray-500">Venture ID: {opp.convertedToVentureId}</p>
                 </div>
               </div>
@@ -689,7 +689,7 @@ function OpportunityDetail({ id, onClose }: { id: number; onClose: () => void })
                   </div>
                   <Button
                     className="w-full text-white"
-                    style={{ background: "#51AF37" }}
+                    style={{ background: "#56A837" }}
                     disabled={!reviewerName || !decision || addReview.isPending}
                     onClick={() => addReview.mutate({
                       productOpportunityId: id,
@@ -718,10 +718,10 @@ function OpportunityDetail({ id, onClose }: { id: number; onClose: () => void })
                     <div className="space-y-3">
                       {reviews.map((r: any) => {
                         const decisionColors: Record<string, string> = {
-                          "Approve for VRL": "#51AF37",
+                          "Approve for VRL": "#56A837",
                           "Reject": "#ef4444",
-                          "Defer": "#F49C13",
-                          "Request More Data": "#3A97D3",
+                          "Defer": "#F69111",
+                          "Request More Data": "#3B85BA",
                         };
                         const color = decisionColors[r.decision] ?? "#6b7280";
                         return (
@@ -751,14 +751,14 @@ function OpportunityDetail({ id, onClose }: { id: number; onClose: () => void })
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Rocket size={18} style={{ color: "#51AF37" }} />
+              <Rocket size={18} style={{ color: "#56A837" }} />
               Approve for VRL Pipeline
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div
               className="rounded-lg p-3 text-sm"
-              style={{ background: "#51AF3710", border: "1px solid #51AF3730", color: "#1a2332" }}
+              style={{ background: "#56A83710", border: "1px solid #56A83730", color: "#1a2332" }}
             >
               <p className="font-semibold mb-1">What happens next:</p>
               <ol className="list-decimal list-inside space-y-1 text-xs text-gray-600">
@@ -804,7 +804,7 @@ function OpportunityDetail({ id, onClose }: { id: number; onClose: () => void })
             </Button>
             <Button
               className="text-white"
-              style={{ background: "#51AF37" }}
+              style={{ background: "#56A837" }}
               disabled={!approveReviewerName || approveForVrl.isPending}
               onClick={() => approveForVrl.mutate({
                 opportunityId: id,
@@ -890,7 +890,7 @@ function AddOpportunityDialog({ open, onClose }: { open: boolean; onClose: () =>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button
             className="text-white"
-            style={{ background: "#51AF37" }}
+            style={{ background: "#56A837" }}
             disabled={!name || addMutation.isPending}
             onClick={() => addMutation.mutate({ name, description: description || undefined, sector: sector || undefined, targetMarket: targetMarket || undefined, productStage: productStage as any, submittedBy: submittedBy || undefined })}
           >
@@ -945,7 +945,7 @@ export default function ProductOpportunityIntelligence() {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#51AF3715", color: "#51AF37" }}>
+              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#56A83715", color: "#56A837" }}>
                 POI Module
               </span>
               <span className="text-xs text-gray-400">·</span>
@@ -960,7 +960,7 @@ export default function ProductOpportunityIntelligence() {
           </div>
           <Button
             className="text-white gap-1.5"
-            style={{ background: "#51AF37" }}
+            style={{ background: "#56A837" }}
             onClick={() => setAddOpen(true)}
           >
             <Plus size={14} /> Add Opportunity
@@ -972,8 +972,8 @@ export default function ProductOpportunityIntelligence() {
           {[
             { label: "Total Opportunities", value: total, color: "#1a2332", sub: "in pipeline" },
             { label: "Scored",              value: scored, color: "#8b5cf6", sub: "with POS score" },
-            { label: "Approved for VRL",    value: approved, color: "#51AF37", sub: "ready to enter VRL" },
-            { label: "Avg POS Score",       value: avgPos.toFixed(2), color: "#3A97D3", sub: "out of 5.00" },
+            { label: "Approved for VRL",    value: approved, color: "#56A837", sub: "ready to enter VRL" },
+            { label: "Avg POS Score",       value: avgPos.toFixed(2), color: "#3B85BA", sub: "out of 5.00" },
           ].map(k => (
             <div key={k.label} className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
               <span className="text-xs font-semibold uppercase tracking-widest text-gray-400 block mb-1">{k.label}</span>
@@ -1031,7 +1031,7 @@ export default function ProductOpportunityIntelligence() {
             {!search && filterStatus === "all" && (
               <Button
                 className="mt-4 text-white"
-                style={{ background: "#51AF37" }}
+                style={{ background: "#56A837" }}
                 onClick={() => setAddOpen(true)}
               >
                 <Plus size={14} className="mr-2" /> Add First Opportunity

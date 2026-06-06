@@ -51,9 +51,9 @@ const STAGE_ORDER = ["opportunity","concept","materials","simulation","prototype
 type Stage = typeof STAGE_ORDER[number];
 
 const STAGE_META: Record<Stage, { label: string; icon: React.ElementType; color: string; agentName: string; agentDesc: string }> = {
-  opportunity:    { label: "Opportunity",    icon: Lightbulb,    color: "#F49C13", agentName: "Opportunity Translator", agentDesc: "Translates problem statements into structured engineering briefs" },
-  concept:        { label: "Concept",        icon: Cpu,          color: "#3A97D3", agentName: "Concept Engineer",       agentDesc: "Generates engineering concepts and performance targets" },
-  materials:      { label: "Materials",      icon: Beaker,       color: "#51AF37", agentName: "Materials Scientist",    agentDesc: "Designs ECOCOMP formulations and sustainability optimisation" },
+  opportunity:    { label: "Opportunity",    icon: Lightbulb,    color: "#F69111", agentName: "Opportunity Translator", agentDesc: "Translates problem statements into structured engineering briefs" },
+  concept:        { label: "Concept",        icon: Cpu,          color: "#3B85BA", agentName: "Concept Engineer",       agentDesc: "Generates engineering concepts and performance targets" },
+  materials:      { label: "Materials",      icon: Beaker,       color: "#56A837", agentName: "Materials Scientist",    agentDesc: "Designs ECOCOMP formulations and sustainability optimisation" },
   simulation:     { label: "Simulation",     icon: Activity,     color: "#8B5CF6", agentName: "Simulation Engineer",    agentDesc: "Plans FEA, thermal, and fatigue analysis strategies" },
   prototype:      { label: "Prototype",      icon: Box,          color: "#EC4899", agentName: "Concept Engineer",       agentDesc: "CAD outputs and manufacturing feasibility assessment" },
   manufacturing:  { label: "Manufacturing",  icon: Factory,      color: "#F97316", agentName: "Manufacturing Planner",  agentDesc: "UK prototyping and China-scale production strategy" },
@@ -63,9 +63,9 @@ const STAGE_META: Record<Stage, { label: string; icon: React.ElementType; color:
 
 const STATUS_COLORS: Record<string, string> = {
   pending:      "#9ca3af",
-  in_progress:  "#F49C13",
-  human_review: "#3A97D3",
-  completed:    "#51AF37",
+  in_progress:  "#F69111",
+  human_review: "#3B85BA",
+  completed:    "#56A837",
   blocked:      "#EF4444",
 };
 
@@ -338,7 +338,7 @@ function MaterialsTab({ projectId }: { projectId: number }) {
           <Button size="sm" variant="outline" onClick={() => generate.mutate({ projectId })} disabled={generate.isPending} className="gap-1.5 text-xs">
             {generate.isPending ? <Loader2 size={12} className="animate-spin" /> : <Beaker size={12} />} Generate from Stage
           </Button>
-          <Button size="sm" onClick={() => setShowAdd(true)} className="gap-1.5 text-xs" style={{ background: "#51AF37", color: "white", border: "none" }}>
+          <Button size="sm" onClick={() => setShowAdd(true)} className="gap-1.5 text-xs" style={{ background: "#56A837", color: "white", border: "none" }}>
             <Plus size={12} /> Add Material
           </Button>
         </div>
@@ -357,7 +357,7 @@ function MaterialsTab({ projectId }: { projectId: number }) {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-gray-900 text-sm">{m.name}</span>
-                    {m.aiGenerated && <Badge variant="outline" className="text-xs" style={{ borderColor: "#51AF37", color: "#51AF37" }}>AI</Badge>}
+                    {m.aiGenerated && <Badge variant="outline" className="text-xs" style={{ borderColor: "#56A837", color: "#56A837" }}>AI</Badge>}
                   </div>
                   <span className="text-xs text-gray-500 capitalize">{m.category?.replace("_", " ")}</span>
                 </div>
@@ -371,7 +371,7 @@ function MaterialsTab({ projectId }: { projectId: number }) {
                     <span className="text-xs text-gray-400">Sustainability</span>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <div className="flex-1 h-1.5 rounded-full bg-gray-100">
-                        <div className="h-full rounded-full" style={{ width: `${m.sustainabilityScore}%`, background: "#51AF37" }} />
+                        <div className="h-full rounded-full" style={{ width: `${m.sustainabilityScore}%`, background: "#56A837" }} />
                       </div>
                       <span className="text-xs font-mono text-gray-600">{m.sustainabilityScore}%</span>
                     </div>
@@ -382,7 +382,7 @@ function MaterialsTab({ projectId }: { projectId: number }) {
                     <span className="text-xs text-gray-400">Recycled Content</span>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <div className="flex-1 h-1.5 rounded-full bg-gray-100">
-                        <div className="h-full rounded-full" style={{ width: `${m.recycledContent}%`, background: "#3A97D3" }} />
+                        <div className="h-full rounded-full" style={{ width: `${m.recycledContent}%`, background: "#3B85BA" }} />
                       </div>
                       <span className="text-xs font-mono text-gray-600">{m.recycledContent}%</span>
                     </div>
@@ -450,8 +450,8 @@ function SimulationsTab({ projectId }: { projectId: number }) {
   const updateSim = trpc.ecoraceLab.simulations.upsert.useMutation({ onSuccess: () => refetch() });
 
   const simTypeColors: Record<string, string> = {
-    fea: "#3A97D3", thermal: "#F49C13", fatigue: "#EF4444",
-    cfd: "#8B5CF6", impact: "#EC4899", vibration: "#06B6D4", lifecycle: "#51AF37",
+    fea: "#3B85BA", thermal: "#F69111", fatigue: "#EF4444",
+    cfd: "#8B5CF6", impact: "#EC4899", vibration: "#06B6D4", lifecycle: "#56A837",
   };
 
   return (
@@ -529,8 +529,8 @@ function IpTab({ projectId }: { projectId: number }) {
   });
 
   const filingColors: Record<string, string> = {
-    draft: "#9ca3af", review: "#F49C13", filed: "#3A97D3",
-    granted: "#51AF37", rejected: "#EF4444", abandoned: "#6b7280",
+    draft: "#9ca3af", review: "#F69111", filed: "#3B85BA",
+    granted: "#56A837", rejected: "#EF4444", abandoned: "#6b7280",
   };
 
   return (
@@ -602,7 +602,7 @@ function ValidationTab({ projectId }: { projectId: number }) {
   const updateLog = trpc.ecoraceLab.validation.upsert.useMutation({ onSuccess: () => refetch() });
 
   const typeColors: Record<string, string> = {
-    performance: "#3A97D3", compliance: "#F49C13", lifecycle: "#51AF37",
+    performance: "#3B85BA", compliance: "#F69111", lifecycle: "#56A837",
     safety: "#EF4444", market: "#8B5CF6", technical: "#06B6D4",
   };
 
@@ -672,8 +672,8 @@ function AgentLogTab({ projectId }: { projectId: number }) {
         <div className="space-y-2">
           {runs.map(r => (
             <div key={r.id} className="bg-white rounded-xl border p-4 shadow-sm flex items-center gap-4" style={{ borderColor: "#e5e7eb" }}>
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: r.status === "completed" ? "#51AF3715" : "#EF444415" }}>
-                <Bot size={16} style={{ color: r.status === "completed" ? "#51AF37" : "#EF4444" }} />
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: r.status === "completed" ? "#56A83715" : "#EF444415" }}>
+                <Bot size={16} style={{ color: r.status === "completed" ? "#56A837" : "#EF4444" }} />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
@@ -729,7 +729,7 @@ function NewProjectDialog({ open, onClose, onCreated }: { open: boolean; onClose
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => upsert.mutate(form)} disabled={!form.title || upsert.isPending} style={{ background: "#51AF37", color: "white", border: "none" }}>
+          <Button onClick={() => upsert.mutate(form)} disabled={!form.title || upsert.isPending} style={{ background: "#56A837", color: "white", border: "none" }}>
             {upsert.isPending ? <Loader2 size={14} className="animate-spin mr-1" /> : null} Create Project
           </Button>
         </DialogFooter>
@@ -780,8 +780,8 @@ export default function EcoraceLab() {
       <div className="bg-white border-b px-8 py-6" style={{ borderColor: "#e5e7eb" }}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "#51AF3715" }}>
-              <FlaskConical size={20} style={{ color: "#51AF37" }} />
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "#56A83715" }}>
+              <FlaskConical size={20} style={{ color: "#56A837" }} />
             </div>
             <div>
               <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
@@ -790,7 +790,7 @@ export default function EcoraceLab() {
               <p className="text-xs text-gray-500">8-Stage AI Engineering Workflow · 7 Specialised Agents</p>
             </div>
           </div>
-          <Button size="sm" onClick={() => setShowNewProject(true)} className="gap-1.5 text-xs" style={{ background: "#51AF37", color: "white", border: "none" }}>
+          <Button size="sm" onClick={() => setShowNewProject(true)} className="gap-1.5 text-xs" style={{ background: "#56A837", color: "white", border: "none" }}>
             <Plus size={13} /> New Project
           </Button>
         </div>
@@ -799,8 +799,8 @@ export default function EcoraceLab() {
         {summary && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-5">
             <KpiCard label="Total Projects" value={summary.total} sub="in lab" color="#1a2332" />
-            <KpiCard label="Active" value={summary.active} sub="in progress" color="#51AF37" />
-            <KpiCard label="Completed" value={summary.completed} sub="delivered" color="#3A97D3" />
+            <KpiCard label="Active" value={summary.active} sub="in progress" color="#56A837" />
+            <KpiCard label="Completed" value={summary.completed} sub="delivered" color="#3B85BA" />
             <KpiCard label="High Priority" value={(summary.byPriority?.high ?? 0) + (summary.byPriority?.critical ?? 0)} sub="high + critical" color="#EF4444" />
           </div>
         )}
@@ -821,13 +821,13 @@ export default function EcoraceLab() {
             ) : (
               projects.map((p: any) => {
                 const isSelected = p.id === selectedProjectId;
-                const priorityColors: Record<string, string> = { low: "#9ca3af", medium: "#F49C13", high: "#EF4444", critical: "#7C3AED" };
+                const priorityColors: Record<string, string> = { low: "#9ca3af", medium: "#F69111", high: "#EF4444", critical: "#7C3AED" };
                 return (
                   <button
                     key={p.id}
                     onClick={() => { setSelectedProjectId(p.id); setActiveTab("workflow"); setActiveStage("opportunity"); }}
                     className="w-full text-left px-4 py-3 border-b transition-colors hover:bg-gray-50"
-                    style={{ borderColor: "#f3f4f6", background: isSelected ? "#51AF3708" : "transparent", borderLeft: isSelected ? "3px solid #51AF37" : "3px solid transparent" }}
+                    style={{ borderColor: "#f3f4f6", background: isSelected ? "#56A83708" : "transparent", borderLeft: isSelected ? "3px solid #56A837" : "3px solid transparent" }}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
@@ -840,7 +840,7 @@ export default function EcoraceLab() {
                         </div>
                       </div>
                       <span className="text-xs px-1.5 py-0.5 rounded font-medium ml-2 flex-shrink-0"
-                        style={{ background: p.status === "active" ? "#51AF3715" : "#f3f4f6", color: p.status === "active" ? "#51AF37" : "#9ca3af" }}>
+                        style={{ background: p.status === "active" ? "#56A83715" : "#f3f4f6", color: p.status === "active" ? "#56A837" : "#9ca3af" }}>
                         {p.status}
                       </span>
                     </div>
@@ -858,7 +858,7 @@ export default function EcoraceLab() {
               <FlaskConical size={48} className="mb-4 opacity-20" />
               <p className="text-lg font-semibold text-gray-500" style={{ fontFamily: "'Prompt', sans-serif" }}>Select a project</p>
               <p className="text-sm mt-1">Choose a project from the sidebar or create a new one.</p>
-              <Button size="sm" onClick={() => setShowNewProject(true)} className="mt-4 gap-1.5" style={{ background: "#51AF37", color: "white", border: "none" }}>
+              <Button size="sm" onClick={() => setShowNewProject(true)} className="mt-4 gap-1.5" style={{ background: "#56A837", color: "white", border: "none" }}>
                 <Plus size={13} /> New Project
               </Button>
             </div>
@@ -884,7 +884,7 @@ export default function EcoraceLab() {
 
                 {/* Progress bar */}
                 <div className="w-full h-2 rounded-full bg-gray-100 mb-4">
-                  <div className="h-full rounded-full transition-all duration-700" style={{ width: `${dashboard?.progressPct ?? 0}%`, background: "#51AF37" }} />
+                  <div className="h-full rounded-full transition-all duration-700" style={{ width: `${dashboard?.progressPct ?? 0}%`, background: "#56A837" }} />
                 </div>
 
                 {/* Stage Pipeline */}
@@ -928,7 +928,7 @@ export default function EcoraceLab() {
                       onClick={() => setActiveTab(tab.id)}
                       className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all"
                       style={{
-                        background: activeTab === tab.id ? "#51AF37" : "transparent",
+                        background: activeTab === tab.id ? "#56A837" : "transparent",
                         color: activeTab === tab.id ? "white" : "#6b7280",
                       }}
                     >

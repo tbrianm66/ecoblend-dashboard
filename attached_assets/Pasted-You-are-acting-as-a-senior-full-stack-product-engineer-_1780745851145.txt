@@ -1,0 +1,1182 @@
+You are acting as a senior full-stack product engineer, venture studio systems architect, and Lean Startup product strategist.
+
+I am building EcoBLEND IO, a Venture Validation OS used by EcoRACE Studio to validate portfolio ventures through structured hypotheses, experiments, evidence capture, readiness scoring, and stage-gate decision-making.
+
+The current application includes a module:
+
+C. Discovery & Market
+
+One of its sub-sections is:
+
+WTP Assessment
+
+WTP means Willingness To Pay.
+
+Your task is to audit the existing WTP Assessment module, identify gaps, and then develop it into a structured Lean Startup commercial validation system.
+
+The WTP Assessment module must not measure whether customers “like the idea”. It must test whether customers will commit:
+
+* Money
+* Budget
+* Procurement time
+* Operational data
+* Pilot access
+* Internal stakeholder introductions
+* Letters of intent
+* Paid trials
+* Co-development resources
+
+The purpose of this module is to answer:
+
+“Is there credible commercial evidence that this customer segment will pay for this value proposition?”
+
+⸻
+
+1. Audit First
+
+Before building new functionality, audit the existing WTP Assessment implementation.
+
+Identify:
+
+* Existing routes
+* Existing components
+* Existing forms
+* Existing database tables
+* Existing API calls
+* Existing state management
+* Existing mock/demo data
+* Existing scoring logic
+* Existing links to ventures
+* Existing links to hypotheses
+* Existing links to Customer Discovery
+* Existing links to Command Centre
+* Existing links to Market Risk Log
+* Broken UI states
+* Missing CRUD functionality
+* Duplicated data models
+
+Do not create duplicate venture, hypothesis, customer, or experiment tables if they already exist.
+
+Reuse existing tables where possible.
+
+After the audit, provide a short implementation summary before making changes.
+
+⸻
+
+2. Strategic Role of WTP Assessment
+
+The WTP Assessment module sits after:
+
+* Venture Intake
+* Customer Discovery
+* Problem Hypothesis
+* Value Proposition Hypothesis
+* Demand Signals
+* Competitor Mapping
+
+It should feed:
+
+* Command Centre
+* Lean Decision Board
+* Experiment Queue
+* Market Risk Log
+* Proposition & Model
+* Stage-Gate Review
+* Investment Readiness
+
+The WTP Assessment should be used to determine whether a venture is ready to move from:
+
+Market Validation → Commercial Validation → MVP Validation
+
+The system must prevent false validation where customers express interest but do not show buying intent.
+
+Core logic:
+
+Customer interest → commercial signal → budget evidence → procurement evidence → payment or signed commitment
+
+⸻
+
+3. Required WTP Sub-Module Structure
+
+Develop the WTP Assessment module with the following sections or tabs:
+
+1. WTP Overview
+2. Customer Commitment Log
+3. Pricing Test
+4. Budget Owner Validation
+5. Procurement Pathway
+6. Commercial Objections
+7. WTP Evidence Ladder
+8. WTP Scorecard
+9. Next Commercial Action
+
+If the current sidebar supports only one WTP page, implement these as tabs inside the WTP Assessment page.
+
+⸻
+
+4. Required Data Model
+
+Use existing project conventions. If the app uses Supabase/PostgreSQL, create migrations. If it uses another persistence layer, adapt cleanly.
+
+Reuse existing ventures, venture_hypotheses, lean_experiments, evidence_records, market_risks, and command_alerts tables if they already exist.
+
+Create or extend the following tables if needed.
+
+⸻
+
+wtp_tests
+
+Fields:
+
+* id
+* venture_id
+* hypothesis_id
+* customer_segment_id
+* customer_name
+* organisation
+* contact_role
+* buyer_role
+* economic_buyer
+* budget_owner_confirmed
+* budget_owner_name
+* budget_owner_role
+* current_spend
+* current_spend_currency
+* current_spend_period
+* value_driver
+* pricing_model_tested
+* price_tested
+* price_currency
+* price_period
+* test_method
+* response_summary
+* evidence_level
+* evidence_strength_score
+* procurement_pathway_status
+* procurement_pathway_notes
+* decision_process_notes
+* objections
+* objection_category
+* recommended_pricing_model
+* next_commercial_action
+* next_action_due_date
+* status
+* created_at
+* updated_at
+
+Status options:
+
+* planned
+* in_progress
+* completed
+* blocked
+* invalidated
+* converted_to_pilot
+* converted_to_loi
+* converted_to_paid_customer
+
+Pricing model options:
+
+* paid_pilot
+* subscription
+* licence
+* consultancy_plus_platform
+* product_sales
+* service_fee
+* success_fee
+* data_partnership
+* co_development
+* venture_studio_equity
+* transaction_fee
+
+Test method options:
+
+* pricing_interview
+* proposal_sent
+* paid_pilot_offer
+* loi_request
+* procurement_conversation
+* budget_holder_meeting
+* landing_page_pricing_test
+* concierge_offer
+* sales_call
+* tender_response
+
+Objection category options:
+
+* price_too_high
+* unclear_roi
+* no_budget
+* wrong_budget_cycle
+* procurement_barrier
+* trust_barrier
+* insufficient_proof
+* switching_cost
+* data_sharing_concern
+* not_priority
+* competitor_preferred
+* timing_issue
+
+⸻
+
+wtp_commitments
+
+Fields:
+
+* id
+* venture_id
+* wtp_test_id
+* commitment_type
+* commitment_description
+* commitment_value
+* commitment_currency
+* commitment_date
+* evidence_reference
+* status
+* created_at
+* updated_at
+
+Commitment type options:
+
+* verbal_interest
+* follow_up_meeting
+* data_sharing
+* budget_holder_intro
+* proposal_request
+* loi_signed
+* pilot_agreed
+* paid_pilot
+* purchase_order
+* co_development_agreement
+* partnership_mou
+
+Status options:
+
+* weak
+* moderate
+* strong
+* confirmed
+* withdrawn
+
+⸻
+
+pricing_experiments
+
+Fields:
+
+* id
+* venture_id
+* hypothesis_id
+* pricing_model
+* price_point
+* currency
+* billing_period
+* target_customer_segment
+* value_metric
+* test_method
+* test_sample_size
+* positive_responses
+* negative_responses
+* conversion_rate
+* learning_summary
+* recommended_price_range
+* recommended_next_test
+* status
+* created_at
+* updated_at
+
+Status options:
+
+* proposed
+* running
+* completed
+* inconclusive
+* invalidated
+
+⸻
+
+budget_validations
+
+Fields:
+
+* id
+* venture_id
+* wtp_test_id
+* organisation
+* budget_owner_known
+* budget_owner_role
+* budget_category
+* budget_cycle
+* current_budget_available
+* estimated_budget_range
+* approval_required
+* approval_stakeholders
+* financial_decision_criteria
+* notes
+* validation_status
+* created_at
+* updated_at
+
+Validation status options:
+
+* unknown
+* partially_validated
+* validated
+* blocked
+* invalidated
+
+Budget category examples:
+
+* innovation
+* operations
+* engineering
+* sustainability
+* procurement
+* digital_transformation
+* compliance
+* training
+* capex
+* opex
+* research_and_development
+
+⸻
+
+procurement_pathways
+
+Fields:
+
+* id
+* venture_id
+* wtp_test_id
+* organisation
+* procurement_route
+* procurement_complexity_score
+* expected_sales_cycle_days
+* required_documents
+* compliance_requirements
+* legal_review_required
+* data_security_review_required
+* pilot_possible_without_full_procurement
+* procurement_risks
+* next_procurement_step
+* status
+* created_at
+* updated_at
+
+Procurement route options:
+
+* direct_purchase
+* innovation_pilot
+* framework_agreement
+* tender
+* supplier_onboarding
+* partner_channel
+* university_or_research_route
+* internal_sponsor
+* unknown
+
+Status options:
+
+* unknown
+* mapped
+* blocked
+* feasible
+* high_friction
+* validated
+
+⸻
+
+5. WTP Evidence Ladder
+
+Implement a clear evidence ladder.
+
+This should be visible in the WTP Assessment module.
+
+Evidence levels:
+
+1. Customer says “interesting”
+2. Customer agrees to another meeting
+3. Customer shares internal or operational data
+4. Customer introduces a budget holder
+5. Customer requests a proposal
+6. Customer signs an LOI or formal pilot agreement
+7. Customer pays for a pilot or purchase order
+
+Display:
+
+* Level number
+* Evidence description
+* Evidence strength
+* What it proves
+* What it does not prove
+
+Important interpretation:
+
+Level 1 and 2 are not WTP validation. They are weak interest signals.
+
+Level 3 is useful because data-sharing indicates operational commitment.
+
+Level 4 validates access to budget authority.
+
+Level 5 validates buying-process movement.
+
+Level 6 validates formal intent.
+
+Level 7 validates real willingness to pay.
+
+⸻
+
+6. WTP Assessment Form
+
+Create or update the main WTP form.
+
+Required fields:
+
+* Venture
+* Linked hypothesis
+* Linked customer segment
+* Customer name
+* Organisation
+* Contact role
+* Buyer role
+* Economic buyer
+* Budget owner confirmed
+* Budget owner name
+* Budget owner role
+* Current spend
+* Current spend period
+* Value driver
+* Pricing model tested
+* Price tested
+* Test method
+* Response summary
+* Evidence level
+* Evidence strength score
+* Procurement pathway status
+* Procurement pathway notes
+* Decision process notes
+* Objections
+* Objection category
+* Recommended pricing model
+* Next commercial action
+* Next action due date
+* Status
+
+The form must clearly separate:
+
+* Interest signal
+* Budget signal
+* Procurement signal
+* Payment signal
+
+⸻
+
+7. Scoring Logic
+
+Implement reusable scoring utilities.
+
+Evidence Level Score
+
+Map evidence level to base score:
+
+* Level 1 = 10
+* Level 2 = 25
+* Level 3 = 40
+* Level 4 = 55
+* Level 5 = 70
+* Level 6 = 85
+* Level 7 = 100
+
+WTP Score
+
+Calculate:
+
+WTP Score =
+Evidence Level Score × 50%
+
+* Budget Owner Score × 20%
+* Procurement Pathway Score × 15%
+* Pricing Response Score × 15%
+
+Where:
+
+Budget Owner Score:
+
+* Confirmed = 100
+* Partially known = 50
+* Unknown = 0
+
+Procurement Pathway Score:
+
+* Validated = 100
+* Feasible = 75
+* Mapped = 60
+* Unknown = 25
+* Blocked = 0
+
+Pricing Response Score:
+
+* Accepted = 100
+* Negotiating = 75
+* Needs ROI proof = 50
+* Price resistance = 25
+* Rejected = 0
+
+Cap final score between 0 and 100.
+
+Interpretation
+
+* 0–39 = Weak WTP
+* 40–59 = Early commercial signal
+* 60–79 = Strong commercial signal
+* 80–100 = High-confidence WTP
+
+Display this interpretation on the UI.
+
+⸻
+
+8. WTP Decision Logic
+
+Generate a decision recommendation for each WTP test.
+
+If WTP Score is 80 or above:
+
+* Recommend: proceed to paid pilot, LOI, or MVP validation
+
+If WTP Score is 60–79:
+
+* Recommend: strengthen commercial evidence and clarify procurement pathway
+
+If WTP Score is 40–59:
+
+* Recommend: run another pricing or budget-owner test
+
+If WTP Score is below 40:
+
+* Recommend: do not proceed to MVP build; pivot value proposition, customer segment, or pricing model
+
+If evidence level is 1 or 2:
+
+* Warning: positive interest is not commercial validation
+
+If budget owner is unknown:
+
+* Warning: WTP is not validated until economic buyer or budget owner is identified
+
+If procurement pathway is blocked:
+
+* Warning: adoption may be blocked even if buyer interest exists
+
+If the customer is willing to share data but not pay:
+
+* Recommend testing data partnership, co-development, or paid pilot structure
+
+⸻
+
+9. WTP Overview Page
+
+Create an overview page for each venture showing:
+
+* Total WTP tests
+* Average WTP score
+* Highest evidence level achieved
+* Number of budget owners confirmed
+* Number of proposals requested
+* Number of LOIs signed
+* Number of paid pilots
+* Main objection category
+* Recommended commercial action
+
+Also show a venture-level WTP status:
+
+* Not tested
+* Weak
+* Emerging
+* Strong
+* Validated
+
+Venture-level WTP status logic:
+
+* Not tested = no WTP tests
+* Weak = average WTP below 40
+* Emerging = average WTP 40–59
+* Strong = average WTP 60–79
+* Validated = at least one Level 7 evidence record or average WTP above 80
+
+⸻
+
+10. Customer Commitment Log
+
+Create a commitment log linked to each WTP test.
+
+It should record:
+
+* Type of commitment
+* Description
+* Value
+* Date
+* Evidence reference
+* Status
+
+Commitment types:
+
+* Follow-up meeting
+* Data sharing
+* Budget holder introduction
+* Proposal request
+* LOI
+* Pilot agreement
+* Paid pilot
+* Purchase order
+* Co-development agreement
+* Partnership MOU
+
+The commitment log should distinguish between:
+
+* Weak commitment
+* Moderate commitment
+* Strong commitment
+* Confirmed commitment
+* Withdrawn commitment
+
+⸻
+
+11. Pricing Test Page
+
+Create a pricing test view.
+
+Required features:
+
+* Create pricing experiment
+* Select pricing model
+* Define price point
+* Define billing period
+* Define value metric
+* Define test method
+* Track responses
+* Calculate conversion rate
+* Recommend next price test
+
+Pricing model options:
+
+* Paid pilot
+* Subscription
+* Licence
+* Consultancy + platform
+* Product sales
+* Service fee
+* Success fee
+* Data partnership
+* Co-development
+* Venture studio equity
+* Transaction fee
+
+The pricing test should not only ask “what price?” but also:
+
+* What value metric?
+* What buying trigger?
+* What current spend does this replace?
+* What cost does this reduce?
+* What risk does this remove?
+* What outcome does this improve?
+
+⸻
+
+12. Budget Owner Validation Page
+
+Create a budget owner validation view.
+
+Required fields:
+
+* Organisation
+* Budget owner known
+* Budget owner role
+* Budget category
+* Budget cycle
+* Current budget available
+* Estimated budget range
+* Approval required
+* Approval stakeholders
+* Financial decision criteria
+* Notes
+* Validation status
+
+Budget validation should show:
+
+* Economic buyer known / unknown
+* Budget category identified / missing
+* Budget cycle known / unknown
+* Approval chain known / unknown
+* Financial decision criteria known / unknown
+
+If the budget owner is unknown, the system should generate a next action:
+
+“Secure budget-holder introduction before treating this as WTP evidence.”
+
+⸻
+
+13. Procurement Pathway Page
+
+Create a procurement pathway view.
+
+Required fields:
+
+* Organisation
+* Procurement route
+* Procurement complexity score: 1–5
+* Expected sales cycle days
+* Required documents
+* Compliance requirements
+* Legal review required
+* Data security review required
+* Pilot possible without full procurement
+* Procurement risks
+* Next procurement step
+* Status
+
+Procurement pathway should flag:
+
+* Unknown procurement route
+* Long sales cycle
+* Legal review required
+* Data security review required
+* Tender-only route
+* No pilot route
+* Missing supplier onboarding pathway
+
+If the procurement pathway is blocked, create a market risk.
+
+⸻
+
+14. Commercial Objections Page
+
+Create a commercial objections section.
+
+Objection categories:
+
+* Price too high
+* Unclear ROI
+* No budget
+* Wrong budget cycle
+* Procurement barrier
+* Trust barrier
+* Insufficient proof
+* Switching cost
+* Data sharing concern
+* Not priority
+* Competitor preferred
+* Timing issue
+
+Required functionality:
+
+* Add objection
+* Link objection to WTP test
+* Categorise objection
+* Add response strategy
+* Add next action
+* Track whether objection is resolved
+
+Create a table showing:
+
+* Most common objections
+* Objections by venture
+* Objections by customer segment
+* Unresolved objections
+* Objections blocking WTP validation
+
+⸻
+
+15. Auto-Risk and Alert Logic
+
+The WTP Assessment module must create risks and alerts automatically.
+
+Auto-create Market Risks
+
+If WTP Score is below 40:
+
+Risk title: Willingness to pay not validated
+Risk category: budget_risk
+Severity: high
+
+If evidence level is 1 or 2:
+
+Risk title: Positive interest mistaken for WTP
+Risk category: budget_risk
+Severity: medium
+
+If budget owner is unknown:
+
+Risk title: Budget owner unknown
+Risk category: budget_risk
+Severity: high
+
+If procurement pathway is blocked or unknown:
+
+Risk title: Procurement pathway unclear or blocked
+Risk category: procurement_risk
+Severity: high
+
+If main objection is data_sharing_concern:
+
+Risk title: Data sharing may block commercial validation
+Risk category: data_access_risk
+Severity: high
+
+If main objection is trust_barrier:
+
+Risk title: Customer trust barrier may block purchase
+Risk category: trust_risk
+Severity: medium or high
+
+Auto-create Command Alerts
+
+If a venture is moved to MVP Validation but WTP Score is below 60:
+
+Alert type: low_wtp
+Severity: critical
+Recommended action: Do not proceed to MVP build until commercial validation is strengthened
+
+If a WTP next action is overdue:
+
+Alert type: approval_required or overdue_commercial_action
+Severity: high
+
+If a proposal has been requested but no follow-up action exists:
+
+Alert type: approval_required
+Severity: medium
+
+⸻
+
+16. Integration Requirements
+
+Integration with Venture Intake
+
+Pull in:
+
+* Customer segment hypothesis
+* Problem hypothesis
+* Value proposition hypothesis
+* Business model hypothesis
+* Pricing assumptions
+
+Integration with Customer Discovery
+
+Pull in:
+
+* Interview records
+* Pain score
+* Urgency score
+* Budget signal score
+* Willingness to trial
+* Willingness to pay signal
+
+Integration with Demand Signals
+
+Pull in:
+
+* Demand signal score
+* Market pull evidence
+* Procurement signals
+* Regulatory drivers
+
+Integration with Proposition & Model
+
+Send:
+
+* Validated pricing model
+* Pricing objections
+* Revenue model evidence
+* Budget category
+* Commercial readiness score
+
+Integration with Command Centre
+
+Send:
+
+* WTP score
+* WTP status
+* Budget owner status
+* Procurement pathway status
+* Commercial validation alerts
+* Recommended commercial decision
+
+Integration with Market Risk Log
+
+Send:
+
+* Budget risk
+* Procurement risk
+* Data access risk
+* Trust risk
+* Commercial adoption risk
+
+Integration with Stage-Gate Review
+
+Commercial Validation → MVP Validation should require:
+
+* WTP Score of 60 or above
+* Budget owner identified or explanation recorded
+* Pricing model tested
+* Procurement pathway mapped
+* No unresolved critical WTP risk
+
+If these are missing, Stage-Gate Review should show a warning.
+
+⸻
+
+17. UI Design Requirements
+
+Match the current EcoBLEND IO design language:
+
+* Dark sidebar
+* Clean executive dashboard
+* White/light content panels
+* Rounded cards
+* Minimal icons
+* Professional SaaS aesthetic
+* Clear status badges
+* Tables with filters
+* Scorecards with decision outputs
+
+Use status colours:
+
+* Green = validated / strong / paid / confirmed
+* Amber = emerging / needs evidence / unresolved
+* Red = weak / blocked / high risk
+* Grey = not tested / unknown
+* Blue = active / in progress
+
+Each page should include:
+
+* Header
+* Short description
+* Venture selector
+* Hypothesis selector
+* Primary action button
+* Scorecard
+* Main table or form
+* Decision output
+* Next action recommendation
+
+⸻
+
+18. Reusable Components
+
+Create or reuse the following:
+
+* VentureSelector
+* HypothesisSelector
+* CustomerSegmentSelector
+* WTPScoreCard
+* EvidenceLadder
+* CommitmentLogTable
+* PricingExperimentForm
+* BudgetOwnerCard
+* ProcurementPathwayCard
+* ObjectionTable
+* DecisionBadge
+* RiskBadge
+* NextActionPanel
+* FormDrawer
+* EmptyState
+* ConfirmationModal
+
+Create reusable utilities:
+
+* calculateEvidenceLevelScore()
+* calculateWTPScore()
+* calculateVentureWTPStatus()
+* generateWTPDecisionRecommendation()
+* generateWTPWarnings()
+* createWTPMarketRisks()
+* createWTPCommandAlerts()
+* calculatePricingConversionRate()
+* calculateProcurementFrictionScore()
+
+⸻
+
+19. Seed Data
+
+Create realistic seed data for at least four ventures:
+
+1. BEBUS
+2. ECOCOMP
+3. REAL
+4. TONE
+
+BEBUS Example
+
+WTP hypothesis:
+UK bus operators will pay for reliability intelligence if it reduces avoidable downtime and improves supplier accountability.
+
+Customer:
+Regional bus operator
+
+Pricing model tested:
+Paid pilot followed by consultancy-plus-platform subscription
+
+Evidence level:
+5 = requested proposal
+
+Budget owner:
+Engineering Director partially confirmed
+
+Objection:
+Data sharing concern
+
+Next action:
+Create anonymised data-sharing protocol and submit pilot proposal
+
+ECOCOMP Example
+
+WTP hypothesis:
+Manufacturers will pay for validated sustainable composite formulation intelligence before full-scale production.
+
+Customer:
+Specialist product manufacturer
+
+Pricing model tested:
+Licence plus formulation development fee
+
+Evidence level:
+4 = introduced budget holder
+
+Budget owner:
+Innovation lead
+
+Objection:
+Insufficient proof of production scalability
+
+Next action:
+Define paid formulation validation sprint
+
+REAL Example
+
+WTP hypothesis:
+Combat sports customers will pay a premium for sustainable protective equipment if performance and durability are equal or better.
+
+Customer:
+Combat sports gym / retailer
+
+Pricing model tested:
+D2C product sales plus gym partnership
+
+Evidence level:
+3 = shared customer feedback and agreed product testing
+
+Budget owner:
+Gym owner confirmed
+
+Objection:
+Performance proof required
+
+Next action:
+Run prototype trial with athletes
+
+TONE Example
+
+WTP hypothesis:
+Creative production operators will pay for modular sustainable equipment if it reduces storage, cost, and lifecycle waste.
+
+Customer:
+Production studio
+
+Pricing model tested:
+Product sales plus rental model
+
+Evidence level:
+2 = agreed follow-up meeting
+
+Budget owner:
+Unknown
+
+Objection:
+Timing issue and unclear ROI
+
+Next action:
+Run ROI-focused pricing conversation
+
+⸻
+
+20. Testing Requirements
+
+Test that:
+
+* WTP records can be created, edited, viewed, and deleted
+* WTP records link to ventures
+* WTP records link to hypotheses
+* WTP records link to customer segments where available
+* Evidence level score calculates correctly
+* WTP score calculates correctly
+* WTP status updates correctly
+* Budget owner warnings appear when missing
+* Procurement warnings appear when blocked or unknown
+* Weak WTP creates a market risk
+* Low WTP creates a command alert
+* Pricing experiments calculate conversion rate
+* Commitment records save correctly
+* Objections can be added and resolved
+* Venture-level WTP overview updates correctly
+* Command Centre receives WTP score and alerts
+* Stage-Gate Review blocks MVP progression when WTP is weak
+* Existing data is not overwritten
+* Empty states do not crash
+
+⸻
+
+21. Acceptance Criteria
+
+The WTP Assessment module is complete when:
+
+* It clearly distinguishes interest from commercial commitment.
+* Every WTP test links to a venture and hypothesis.
+* The WTP evidence ladder is visible and usable.
+* WTP score is calculated automatically.
+* Venture-level WTP status is calculated automatically.
+* Budget owner validation is captured.
+* Procurement pathway is captured.
+* Pricing experiments can be recorded.
+* Customer commitments can be logged.
+* Commercial objections can be tracked.
+* Weak WTP creates appropriate risks and alerts.
+* Command Centre receives WTP status.
+* Stage-Gate Review uses WTP as a progression requirement.
+* Seed data demonstrates BEBUS, ECOCOMP, REAL, and TONE.
+* The UI matches the existing EcoBLEND IO design.
+
+⸻
+
+22. Critical Failure Modes to Avoid
+
+Avoid these mistakes:
+
+1. Treating customer enthusiasm as willingness to pay.
+2. Allowing WTP records without a linked venture or hypothesis.
+3. Creating pricing forms without procurement or budget-owner context.
+4. Ignoring enterprise sales friction.
+5. Failing to distinguish buyer, user, budget owner, and decision-maker.
+6. Creating disconnected WTP data that does not feed Command Centre.
+7. Allowing MVP progression with weak commercial validation.
+8. Overcomplicating the UI so the user cannot see the next commercial action.
+9. Duplicating venture or hypothesis tables.
+10. Failing to record objections and reasons for non-purchase.
+
+⸻
+
+23. Final Developer Output Required
+
+After completing the audit and implementation, provide:
+
+1. Summary of the WTP Assessment audit
+2. Existing files and components found
+3. What was changed
+4. Files modified
+5. New database tables or migrations added
+6. Existing tables reused
+7. Assumptions made
+8. Features not completed
+9. Bugs found
+10. Recommended next development step
+
+The strategic objective is to make WTP Assessment the commercial validation layer of EcoBLEND IO, ensuring that ventures do not progress from market interest to MVP build without credible evidence of customer commitment, budget access, and buying pathway.

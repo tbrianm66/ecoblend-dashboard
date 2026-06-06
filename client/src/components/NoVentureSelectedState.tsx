@@ -26,9 +26,9 @@ export default function NoVentureSelectedState() {
     >
       <div
         className="w-10 h-10 rounded-xl flex items-center justify-center"
-        style={{ background: "rgba(81,175,55,0.12)" }}
+        style={{ background: "rgba(86, 168, 55,0.12)" }}
       >
-        <Building2 size={20} style={{ color: "#51AF37" }} />
+        <Building2 size={20} style={{ color: "#56A837" }} />
       </div>
 
       <div>
@@ -52,7 +52,7 @@ export default function NoVentureSelectedState() {
             onClick={() => setSelectedVentureId(firstVenture.id)}
             className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all"
             style={{
-              background: "#51AF37",
+              background: "#56A837",
               color: "white",
               fontFamily: "'Inter', sans-serif",
             }}

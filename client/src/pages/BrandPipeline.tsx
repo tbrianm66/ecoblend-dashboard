@@ -126,7 +126,7 @@ export default function BrandPipeline() {
           <div>
             <div className="space-y-3 mb-6">
               {(register.data ?? []).map(asset => (
-                <div key={asset.id} className="bg-white rounded-xl border p-4" style={{ borderColor: "#e5e7eb", borderLeft: `4px solid ${asset.status === "approved" ? "#51AF37" : asset.status === "missing" ? "#EF4444" : "#F49C13"}` }}>
+                <div key={asset.id} className="bg-white rounded-xl border p-4" style={{ borderColor: "#e5e7eb", borderLeft: `4px solid ${asset.status === "approved" ? "#56A837" : asset.status === "missing" ? "#EF4444" : "#F69111"}` }}>
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-3">
                       {STATUS_ICONS[asset.status]}

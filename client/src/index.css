@@ -1,8 +1,8 @@
 /* ============================================================
    VENTURE OS — ECOBLEND DESIGN SYSTEM
    Apple-style: Clarity · Deference · Depth
-   Primary: EcoBlend Green #51AF37
-   Accent:  EcoBlend Blue  #3A97D3
+   Primary: EcoBlend Green #56A837
+   Accent:  EcoBlend Blue  #3B85BA
    Status:  Success #10b981 · Warning #f59e0b · Risk #ef4444
    Typography: Prompt (display) + Inter (body)
    8px spacing grid · Rounded: btn 8px · card 12px · panel 20px
@@ -56,15 +56,15 @@
   --color-sidebar-ring:            var(--sidebar-ring);
 
   /* ── EcoBlend brand tokens ── */
-  --eb-green:       #51AF37;
-  --eb-green-light: #e8f7e3;
-  --eb-green-dark:  #2d9856;
-  --eb-blue:        #3A97D3;
-  --eb-blue-light:  #e0f0fb;
-  --eb-blue-dark:   #096ba7;
-  --eb-orange:      #F49C13;
-  --eb-orange-light:#fef3dc;
-  --eb-yellow:      #f1c411;
+  --eb-green:       #56A837;
+  --eb-green-light: #E9F6E3;
+  --eb-green-dark:  #3D8526;
+  --eb-blue:        #3B85BA;
+  --eb-blue-light:  #E4EFF7;
+  --eb-blue-dark:   #2C6690;
+  --eb-orange:      #F69111;
+  --eb-orange-light:#FEF0D9;
+  --eb-yellow:      #F2BB05;
   --eb-cream:       #f7e6d2;
   --eb-dark:        #1a2332;
   --eb-dark-mid:    #243044;
@@ -100,8 +100,8 @@
   --popover:              oklch(1 0 0);
   --popover-foreground:   oklch(0.16 0.018 240);
 
-  /* Primary = EcoBlend Green */
-  --primary:              oklch(0.62 0.18 140);
+  /* Primary = EcoBlend Green (logo) */
+  --primary:              #56A837;
   --primary-foreground:   oklch(1 0 0);
 
   /* Secondary = soft neutral */
@@ -112,8 +112,8 @@
   --muted:                oklch(0.96 0.003 85);
   --muted-foreground:     oklch(0.50 0.012 240);
 
-  /* Accent = EcoBlend Blue */
-  --accent:               oklch(0.60 0.13 230);
+  /* Accent = EcoBlend Blue (logo) */
+  --accent:               #3B85BA;
   --accent-foreground:    oklch(1 0 0);
 
   /* Destructive = risk red */
@@ -123,24 +123,24 @@
   /* Borders: very subtle */
   --border:               oklch(0.91 0.005 85);
   --input:                oklch(0.91 0.005 85);
-  --ring:                 oklch(0.62 0.18 140);
+  --ring:                 #56A837;
 
-  /* Charts: EcoBlend brand palette */
-  --chart-1: oklch(0.62 0.18 140);   /* green */
-  --chart-2: oklch(0.60 0.15 230);   /* blue */
-  --chart-3: oklch(0.72 0.18 60);    /* orange */
-  --chart-4: oklch(0.82 0.18 90);    /* yellow */
-  --chart-5: oklch(0.88 0.06 80);    /* cream */
+  /* Charts: EcoBlend logo palette */
+  --chart-1: #56A837;   /* green */
+  --chart-2: #3B85BA;   /* blue */
+  --chart-3: #F69111;   /* orange */
+  --chart-4: #F2BB05;   /* yellow */
+  --chart-5: #1D91D8;   /* bright blue */
 
   /* Sidebar: dark navy — unchanged */
   --sidebar:              oklch(0.17 0.035 240);
   --sidebar-foreground:   oklch(0.93 0.004 85);
-  --sidebar-primary:      oklch(0.62 0.18 140);
+  --sidebar-primary:      #56A837;
   --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-accent:       oklch(0.24 0.032 240);
   --sidebar-accent-foreground: oklch(0.93 0.004 85);
   --sidebar-border:       oklch(0.27 0.032 240);
-  --sidebar-ring:         oklch(0.62 0.18 140);
+  --sidebar-ring:         #56A837;
 }
 
 @layer base {
@@ -293,10 +293,10 @@
     font-weight: 600;
     letter-spacing: 0.02em;
   }
-  .vos-badge-success { background: #e8f7e3; color: #2d9856; }
-  .vos-badge-warning { background: #fef3dc; color: #b45309; }
+  .vos-badge-success { background: #E9F6E3; color: #3D8526; }
+  .vos-badge-warning { background: #FEF0D9; color: #b45309; }
   .vos-badge-risk    { background: #fee2e2; color: #dc2626; }
-  .vos-badge-blue    { background: #e0f0fb; color: #096ba7; }
+  .vos-badge-blue    { background: #E4EFF7; color: #2C6690; }
   .vos-badge-neutral { background: oklch(0.94 0.004 85); color: oklch(0.40 0.012 240); }
 
   /* ── Design System: Lifecycle stage pill ── */
@@ -335,14 +335,14 @@
     padding: 0.5rem 1rem;
     font-size: 0.875rem;
     font-weight: 600;
-    background: #51AF37;
+    background: #56A837;
     color: white;
     border: none;
     transition: background 0.15s ease, box-shadow 0.15s ease;
   }
   .vos-btn-primary:hover {
-    background: #2d9856;
-    box-shadow: 0 2px 8px rgba(81, 175, 55, 0.3);
+    background: #3D8526;
+    box-shadow: 0 2px 8px rgba(86, 168, 55, 0.3);
   }
   .vos-btn-secondary {
     display: inline-flex;
@@ -392,8 +392,8 @@
     border: 1px solid oklch(0.91 0.005 85);
     box-shadow: 0 1px 3px rgba(26, 35, 50, 0.06);
   }
-  .eb-badge-green  { background: #51AF3715; color: #51AF37; border: 1px solid #51AF3730; border-radius: 9999px; padding: 0.15rem 0.6rem; font-size: 0.7rem; font-weight: 700; }
-  .eb-badge-blue   { background: #3A97D315; color: #3A97D3; border: 1px solid #3A97D330; border-radius: 9999px; padding: 0.15rem 0.6rem; font-size: 0.7rem; font-weight: 700; }
-  .eb-badge-orange { background: #F49C1315; color: #F49C13; border: 1px solid #F49C1330; border-radius: 9999px; padding: 0.15rem 0.6rem; font-size: 0.7rem; font-weight: 700; }
-  .eb-badge-yellow { background: #f1c41115; color: #c9a200; border: 1px solid #f1c41130; border-radius: 9999px; padding: 0.15rem 0.6rem; font-size: 0.7rem; font-weight: 700; }
+  .eb-badge-green  { background: #56A83715; color: #56A837; border: 1px solid #56A83730; border-radius: 9999px; padding: 0.15rem 0.6rem; font-size: 0.7rem; font-weight: 700; }
+  .eb-badge-blue   { background: #3B85BA15; color: #3B85BA; border: 1px solid #3B85BA30; border-radius: 9999px; padding: 0.15rem 0.6rem; font-size: 0.7rem; font-weight: 700; }
+  .eb-badge-orange { background: #F6911115; color: #F69111; border: 1px solid #F6911130; border-radius: 9999px; padding: 0.15rem 0.6rem; font-size: 0.7rem; font-weight: 700; }
+  .eb-badge-yellow { background: #F2BB0515; color: #c9a200; border: 1px solid #F2BB0530; border-radius: 9999px; padding: 0.15rem 0.6rem; font-size: 0.7rem; font-weight: 700; }
 }

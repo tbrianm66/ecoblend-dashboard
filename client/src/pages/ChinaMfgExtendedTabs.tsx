@@ -61,7 +61,7 @@ const AUDIT_RESULT_COLORS: Record<string, string> = {
 };
 
 // ── Score bar ──────────────────────────────────────────────────────────────────
-function ScoreBar({ value, max = 5, color = "#51AF37" }: { value: number; max?: number; color?: string }) {
+function ScoreBar({ value, max = 5, color = "#56A837" }: { value: number; max?: number; color?: string }) {
   const pct = Math.min((value / max) * 100, 100);
   return (
     <div className="flex items-center gap-2">
@@ -160,10 +160,10 @@ export function SupplierOnboardingTab({ ventureId }: { ventureId: string }) {
       {/* KPI row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "Total Suppliers", value: suppliers.length, color: "#51AF37" },
+          { label: "Total Suppliers", value: suppliers.length, color: "#56A837" },
           { label: "Approved", value: suppliers.filter((s: any) => s.status === "approved").length, color: "#22c55e" },
-          { label: "Under Review", value: suppliers.filter((s: any) => s.status === "under_review").length, color: "#3A97D3" },
-          { label: "Avg Score", value: avgScore, color: "#F49C13" },
+          { label: "Under Review", value: suppliers.filter((s: any) => s.status === "under_review").length, color: "#3B85BA" },
+          { label: "Avg Score", value: avgScore, color: "#F69111" },
         ].map(({ label, value, color }) => (
           <div key={label} className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">{label}</p>
@@ -175,7 +175,7 @@ export function SupplierOnboardingTab({ ventureId }: { ventureId: string }) {
       {/* Header + Add */}
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-bold text-gray-900">Supplier Register</h3>
-        <Button size="sm" onClick={openNew} className="gap-1.5 text-xs" style={{ background: "#51AF37" }}>
+        <Button size="sm" onClick={openNew} className="gap-1.5 text-xs" style={{ background: "#56A837" }}>
           <Plus size={13} /> Add Supplier
         </Button>
       </div>
@@ -274,7 +274,7 @@ export function SupplierOnboardingTab({ ventureId }: { ventureId: string }) {
             <div><Label className="text-xs">Notes</Label><Textarea value={form.notes} onChange={e => setForm(s => ({ ...s, notes: e.target.value }))} rows={2} /></div>
             <div className="flex gap-2 justify-end pt-2">
               <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button onClick={handleSave} disabled={upsert.isPending} style={{ background: "#51AF37" }}>
+              <Button onClick={handleSave} disabled={upsert.isPending} style={{ background: "#56A837" }}>
                 {upsert.isPending ? <Loader2 size={14} className="animate-spin" /> : "Save Supplier"}
               </Button>
             </div>
@@ -346,10 +346,10 @@ export function FactoryAuditTab({ ventureId }: { ventureId: string }) {
     <div className="space-y-6">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "Total Audits", value: audits.length, color: "#51AF37" },
+          { label: "Total Audits", value: audits.length, color: "#56A837" },
           { label: "Passed", value: passCount, color: "#22c55e" },
-          { label: "Follow-up Required", value: audits.filter((a: any) => a.status === "follow_up_required").length, color: "#F49C13" },
-          { label: "Avg Score", value: `${avgScore}%`, color: "#3A97D3" },
+          { label: "Follow-up Required", value: audits.filter((a: any) => a.status === "follow_up_required").length, color: "#F69111" },
+          { label: "Avg Score", value: `${avgScore}%`, color: "#3B85BA" },
         ].map(({ label, value, color }) => (
           <div key={label} className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">{label}</p>
@@ -360,7 +360,7 @@ export function FactoryAuditTab({ ventureId }: { ventureId: string }) {
 
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-bold text-gray-900">Factory Audit Records</h3>
-        <Button size="sm" onClick={openNew} className="gap-1.5 text-xs" style={{ background: "#51AF37" }}>
+        <Button size="sm" onClick={openNew} className="gap-1.5 text-xs" style={{ background: "#56A837" }}>
           <Plus size={13} /> Schedule Audit
         </Button>
       </div>
@@ -449,7 +449,7 @@ export function FactoryAuditTab({ ventureId }: { ventureId: string }) {
             <div><Label className="text-xs">Corrective Actions</Label><Textarea value={form.correctiveActions} onChange={e => setForm(s => ({ ...s, correctiveActions: e.target.value }))} rows={3} /></div>
             <div className="flex gap-2 justify-end pt-2">
               <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button onClick={handleSave} disabled={upsert.isPending} style={{ background: "#51AF37" }}>
+              <Button onClick={handleSave} disabled={upsert.isPending} style={{ background: "#56A837" }}>
                 {upsert.isPending ? <Loader2 size={14} className="animate-spin" /> : "Save Audit"}
               </Button>
             </div>
@@ -520,9 +520,9 @@ export function RfqManagerTab({ ventureId }: { ventureId: string }) {
     <div className="space-y-6">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "Total RFQs", value: rfqs.length, color: "#51AF37" },
+          { label: "Total RFQs", value: rfqs.length, color: "#56A837" },
           { label: "Draft", value: rfqs.filter((r: any) => r.status === "draft").length, color: "#6b7280" },
-          { label: "Sent", value: rfqs.filter((r: any) => r.status === "sent").length, color: "#3A97D3" },
+          { label: "Sent", value: rfqs.filter((r: any) => r.status === "sent").length, color: "#3B85BA" },
           { label: "Awarded", value: rfqs.filter((r: any) => r.status === "awarded").length, color: "#22c55e" },
         ].map(({ label, value, color }) => (
           <div key={label} className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
@@ -534,7 +534,7 @@ export function RfqManagerTab({ ventureId }: { ventureId: string }) {
 
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-bold text-gray-900">RFQ Templates</h3>
-        <Button size="sm" onClick={openNew} className="gap-1.5 text-xs" style={{ background: "#51AF37" }}>
+        <Button size="sm" onClick={openNew} className="gap-1.5 text-xs" style={{ background: "#56A837" }}>
           <Plus size={13} /> Create RFQ
         </Button>
       </div>
@@ -626,7 +626,7 @@ export function RfqManagerTab({ ventureId }: { ventureId: string }) {
             <div><Label className="text-xs">Notes</Label><Textarea value={form.notes} onChange={e => setForm(s => ({ ...s, notes: e.target.value }))} rows={2} /></div>
             <div className="flex gap-2 justify-end pt-2">
               <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button onClick={handleSave} disabled={upsert.isPending} style={{ background: "#51AF37" }}>
+              <Button onClick={handleSave} disabled={upsert.isPending} style={{ background: "#56A837" }}>
                 {upsert.isPending ? <Loader2 size={14} className="animate-spin" /> : "Save RFQ"}
               </Button>
             </div>
@@ -689,9 +689,9 @@ export function ApprovedSupplierListTab({ ventureId }: { ventureId: string }) {
     <div className="space-y-6">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "Total ASL", value: suppliers.length, color: "#51AF37" },
+          { label: "Total ASL", value: suppliers.length, color: "#56A837" },
           { label: "Active", value: suppliers.filter((s: any) => s.status === "active").length, color: "#22c55e" },
-          { label: "Probationary", value: suppliers.filter((s: any) => s.status === "probationary").length, color: "#F49C13" },
+          { label: "Probationary", value: suppliers.filter((s: any) => s.status === "probationary").length, color: "#F69111" },
           { label: "Suspended", value: suppliers.filter((s: any) => s.status === "suspended").length, color: "#ef4444" },
         ].map(({ label, value, color }) => (
           <div key={label} className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
@@ -703,7 +703,7 @@ export function ApprovedSupplierListTab({ ventureId }: { ventureId: string }) {
 
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-bold text-gray-900">Approved Supplier List</h3>
-        <Button size="sm" onClick={openNew} className="gap-1.5 text-xs" style={{ background: "#51AF37" }}>
+        <Button size="sm" onClick={openNew} className="gap-1.5 text-xs" style={{ background: "#56A837" }}>
           <Plus size={13} /> Add to ASL
         </Button>
       </div>
@@ -805,7 +805,7 @@ export function ApprovedSupplierListTab({ ventureId }: { ventureId: string }) {
             <div><Label className="text-xs">Notes</Label><Textarea value={form.notes} onChange={e => setForm(s => ({ ...s, notes: e.target.value }))} rows={2} /></div>
             <div className="flex gap-2 justify-end pt-2">
               <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button onClick={handleSave} disabled={upsert.isPending} style={{ background: "#51AF37" }}>
+              <Button onClick={handleSave} disabled={upsert.isPending} style={{ background: "#56A837" }}>
                 {upsert.isPending ? <Loader2 size={14} className="animate-spin" /> : "Save"}
               </Button>
             </div>
@@ -829,8 +829,8 @@ const CONTRACT_TYPE_LABELS: Record<string, string> = {
 
 const CONTRACT_TYPE_COLORS: Record<string, string> = {
   nnn: "#ef4444",
-  manufacturing: "#3A97D3",
-  tooling_ownership: "#F49C13",
+  manufacturing: "#3B85BA",
+  tooling_ownership: "#F69111",
   quality: "#22c55e",
   logistics_supply: "#8b5cf6",
 };
@@ -926,7 +926,7 @@ export function ContractTemplatesTab({ ventureId }: { ventureId: string }) {
 
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-bold text-gray-900">Contract Templates</h3>
-        <Button size="sm" onClick={openNew} className="gap-1.5 text-xs" style={{ background: "#51AF37" }}>
+        <Button size="sm" onClick={openNew} className="gap-1.5 text-xs" style={{ background: "#56A837" }}>
           <Plus size={13} /> New Contract
         </Button>
       </div>
@@ -963,7 +963,7 @@ export function ContractTemplatesTab({ ventureId }: { ventureId: string }) {
                       <span>{checkedCount}/{totalClauses}</span>
                     </div>
                     <div className="w-full h-1.5 rounded-full bg-gray-100 overflow-hidden">
-                      <div className="h-full rounded-full transition-all" style={{ width: `${totalClauses > 0 ? (checkedCount / totalClauses) * 100 : 0}%`, background: CONTRACT_TYPE_COLORS[c.contractType] ?? "#51AF37" }} />
+                      <div className="h-full rounded-full transition-all" style={{ width: `${totalClauses > 0 ? (checkedCount / totalClauses) * 100 : 0}%`, background: CONTRACT_TYPE_COLORS[c.contractType] ?? "#56A837" }} />
                     </div>
                   </div>
                 )}
@@ -1052,7 +1052,7 @@ export function ContractTemplatesTab({ ventureId }: { ventureId: string }) {
             <div><Label className="text-xs">Notes</Label><Textarea value={form.notes} onChange={e => setForm(s => ({ ...s, notes: e.target.value }))} rows={2} /></div>
             <div className="flex gap-2 justify-end pt-2">
               <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button onClick={handleSave} disabled={upsert.isPending} style={{ background: "#51AF37" }}>
+              <Button onClick={handleSave} disabled={upsert.isPending} style={{ background: "#56A837" }}>
                 {upsert.isPending ? <Loader2 size={14} className="animate-spin" /> : "Save Contract"}
               </Button>
             </div>

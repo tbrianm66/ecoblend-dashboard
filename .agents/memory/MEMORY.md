@@ -1,1 +1,4 @@
 - [Dev CSP must allow inline scripts](screenshot-blank-csp.md) — strict script-src crashes dev app ("can't detect preamble", blank page); dev needs 'unsafe-inline' gated on NODE_ENV.
+- [VRL dual-scale](vrl-dual-scale.md) — dashboard has two VRL scales (1–4 playbook level vs 0–9 score); Hypothesis Register drives the 0–9 score, never the 1–4 level.
+- [App shell scroll layout](shell-scroll-layout.md) — shell is fixed-height (h-screen + column overflow-y-auto); sticky/tab pages need a bounded flex-1 overflow-y-auto root, not nested scroll.
+- [Venture access model](venture-access-model.md) — no native ownership existed; venture writes use assertVentureAccess (admin/member/first-touch-claim) + venture_members table.

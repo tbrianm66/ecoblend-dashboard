@@ -12,15 +12,36 @@
     {
       "idx": 1,
       "version": "7",
-      "when": 1780341379133,
-      "tag": "0001_early_thunderbird",
+      "when": 1780414365460,
+      "tag": "0001_chunky_miracleman",
       "breakpoints": true
     },
     {
       "idx": 2,
       "version": "7",
-      "when": 1780349992576,
-      "tag": "0002_same_weapon_omega",
+      "when": 1780420559670,
+      "tag": "0002_yummy_prima",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1780595316394,
+      "tag": "0003_rapid_molten_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1780746144742,
+      "tag": "0004_majestic_big_bertha",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1780750332114,
+      "tag": "0005_amazing_callisto",
       "breakpoints": true
     }
   ]

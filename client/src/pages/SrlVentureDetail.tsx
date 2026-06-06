@@ -43,17 +43,17 @@ const SRL_LEVELS = [
   { level: 1, label: "Aware",       color: "#f59e0b", bg: "#fef3c7" },
   { level: 2, label: "Committed",   color: "#f97316", bg: "#ffedd5" },
   { level: 3, label: "Measured",    color: "#3b82f6", bg: "#dbeafe" },
-  { level: 4, label: "Optimising",  color: "#51AF37", bg: "#e8f7e3" },
-  { level: 5, label: "Exemplary",   color: "#2d9856", bg: "#d1fae5" },
+  { level: 4, label: "Optimising",  color: "#56A837", bg: "#E9F6E3" },
+  { level: 5, label: "Exemplary",   color: "#3D8526", bg: "#d1fae5" },
 ];
 
 const DIMS = ["ENV", "LCA", "SMF", "SOC", "ESG"] as const;
 type DimCode = typeof DIMS[number];
 
 const DIM_COLORS: Record<DimCode, string> = {
-  ENV: "#51AF37",
-  LCA: "#3A97D3",
-  SMF: "#F49C13",
+  ENV: "#56A837",
+  LCA: "#3B85BA",
+  SMF: "#F69111",
   SOC: "#8b5cf6",
   ESG: "#ec4899",
 };
@@ -83,7 +83,7 @@ function getSrlLevel(level: number) {
 function GateStatusBadge({ status }: { status: string | null | undefined }) {
   if (!status) return <span className="text-xs text-gray-400">—</span>;
   const map: Record<string, { color: string; icon: React.ReactNode }> = {
-    PASS: { color: "text-[#51AF37]", icon: <CheckCircle2 size={12} /> },
+    PASS: { color: "text-[#56A837]", icon: <CheckCircle2 size={12} /> },
     FAIL: { color: "text-red-500", icon: <XCircle size={12} /> },
     HOLDING: { color: "text-amber-500", icon: <Clock size={12} /> },
     REMEDIATION: { color: "text-orange-500", icon: <AlertTriangle size={12} /> },
@@ -105,7 +105,7 @@ function DimScoreCard({ dimCode, score, coverage, gatePass }: {
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-bold uppercase tracking-wider" style={{ color }}>{dimCode}</span>
         {gatePass
-          ? <ShieldCheck size={13} className="text-[#51AF37]" />
+          ? <ShieldCheck size={13} className="text-[#56A837]" />
           : <ShieldAlert size={13} className="text-amber-500" />}
       </div>
       <div className="text-2xl font-bold text-gray-900 mb-1" style={{ fontFamily: "'Prompt', sans-serif" }}>
@@ -231,7 +231,7 @@ function KpiSubmissionForm({ ventureId, onSuccess }: { ventureId: string; onSucc
         )}
 
         <Button
-          className="w-full mt-5 bg-[#51AF37] hover:bg-[#2d9856] text-white text-sm"
+          className="w-full mt-5 bg-[#56A837] hover:bg-[#3D8526] text-white text-sm"
           onClick={handleSubmit}
           disabled={submitMutation.isPending}
         >
@@ -322,19 +322,19 @@ export default function SrlVentureDetail() {
     datasets: [{
       label: "Covered Score",
       data: DIMS.map(d => dimScores[d]?.coveredScore ?? 0),
-      backgroundColor: "rgba(81, 175, 55, 0.15)",
-      borderColor: "#51AF37",
+      backgroundColor: "rgba(86, 168, 55, 0.15)",
+      borderColor: "#56A837",
       borderWidth: 2,
-      pointBackgroundColor: "#51AF37",
+      pointBackgroundColor: "#56A837",
       pointRadius: 4,
     }, {
       label: "Raw Score",
       data: DIMS.map(d => dimScores[d]?.rawScore ?? 0),
-      backgroundColor: "rgba(58, 151, 211, 0.08)",
-      borderColor: "#3A97D3",
+      backgroundColor: "rgba(59, 133, 186, 0.08)",
+      borderColor: "#3B85BA",
       borderWidth: 1.5,
       borderDash: [4, 4],
-      pointBackgroundColor: "#3A97D3",
+      pointBackgroundColor: "#3B85BA",
       pointRadius: 3,
     }],
   };
@@ -349,12 +349,12 @@ export default function SrlVentureDetail() {
     datasets: [{
       label: "Composite Score",
       data: trendSeries.map(s => s.compositeScore),
-      borderColor: "#51AF37",
-      backgroundColor: "rgba(81,175,55,0.08)",
+      borderColor: "#56A837",
+      backgroundColor: "rgba(86, 168, 55,0.08)",
       fill: true,
       tension: 0.4,
       pointRadius: 5,
-      pointBackgroundColor: "#51AF37",
+      pointBackgroundColor: "#56A837",
     }],
   };
 
@@ -376,8 +376,8 @@ export default function SrlVentureDetail() {
               <ChevronLeft size={13} /> Portfolio Overview
             </button>
             <div className="flex items-center gap-2 mb-1">
-              <Leaf size={16} className="text-[#51AF37]" />
-              <span className="text-xs font-semibold uppercase tracking-widest text-[#51AF37]">SRL Venture Detail</span>
+              <Leaf size={16} className="text-[#56A837]" />
+              <span className="text-xs font-semibold uppercase tracking-widest text-[#56A837]">SRL Venture Detail</span>
             </div>
             <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
               {ventureId}
@@ -410,7 +410,7 @@ export default function SrlVentureDetail() {
             </Button>
             <Button
               size="sm"
-              className="gap-1.5 text-xs bg-[#51AF37] hover:bg-[#2d9856] text-white"
+              className="gap-1.5 text-xs bg-[#56A837] hover:bg-[#3D8526] text-white"
               onClick={() => runAssessmentMutation.mutate({ ventureId, gateRef: selectedGate as any, lockAssessment: true })}
               disabled={runAssessmentMutation.isPending}
             >
@@ -437,7 +437,7 @@ export default function SrlVentureDetail() {
           </div>
           <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
             <div className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Trajectory</div>
-            <div className="text-3xl font-bold text-[#3A97D3]" style={{ fontFamily: "'Prompt', sans-serif" }}>
+            <div className="text-3xl font-bold text-[#3B85BA]" style={{ fontFamily: "'Prompt', sans-serif" }}>
               {trendsData?.trajectory.direction === "improving" ? "↑" : trendsData?.trajectory.direction === "declining" ? "↓" : "→"}
             </div>
             <div className="text-xs text-gray-400 mt-1">
@@ -448,7 +448,7 @@ export default function SrlVentureDetail() {
           </div>
           <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
             <div className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Gate Status</div>
-            <div className="text-3xl font-bold" style={{ color: gatePass ? "#51AF37" : "#ef4444", fontFamily: "'Prompt', sans-serif" }}>
+            <div className="text-3xl font-bold" style={{ color: gatePass ? "#56A837" : "#ef4444", fontFamily: "'Prompt', sans-serif" }}>
               {gatePass ? "PASS" : "FAIL"}
             </div>
             <div className="text-xs text-gray-400 mt-1">{GATE_THRESHOLDS[selectedGate]?.label}</div>
@@ -499,7 +499,7 @@ export default function SrlVentureDetail() {
               </h3>
               {trendsData?.trajectory.projected !== null && trendsData?.trajectory.projected !== undefined && (
                 <div className="text-xs text-gray-400">
-                  Projected next: <span className="font-semibold text-[#51AF37]">{trendsData.trajectory.projected.toFixed(1)}</span>
+                  Projected next: <span className="font-semibold text-[#56A837]">{trendsData.trajectory.projected.toFixed(1)}</span>
                 </div>
               )}
             </div>
@@ -561,7 +561,7 @@ export default function SrlVentureDetail() {
                     onClick={() => setSelectedGate(gateCode)}
                     className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all text-left ${
                       isSelected
-                        ? "border-[#51AF37] bg-[#e8f7e3]"
+                        ? "border-[#56A837] bg-[#E9F6E3]"
                         : "border-gray-100 hover:border-gray-200 bg-gray-50"
                     }`}
                   >
@@ -576,7 +576,7 @@ export default function SrlVentureDetail() {
                     </div>
                     <div className="flex items-center gap-1.5">
                       {pass
-                        ? <><CheckCircle2 size={14} className="text-[#51AF37]" /><span className="text-xs font-semibold text-[#51AF37]">PASS</span></>
+                        ? <><CheckCircle2 size={14} className="text-[#56A837]" /><span className="text-xs font-semibold text-[#56A837]">PASS</span></>
                         : <><XCircle size={14} className="text-red-400" /><span className="text-xs font-semibold text-red-400">FAIL</span></>
                       }
                     </div>
@@ -595,7 +595,7 @@ export default function SrlVentureDetail() {
                     className="h-full rounded-full transition-all duration-700"
                     style={{
                       width: `${Math.min(100, (compositeScore / gateThreshold) * 100)}%`,
-                      background: gatePass ? "#51AF37" : "#ef4444",
+                      background: gatePass ? "#56A837" : "#ef4444",
                     }}
                   />
                 </div>
@@ -625,7 +625,7 @@ export default function SrlVentureDetail() {
             <div className="p-5">
               {!riskConditions || riskConditions.length === 0 ? (
                 <div className="text-center py-8">
-                  <ShieldCheck size={28} className="text-[#51AF37] mx-auto mb-2" />
+                  <ShieldCheck size={28} className="text-[#56A837] mx-auto mb-2" />
                   <p className="text-sm text-gray-500">No active risk conditions</p>
                   <p className="text-xs text-gray-400 mt-1">Run an assessment to evaluate risks</p>
                 </div>

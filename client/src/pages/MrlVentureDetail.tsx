@@ -34,17 +34,17 @@ const MRL_LEVEL_COLORS: Record<number, string> = {
 };
 
 const SUBSYSTEM_META = [
-  { code: "pde",  label: "PDE",  name: "Process Design & Engineering",         icon: Cog,      color: "#3A97D3" },
+  { code: "pde",  label: "PDE",  name: "Process Design & Engineering",         icon: Cog,      color: "#3B85BA" },
   { code: "scie", label: "SCIE", name: "Supply Chain & Integration Execution",  icon: Globe,    color: "#7c3aed" },
   { code: "csm",  label: "CSM",  name: "Cost Structure & Manufacturability",    icon: BarChart3, color: "#d97706" },
   { code: "qce",  label: "QCE",  name: "Quality, Compliance & Export",          icon: Shield,   color: "#16a34a" },
-  { code: "sil",  label: "SIL",  name: "Sustainability Integration Level",      icon: Leaf,     color: "#51AF37" },
+  { code: "sil",  label: "SIL",  name: "Sustainability Integration Level",      icon: Leaf,     color: "#56A837" },
 ];
 
 const COMPLIANCE_STATUS_COLORS: Record<string, string> = {
   "Not Started": "#6b7280",
   "Gap Analysis": "#d97706",
-  "In Progress": "#3A97D3",
+  "In Progress": "#3B85BA",
   "Submitted": "#7c3aed",
   "Certified": "#16a34a",
   "Expired": "#dc2626",
@@ -144,8 +144,8 @@ export default function MrlVentureDetail() {
           <div className="flex items-center gap-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <Factory size={16} style={{ color: "#3A97D3" }} />
-                <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "#3A97D3" }}>MRL Venture Detail</span>
+                <Factory size={16} style={{ color: "#3B85BA" }} />
+                <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "#3B85BA" }}>MRL Venture Detail</span>
               </div>
               <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
                 {selectedVenture}
@@ -172,7 +172,7 @@ export default function MrlVentureDetail() {
               variant="outline"
               className="gap-1.5 text-xs"
               onClick={() => setShowAssessForm(s => !s)}
-              style={{ borderColor: "#3A97D3", color: "#3A97D3" }}
+              style={{ borderColor: "#3B85BA", color: "#3B85BA" }}
             >
               <Plus size={13} /> New Assessment
             </Button>
@@ -232,7 +232,7 @@ export default function MrlVentureDetail() {
                 size="sm"
                 onClick={() => createAssessment.mutate({ ventureId: selectedVenture, scores, trlLevel, region })}
                 disabled={createAssessment.isPending}
-                style={{ background: "#3A97D3", color: "#fff" }}
+                style={{ background: "#3B85BA", color: "#fff" }}
               >
                 {createAssessment.isPending ? "Submitting…" : "Submit Assessment"}
               </Button>
@@ -251,8 +251,8 @@ export default function MrlVentureDetail() {
               onClick={() => setActiveTab(id)}
               className="flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors"
               style={{
-                borderColor: activeTab === id ? "#3A97D3" : "transparent",
-                color: activeTab === id ? "#3A97D3" : "#6b7280",
+                borderColor: activeTab === id ? "#3B85BA" : "transparent",
+                color: activeTab === id ? "#3B85BA" : "#6b7280",
               }}
             >
               <Icon size={14} />
@@ -360,7 +360,7 @@ export default function MrlVentureDetail() {
                           <span className="font-bold" style={{ color: MRL_LEVEL_COLORS[h.mrlLevel] ?? "#6b7280" }}>MRL-{h.mrlLevel}</span>
                           <span className="text-gray-500">{h.mrlLabel?.replace(/^MRL-\d+:\s*/, "")}</span>
                           <span className="text-gray-400">Composite: {h.compositeScore}</span>
-                          {i === 0 && <span className="px-1.5 py-0.5 rounded text-xs font-bold" style={{ background: "#3A97D320", color: "#3A97D3" }}>Latest</span>}
+                          {i === 0 && <span className="px-1.5 py-0.5 rounded text-xs font-bold" style={{ background: "#3B85BA20", color: "#3B85BA" }}>Latest</span>}
                         </div>
                       ))}
                     </div>
@@ -519,7 +519,7 @@ export default function MrlVentureDetail() {
                       <div className="text-xs text-gray-400">Scope 3 tCO₂e</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold" style={{ color: "#51AF37" }}>{l.lcsaScore ?? "—"}</div>
+                      <div className="text-2xl font-bold" style={{ color: "#56A837" }}>{l.lcsaScore ?? "—"}</div>
                       <div className="text-xs text-gray-400">LCSA Score /100</div>
                     </div>
                   </div>

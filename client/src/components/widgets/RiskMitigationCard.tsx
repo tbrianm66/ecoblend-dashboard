@@ -24,9 +24,9 @@ interface RiskMitigationCardProps {
 
 const RISK_LEVEL_CONFIG: Record<string, { color: string; bg: string }> = {
   Critical: { color: "#ef4444", bg: "#fef2f2" },
-  High: { color: "#F49C13", bg: "#fffbeb" },
-  Medium: { color: "#3A97D3", bg: "#eff6ff" },
-  Low: { color: "#51AF37", bg: "#f0fdf4" },
+  High: { color: "#F69111", bg: "#fffbeb" },
+  Medium: { color: "#3B85BA", bg: "#eff6ff" },
+  Low: { color: "#56A837", bg: "#f0fdf4" },
 };
 
 export default function RiskMitigationCard({ ventureId, module = "Risk Intelligence" }: RiskMitigationCardProps) {
@@ -48,7 +48,7 @@ export default function RiskMitigationCard({ ventureId, module = "Risk Intellige
       <WidgetSectionHeader
         title="Risk Mitigation"
         badge={data.totalHighRisks > 0 ? `${data.totalHighRisks} high/critical` : "No critical risks"}
-        badgeColor={data.totalHighRisks > 0 ? "#ef4444" : "#51AF37"}
+        badgeColor={data.totalHighRisks > 0 ? "#ef4444" : "#56A837"}
         icon={<ShieldAlert size={14} />}
       />
 

@@ -66,21 +66,21 @@ const TRIGGER_META: Record<
     icon: <FlaskConical size={14} />,
     source: "University Playbook",
     target: "Experiment Log (TRL Evidence)",
-    color: "#3A97D3",
+    color: "#3B85BA",
   },
   audit_failed: {
     label: "Audit Failed",
     icon: <ClipboardCheck size={14} />,
     source: "China Mfg Playbook",
     target: "Venture Project Management (CAPA Task)",
-    color: "#F49C13",
+    color: "#F69111",
   },
   supplier_approved: {
     label: "Supplier Approved",
     icon: <UserCheck size={14} />,
     source: "China Mfg Playbook",
     target: "Approved Supplier List",
-    color: "#51AF37",
+    color: "#56A837",
   },
   deal_closed_won: {
     label: "Deal Closed Won",
@@ -154,7 +154,7 @@ function ManualFireDialog({ onClose }: { onClose: () => void }) {
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Play size={16} style={{ color: "#51AF37" }} />
+            <Play size={16} style={{ color: "#56A837" }} />
             Fire Trigger Manually
           </DialogTitle>
         </DialogHeader>
@@ -215,7 +215,7 @@ function ManualFireDialog({ onClose }: { onClose: () => void }) {
           <Button
             onClick={handleFire}
             disabled={fireMutation.isPending}
-            style={{ background: "#51AF37", color: "white" }}
+            style={{ background: "#56A837", color: "white" }}
           >
             {fireMutation.isPending ? <RefreshCw size={14} className="animate-spin mr-2" /> : <Play size={14} className="mr-2" />}
             Fire Trigger
@@ -333,7 +333,7 @@ function LogDetailDialog({ logId, onClose }: { logId: number; onClose: () => voi
             <Button
               onClick={handleRerun}
               disabled={rerunMutation.isPending}
-              style={{ background: "#F49C13", color: "white" }}
+              style={{ background: "#F69111", color: "white" }}
             >
               {rerunMutation.isPending ? <RefreshCw size={14} className="animate-spin mr-2" /> : <RefreshCw size={14} className="mr-2" />}
               Re-run Trigger
@@ -371,13 +371,13 @@ export default function WorkflowEngine() {
       label: "Total Triggers Fired",
       value: statsLoading ? "—" : stats?.totalFired ?? 0,
       icon: <Zap size={18} />,
-      color: "#3A97D3",
+      color: "#3B85BA",
     },
     {
       label: "Successful",
       value: statsLoading ? "—" : stats?.totalSuccess ?? 0,
       icon: <CheckCircle2 size={18} />,
-      color: "#51AF37",
+      color: "#56A837",
     },
     {
       label: "Failed",
@@ -393,7 +393,7 @@ export default function WorkflowEngine() {
         ? `${Math.round((stats.totalSuccess / stats.totalFired) * 100)}%`
         : "N/A",
       icon: <Activity size={18} />,
-      color: "#F49C13",
+      color: "#F69111",
     },
   ];
 
@@ -406,7 +406,7 @@ export default function WorkflowEngine() {
             <div className="flex items-center gap-2 mb-1">
               <span
                 className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded"
-                style={{ background: "#51AF3715", color: "#51AF37" }}
+                style={{ background: "#56A83715", color: "#56A837" }}
               >
                 Venture OS
               </span>
@@ -422,7 +422,7 @@ export default function WorkflowEngine() {
           </div>
           <Button
             onClick={() => setShowFireDialog(true)}
-            style={{ background: "#51AF37", color: "white" }}
+            style={{ background: "#56A837", color: "white" }}
             className="gap-2"
           >
             <Play size={14} />
@@ -494,7 +494,7 @@ export default function WorkflowEngine() {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base font-bold flex items-center gap-2">
-                <Activity size={16} style={{ color: "#3A97D3" }} />
+                <Activity size={16} style={{ color: "#3B85BA" }} />
                 Trigger Log
                 {logData && (
                   <span className="text-xs font-normal text-muted-foreground ml-1">

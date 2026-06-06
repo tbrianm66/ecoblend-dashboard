@@ -80,17 +80,17 @@ function OverviewTab({ ventureId }: { ventureId: VentureId }) {
   const { data: summary } = trpc.uniSummary.getSummary.useQuery({ ventureId });
 
   const WORKFLOW_STAGES = [
-    { id: "problem_definition", label: "Problem Definition", color: "#3A97D3" },
-    { id: "research_discovery", label: "Research & Discovery", color: "#F49C13" },
+    { id: "problem_definition", label: "Problem Definition", color: "#3B85BA" },
+    { id: "research_discovery", label: "Research & Discovery", color: "#F69111" },
     { id: "hypothesis_development", label: "Hypothesis Development", color: "#8B5CF6" },
-    { id: "validation", label: "Validation", color: "#51AF37" },
+    { id: "validation", label: "Validation", color: "#56A837" },
     { id: "commercialisation", label: "Commercialisation", color: "#EF4444" },
   ];
 
   const STRATEGIC_OBJECTIVES = [
-    { icon: GraduationCap, label: "Establish venture creation capability", color: "#3A97D3" },
-    { icon: BookOpen, label: "Integrate academic research with commercialisation", color: "#51AF37" },
-    { icon: TrendingUp, label: "Create new revenue streams", color: "#F49C13" },
+    { icon: GraduationCap, label: "Establish venture creation capability", color: "#3B85BA" },
+    { icon: BookOpen, label: "Integrate academic research with commercialisation", color: "#56A837" },
+    { icon: TrendingUp, label: "Create new revenue streams", color: "#F69111" },
     { icon: Building2, label: "Strengthen industry collaboration", color: "#8B5CF6" },
   ];
 
@@ -99,10 +99,10 @@ function OverviewTab({ ventureId }: { ventureId: VentureId }) {
       {/* KPI Tiles */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "University Partners", value: summary?.activePartners ?? 0, sub: `of ${summary?.totalPartners ?? 0} total`, icon: GraduationCap, color: "#3A97D3" },
-          { label: "Research Projects", value: summary?.activeResearch ?? 0, sub: `of ${summary?.totalResearch ?? 0} total`, icon: BookOpen, color: "#51AF37" },
+          { label: "University Partners", value: summary?.activePartners ?? 0, sub: `of ${summary?.totalPartners ?? 0} total`, icon: GraduationCap, color: "#3B85BA" },
+          { label: "Research Projects", value: summary?.activeResearch ?? 0, sub: `of ${summary?.totalResearch ?? 0} total`, icon: BookOpen, color: "#56A837" },
           { label: "Active Talent", value: summary?.activeTalent ?? 0, sub: `of ${summary?.totalTalent ?? 0} enrolled`, icon: Users, color: "#8B5CF6" },
-          { label: "Roadmap Progress", value: `${summary?.roadmapProgress ?? 0}%`, sub: `${summary?.completedMilestones ?? 0}/${summary?.totalMilestones ?? 0} milestones`, icon: Map, color: "#F49C13" },
+          { label: "Roadmap Progress", value: `${summary?.roadmapProgress ?? 0}%`, sub: `${summary?.completedMilestones ?? 0}/${summary?.totalMilestones ?? 0} milestones`, icon: Map, color: "#F69111" },
         ].map(({ label, value, sub, icon: Icon, color }) => (
           <Card key={label} className="border shadow-sm">
             <CardContent className="p-5 flex items-center gap-4">
@@ -129,10 +129,10 @@ function OverviewTab({ ventureId }: { ventureId: VentureId }) {
             <p className="text-xs text-gray-400">University manages business risk; founders manage product risk</p>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="rounded-xl p-4 border" style={{ background: "#3A97D308", borderColor: "#3A97D330" }}>
+            <div className="rounded-xl p-4 border" style={{ background: "#3B85BA08", borderColor: "#3B85BA30" }}>
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "#3A97D318" }}>
-                  <Building2 size={16} style={{ color: "#3A97D3" }} />
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "#3B85BA18" }}>
+                  <Building2 size={16} style={{ color: "#3B85BA" }} />
                 </div>
                 <div>
                   <p className="text-sm font-bold text-gray-900">Business Risk</p>
@@ -141,14 +141,14 @@ function OverviewTab({ ventureId }: { ventureId: VentureId }) {
               </div>
               <div className="grid grid-cols-3 gap-2 mt-3">
                 {["Market Analysis", "Strategy", "Commercialisation"].map(item => (
-                  <div key={item} className="text-xs text-center py-1.5 px-2 rounded-lg font-medium" style={{ background: "#3A97D315", color: "#3A97D3" }}>{item}</div>
+                  <div key={item} className="text-xs text-center py-1.5 px-2 rounded-lg font-medium" style={{ background: "#3B85BA15", color: "#3B85BA" }}>{item}</div>
                 ))}
               </div>
             </div>
-            <div className="rounded-xl p-4 border" style={{ background: "#51AF3708", borderColor: "#51AF3730" }}>
+            <div className="rounded-xl p-4 border" style={{ background: "#56A83708", borderColor: "#56A83730" }}>
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "#51AF3718" }}>
-                  <Lightbulb size={16} style={{ color: "#51AF37" }} />
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "#56A83718" }}>
+                  <Lightbulb size={16} style={{ color: "#56A837" }} />
                 </div>
                 <div>
                   <p className="text-sm font-bold text-gray-900">Product Risk</p>
@@ -157,7 +157,7 @@ function OverviewTab({ ventureId }: { ventureId: VentureId }) {
               </div>
               <div className="grid grid-cols-3 gap-2 mt-3">
                 {["Technology", "Engineering", "Validation"].map(item => (
-                  <div key={item} className="text-xs text-center py-1.5 px-2 rounded-lg font-medium" style={{ background: "#51AF3715", color: "#51AF37" }}>{item}
+                  <div key={item} className="text-xs text-center py-1.5 px-2 rounded-lg font-medium" style={{ background: "#56A83715", color: "#56A837" }}>{item}
                   </div>
                 ))}
               </div>
@@ -218,9 +218,9 @@ function OverviewTab({ ventureId }: { ventureId: VentureId }) {
         <CardContent>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {[
-              { label: "Research Database", value: summary?.totalResearch ?? 0, icon: BookOpen, color: "#3A97D3" },
-              { label: "Talent Network", value: summary?.totalTalent ?? 0, icon: Users, color: "#51AF37" },
-              { label: "Industry Engagements", value: summary?.totalIndustry ?? 0, icon: Building2, color: "#F49C13" },
+              { label: "Research Database", value: summary?.totalResearch ?? 0, icon: BookOpen, color: "#3B85BA" },
+              { label: "Talent Network", value: summary?.totalTalent ?? 0, icon: Users, color: "#56A837" },
+              { label: "Industry Engagements", value: summary?.totalIndustry ?? 0, icon: Building2, color: "#F69111" },
               { label: "Governance Docs", value: `${summary?.signedDocs ?? 0}/${summary?.totalGovernance ?? 0} signed`, icon: FileText, color: "#8B5CF6" },
             ].map(({ label, value, icon: Icon, color }) => (
               <div key={label} className="rounded-xl p-3 border text-center" style={{ background: `${color}08`, borderColor: `${color}25` }}>
@@ -248,7 +248,7 @@ function ResearchTab({ ventureId }: { ventureId: VentureId }) {
   const [editing, setEditing] = useState<number | null>(null);
   const [form, setForm] = useState({ title: "", researchType: "business", description: "", objective: "", methodology: "", status: "planned", leadResearcher: "", budget: "", keyFindings: "", trlImpact: "" });
 
-  const TYPE_COLORS: Record<string, string> = { business: "#3A97D3", technical: "#51AF37", applied: "#F49C13" };
+  const TYPE_COLORS: Record<string, string> = { business: "#3B85BA", technical: "#56A837", applied: "#F69111" };
 
   function openNew() { setEditing(null); setForm({ title: "", researchType: "business", description: "", objective: "", methodology: "", status: "planned", leadResearcher: "", budget: "", keyFindings: "", trlImpact: "" }); setOpen(true); }
   function openEdit(p: typeof projects extends (infer T)[] | undefined ? T : never) {
@@ -276,7 +276,7 @@ function ResearchTab({ ventureId }: { ventureId: VentureId }) {
           <h3 className="text-base font-bold text-gray-900">Research Projects</h3>
           <p className="text-xs text-gray-400">Business, technical, and applied research linked to ventures</p>
         </div>
-        <Button size="sm" onClick={openNew} className="gap-1.5 text-xs" style={{ background: "#3A97D3" }}>
+        <Button size="sm" onClick={openNew} className="gap-1.5 text-xs" style={{ background: "#3B85BA" }}>
           <Plus size={13} /> Add Research
         </Button>
       </div>
@@ -366,7 +366,7 @@ function ResearchTab({ ventureId }: { ventureId: VentureId }) {
               </div>
               <Textarea rows={3} value={form.keyFindings} onChange={e => setForm(f => ({ ...f, keyFindings: e.target.value }))} placeholder="Key research findings..." />
             </div>
-            <Button className="w-full" style={{ background: "#3A97D3" }} onClick={() => upsert.mutate({ ...form, id: editing ?? undefined, ventureId, researchType: form.researchType as "business" | "technical" | "applied", status: form.status as "planned" | "active" | "completed" | "published" | "paused", trlImpact: form.trlImpact ? parseInt(form.trlImpact) : undefined })} disabled={!form.title || upsert.isPending}>
+            <Button className="w-full" style={{ background: "#3B85BA" }} onClick={() => upsert.mutate({ ...form, id: editing ?? undefined, ventureId, researchType: form.researchType as "business" | "technical" | "applied", status: form.status as "planned" | "active" | "completed" | "published" | "paused", trlImpact: form.trlImpact ? parseInt(form.trlImpact) : undefined })} disabled={!form.title || upsert.isPending}>
               {editing ? "Update" : "Add"} Research
             </Button>
           </div>
@@ -387,7 +387,7 @@ function TalentTab({ ventureId }: { ventureId: VentureId }) {
   const [editing, setEditing] = useState<number | null>(null);
   const [form, setForm] = useState({ name: "", roleType: "student", institution: "", skills: "", availability: "part_time", assignedProject: "", stipend: "", status: "active", notes: "" });
 
-  const ROLE_COLORS: Record<string, string> = { student: "#3A97D3", academic: "#51AF37", industry_expert: "#F49C13", venture_lead: "#8B5CF6" };
+  const ROLE_COLORS: Record<string, string> = { student: "#3B85BA", academic: "#56A837", industry_expert: "#F69111", venture_lead: "#8B5CF6" };
   const ROLE_ICONS: Record<string, typeof Users> = { student: GraduationCap, academic: BookOpen, industry_expert: Building2, venture_lead: Lightbulb };
 
   function openNew() { setEditing(null); setForm({ name: "", roleType: "student", institution: "", skills: "", availability: "part_time", assignedProject: "", stipend: "", status: "active", notes: "" }); setOpen(true); }
@@ -410,7 +410,7 @@ function TalentTab({ ventureId }: { ventureId: VentureId }) {
           <h3 className="text-base font-bold text-gray-900">Talent Network</h3>
           <p className="text-xs text-gray-400">Students, academics, industry experts, and venture leads</p>
         </div>
-        <Button size="sm" onClick={openNew} className="gap-1.5 text-xs" style={{ background: "#51AF37" }}>
+        <Button size="sm" onClick={openNew} className="gap-1.5 text-xs" style={{ background: "#56A837" }}>
           <Plus size={13} /> Add Talent
         </Button>
       </div>
@@ -517,7 +517,7 @@ function TalentTab({ ventureId }: { ventureId: VentureId }) {
                 </Select>
               </div>
             </div>
-            <Button className="w-full" style={{ background: "#51AF37" }} onClick={() => upsert.mutate({ ...form, id: editing ?? undefined, ventureId, roleType: form.roleType as "student" | "academic" | "industry_expert" | "venture_lead", availability: form.availability as "full_time" | "part_time" | "advisory" | "internship", status: form.status as "active" | "inactive" | "onboarding" | "completed", stipend: form.stipend || undefined })} disabled={!form.name || upsert.isPending}>
+            <Button className="w-full" style={{ background: "#56A837" }} onClick={() => upsert.mutate({ ...form, id: editing ?? undefined, ventureId, roleType: form.roleType as "student" | "academic" | "industry_expert" | "venture_lead", availability: form.availability as "full_time" | "part_time" | "advisory" | "internship", status: form.status as "active" | "inactive" | "onboarding" | "completed", stipend: form.stipend || undefined })} disabled={!form.name || upsert.isPending}>
               {editing ? "Update" : "Add"} Talent
             </Button>
           </div>
@@ -540,10 +540,10 @@ function VentureWorkflowTab({ ventureId }: { ventureId: VentureId }) {
   const [form, setForm] = useState({ projectName: "", stage: "problem_definition", problemStatement: "", researchFindings: "", hypothesis: "", validationMethod: "", validationResult: "", commercialisationPlan: "", notes: "" });
 
   const STAGES = [
-    { id: "problem_definition", label: "Problem Definition", color: "#3A97D3", icon: Lightbulb },
-    { id: "research_discovery", label: "Research & Discovery", color: "#F49C13", icon: BookOpen },
+    { id: "problem_definition", label: "Problem Definition", color: "#3B85BA", icon: Lightbulb },
+    { id: "research_discovery", label: "Research & Discovery", color: "#F69111", icon: BookOpen },
     { id: "hypothesis_development", label: "Hypothesis Development", color: "#8B5CF6", icon: GitBranch },
-    { id: "validation", label: "Validation", color: "#51AF37", icon: CheckCircle2 },
+    { id: "validation", label: "Validation", color: "#56A837", icon: CheckCircle2 },
     { id: "commercialisation", label: "Commercialisation", color: "#EF4444", icon: TrendingUp },
   ];
 
@@ -674,7 +674,7 @@ function IndustryTab({ ventureId }: { ventureId: VentureId }) {
   const [editing, setEditing] = useState<number | null>(null);
   const [form, setForm] = useState({ companyName: "", engagementType: "sponsored_research", description: "", contactName: "", contactEmail: "", value: "", status: "active", deliverables: "", notes: "" });
 
-  const TYPE_COLORS: Record<string, string> = { sponsored_research: "#3A97D3", consulting: "#51AF37", venture_partnership: "#8B5CF6", internship_pipeline: "#F49C13", joint_ip: "#EF4444" };
+  const TYPE_COLORS: Record<string, string> = { sponsored_research: "#3B85BA", consulting: "#56A837", venture_partnership: "#8B5CF6", internship_pipeline: "#F69111", joint_ip: "#EF4444" };
 
   function openNew() { setEditing(null); setForm({ companyName: "", engagementType: "sponsored_research", description: "", contactName: "", contactEmail: "", value: "", status: "active", deliverables: "", notes: "" }); setOpen(true); }
   function openEdit(e: NonNullable<typeof engagements>[number]) {
@@ -692,7 +692,7 @@ function IndustryTab({ ventureId }: { ventureId: VentureId }) {
           <h3 className="text-base font-bold text-gray-900">Industry Engagements</h3>
           <p className="text-xs text-gray-400">Sponsored research, consulting, partnerships, internships</p>
         </div>
-        <Button size="sm" onClick={openNew} className="gap-1.5 text-xs" style={{ background: "#F49C13" }}>
+        <Button size="sm" onClick={openNew} className="gap-1.5 text-xs" style={{ background: "#F69111" }}>
           <Plus size={13} /> Add Engagement
         </Button>
       </div>
@@ -780,7 +780,7 @@ function IndustryTab({ ventureId }: { ventureId: VentureId }) {
               <div><Label>Value (£)</Label><Input type="number" value={form.value} onChange={e => setForm(f => ({ ...f, value: e.target.value }))} /></div>
             </div>
             <div><Label>Deliverables</Label><Textarea rows={2} value={form.deliverables} onChange={e => setForm(f => ({ ...f, deliverables: e.target.value }))} /></div>
-            <Button className="w-full" style={{ background: "#F49C13" }} onClick={() => upsert.mutate({ ...form, id: editing ?? undefined, ventureId, engagementType: form.engagementType as "sponsored_research" | "consulting" | "venture_partnership" | "internship_pipeline" | "joint_ip", status: form.status as "active" | "completed" | "negotiating" | "paused" | "cancelled", value: form.value || undefined })} disabled={!form.companyName || upsert.isPending}>
+            <Button className="w-full" style={{ background: "#F69111" }} onClick={() => upsert.mutate({ ...form, id: editing ?? undefined, ventureId, engagementType: form.engagementType as "sponsored_research" | "consulting" | "venture_partnership" | "internship_pipeline" | "joint_ip", status: form.status as "active" | "completed" | "negotiating" | "paused" | "cancelled", value: form.value || undefined })} disabled={!form.companyName || upsert.isPending}>
               {editing ? "Update" : "Add"} Engagement
             </Button>
           </div>
@@ -801,7 +801,7 @@ function GovernanceTab({ ventureId }: { ventureId: VentureId }) {
   const [editing, setEditing] = useState<number | null>(null);
   const [form, setForm] = useState({ docType: "student_agreement", title: "", parties: "", status: "draft", documentUrl: "", notes: "" });
 
-  const DOC_COLORS: Record<string, string> = { student_agreement: "#3A97D3", ip_agreement: "#8B5CF6", nda: "#EF4444", ethics_approval: "#51AF37", data_protection: "#F49C13", collaboration_agreement: "#6b7280" };
+  const DOC_COLORS: Record<string, string> = { student_agreement: "#3B85BA", ip_agreement: "#8B5CF6", nda: "#EF4444", ethics_approval: "#56A837", data_protection: "#F69111", collaboration_agreement: "#6b7280" };
   const DOC_ICONS: Record<string, typeof FileText> = { student_agreement: GraduationCap, ip_agreement: Shield, nda: FileText, ethics_approval: CheckCircle2, data_protection: Database, collaboration_agreement: Building2 };
 
   function openNew() { setEditing(null); setForm({ docType: "student_agreement", title: "", parties: "", status: "draft", documentUrl: "", notes: "" }); setOpen(true); }
@@ -934,7 +934,7 @@ function DataStrategyTab({ ventureId }: { ventureId: VentureId }) {
   const [editing, setEditing] = useState<number | null>(null);
   const [form, setForm] = useState({ sourceType: "interview", title: "", description: "", sampleSize: "", collectionMethod: "", status: "planned", keyInsights: "", linkedHypothesis: "" });
 
-  const TYPE_COLORS: Record<string, string> = { interview: "#3A97D3", survey: "#51AF37", secondary_research: "#F49C13", ai_analysis: "#8B5CF6", focus_group: "#EF4444", observation: "#6b7280" };
+  const TYPE_COLORS: Record<string, string> = { interview: "#3B85BA", survey: "#56A837", secondary_research: "#F69111", ai_analysis: "#8B5CF6", focus_group: "#EF4444", observation: "#6b7280" };
   const TYPE_ICONS: Record<string, typeof Users> = { interview: Users, survey: FileText, secondary_research: BookOpen, ai_analysis: Sparkles, focus_group: Users, observation: Globe };
 
   function openNew() { setEditing(null); setForm({ sourceType: "interview", title: "", description: "", sampleSize: "", collectionMethod: "", status: "planned", keyInsights: "", linkedHypothesis: "" }); setOpen(true); }
@@ -953,7 +953,7 @@ function DataStrategyTab({ ventureId }: { ventureId: VentureId }) {
           <h3 className="text-base font-bold text-gray-900">Data Strategy</h3>
           <p className="text-xs text-gray-400">Hybrid model: interviews, surveys, secondary research, AI analysis</p>
         </div>
-        <Button size="sm" onClick={openNew} className="gap-1.5 text-xs" style={{ background: "#3A97D3" }}>
+        <Button size="sm" onClick={openNew} className="gap-1.5 text-xs" style={{ background: "#3B85BA" }}>
           <Plus size={13} /> Add Source
         </Button>
       </div>
@@ -1055,7 +1055,7 @@ function DataStrategyTab({ ventureId }: { ventureId: VentureId }) {
             </div>
             <div><Label>Linked Hypothesis</Label><Input value={form.linkedHypothesis} onChange={e => setForm(f => ({ ...f, linkedHypothesis: e.target.value }))} /></div>
             <div><Label>Key Insights</Label><Textarea rows={2} value={form.keyInsights} onChange={e => setForm(f => ({ ...f, keyInsights: e.target.value }))} /></div>
-            <Button className="w-full" style={{ background: "#3A97D3" }} onClick={() => upsert.mutate({ ...form, id: editing ?? undefined, ventureId, sourceType: form.sourceType as "interview" | "survey" | "secondary_research" | "ai_analysis" | "focus_group" | "observation", status: form.status as "planned" | "in_progress" | "completed" | "analysed", sampleSize: form.sampleSize ? parseInt(form.sampleSize) : undefined })} disabled={!form.title || upsert.isPending}>
+            <Button className="w-full" style={{ background: "#3B85BA" }} onClick={() => upsert.mutate({ ...form, id: editing ?? undefined, ventureId, sourceType: form.sourceType as "interview" | "survey" | "secondary_research" | "ai_analysis" | "focus_group" | "observation", status: form.status as "planned" | "in_progress" | "completed" | "analysed", sampleSize: form.sampleSize ? parseInt(form.sampleSize) : undefined })} disabled={!form.title || upsert.isPending}>
               {editing ? "Update" : "Add"} Source
             </Button>
           </div>
@@ -1078,9 +1078,9 @@ function RoadmapTab({ ventureId }: { ventureId: VentureId }) {
   const [form, setForm] = useState({ phase: "setup", title: "", description: "", owner: "", status: "pending", priority: "medium", notes: "" });
 
   const PHASES = [
-    { id: "setup", label: "Phase 1: Setup (0–3 months)", color: "#3A97D3", description: "Infrastructure, agreements, partner onboarding" },
-    { id: "pilot", label: "Phase 2: Pilot (3–6 months)", color: "#F49C13", description: "First ventures, initial research, talent deployment" },
-    { id: "scale", label: "Phase 3: Scale (6–12 months)", color: "#51AF37", description: "Multiple ventures, industry partnerships, commercialisation" },
+    { id: "setup", label: "Phase 1: Setup (0–3 months)", color: "#3B85BA", description: "Infrastructure, agreements, partner onboarding" },
+    { id: "pilot", label: "Phase 2: Pilot (3–6 months)", color: "#F69111", description: "First ventures, initial research, talent deployment" },
+    { id: "scale", label: "Phase 3: Scale (6–12 months)", color: "#56A837", description: "Multiple ventures, industry partnerships, commercialisation" },
   ];
 
   function openNew() { setEditing(null); setForm({ phase: "setup", title: "", description: "", owner: "", status: "pending", priority: "medium", notes: "" }); setOpen(true); }
@@ -1103,7 +1103,7 @@ function RoadmapTab({ ventureId }: { ventureId: VentureId }) {
           <h3 className="text-base font-bold text-gray-900">Implementation Roadmap</h3>
           <p className="text-xs text-gray-400">3-phase university venture creation rollout</p>
         </div>
-        <Button size="sm" onClick={openNew} className="gap-1.5 text-xs" style={{ background: "#51AF37" }}>
+        <Button size="sm" onClick={openNew} className="gap-1.5 text-xs" style={{ background: "#56A837" }}>
           <Plus size={13} /> Add Milestone
         </Button>
       </div>
@@ -1208,7 +1208,7 @@ function RoadmapTab({ ventureId }: { ventureId: VentureId }) {
                 </Select>
               </div>
             </div>
-            <Button className="w-full" style={{ background: "#51AF37" }} onClick={() => upsert.mutate({ ...form, id: editing ?? undefined, ventureId, phase: form.phase as "setup" | "pilot" | "scale", priority: form.priority as "low" | "medium" | "high" | "critical", status: form.status as "pending" | "in_progress" | "completed" | "delayed" | "cancelled" })} disabled={!form.title || upsert.isPending}>
+            <Button className="w-full" style={{ background: "#56A837" }} onClick={() => upsert.mutate({ ...form, id: editing ?? undefined, ventureId, phase: form.phase as "setup" | "pilot" | "scale", priority: form.priority as "low" | "medium" | "high" | "critical", status: form.status as "pending" | "in_progress" | "completed" | "delayed" | "cancelled" })} disabled={!form.title || upsert.isPending}>
               {editing ? "Update" : "Add"} Milestone
             </Button>
           </div>
@@ -1229,7 +1229,7 @@ function PartnersTab({ ventureId }: { ventureId: VentureId }) {
   const [editing, setEditing] = useState<number | null>(null);
   const [form, setForm] = useState({ name: "", type: "university", country: "", department: "", contactName: "", contactEmail: "", partnershipType: "research", status: "active", notes: "" });
 
-  const TYPE_COLORS: Record<string, string> = { university: "#3A97D3", research_institute: "#51AF37", polytechnic: "#F49C13", industry_lab: "#8B5CF6" };
+  const TYPE_COLORS: Record<string, string> = { university: "#3B85BA", research_institute: "#56A837", polytechnic: "#F69111", industry_lab: "#8B5CF6" };
 
   function openNew() { setEditing(null); setForm({ name: "", type: "university", country: "", department: "", contactName: "", contactEmail: "", partnershipType: "research", status: "active", notes: "" }); setOpen(true); }
   function openEdit(p: NonNullable<typeof partners>[number]) {
@@ -1245,7 +1245,7 @@ function PartnersTab({ ventureId }: { ventureId: VentureId }) {
           <h3 className="text-base font-bold text-gray-900">University Partners</h3>
           <p className="text-xs text-gray-400">Universities, research institutes, and industry labs</p>
         </div>
-        <Button size="sm" onClick={openNew} className="gap-1.5 text-xs" style={{ background: "#3A97D3" }}>
+        <Button size="sm" onClick={openNew} className="gap-1.5 text-xs" style={{ background: "#3B85BA" }}>
           <Plus size={13} /> Add Partner
         </Button>
       </div>
@@ -1331,7 +1331,7 @@ function PartnersTab({ ventureId }: { ventureId: VentureId }) {
                 </SelectContent>
               </Select>
             </div>
-            <Button className="w-full" style={{ background: "#3A97D3" }} onClick={() => upsert.mutate({ ...form, id: editing ?? undefined, ventureId, type: form.type as "university" | "research_institute" | "polytechnic" | "industry_lab", partnershipType: form.partnershipType as "research" | "talent" | "commercialisation" | "sponsored" | "internship", status: form.status as "active" | "inactive" | "pending" | "negotiating" })} disabled={!form.name || upsert.isPending}>
+            <Button className="w-full" style={{ background: "#3B85BA" }} onClick={() => upsert.mutate({ ...form, id: editing ?? undefined, ventureId, type: form.type as "university" | "research_institute" | "polytechnic" | "industry_lab", partnershipType: form.partnershipType as "research" | "talent" | "commercialisation" | "sponsored" | "internship", status: form.status as "active" | "inactive" | "pending" | "negotiating" })} disabled={!form.name || upsert.isPending}>
               {editing ? "Update" : "Add"} Partner
             </Button>
           </div>
@@ -1367,7 +1367,7 @@ export default function UniversityPlaybook() {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#3A97D320", color: "#3A97D3" }}>
+              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#3B85BA20", color: "#3B85BA" }}>
                 University Venture Creation
               </span>
             </div>

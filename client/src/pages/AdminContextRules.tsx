@@ -286,8 +286,8 @@ export default function AdminContextRules() {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <BookOpen size={18} style={{ color: "#51AF37" }} />
-              <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#51AF37" }}>
+              <BookOpen size={18} style={{ color: "#56A837" }} />
+              <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#56A837" }}>
                 Admin / Context Rules
               </span>
             </div>
@@ -298,7 +298,7 @@ export default function AdminContextRules() {
               Define when and where playbooks appear across EcoBlend OS modules. Rules control contextual recommendations based on venture stage, risk, scoring, and workflow position.
             </p>
           </div>
-          <Button onClick={openCreate} className="gap-1.5" style={{ background: "#51AF37" }}>
+          <Button onClick={openCreate} className="gap-1.5" style={{ background: "#56A837" }}>
             <Plus size={14} /> New Rule
           </Button>
         </div>
@@ -825,7 +825,7 @@ export default function AdminContextRules() {
               size="sm"
               onClick={handleSave}
               disabled={createRule.isPending || updateRule.isPending}
-              style={{ background: "#51AF37" }}
+              style={{ background: "#56A837" }}
             >
               {createRule.isPending || updateRule.isPending ? "Saving..." : editingRule ? "Update Rule" : "Create Rule"}
             </Button>

@@ -2,15 +2,15 @@
 // Exposes the trigger log, manual re-run, and summary stats to the frontend.
 
 import { z } from "zod";
-import { router, publicProcedure } from "./_core/trpc";
+import { router, adminProcedure } from "./_core/trpc";
 import { getDb } from "./db";
-import { desc, eq, and, count, sql } from "drizzle-orm";
+import { desc, eq, and, count } from "drizzle-orm";
 import { workflowTriggerLog } from "../drizzle/schema";
 import { dispatchTrigger, TriggerType } from "./workflowEngine";
 
 export const workflowEngineRouter = router({
   // List all trigger log entries, newest first
-  listTriggerLog: publicProcedure
+  listTriggerLog: adminProcedure
     .input(
       z.object({
         ventureId: z.string().optional(),
@@ -28,7 +28,17 @@ export const workflowEngineRouter = router({
       if (input.status) conditions.push(eq(workflowTriggerLog.status, input.status));
 
       const rows = await db
-        .select()
+        .select({
+          id: workflowTriggerLog.id,
+          triggerType: workflowTriggerLog.triggerType,
+          sourceModule: workflowTriggerLog.sourceModule,
+          sourceRecordId: workflowTriggerLog.sourceRecordId,
+          targetModule: workflowTriggerLog.targetModule,
+          targetRecordId: workflowTriggerLog.targetRecordId,
+          ventureId: workflowTriggerLog.ventureId,
+          status: workflowTriggerLog.status,
+          createdAt: workflowTriggerLog.createdAt,
+        })
         .from(workflowTriggerLog)
         .where(conditions.length > 0 ? and(...conditions) : undefined)
         .orderBy(desc(workflowTriggerLog.createdAt))
@@ -44,12 +54,22 @@ export const workflowEngineRouter = router({
     }),
 
   // Get a single trigger log entry
-  getTriggerLog: publicProcedure
+  getTriggerLog: adminProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
       const db = (await getDb())!;
       const [row] = await db
-        .select()
+        .select({
+          id: workflowTriggerLog.id,
+          triggerType: workflowTriggerLog.triggerType,
+          sourceModule: workflowTriggerLog.sourceModule,
+          sourceRecordId: workflowTriggerLog.sourceRecordId,
+          targetModule: workflowTriggerLog.targetModule,
+          targetRecordId: workflowTriggerLog.targetRecordId,
+          ventureId: workflowTriggerLog.ventureId,
+          status: workflowTriggerLog.status,
+          createdAt: workflowTriggerLog.createdAt,
+        })
         .from(workflowTriggerLog)
         .where(eq(workflowTriggerLog.id, input.id))
         .limit(1);
@@ -57,7 +77,7 @@ export const workflowEngineRouter = router({
     }),
 
   // Manual re-run of a trigger (creates a new log entry with retriedFrom set)
-  rerunTrigger: publicProcedure
+  rerunTrigger: adminProcedure
     .input(
       z.object({
         triggerType: z.enum(["research_completed", "audit_failed", "supplier_approved", "deal_closed_won", "funding_round_closed", "milestone_overdue", "data_quality_degraded"]),
@@ -75,7 +95,7 @@ export const workflowEngineRouter = router({
     }),
 
   // Summary stats for the dashboard cards
-  getTriggerStats: publicProcedure.query(async () => {
+  getTriggerStats: adminProcedure.query(async () => {
     const db = (await getDb())!;
 
     const rows = await db
@@ -87,7 +107,6 @@ export const workflowEngineRouter = router({
       .from(workflowTriggerLog)
       .groupBy(workflowTriggerLog.triggerType, workflowTriggerLog.status);
 
-    // Aggregate into a summary object
     const summary: Record<string, { success: number; failed: number; skipped: number; total: number }> = {};
     for (const row of rows) {
       const t = row.triggerType;
@@ -102,9 +121,15 @@ export const workflowEngineRouter = router({
     const totalSuccess = rows.filter((r) => r.status === "success").reduce((a, r) => a + r.cnt, 0);
     const totalFailed = rows.filter((r) => r.status === "failed").reduce((a, r) => a + r.cnt, 0);
 
-    // Recent activity (last 10 entries)
     const recent = await db
-      .select()
+      .select({
+        id: workflowTriggerLog.id,
+        triggerType: workflowTriggerLog.triggerType,
+        sourceModule: workflowTriggerLog.sourceModule,
+        ventureId: workflowTriggerLog.ventureId,
+        status: workflowTriggerLog.status,
+        createdAt: workflowTriggerLog.createdAt,
+      })
       .from(workflowTriggerLog)
       .orderBy(desc(workflowTriggerLog.createdAt))
       .limit(10);
@@ -112,8 +137,8 @@ export const workflowEngineRouter = router({
     return { summary, totalFired, totalSuccess, totalFailed, recent };
   }),
 
-  // Fire a trigger manually from the UI (for testing / admin use)
-  fireTrigger: publicProcedure
+  // Fire a trigger manually from the UI (admin-only)
+  fireTrigger: adminProcedure
     .input(
       z.object({
         triggerType: z.enum(["research_completed", "audit_failed", "supplier_approved", "deal_closed_won", "funding_round_closed", "milestone_overdue", "data_quality_degraded"]),

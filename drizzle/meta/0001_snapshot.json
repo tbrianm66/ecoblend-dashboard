@@ -1,5 +1,5 @@
 {
-  "id": "f1c7c8ca-6fe6-4730-b9fd-21ad6515a14d",
+  "id": "4c0d2370-d9c7-4d52-92d2-86be6413f14a",
   "prevId": "8967cd13-0d2b-4953-a94d-82c19b536161",
   "version": "7",
   "dialect": "postgresql",
@@ -4730,6 +4730,280 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.customer_interviews": {
+      "name": "customer_interviews",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "ventureId": {
+          "name": "ventureId",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "customerSegmentId": {
+          "name": "customerSegmentId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "problemHypothesisId": {
+          "name": "problemHypothesisId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contactName": {
+          "name": "contactName",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "organisation": {
+          "name": "organisation",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "roleTitle": {
+          "name": "roleTitle",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "interviewDate": {
+          "name": "interviewDate",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "interviewType": {
+          "name": "interviewType",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'logged'"
+        },
+        "problemMentionedUnprompted": {
+          "name": "problemMentionedUnprompted",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "currentWorkaround": {
+          "name": "currentWorkaround",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "painScore": {
+          "name": "painScore",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "urgencyScore": {
+          "name": "urgencyScore",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "frequencyScore": {
+          "name": "frequencyScore",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "budgetSignalScore": {
+          "name": "budgetSignalScore",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "decisionMakerAccessScore": {
+          "name": "decisionMakerAccessScore",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "willingnessToTrial": {
+          "name": "willingnessToTrial",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "willingnessToPaySignal": {
+          "name": "willingnessToPaySignal",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'none'"
+        },
+        "discoveryScore": {
+          "name": "discoveryScore",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "keyQuote": {
+          "name": "keyQuote",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "evidenceNotes": {
+          "name": "evidenceNotes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contradictionNotes": {
+          "name": "contradictionNotes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recommendedDecision": {
+          "name": "recommendedDecision",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nextAction": {
+          "name": "nextAction",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.customer_segments": {
+      "name": "customer_segments",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "ventureId": {
+          "name": "ventureId",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "segmentName": {
+          "name": "segmentName",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "buyerRole": {
+          "name": "buyerRole",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "userRole": {
+          "name": "userRole",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "influencerRole": {
+          "name": "influencerRole",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decisionMakerRole": {
+          "name": "decisionMakerRole",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "problemArea": {
+          "name": "problemArea",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "currentAlternative": {
+          "name": "currentAlternative",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "segmentNotes": {
+          "name": "segmentNotes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.customer_validation_evidence": {
       "name": "customer_validation_evidence",
       "schema": "",
@@ -5025,6 +5299,142 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.demand_signals": {
+      "name": "demand_signals",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "ventureId": {
+          "name": "ventureId",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "problemHypothesisId": {
+          "name": "problemHypothesisId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "signalName": {
+          "name": "signalName",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "signalType": {
+          "name": "signalType",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'customer_pull'"
+        },
+        "sourceName": {
+          "name": "sourceName",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sourceUrl": {
+          "name": "sourceUrl",
+          "type": "varchar(512)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "signalDate": {
+          "name": "signalDate",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "relevanceScore": {
+          "name": "relevanceScore",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "evidenceStrengthScore": {
+          "name": "evidenceStrengthScore",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "recencyScore": {
+          "name": "recencyScore",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "commercialImpactScore": {
+          "name": "commercialImpactScore",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "repeatabilityScore": {
+          "name": "repeatabilityScore",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "demandSignalScore": {
+          "name": "demandSignalScore",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "evidenceSummary": {
+          "name": "evidenceSummary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "linkedExperiment": {
+          "name": "linkedExperiment",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "successThreshold": {
+          "name": "successThreshold",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.dmAiPipelines": {
       "name": "dmAiPipelines",
       "schema": "",
@@ -5167,6 +5577,135 @@
         },
         "tags": {
           "name": "tags",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.dm_competitors": {
+      "name": "dm_competitors",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "ventureId": {
+          "name": "ventureId",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "problemHypothesisId": {
+          "name": "problemHypothesisId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "competitorName": {
+          "name": "competitorName",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "competitorType": {
+          "name": "competitorType",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'direct'"
+        },
+        "customerSegment": {
+          "name": "customerSegment",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "problemSolved": {
+          "name": "problemSolved",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "strengths": {
+          "name": "strengths",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "weaknesses": {
+          "name": "weaknesses",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pricingModel": {
+          "name": "pricingModel",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "customerSatisfactionScore": {
+          "name": "customerSatisfactionScore",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "switchingDifficultyScore": {
+          "name": "switchingDifficultyScore",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "differentiationScore": {
+          "name": "differentiationScore",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "threatScore": {
+          "name": "threatScore",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "competitiveRiskScore": {
+          "name": "competitiveRiskScore",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "notes": {
+          "name": "notes",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -11748,134 +12287,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.governance_structures": {
-      "name": "governance_structures",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "varchar(64)",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "ventureId": {
-          "name": "ventureId",
-          "type": "varchar(64)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "founderVetoRights": {
-          "name": "founderVetoRights",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "founderVetoScope": {
-          "name": "founderVetoScope",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "boardSize": {
-          "name": "boardSize",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "founderSeats": {
-          "name": "founderSeats",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "independentSeats": {
-          "name": "independentSeats",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "investorSeats": {
-          "name": "investorSeats",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "missionAlignedSeats": {
-          "name": "missionAlignedSeats",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "employeeRepresentation": {
-          "name": "employeeRepresentation",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "communityRepresentation": {
-          "name": "communityRepresentation",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "customerAdvisoryBoard": {
-          "name": "customerAdvisoryBoard",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "missionClauseInBylaws": {
-          "name": "missionClauseInBylaws",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "missionClauseText": {
-          "name": "missionClauseText",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "complianceScore": {
-          "name": "complianceScore",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "lastReviewAt": {
-          "name": "lastReviewAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updatedAt": {
-          "name": "updatedAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.insight_summaries": {
       "name": "insight_summaries",
       "schema": "",
@@ -16300,6 +16711,106 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.lean_experiments": {
+      "name": "lean_experiments",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "ventureId": {
+          "name": "ventureId",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "problemHypothesisId": {
+          "name": "problemHypothesisId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "experimentName": {
+          "name": "experimentName",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "experimentType": {
+          "name": "experimentType",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'interview'"
+        },
+        "hypothesisTested": {
+          "name": "hypothesisTested",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "method": {
+          "name": "method",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "successThreshold": {
+          "name": "successThreshold",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "result": {
+          "name": "result",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "learningSummary": {
+          "name": "learningSummary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decision": {
+          "name": "decision",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nextStep": {
+          "name": "nextStep",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.legal_risk_escalations": {
       "name": "legal_risk_escalations",
       "schema": "",
@@ -16550,6 +17061,148 @@
         },
         "aiGenerated": {
           "name": "aiGenerated",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.market_risks": {
+      "name": "market_risks",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "ventureId": {
+          "name": "ventureId",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "linkedModule": {
+          "name": "linkedModule",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "linkedRecordId": {
+          "name": "linkedRecordId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "riskTitle": {
+          "name": "riskTitle",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "riskCategory": {
+          "name": "riskCategory",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'problem_risk'"
+        },
+        "riskDescription": {
+          "name": "riskDescription",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "probabilityScore": {
+          "name": "probabilityScore",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 1
+        },
+        "severityScore": {
+          "name": "severityScore",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 1
+        },
+        "evidenceConfidenceScore": {
+          "name": "evidenceConfidenceScore",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 1
+        },
+        "marketRiskScore": {
+          "name": "marketRiskScore",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 1
+        },
+        "evidenceSummary": {
+          "name": "evidenceSummary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mitigationPlan": {
+          "name": "mitigationPlan",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "requiredExperiment": {
+          "name": "requiredExperiment",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "owner": {
+          "name": "owner",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reviewDate": {
+          "name": "reviewDate",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'open'"
+        },
+        "autoGenerated": {
+          "name": "autoGenerated",
           "type": "boolean",
           "primaryKey": false,
           "notNull": false,
@@ -18376,177 +19029,6 @@
         },
         "createdAt": {
           "name": "createdAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.mission_drift_alerts": {
-      "name": "mission_drift_alerts",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "varchar(64)",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "ventureId": {
-          "name": "ventureId",
-          "type": "varchar(64)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "alertType": {
-          "name": "alertType",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "severity": {
-          "name": "severity",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'Medium'"
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "evidence": {
-          "name": "evidence",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "recommendedAction": {
-          "name": "recommendedAction",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'Active'"
-        },
-        "acknowledgedAt": {
-          "name": "acknowledgedAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "resolvedAt": {
-          "name": "resolvedAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updatedAt": {
-          "name": "updatedAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.mission_integrity_scores": {
-      "name": "mission_integrity_scores",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "varchar(64)",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "ventureId": {
-          "name": "ventureId",
-          "type": "varchar(64)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "overallScore": {
-          "name": "overallScore",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "financialVsMissionDrift": {
-          "name": "financialVsMissionDrift",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "stakeholderAlignmentScore": {
-          "name": "stakeholderAlignmentScore",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "governanceStrengthScore": {
-          "name": "governanceStrengthScore",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "leadershipContinuityScore": {
-          "name": "leadershipContinuityScore",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "missionDriftTrend": {
-          "name": "missionDriftTrend",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'Stable'"
-        },
-        "lastAssessmentAt": {
-          "name": "lastAssessmentAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updatedAt": {
-          "name": "updatedAt",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
@@ -23279,6 +23761,107 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.problem_hypotheses": {
+      "name": "problem_hypotheses",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "ventureId": {
+          "name": "ventureId",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "customerSegmentId": {
+          "name": "customerSegmentId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hypothesisStatement": {
+          "name": "hypothesisStatement",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "problemType": {
+          "name": "problemType",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "targetCustomer": {
+          "name": "targetCustomer",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "assumedPain": {
+          "name": "assumedPain",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "assumedFrequency": {
+          "name": "assumedFrequency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "assumedUrgency": {
+          "name": "assumedUrgency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "assumedBudgetOwner": {
+          "name": "assumedBudgetOwner",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'untested'"
+        },
+        "confidenceScore": {
+          "name": "confidenceScore",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.product_baselines": {
       "name": "product_baselines",
       "schema": "",
@@ -27904,106 +28487,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.stakeholder_profiles": {
-      "name": "stakeholder_profiles",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "varchar(64)",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "ventureId": {
-          "name": "ventureId",
-          "type": "varchar(64)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "stakeholderType": {
-          "name": "stakeholderType",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "role": {
-          "name": "role",
-          "type": "varchar(128)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "primaryIncentive": {
-          "name": "primaryIncentive",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "missionAlignment": {
-          "name": "missionAlignment",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "financialAlignment": {
-          "name": "financialAlignment",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "lastEngagementAt": {
-          "name": "lastEngagementAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "feedbackScore": {
-          "name": "feedbackScore",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "conflictRisk": {
-          "name": "conflictRisk",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'Low'"
-        },
-        "conflictDescription": {
-          "name": "conflictDescription",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updatedAt": {
-          "name": "updatedAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.startup_failure_risk_scores": {
       "name": "startup_failure_risk_scores",
       "schema": "",
@@ -28175,119 +28658,6 @@
         },
         "createdAt": {
           "name": "createdAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.succession_plans": {
-      "name": "succession_plans",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "varchar(64)",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "ventureId": {
-          "name": "ventureId",
-          "type": "varchar(64)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "currentCeo": {
-          "name": "currentCeo",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "ceoPlanningHorizon": {
-          "name": "ceoPlanningHorizon",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "potentialSuccessors": {
-          "name": "potentialSuccessors",
-          "type": "json",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "founderIntentDocumented": {
-          "name": "founderIntentDocumented",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "founderIntentSummary": {
-          "name": "founderIntentSummary",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "institutionalMemorySystem": {
-          "name": "institutionalMemorySystem",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "missionCodexDocument": {
-          "name": "missionCodexDocument",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "keyDecisionFrameworks": {
-          "name": "keyDecisionFrameworks",
-          "type": "json",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "coreValuesDocumented": {
-          "name": "coreValuesDocumented",
-          "type": "json",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "successionReadinessScore": {
-          "name": "successionReadinessScore",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "riskFactors": {
-          "name": "riskFactors",
-          "type": "json",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "lastUpdatedAt": {
-          "name": "lastUpdatedAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updatedAt": {
-          "name": "updatedAt",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
@@ -33330,6 +33700,138 @@
         },
         "createdAt": {
           "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.wtp_tests": {
+      "name": "wtp_tests",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "ventureId": {
+          "name": "ventureId",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "problemHypothesisId": {
+          "name": "problemHypothesisId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "customerName": {
+          "name": "customerName",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "buyerRole": {
+          "name": "buyerRole",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "budgetOwnerConfirmed": {
+          "name": "budgetOwnerConfirmed",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "currentSpend": {
+          "name": "currentSpend",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "valueDriver": {
+          "name": "valueDriver",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pricingModelTested": {
+          "name": "pricingModelTested",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "priceTested": {
+          "name": "priceTested",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "responseSummary": {
+          "name": "responseSummary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "evidenceLevel": {
+          "name": "evidenceLevel",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 1
+        },
+        "procurementPathway": {
+          "name": "procurementPathway",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "objections": {
+          "name": "objections",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "wtpScore": {
+          "name": "wtpScore",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "recommendedPricingModel": {
+          "name": "recommendedPricingModel",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nextCommercialAction": {
+          "name": "nextCommercialAction",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,

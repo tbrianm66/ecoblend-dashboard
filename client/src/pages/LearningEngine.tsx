@@ -25,9 +25,9 @@ import {
 } from "lucide-react";
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
-const GREEN = "#51AF37";
-const BLUE = "#3A97D3";
-const AMBER = "#F49C13";
+const GREEN = "#56A837";
+const BLUE = "#3B85BA";
+const AMBER = "#F69111";
 const RED = "#EF4444";
 const PURPLE = "#8B5CF6";
 const FONT = "'Prompt', sans-serif";
@@ -129,7 +129,7 @@ function ProblemHeatmapPanel() {
                       {[1, 2, 3, 4, 5].map((freq) => {
                         const count = heatmapData[sev]?.[freq] ?? 0;
                         const intensity = count / maxCount;
-                        const bg = count === 0 ? "#f9fafb" : `rgba(58, 151, 211, ${0.15 + intensity * 0.75})`;
+                        const bg = count === 0 ? "#f9fafb" : `rgba(59, 133, 186, ${0.15 + intensity * 0.75})`;
                         return (
                           <div
                             key={freq}

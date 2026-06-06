@@ -49,15 +49,15 @@ import {
 
 // ── Color palette for portfolios ──────────────────────────────────────────────
 const PORTFOLIO_COLORS = [
-  "#51AF37", "#3A97D3", "#F49C13", "#E05C5C", "#8B5CF6",
+  "#56A837", "#3B85BA", "#F69111", "#E05C5C", "#8B5CF6",
   "#06B6D4", "#F59E0B", "#10B981", "#EF4444", "#6366F1",
 ];
 
 const OFFERING_STATUS_COLORS: Record<string, string> = {
   Concept: "#6b7280",
-  Development: "#F49C13",
-  Pilot: "#3A97D3",
-  Live: "#51AF37",
+  Development: "#F69111",
+  Pilot: "#3B85BA",
+  Live: "#56A837",
   Scaling: "#8B5CF6",
   Sunset: "#E05C5C",
 };
@@ -360,7 +360,7 @@ function OfferingCard({
   return (
     <div
       className="bg-white rounded-xl border p-4 hover:shadow-md transition-all duration-200 group cursor-pointer"
-      style={{ borderColor: "#e5e7eb", borderLeft: `3px solid ${offering.color ?? "#51AF37"}` }}
+      style={{ borderColor: "#e5e7eb", borderLeft: `3px solid ${offering.color ?? "#56A837"}` }}
       onClick={onDrillDown}
     >
       <div className="flex items-start justify-between mb-2">
@@ -475,11 +475,11 @@ function PortfolioSection({
         <CollapsibleTrigger asChild>
           <div
             className="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-gray-50 transition-colors"
-            style={{ borderLeft: `4px solid ${portfolio.color ?? "#51AF37"}` }}
+            style={{ borderLeft: `4px solid ${portfolio.color ?? "#56A837"}` }}
           >
             <div className="flex items-center gap-3">
               {open ? <ChevronDown size={16} className="text-gray-400" /> : <ChevronRight size={16} className="text-gray-400" />}
-              <Layers size={16} style={{ color: portfolio.color ?? "#51AF37" }} />
+              <Layers size={16} style={{ color: portfolio.color ?? "#56A837" }} />
               <div>
                 <span className="text-sm font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
                   {portfolio.name}
@@ -492,9 +492,9 @@ function PortfolioSection({
                 variant="outline"
                 className="text-xs"
                 style={{
-                  borderColor: portfolio.color ?? "#51AF37",
-                  color: portfolio.color ?? "#51AF37",
-                  background: `${portfolio.color ?? "#51AF37"}10`,
+                  borderColor: portfolio.color ?? "#56A837",
+                  color: portfolio.color ?? "#56A837",
+                  background: `${portfolio.color ?? "#56A837"}10`,
                 }}
               >
                 {portfolio.status ?? "Active"}
@@ -641,7 +641,7 @@ export default function PortfolioManager() {
             <div className="flex items-center gap-2 mb-1">
               <span
                 className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded"
-                style={{ background: "#51AF3715", color: "#51AF37" }}
+                style={{ background: "#56A83715", color: "#56A837" }}
               >
                 Portfolio Architecture
               </span>
@@ -656,7 +656,7 @@ export default function PortfolioManager() {
           <Button
             size="sm"
             className="gap-1.5"
-            style={{ background: "#51AF37" }}
+            style={{ background: "#56A837" }}
             onClick={() => setShowAddPortfolio(true)}
             disabled={!selectedVentureId}
           >
@@ -673,9 +673,9 @@ export default function PortfolioManager() {
                 key={v.id}
                 className="text-xs px-3 py-1.5 rounded-lg border font-medium transition-all"
                 style={{
-                  borderColor: selectedVentureId === v.id ? (v.color ?? "#51AF37") : "#e5e7eb",
-                  background: selectedVentureId === v.id ? `${v.color ?? "#51AF37"}12` : "white",
-                  color: selectedVentureId === v.id ? (v.color ?? "#51AF37") : "#6b7280",
+                  borderColor: selectedVentureId === v.id ? (v.color ?? "#56A837") : "#e5e7eb",
+                  background: selectedVentureId === v.id ? `${v.color ?? "#56A837"}12` : "white",
+                  color: selectedVentureId === v.id ? (v.color ?? "#56A837") : "#6b7280",
                 }}
                 onClick={() => setSelectedVentureId(v.id)}
               >
@@ -694,7 +694,7 @@ export default function PortfolioManager() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4">
                 <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Portfolios</p>
-                <p className="text-2xl font-bold" style={{ color: "#51AF37", fontFamily: "'Prompt', sans-serif" }}>
+                <p className="text-2xl font-bold" style={{ color: "#56A837", fontFamily: "'Prompt', sans-serif" }}>
                   {portfolios.length}
                 </p>
               </CardContent>
@@ -702,7 +702,7 @@ export default function PortfolioManager() {
             <Card className="border-0 shadow-sm">
               <CardContent className="p-4">
                 <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Active Portfolios</p>
-                <p className="text-2xl font-bold" style={{ color: "#3A97D3", fontFamily: "'Prompt', sans-serif" }}>
+                <p className="text-2xl font-bold" style={{ color: "#3B85BA", fontFamily: "'Prompt', sans-serif" }}>
                   {portfolios.filter((p) => p.status === "Active").length}
                 </p>
               </CardContent>
@@ -729,7 +729,7 @@ export default function PortfolioManager() {
             <p className="text-sm text-gray-400 mb-4">
               Create your first portfolio to start organising offerings for {selectedVenture?.name ?? "this venture"}.
             </p>
-            <Button onClick={() => setShowAddPortfolio(true)} style={{ background: "#51AF37" }}>
+            <Button onClick={() => setShowAddPortfolio(true)} style={{ background: "#56A837" }}>
               <Plus size={14} className="mr-1" /> Create First Portfolio
             </Button>
           </div>

@@ -1,0 +1,1085 @@
+You are acting as a senior full-stack product engineer and venture studio systems architect.
+
+I am building **EcoBLEND IO**, a Venture Validation OS used by **EcoRACE Studio** to validate early-stage ventures through structured evidence, Lean Startup methodology, and venture readiness scoring.
+
+The current application already has a sidebar module called:
+
+**3. Discovery & Market**
+
+It contains the following sub-sections:
+
+1. Customer Discovery
+2. Competitor Mapping
+3. Demand Signals
+4. WTP Assessment
+5. Market Risk Log
+
+Your task is to develop these sub-sections as a connected Lean Startup evidence engine.
+
+Do not treat this as a static dashboard. The module must support the cycle:
+
+**Build → Measure → Learn → Decide**
+
+Every feature should help the user test assumptions, capture evidence, score confidence, and decide whether to persevere, pivot, pause, or kill a venture hypothesis.
+
+---
+
+# 1. Overall Objective
+
+Develop the **Discovery & Market** module so that each sub-section allows the user to:
+
+* Select a venture
+* Define or link a hypothesis
+* Capture structured evidence
+* Score the evidence
+* Generate a Lean Startup decision
+* Identify the next experiment
+* Feed data into venture-level validation scoring
+
+The module must work across multiple ventures, for example:
+
+* BEBUS
+* ECOCOMP
+* REAL
+* TONE
+* Future portfolio ventures
+
+Each venture should have its own market discovery records, competitor records, demand signals, WTP tests, and market risks.
+
+---
+
+# 2. Core Lean Startup Logic
+
+Implement the following logic across the module:
+
+A venture begins with assumptions.
+
+Those assumptions should be converted into explicit hypotheses.
+
+Each hypothesis should be tested through evidence.
+
+Evidence should be scored by strength, quality, and relevance.
+
+The system should recommend one of the following decisions:
+
+* Persevere
+* Pivot customer segment
+* Pivot problem
+* Pivot value proposition
+* Pivot business model
+* Run more experiments
+* Pause
+* Kill
+
+The system should always show:
+
+* What do we believe?
+* What evidence supports it?
+* What evidence contradicts it?
+* What is the confidence level?
+* What experiment should be run next?
+* What decision should be made?
+
+---
+
+# 3. Data Model Requirements
+
+Create or extend the database with the following tables.
+
+Use the existing project conventions. If the project uses Supabase/PostgreSQL, create appropriate SQL migrations. If it uses another local store, adapt cleanly but preserve the data model.
+
+## ventures
+
+If this already exists, reuse it.
+
+Required fields:
+
+* id
+* name
+* description
+* status
+* created_at
+* updated_at
+
+## customer_segments
+
+Fields:
+
+* id
+* venture_id
+* segment_name
+* buyer_role
+* user_role
+* influencer_role
+* decision_maker_role
+* problem_area
+* current_alternative
+* segment_notes
+* created_at
+* updated_at
+
+## problem_hypotheses
+
+Fields:
+
+* id
+* venture_id
+* customer_segment_id
+* hypothesis_statement
+* problem_type
+* target_customer
+* assumed_pain
+* assumed_frequency
+* assumed_urgency
+* assumed_budget_owner
+* status
+* confidence_score
+* created_at
+* updated_at
+
+Status options:
+
+* untested
+* testing
+* validated
+* invalidated
+* pivot_required
+* paused
+
+## customer_interviews
+
+Fields:
+
+* id
+* venture_id
+* customer_segment_id
+* problem_hypothesis_id
+* contact_name
+* organisation
+* role_title
+* interview_date
+* interview_type
+* status
+* problem_mentioned_unprompted
+* current_workaround
+* pain_score
+* urgency_score
+* frequency_score
+* budget_signal_score
+* decision_maker_access_score
+* willingness_to_trial
+* willingness_to_pay_signal
+* key_quote
+* evidence_notes
+* contradiction_notes
+* recommended_decision
+* next_action
+* created_at
+* updated_at
+
+## competitors
+
+Fields:
+
+* id
+* venture_id
+* problem_hypothesis_id
+* competitor_name
+* competitor_type
+* customer_segment
+* problem_solved
+* strengths
+* weaknesses
+* pricing_model
+* customer_satisfaction_score
+* switching_difficulty_score
+* differentiation_score
+* threat_score
+* notes
+* created_at
+* updated_at
+
+Competitor type options:
+
+* direct
+* indirect
+* substitute
+* status_quo
+* future_competitor
+
+## demand_signals
+
+Fields:
+
+* id
+* venture_id
+* problem_hypothesis_id
+* signal_name
+* signal_type
+* source_name
+* source_url
+* signal_date
+* relevance_score
+* evidence_strength_score
+* recency_score
+* commercial_impact_score
+* repeatability_score
+* demand_signal_score
+* evidence_summary
+* linked_experiment
+* success_threshold
+* created_at
+* updated_at
+
+Signal type options:
+
+* customer_pull
+* search_demand
+* procurement
+* regulation
+* investment
+* hiring
+* media
+* academic
+* partner
+* industry_report
+
+## wtp_tests
+
+Fields:
+
+* id
+* venture_id
+* problem_hypothesis_id
+* customer_name
+* buyer_role
+* budget_owner_confirmed
+* current_spend
+* value_driver
+* pricing_model_tested
+* price_tested
+* response_summary
+* evidence_level
+* procurement_pathway
+* objections
+* recommended_pricing_model
+* next_commercial_action
+* created_at
+* updated_at
+
+Evidence level options:
+
+1 = vague interest
+2 = agrees to another meeting
+3 = shares operational data
+4 = introduces budget holder
+5 = requests proposal
+6 = signs LOI
+7 = pays for pilot
+
+## market_risks
+
+Fields:
+
+* id
+* venture_id
+* linked_module
+* linked_record_id
+* risk_title
+* risk_category
+* risk_description
+* probability_score
+* severity_score
+* evidence_confidence_score
+* market_risk_score
+* evidence_summary
+* mitigation_plan
+* required_experiment
+* owner
+* review_date
+* status
+* created_at
+* updated_at
+
+Risk category options:
+
+* segment_risk
+* problem_risk
+* timing_risk
+* budget_risk
+* adoption_risk
+* procurement_risk
+* data_access_risk
+* competitive_risk
+* regulatory_risk
+* trust_risk
+* channel_risk
+
+Status options:
+
+* open
+* monitoring
+* mitigated
+* escalated
+* closed
+
+## lean_experiments
+
+Fields:
+
+* id
+* venture_id
+* problem_hypothesis_id
+* experiment_name
+* experiment_type
+* hypothesis_tested
+* method
+* success_threshold
+* result
+* learning_summary
+* decision
+* next_step
+* created_at
+* updated_at
+
+Experiment type options:
+
+* interview
+* survey
+* landing_page
+* concierge_mvp
+* prototype_test
+* paid_pilot
+* loi_test
+* pricing_test
+* data_access_test
+* procurement_test
+
+---
+
+# 4. Sub-Section 1: Customer Discovery
+
+Develop the Customer Discovery screen first.
+
+## Purpose
+
+This sub-section validates whether the venture has identified:
+
+* A real customer
+* A painful problem
+* A current workaround
+* A buyer or decision-maker
+* A credible reason to continue
+
+## Required UI
+
+Create a clean page with:
+
+* Venture selector
+* Customer segment list
+* Add/edit customer segment form
+* Problem hypothesis list
+* Add/edit problem hypothesis form
+* Customer interview log
+* Add/edit interview form
+* Discovery evidence scorecard
+* Lean Startup decision output
+* Next experiment recommendation
+
+## Customer Segment Form
+
+Fields:
+
+* Segment name
+* Buyer role
+* User role
+* Influencer role
+* Decision-maker role
+* Problem area
+* Current alternative
+* Notes
+
+## Problem Hypothesis Form
+
+Fields:
+
+* Hypothesis statement
+* Problem type
+* Target customer
+* Assumed pain
+* Assumed frequency
+* Assumed urgency
+* Assumed budget owner
+* Status
+
+## Customer Interview Form
+
+Fields:
+
+* Contact name
+* Organisation
+* Role title
+* Interview date
+* Interview type
+* Problem mentioned unprompted: yes/no
+* Current workaround
+* Pain score: 1–5
+* Urgency score: 1–5
+* Frequency score: 1–5
+* Budget signal score: 1–5
+* Decision-maker access score: 1–5
+* Willingness to trial: yes/no
+* Willingness to pay signal: none / weak / moderate / strong
+* Key quote
+* Evidence notes
+* Contradiction notes
+* Next action
+
+## Scoring Formula
+
+Calculate:
+
+Customer Discovery Score =
+Pain Score × 30%
+
+* Urgency Score × 25%
+* Frequency Score × 15%
+* Budget Signal Score × 20%
+* Decision-Maker Access Score × 10%
+
+Convert the 1–5 score into a 0–100 score.
+
+Score interpretation:
+
+* 0–39 = Weak evidence
+* 40–59 = Needs more discovery
+* 60–79 = Promising
+* 80–100 = Strong validation candidate
+
+## Decision Logic
+
+If score is 80–100, recommend:
+
+* Persevere
+* Begin WTP testing
+* Identify pilot candidate
+
+If score is 60–79, recommend:
+
+* Continue discovery
+* Strengthen budget evidence
+* Run more interviews
+
+If score is 40–59, recommend:
+
+* Refine customer segment
+* Re-test problem hypothesis
+
+If score is 0–39, recommend:
+
+* Pivot problem or customer segment
+* Pause further product build
+
+## Auto-Risk Creation
+
+If Budget Signal Score is 2 or below, auto-create a market risk:
+
+Risk title: Budget owner not validated
+Risk category: budget_risk
+
+If Decision-Maker Access Score is 2 or below, auto-create:
+
+Risk title: Decision-maker access weak
+Risk category: procurement_risk
+
+If Pain Score is 2 or below, auto-create:
+
+Risk title: Problem pain may be insufficient
+Risk category: problem_risk
+
+---
+
+# 5. Sub-Section 2: Competitor Mapping
+
+Develop this after Customer Discovery.
+
+## Purpose
+
+This sub-section identifies whether the customer already has acceptable alternatives.
+
+The module must include direct competitors, indirect competitors, substitutes, status quo, and future competitors.
+
+## Required UI
+
+Create a page with:
+
+* Venture selector
+* Problem hypothesis selector
+* Competitor table
+* Add/edit competitor form
+* Competitor type filter
+* Competitive intensity scorecard
+* Differentiation statement generator
+* Recommended positioning output
+
+## Competitor Form
+
+Fields:
+
+* Competitor name
+* Competitor type
+* Customer segment
+* Problem solved
+* Strengths
+* Weaknesses
+* Pricing model
+* Customer satisfaction score: 1–5
+* Switching difficulty score: 1–5
+* Differentiation score: 1–5
+* Threat score: 1–5
+* Notes
+
+## Scoring Logic
+
+Calculate Competitive Risk Score as:
+
+Customer Satisfaction Score × 30%
+
+* Switching Difficulty Score × 25%
+* Threat Score × 25%
+* inverse Differentiation Score × 20%
+
+Convert to 0–100.
+
+Interpretation:
+
+* 0–39 = Low competitive risk
+* 40–59 = Moderate competitive risk
+* 60–79 = High competitive risk
+* 80–100 = Severe competitive risk
+
+## Output
+
+Display:
+
+* Primary competitor type
+* Strongest competitor
+* Most dangerous substitute
+* Status quo risk
+* Differentiation strength
+* Recommended positioning
+
+## Auto-Risk Creation
+
+If Competitive Risk Score is above 70, auto-create:
+
+Risk title: Competitive intensity may block adoption
+Risk category: competitive_risk
+
+If Switching Difficulty Score is 4 or above, auto-create:
+
+Risk title: Switching friction is high
+Risk category: adoption_risk
+
+If competitor type is status_quo and customer satisfaction score is 4 or above, auto-create:
+
+Risk title: Status quo may be good enough
+Risk category: adoption_risk
+
+---
+
+# 6. Sub-Section 3: Demand Signals
+
+Develop this after Competitor Mapping.
+
+## Purpose
+
+This sub-section captures market evidence from external and internal signals.
+
+The module must distinguish between macro demand and transactional demand.
+
+For example, a regulation or industry report is useful, but a signed pilot, tender, budget conversation, or procurement request is stronger evidence.
+
+## Required UI
+
+Create a page with:
+
+* Venture selector
+* Problem hypothesis selector
+* Demand signal table
+* Add/edit demand signal form
+* Signal type filter
+* Demand signal scorecard
+* Recommended Lean experiment output
+
+## Demand Signal Form
+
+Fields:
+
+* Signal name
+* Signal type
+* Source name
+* Source URL
+* Signal date
+* Relevance score: 1–5
+* Evidence strength score: 1–5
+* Recency score: 1–5
+* Commercial impact score: 1–5
+* Repeatability score: 1–5
+* Evidence summary
+* Linked experiment
+* Success threshold
+
+## Scoring Logic
+
+Demand Signal Score =
+Relevance Score × 25%
+
+* Evidence Strength Score × 25%
+* Recency Score × 15%
+* Commercial Impact Score × 25%
+* Repeatability Score × 10%
+
+Convert to 0–100.
+
+Interpretation:
+
+* 0–39 = Weak market signal
+* 40–59 = Emerging signal
+* 60–79 = Strong signal
+* 80–100 = High-confidence market pull
+
+## Output
+
+Display:
+
+* Strongest demand signal
+* Weakest evidence area
+* Signal trend
+* Recommended experiment
+* Suggested success threshold
+
+## Experiment Conversion
+
+Every demand signal should be convertible into a Lean Startup experiment.
+
+Example:
+
+Demand signal:
+Public sector fleet operators are under pressure to reduce emissions.
+
+Experiment:
+Interview 10 fleet procurement managers to test whether sustainability evidence affects supplier selection.
+
+Success threshold:
+At least 6 out of 10 confirm sustainability evidence influences procurement scoring.
+
+## Auto-Risk Creation
+
+If macro signals are strong but evidence strength is below 3, auto-create:
+
+Risk title: Macro demand not yet converted into buyer evidence
+Risk category: timing_risk
+
+If commercial impact score is 2 or below, auto-create:
+
+Risk title: Demand signal may not create commercial urgency
+Risk category: problem_risk
+
+---
+
+# 7. Sub-Section 4: WTP Assessment
+
+Develop this after Demand Signals.
+
+## Purpose
+
+WTP means Willingness To Pay.
+
+This sub-section validates whether customers will commit money, budget, data, time, or operational access.
+
+The system must not treat positive feedback as willingness to pay.
+
+## Required UI
+
+Create a page with:
+
+* Venture selector
+* Problem hypothesis selector
+* WTP test table
+* Add/edit WTP test form
+* Evidence ladder visual
+* Pricing model recommendation
+* Budget-owner validation card
+* Next commercial action output
+
+## WTP Test Form
+
+Fields:
+
+* Customer name
+* Buyer role
+* Budget owner confirmed: yes/no
+* Current spend
+* Value driver
+* Pricing model tested
+* Price tested
+* Response summary
+* Evidence level: 1–7
+* Procurement pathway
+* Objections
+* Recommended pricing model
+* Next commercial action
+
+## Pricing Model Options
+
+Allow the user to select:
+
+* Paid pilot
+* Consultancy + platform
+* Subscription
+* Licence
+* Success fee
+* Data partnership
+* Co-development agreement
+* Venture studio equity model
+
+## Evidence Ladder
+
+Display the following:
+
+1 = Says “interesting”
+2 = Agrees to another meeting
+3 = Shares operational data
+4 = Introduces budget holder
+5 = Requests proposal
+6 = Signs LOI
+7 = Pays for pilot
+
+## Scoring Logic
+
+Convert Evidence Level into WTP Score:
+
+* 1 = 10
+* 2 = 25
+* 3 = 40
+* 4 = 55
+* 5 = 70
+* 6 = 85
+* 7 = 100
+
+Then adjust:
+
+* Add 10 points if budget owner confirmed
+* Add 10 points if procurement pathway is clear
+* Cap score at 100
+
+Interpretation:
+
+* 0–39 = Weak WTP
+* 40–59 = Early commercial signal
+* 60–79 = Strong commercial signal
+* 80–100 = High-confidence WTP
+
+## Output
+
+Display:
+
+* WTP status
+* Budget-owner status
+* Best pricing model
+* Commercial confidence score
+* Main objection
+* Next commercial action
+
+## Auto-Risk Creation
+
+If Evidence Level is below 4, auto-create:
+
+Risk title: Willingness to pay not yet validated
+Risk category: budget_risk
+
+If budget owner is not confirmed, auto-create:
+
+Risk title: Budget owner unknown
+Risk category: budget_risk
+
+If procurement pathway is blank or unclear, auto-create:
+
+Risk title: Procurement pathway unclear
+Risk category: procurement_risk
+
+---
+
+# 8. Sub-Section 5: Market Risk Log
+
+Develop this after the previous four sub-sections.
+
+## Purpose
+
+The Market Risk Log should consolidate risk signals from all Discovery & Market sub-sections.
+
+It should not be passive documentation. Each risk must link to evidence, mitigation, and a required experiment.
+
+## Required UI
+
+Create a page with:
+
+* Venture selector
+* Risk table
+* Add/edit risk form
+* Risk category filter
+* Status filter
+* Top 5 risks card
+* Critical risks card
+* Required experiments card
+* Risk movement over time if historical data exists
+
+## Risk Form
+
+Fields:
+
+* Risk title
+* Linked module
+* Linked record ID
+* Risk category
+* Risk description
+* Probability score: 1–5
+* Severity score: 1–5
+* Evidence confidence score: 1–5
+* Evidence summary
+* Mitigation plan
+* Required experiment
+* Owner
+* Review date
+* Status
+
+## Scoring Logic
+
+Market Risk Score =
+Probability Score × Severity Score × Evidence Confidence Score
+
+Interpretation:
+
+* 1–25 = Low risk
+* 26–50 = Moderate risk
+* 51–75 = High risk
+* 76–125 = Critical risk
+
+## Required Output
+
+For each venture, show:
+
+* Total open risks
+* Top 5 risks
+* Critical risks
+* Risks by category
+* Risks by linked module
+* Risks without mitigation
+* Risks without experiment
+* Risks overdue for review
+
+## Decision Logic
+
+If there are three or more critical market risks, show:
+
+Decision warning:
+Market validation is not strong enough to justify full product build.
+
+If there are unresolved budget_risk and procurement_risk records, show:
+
+Decision warning:
+Commercial pathway is not validated.
+
+If data_access_risk exists and is high or critical, show:
+
+Decision warning:
+MVP feasibility may be blocked by customer data access.
+
+---
+
+# 9. Combined Discovery & Market Summary Page
+
+Add or update a summary view for the full module.
+
+The summary should show:
+
+* Customer Discovery Score
+* Competitive Risk Score
+* Demand Signal Score
+* WTP Score
+* Open Market Risk Score
+* Overall Discovery & Market Confidence
+* Recommended Lean Startup decision
+* Next best experiment
+
+## Overall Confidence Logic
+
+Calculate:
+
+Overall Discovery & Market Confidence =
+Customer Discovery Score × 30%
+
+* Demand Signal Score × 20%
+* WTP Score × 30%
+* inverse Competitive Risk Score × 10%
+* inverse Open Market Risk Score × 10%
+
+Output categories:
+
+* 0–39 = Weak validation
+* 40–59 = More discovery required
+* 60–79 = Promising validation
+* 80–100 = Strong market validation
+
+## Decision Logic
+
+If Customer Discovery Score is low:
+Recommend pivot customer segment or problem.
+
+If Demand Signal Score is low:
+Recommend further market signal testing.
+
+If WTP Score is low:
+Recommend commercial validation before product build.
+
+If Competitive Risk Score is high:
+Recommend sharper differentiation or niche positioning.
+
+If Market Risk Score is high:
+Recommend mitigation experiments before progressing.
+
+---
+
+# 10. UI and Design Requirements
+
+Match the existing EcoBLEND IO design language shown in the current app:
+
+* Dark sidebar
+* Premium venture studio aesthetic
+* Clean cards
+* Rounded panels
+* Clear status badges
+* Minimal icons
+* Professional enterprise SaaS feel
+* Use green for validated/positive status
+* Amber for caution
+* Red for high risk
+* Neutral grey for untested or incomplete items
+
+Each sub-section should have:
+
+* Header
+* Short explanation of purpose
+* Primary action button
+* Evidence table
+* Scorecard
+* Decision output
+* Next action recommendation
+
+Avoid clutter. This is an executive validation OS, not a generic CRM.
+
+---
+
+# 11. Implementation Standards
+
+Please implement in small, testable increments.
+
+Recommended sequence:
+
+1. Database schema/migrations
+2. Shared scoring utilities
+3. Customer Discovery page
+4. Competitor Mapping page
+5. Demand Signals page
+6. WTP Assessment page
+7. Market Risk Log page
+8. Combined Discovery & Market summary
+9. Auto-risk creation logic
+10. Final QA and bug fixing
+
+Create reusable components where possible:
+
+* VentureSelector
+* HypothesisSelector
+* ScoreCard
+* EvidenceTable
+* DecisionBadge
+* RiskBadge
+* LeanDecisionPanel
+* NextExperimentPanel
+* EmptyState
+* FormDrawer or FormModal
+
+Create reusable scoring functions:
+
+* calculateCustomerDiscoveryScore()
+* calculateCompetitiveRiskScore()
+* calculateDemandSignalScore()
+* calculateWTPScore()
+* calculateMarketRiskScore()
+* calculateOverallDiscoveryMarketConfidence()
+* generateLeanDecision()
+* generateNextExperimentRecommendation()
+
+---
+
+# 12. Testing Requirements
+
+Add test data for at least three ventures:
+
+1. BEBUS
+2. ECOCOMP
+3. REAL
+
+For each venture, add sample records for:
+
+* Customer segment
+* Problem hypothesis
+* Customer interview
+* Competitor
+* Demand signal
+* WTP test
+* Market risk
+
+Test that:
+
+* Forms save correctly
+* Scores calculate correctly
+* Records filter by venture
+* Records filter by problem hypothesis
+* Decision outputs update when scores change
+* Auto-created risks appear in the Market Risk Log
+* Summary page reflects all sub-section scores
+* Empty states display correctly
+* No page crashes when there is no data
+
+---
+
+# 13. Acceptance Criteria
+
+The build is complete when:
+
+* Each Discovery & Market sub-section is functional
+* Each sub-section can create, read, update, and delete records
+* Every record links to a venture
+* Key records can link to a problem hypothesis
+* Scores calculate automatically
+* Lean Startup decisions are generated automatically
+* Next experiment recommendations are shown
+* Weak evidence creates market risks automatically
+* Market risks are visible in the Market Risk Log
+* The module summary shows overall confidence
+* The user can understand whether to persevere, pivot, pause, or kill a venture hypothesis
+
+---
+
+# 14. Important Product Principle
+
+Do not optimise for adding more forms.
+
+Optimise for helping the venture studio answer this question:
+
+“Do we have enough market evidence to justify continuing this venture, or should we pivot before wasting time and capital?”
+
+The Discovery & Market module should become a structured decision system for venture validation.

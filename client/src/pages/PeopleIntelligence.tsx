@@ -25,25 +25,25 @@ import MissionIntegrityBadge from "@/components/MissionIntegrityBadge";
 
 // ── Colour helpers ────────────────────────────────────────────────────────────
 const PVF_COLORS: Record<string, string> = {
-  "Highly Recommended": "#51AF37",
-  "Recommended": "#3A97D3",
-  "Possible": "#F49C13",
+  "Highly Recommended": "#56A837",
+  "Recommended": "#3B85BA",
+  "Possible": "#F69111",
   "Not Recommended": "#ef4444",
 };
 const SEVERITY_COLORS: Record<string, string> = {
-  Critical: "#ef4444", High: "#F49C13", Medium: "#3A97D3", Low: "#6b7280",
+  Critical: "#ef4444", High: "#F69111", Medium: "#3B85BA", Low: "#6b7280",
 };
 const AVAILABILITY_COLORS: Record<string, string> = {
-  "Immediately Available": "#51AF37",
-  "Available in 1 Month": "#3A97D3",
-  "Available in 3 Months": "#F49C13",
+  "Immediately Available": "#56A837",
+  "Available in 1 Month": "#3B85BA",
+  "Available in 3 Months": "#F69111",
   "Part-Time Only": "#8b5cf6",
   "Advisory Only": "#6b7280",
   "Not Available": "#ef4444",
 };
 
 // ── Score bar ─────────────────────────────────────────────────────────────────
-function ScoreBar({ value, max = 10, color = "#3A97D3" }: { value: number; max?: number; color?: string }) {
+function ScoreBar({ value, max = 10, color = "#3B85BA" }: { value: number; max?: number; color?: string }) {
   return (
     <div className="w-full h-1.5 rounded-full bg-gray-100 overflow-hidden">
       <div
@@ -57,9 +57,9 @@ function ScoreBar({ value, max = 10, color = "#3A97D3" }: { value: number; max?:
 // ── Radar-style capability summary ───────────────────────────────────────────
 function CapabilityGrid({ profile }: { profile: any }) {
   const caps = [
-    { label: "Technical",    value: profile.capTechnical ?? 0,    color: "#3A97D3" },
-    { label: "Commercial",   value: profile.capCommercial ?? 0,   color: "#51AF37" },
-    { label: "Operational",  value: profile.capOperational ?? 0,  color: "#F49C13" },
+    { label: "Technical",    value: profile.capTechnical ?? 0,    color: "#3B85BA" },
+    { label: "Commercial",   value: profile.capCommercial ?? 0,   color: "#56A837" },
+    { label: "Operational",  value: profile.capOperational ?? 0,  color: "#F69111" },
     { label: "Financial",    value: profile.capFinancial ?? 0,    color: "#8b5cf6" },
     { label: "Marketing",    value: profile.capMarketing ?? 0,    color: "#ec4899" },
     { label: "Leadership",   value: profile.attrLeadership ?? 0,  color: "#ef4444" },
@@ -94,7 +94,7 @@ function TalentCard({ profile, onDelete, onComputePVF, ventureId }: {
           <div className="flex items-center gap-2 mb-1">
             <span className="font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>{profile.name}</span>
             {profile.profileType && (
-              <Badge variant="outline" className="text-xs" style={{ borderColor: "#3A97D3", color: "#3A97D3" }}>
+              <Badge variant="outline" className="text-xs" style={{ borderColor: "#3B85BA", color: "#3B85BA" }}>
                 {profile.profileType}
               </Badge>
             )}
@@ -115,7 +115,7 @@ function TalentCard({ profile, onDelete, onComputePVF, ventureId }: {
             size="sm"
             variant="outline"
             className="text-xs gap-1 h-7"
-            style={{ borderColor: "#51AF37", color: "#51AF37" }}
+            style={{ borderColor: "#56A837", color: "#56A837" }}
             onClick={() => onComputePVF(profile.id)}
           >
             <Zap size={11} /> Score PVF
@@ -172,7 +172,7 @@ function AddTalentForm({ onSuccess }: { onSuccess: () => void }) {
 
   if (!open) {
     return (
-      <Button size="sm" className="gap-1.5" style={{ background: "#51AF37" }} onClick={() => setOpen(true)}>
+      <Button size="sm" className="gap-1.5" style={{ background: "#56A837" }} onClick={() => setOpen(true)}>
         <Plus size={13} /> Add Talent
       </Button>
     );
@@ -262,7 +262,7 @@ function AddTalentForm({ onSuccess }: { onSuccess: () => void }) {
       </div>
 
       <div className="flex gap-2">
-        <Button size="sm" style={{ background: "#51AF37" }} onClick={() => upsert.mutate(form as any)} disabled={!form.name || upsert.isPending}>
+        <Button size="sm" style={{ background: "#56A837" }} onClick={() => upsert.mutate(form as any)} disabled={!form.name || upsert.isPending}>
           {upsert.isPending ? "Saving..." : "Save Profile"}
         </Button>
         <Button size="sm" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
@@ -480,7 +480,7 @@ export default function PeopleIntelligence() {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#51AF3715", color: "#51AF37" }}>
+              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#56A83715", color: "#56A837" }}>
                 People Intelligence
               </span>
               <span className="text-xs text-gray-400">·</span>
@@ -513,10 +513,10 @@ export default function PeopleIntelligence() {
         {/* KPI row */}
         <div className="grid grid-cols-4 gap-4 mt-5">
           {[
-            { label: "Talent Pool", value: poolSummary?.totalTalent ?? 0, sub: "profiles", color: "#3A97D3", icon: Users },
-            { label: "Assigned", value: poolSummary?.assignedToVentures ?? 0, sub: "to ventures", color: "#51AF37", icon: UserCheck },
+            { label: "Talent Pool", value: poolSummary?.totalTalent ?? 0, sub: "profiles", color: "#3B85BA", icon: Users },
+            { label: "Assigned", value: poolSummary?.assignedToVentures ?? 0, sub: "to ventures", color: "#56A837", icon: UserCheck },
             { label: "Critical Gaps", value: poolSummary?.criticalGaps ?? 0, sub: "portfolio-wide", color: "#ef4444", icon: AlertTriangle },
-            { label: "PVF Rankings", value: pvfRankings.length, sub: `for ${venture?.name ?? "venture"}`, color: "#F49C13", icon: Star },
+            { label: "PVF Rankings", value: pvfRankings.length, sub: `for ${venture?.name ?? "venture"}`, color: "#F69111", icon: Star },
           ].map(({ label, value, sub, color, icon: Icon }) => (
             <div key={label} className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
               <div className="flex items-center gap-2 mb-1">
@@ -619,9 +619,9 @@ export default function PeopleIntelligence() {
               <p className="text-xs font-semibold text-gray-500 mb-3">PVF Formula Breakdown</p>
               <div className="grid grid-cols-5 gap-3">
                 {[
-                  { label: "Skills Match", desc: "Weighted avg of capability scores, boosted by role functional area", color: "#3A97D3" },
-                  { label: "Industry Match", desc: "Years of experience normalised to 0–10 scale", color: "#51AF37" },
-                  { label: "Stage Match", desc: "Average of Idea/Validation/Build/Scale stage scores", color: "#F49C13" },
+                  { label: "Skills Match", desc: "Weighted avg of capability scores, boosted by role functional area", color: "#3B85BA" },
+                  { label: "Industry Match", desc: "Years of experience normalised to 0–10 scale", color: "#56A837" },
+                  { label: "Stage Match", desc: "Average of Idea/Validation/Build/Scale stage scores", color: "#F69111" },
                   { label: "Network Value", desc: "Average of investor, customer, supplier, regulator, industry networks", color: "#8b5cf6" },
                   { label: "Availability Fit", desc: "Immediately Available=10 → Not Available=0", color: "#ef4444" },
                 ].map(f => (
@@ -668,7 +668,7 @@ export default function PeopleIntelligence() {
                           </div>
                           <Button
                             size="sm" variant="outline" className="text-xs gap-1 h-7"
-                            style={{ borderColor: "#51AF37", color: "#51AF37" }}
+                            style={{ borderColor: "#56A837", color: "#56A837" }}
                             onClick={() => addToTeam.mutate({
                               ventureId: selectedVenture,
                               talentProfileId: profile.id,
@@ -683,9 +683,9 @@ export default function PeopleIntelligence() {
                       </div>
                       <div className="grid grid-cols-5 gap-3">
                         {[
-                          { label: "Skills", value: fit.skillsMatch, color: "#3A97D3" },
-                          { label: "Industry", value: fit.industryMatch, color: "#51AF37" },
-                          { label: "Stage", value: fit.stageMatch, color: "#F49C13" },
+                          { label: "Skills", value: fit.skillsMatch, color: "#3B85BA" },
+                          { label: "Industry", value: fit.industryMatch, color: "#56A837" },
+                          { label: "Stage", value: fit.stageMatch, color: "#F69111" },
                           { label: "Network", value: fit.networkValue, color: "#8b5cf6" },
                           { label: "Availability", value: fit.availabilityFit, color: "#ef4444" },
                         ].map(d => (
@@ -734,7 +734,7 @@ export default function PeopleIntelligence() {
                           <p className="text-xs text-gray-500">{composition.assignedRole}</p>
                           <div className="flex items-center gap-2 mt-1">
                             {composition.assignmentType && (
-                              <Badge variant="outline" className="text-xs" style={{ borderColor: "#3A97D3", color: "#3A97D3" }}>
+                              <Badge variant="outline" className="text-xs" style={{ borderColor: "#3B85BA", color: "#3B85BA" }}>
                                 {composition.assignmentType}
                               </Badge>
                             )}
@@ -744,7 +744,7 @@ export default function PeopleIntelligence() {
                               </Badge>
                             )}
                             {composition.isFounder && (
-                              <Badge className="text-xs" style={{ background: "#51AF3720", color: "#51AF37", border: "1px solid #51AF3740" }}>
+                              <Badge className="text-xs" style={{ background: "#56A83720", color: "#56A837", border: "1px solid #56A83740" }}>
                                 Founder
                               </Badge>
                             )}
@@ -790,7 +790,7 @@ export default function PeopleIntelligence() {
               </div>
               <Button
                 size="sm" variant="outline" className="gap-1.5 text-xs"
-                style={{ borderColor: "#3A97D3", color: "#3A97D3" }}
+                style={{ borderColor: "#3B85BA", color: "#3B85BA" }}
                 onClick={() => computeGaps.mutate({ ventureId: selectedVenture })}
                 disabled={computeGaps.isPending}
               >
@@ -902,9 +902,9 @@ function FounderSuitabilityPanel({ ventureId, talent, assessments, onRefresh }: 
   });
 
   const dimensions = [
-    { key: "domainKnowledge",    label: "Domain Knowledge",    color: "#3A97D3" },
-    { key: "executionCapability",label: "Execution Capability",color: "#51AF37" },
-    { key: "leadershipStrength", label: "Leadership Strength", color: "#F49C13" },
+    { key: "domainKnowledge",    label: "Domain Knowledge",    color: "#3B85BA" },
+    { key: "executionCapability",label: "Execution Capability",color: "#56A837" },
+    { key: "leadershipStrength", label: "Leadership Strength", color: "#F69111" },
     { key: "networkRelevance",   label: "Network Relevance",   color: "#8b5cf6" },
     { key: "stageReadiness",     label: "Stage Readiness",     color: "#ec4899" },
     { key: "riskProfile",        label: "Risk Profile",        color: "#ef4444" },
@@ -918,14 +918,14 @@ function FounderSuitabilityPanel({ ventureId, talent, assessments, onRefresh }: 
           <UserCheck size={32} className="mx-auto mb-3 text-gray-300" />
           <p className="text-gray-500 font-medium">No founder assessments yet</p>
           <p className="text-xs text-gray-400 mt-1">Run a suitability assessment for each founder candidate.</p>
-          <Button size="sm" className="mt-4 gap-1.5" style={{ background: "#51AF37" }} onClick={() => setShowForm(true)}>
+          <Button size="sm" className="mt-4 gap-1.5" style={{ background: "#56A837" }} onClick={() => setShowForm(true)}>
             <Plus size={13} /> New Assessment
           </Button>
         </div>
       ) : (
         <>
           <div className="flex justify-end">
-            <Button size="sm" className="gap-1.5" style={{ background: "#51AF37" }} onClick={() => setShowForm(s => !s)}>
+            <Button size="sm" className="gap-1.5" style={{ background: "#56A837" }} onClick={() => setShowForm(s => !s)}>
               <Plus size={13} /> New Assessment
             </Button>
           </div>
@@ -933,8 +933,8 @@ function FounderSuitabilityPanel({ ventureId, talent, assessments, onRefresh }: 
           {assessments.map((row: any) => {
             const { assessment, profile } = row;
             const SUIT_COLORS: Record<string, string> = {
-              "Highly Suitable": "#51AF37", "Suitable": "#3A97D3",
-              "Conditionally Suitable": "#F49C13", "Not Suitable": "#ef4444",
+              "Highly Suitable": "#56A837", "Suitable": "#3B85BA",
+              "Conditionally Suitable": "#F69111", "Not Suitable": "#ef4444",
             };
             const rec = assessment.recommendation ?? "Conditionally Suitable";
             return (
@@ -1035,7 +1035,7 @@ function FounderSuitabilityPanel({ ventureId, talent, assessments, onRefresh }: 
 
           <div className="flex gap-2">
             <Button
-              size="sm" style={{ background: "#51AF37" }}
+              size="sm" style={{ background: "#56A837" }}
               onClick={() => upsert.mutate({ ...form, ventureId })}
               disabled={!form.talentProfileId || upsert.isPending}
             >

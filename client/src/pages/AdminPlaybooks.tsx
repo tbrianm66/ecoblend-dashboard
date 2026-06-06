@@ -64,9 +64,9 @@ const USER_ROLES = [
 
 const STATUS_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   "Draft":        { bg: "#1a2332", text: "#94a3b8", border: "#334155" },
-  "Under Review": { bg: "#1c1a08", text: "#F49C13", border: "#78350f" },
+  "Under Review": { bg: "#1c1a08", text: "#F69111", border: "#78350f" },
   "Approved":     { bg: "#0f1f14", text: "#4ade80", border: "#166534" },
-  "Published":    { bg: "#0d1f2d", text: "#3A97D3", border: "#1d4ed8" },
+  "Published":    { bg: "#0d1f2d", text: "#3B85BA", border: "#1d4ed8" },
   "Archived":     { bg: "#1a1a1a", text: "#6b7280", border: "#374151" },
   "Superseded":   { bg: "#1f0f1a", text: "#c084fc", border: "#7e22ce" },
 };
@@ -190,7 +190,7 @@ function PlaybookFormDialog({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" style={{ background: "#0f1923", border: "1px solid #1e2d3d", color: "#e2e8f0" }}>
         <DialogHeader>
-          <DialogTitle style={{ color: "#51AF37", fontFamily: "'Prompt', sans-serif" }}>
+          <DialogTitle style={{ color: "#56A837", fontFamily: "'Prompt', sans-serif" }}>
             {isEdit ? "Edit Playbook" : "Create New Playbook"}
           </DialogTitle>
         </DialogHeader>
@@ -203,8 +203,8 @@ function PlaybookFormDialog({
               onClick={() => setTab(t.id)}
               className="px-4 py-2 text-sm font-medium transition-colors"
               style={{
-                color: tab === t.id ? "#51AF37" : "#64748b",
-                borderBottom: tab === t.id ? "2px solid #51AF37" : "2px solid transparent",
+                color: tab === t.id ? "#56A837" : "#64748b",
+                borderBottom: tab === t.id ? "2px solid #56A837" : "2px solid transparent",
               }}
             >
               {t.label}
@@ -406,7 +406,7 @@ function PlaybookFormDialog({
           </Button>
           <Button onClick={handleSave}
             disabled={createMutation.isPending || updateMutation.isPending}
-            style={{ background: "#51AF37", color: "#fff" }}>
+            style={{ background: "#56A837", color: "#fff" }}>
             {createMutation.isPending || updateMutation.isPending ? "Saving…" : isEdit ? "Save Changes" : "Create Playbook"}
           </Button>
         </DialogFooter>
@@ -444,7 +444,7 @@ function PlaybookDetailDrawer({
       <div className="flex items-start justify-between p-5 border-b" style={{ borderColor: "#1e2d3d" }}>
         <div className="flex-1 pr-4">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-mono" style={{ color: "#3A97D3" }}>{playbook.playbookId}</span>
+            <span className="text-xs font-mono" style={{ color: "#3B85BA" }}>{playbook.playbookId}</span>
             <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
               style={{ background: sc.bg, color: sc.text, border: `1px solid ${sc.border}` }}>
               {playbook.status}
@@ -492,7 +492,7 @@ function PlaybookDetailDrawer({
         <Section title="Linked Risk Categories" content={playbook.linkedRiskCategories} />
 
         {playbook.approvalRequired && (
-          <div className="flex items-center gap-2 text-xs mt-2" style={{ color: "#F49C13" }}>
+          <div className="flex items-center gap-2 text-xs mt-2" style={{ color: "#F69111" }}>
             <AlertTriangle size={12} /> Approval required before publishing
           </div>
         )}
@@ -501,7 +501,7 @@ function PlaybookDetailDrawer({
       {/* Footer actions */}
       <div className="p-4 border-t flex gap-2" style={{ borderColor: "#1e2d3d" }}>
         <Button size="sm" onClick={onEdit}
-          style={{ background: "#51AF37", color: "#fff" }}>
+          style={{ background: "#56A837", color: "#fff" }}>
           <Edit2 size={13} className="mr-1" /> Edit
         </Button>
         <Button size="sm" variant="outline"
@@ -578,8 +578,8 @@ export default function AdminPlaybooks() {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <BookOpenCheck size={18} style={{ color: "#51AF37" }} />
-              <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#51AF37" }}>
+              <BookOpenCheck size={18} style={{ color: "#56A837" }} />
+              <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#56A837" }}>
                 Admin
               </span>
             </div>
@@ -591,7 +591,7 @@ export default function AdminPlaybooks() {
             </p>
           </div>
           <Button onClick={() => setShowCreateDialog(true)}
-            style={{ background: "#51AF37", color: "#fff" }}>
+            style={{ background: "#56A837", color: "#fff" }}>
             <Plus size={14} className="mr-1.5" /> New Playbook
           </Button>
         </div>
@@ -666,7 +666,7 @@ export default function AdminPlaybooks() {
           {/* Playbook grid grouped by category */}
           {isLoading ? (
             <div className="flex items-center justify-center h-40">
-              <RefreshCw size={20} className="animate-spin" style={{ color: "#51AF37" }} />
+              <RefreshCw size={20} className="animate-spin" style={{ color: "#56A837" }} />
             </div>
           ) : playbooks.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-60 gap-3">
@@ -677,8 +677,8 @@ export default function AdminPlaybooks() {
             Object.entries(grouped).map(([category, pbs]) => (
               <div key={category} className="mb-8">
                 <div className="flex items-center gap-2 mb-3">
-                  <Tag size={12} style={{ color: "#51AF37" }} />
-                  <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "#51AF37" }}>
+                  <Tag size={12} style={{ color: "#56A837" }} />
+                  <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "#56A837" }}>
                     {category}
                   </span>
                   <span className="text-xs" style={{ color: "#475569" }}>({pbs.length})</span>
@@ -695,13 +695,13 @@ export default function AdminPlaybooks() {
                         className="rounded-xl p-4 cursor-pointer transition-all"
                         style={{
                           background: isSelected ? "#0d1f2d" : "#0a1520",
-                          border: `1px solid ${isSelected ? "#3A97D3" : "#1e2d3d"}`,
+                          border: `1px solid ${isSelected ? "#3B85BA" : "#1e2d3d"}`,
                         }}
                       >
                         {/* Card header */}
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex-1 pr-2">
-                            <div className="text-xs font-mono mb-0.5" style={{ color: "#3A97D3" }}>
+                            <div className="text-xs font-mono mb-0.5" style={{ color: "#3B85BA" }}>
                               {pb.playbookId}
                             </div>
                             <div className="text-sm font-semibold leading-snug" style={{ color: "#e2e8f0" }}>
@@ -750,7 +750,7 @@ export default function AdminPlaybooks() {
                             <button
                               onClick={e => { e.stopPropagation(); publishMutation.mutate({ id: pb.id }); }}
                               className="flex items-center gap-1 text-xs px-2 py-1 rounded hover:bg-white/5"
-                              style={{ color: "#51AF37" }}
+                              style={{ color: "#56A837" }}
                             >
                               <Send size={11} /> Publish
                             </button>

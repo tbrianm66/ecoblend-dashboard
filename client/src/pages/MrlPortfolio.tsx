@@ -75,7 +75,7 @@ export default function MrlPortfolio() {
     return (
       <div className="flex-1 flex items-center justify-center min-h-screen" style={{ background: "#f8fafc" }}>
         <div className="flex flex-col items-center gap-3">
-          <Factory size={32} style={{ color: "#3A97D3" }} className="animate-pulse" />
+          <Factory size={32} style={{ color: "#3B85BA" }} className="animate-pulse" />
           <span className="text-sm text-gray-400 font-mono">Loading MRL portfolio…</span>
         </div>
       </div>
@@ -93,8 +93,8 @@ export default function MrlPortfolio() {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <Factory size={18} style={{ color: "#3A97D3" }} />
-              <span className="text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#3A97D320", color: "#3A97D3" }}>
+              <Factory size={18} style={{ color: "#3B85BA" }} />
+              <span className="text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#3B85BA20", color: "#3B85BA" }}>
                 BEBUS-MRL-SE-001
               </span>
               <span className="text-xs text-gray-400">·</span>
@@ -112,7 +112,7 @@ export default function MrlPortfolio() {
             variant="outline"
             className="gap-1.5 text-xs"
             onClick={() => navigate("/mrl-venture")}
-            style={{ borderColor: "#3A97D3", color: "#3A97D3" }}
+            style={{ borderColor: "#3B85BA", color: "#3B85BA" }}
           >
             <Cog size={13} /> Venture Detail
           </Button>
@@ -134,7 +134,7 @@ export default function MrlPortfolio() {
           {/* Avg Composite */}
           <div className="bg-white rounded-xl border p-5 flex flex-col gap-1 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
             <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">Avg Composite Score</span>
-            <span className="text-3xl font-bold" style={{ color: "#3A97D3", fontFamily: "'Prompt', sans-serif" }}>
+            <span className="text-3xl font-bold" style={{ color: "#3B85BA", fontFamily: "'Prompt', sans-serif" }}>
               {summary?.avgComposite ?? 0}
             </span>
             <span className="text-xs text-gray-400">out of 100</span>
@@ -208,11 +208,11 @@ export default function MrlPortfolio() {
             </h2>
             <div className="flex flex-col gap-3">
               {[
-                { code: "PDE", name: "Process Design & Engineering", icon: Cog, color: "#3A97D3", desc: "Manufacturing process design, tooling, and engineering validation" },
+                { code: "PDE", name: "Process Design & Engineering", icon: Cog, color: "#3B85BA", desc: "Manufacturing process design, tooling, and engineering validation" },
                 { code: "SCIE", name: "Supply Chain & Int. Execution", icon: Globe, color: "#7c3aed", desc: "Supplier qualification, dual-source strategy, and logistics" },
                 { code: "CSM", name: "Cost Structure & Manufacturability", icon: BarChart3, color: "#d97706", desc: "Unit economics, CAPEX/OPEX modelling, and margin analysis" },
                 { code: "QCE", name: "Quality, Compliance & Export", icon: Shield, color: "#16a34a", desc: "ISO/CE/RoHS certification, regulatory compliance, and QMS" },
-                { code: "SIL", name: "Sustainability Integration Level", icon: Leaf, color: "#51AF37", desc: "Carbon footprint, CBAM exposure, circularity, and LCSA score" },
+                { code: "SIL", name: "Sustainability Integration Level", icon: Leaf, color: "#56A837", desc: "Carbon footprint, CBAM exposure, circularity, and LCSA score" },
               ].map(({ code, name, icon: Icon, color, desc }) => (
                 <div key={code} className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${color}15` }}>

@@ -49,7 +49,7 @@ const STAGE_GATES: StageGate[] = [
   {
     id: "sg-1",
     ventureName: "EcoBlend Materials",
-    ventureColor: "#51AF37",
+    ventureColor: "#56A837",
     stage: 3,
     gateName: "Stage 3 → Stage 4: Scale-Up Approval",
     status: "pending",
@@ -118,7 +118,7 @@ const statusConfig = {
 const actionColors: Record<string, string> = {
   approve: "#16a34a",
   reject: "#dc2626",
-  create: "#3A97D3",
+  create: "#3B85BA",
   update: "#d97706",
   export: "#7c3aed",
   delete: "#dc2626",

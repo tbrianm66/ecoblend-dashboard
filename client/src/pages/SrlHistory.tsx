@@ -20,12 +20,12 @@ const SRL_LEVELS = [
   { level: 1, label: "Aware",       color: "#f59e0b", bg: "#fef3c7" },
   { level: 2, label: "Committed",   color: "#f97316", bg: "#ffedd5" },
   { level: 3, label: "Measured",    color: "#3b82f6", bg: "#dbeafe" },
-  { level: 4, label: "Optimising",  color: "#51AF37", bg: "#e8f7e3" },
-  { level: 5, label: "Exemplary",   color: "#2d9856", bg: "#d1fae5" },
+  { level: 4, label: "Optimising",  color: "#56A837", bg: "#E9F6E3" },
+  { level: 5, label: "Exemplary",   color: "#3D8526", bg: "#d1fae5" },
 ];
 
 const DIM_COLORS: Record<string, string> = {
-  ENV: "#51AF37", LCA: "#3A97D3", SMF: "#F49C13", SOC: "#8b5cf6", ESG: "#ec4899",
+  ENV: "#56A837", LCA: "#3B85BA", SMF: "#F69111", SOC: "#8b5cf6", ESG: "#ec4899",
 };
 
 function getSrlLevel(level: number) { return SRL_LEVELS[level] ?? SRL_LEVELS[0]; }
@@ -33,7 +33,7 @@ function getSrlLevel(level: number) { return SRL_LEVELS[level] ?? SRL_LEVELS[0];
 function DeltaBadge({ delta }: { delta: number | null | undefined }) {
   if (delta === null || delta === undefined) return <span className="text-xs text-gray-300">—</span>;
   const d = Number(delta);
-  if (d > 0) return <span className="flex items-center gap-0.5 text-xs font-semibold text-[#51AF37]"><TrendingUp size={11} />+{d.toFixed(1)}</span>;
+  if (d > 0) return <span className="flex items-center gap-0.5 text-xs font-semibold text-[#56A837]"><TrendingUp size={11} />+{d.toFixed(1)}</span>;
   if (d < 0) return <span className="flex items-center gap-0.5 text-xs font-semibold text-red-500"><TrendingDown size={11} />{d.toFixed(1)}</span>;
   return <span className="flex items-center gap-0.5 text-xs font-semibold text-gray-400"><Minus size={11} />0.0</span>;
 }
@@ -58,13 +58,13 @@ function AssessmentRow({ assessment }: { assessment: any }) {
         <td className="px-4 py-3 text-center"><span className="text-xs font-mono text-gray-500">{assessment.gateRef ?? "—"}</span></td>
         <td className="px-4 py-3 text-center">
           {assessment.isLocked
-            ? <div className="flex items-center justify-center gap-1"><Lock size={11} className="text-[#51AF37]" /><span className="text-xs text-[#51AF37] font-semibold">Locked</span></div>
+            ? <div className="flex items-center justify-center gap-1"><Lock size={11} className="text-[#56A837]" /><span className="text-xs text-[#56A837] font-semibold">Locked</span></div>
             : <div className="flex items-center justify-center gap-1"><Unlock size={11} className="text-amber-500" /><span className="text-xs text-amber-500 font-semibold">Draft</span></div>}
         </td>
         <td className="px-4 py-3 text-center">
           {assessment.sustainabilityWatch
             ? <AlertTriangle size={13} className="text-red-500 mx-auto" />
-            : <ShieldCheck size={13} className="text-[#51AF37] mx-auto" />}
+            : <ShieldCheck size={13} className="text-[#56A837] mx-auto" />}
         </td>
       </tr>
       {expanded && (
@@ -96,7 +96,7 @@ function AssessmentRow({ assessment }: { assessment: any }) {
                               <div className="h-full rounded-full" style={{ width: `${Math.min(100, covScore)}%`, background: color }} />
                             </div>
                           </div>
-                          {gatePass ? <CheckCircle2 size={13} className="text-[#51AF37] flex-shrink-0" /> : <XCircle size={13} className="text-red-400 flex-shrink-0" />}
+                          {gatePass ? <CheckCircle2 size={13} className="text-[#56A837] flex-shrink-0" /> : <XCircle size={13} className="text-red-400 flex-shrink-0" />}
                         </div>
                       );
                     })}
@@ -106,7 +106,7 @@ function AssessmentRow({ assessment }: { assessment: any }) {
                 <div>
                   <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Risk Conditions</div>
                   <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-gray-100">
-                    <ShieldCheck size={13} className="text-[#51AF37]" />
+                    <ShieldCheck size={13} className="text-[#56A837]" />
                     <span className="text-xs text-gray-500">
                       {assessment.sustainabilityWatch ? "Sustainability Watch active — see Venture Detail for conditions" : "No risk conditions flagged"}
                     </span>
@@ -128,7 +128,7 @@ function AssessmentRow({ assessment }: { assessment: any }) {
 
 function AuditRow({ entry }: { entry: any }) {
   const actionColors: Record<string, string> = {
-    ASSESSMENT_CREATED: "bg-blue-50 text-blue-700", ASSESSMENT_LOCKED: "bg-[#e8f7e3] text-[#2d9856]",
+    ASSESSMENT_CREATED: "bg-blue-50 text-blue-700", ASSESSMENT_LOCKED: "bg-[#E9F6E3] text-[#3D8526]",
     KPI_SUBMITTED: "bg-gray-50 text-gray-600", REPORT_GENERATED: "bg-purple-50 text-purple-700",
     GATE_EVALUATED: "bg-amber-50 text-amber-700", WATCH_FLAGGED: "bg-red-50 text-red-700",
     WATCH_CLEARED: "bg-green-50 text-green-700", IRL_MODULATED: "bg-orange-50 text-orange-700",
@@ -181,8 +181,8 @@ export default function SrlHistory() {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <Leaf size={16} className="text-[#51AF37]" />
-              <span className="text-xs font-semibold uppercase tracking-widest text-[#51AF37]">SRL Module</span>
+              <Leaf size={16} className="text-[#56A837]" />
+              <span className="text-xs font-semibold uppercase tracking-widest text-[#56A837]">SRL Module</span>
               <span className="text-xs text-gray-300">·</span>
               <span className="text-xs text-gray-400 font-mono">Assessment History & Audit Log</span>
             </div>
@@ -200,9 +200,9 @@ export default function SrlHistory() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {[
             { label: "Total Assessments", value: stats.total, color: "text-gray-900" },
-            { label: "Locked", value: stats.locked, color: "text-[#51AF37]" },
+            { label: "Locked", value: stats.locked, color: "text-[#56A837]" },
             { label: "Watch Flags", value: stats.watchActive, color: "text-red-500" },
-            { label: "Avg Score", value: stats.avgScore.toFixed(1), color: "text-[#3A97D3]" },
+            { label: "Avg Score", value: stats.avgScore.toFixed(1), color: "text-[#3B85BA]" },
           ].map(({ label, value, color }) => (
             <div key={label} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
               <div className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">{label}</div>
@@ -223,7 +223,7 @@ export default function SrlHistory() {
         {activeTab === "assessments" && (
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
             {assessLoading ? (
-              <div className="flex items-center justify-center py-16"><Loader2 size={24} className="animate-spin text-[#51AF37]" /></div>
+              <div className="flex items-center justify-center py-16"><Loader2 size={24} className="animate-spin text-[#56A837]" /></div>
             ) : displayedAssessments.length === 0 ? (
               <div className="text-center py-16"><History size={32} className="text-gray-200 mx-auto mb-3" /><p className="text-sm text-gray-400">No assessments found</p></div>
             ) : (
@@ -247,7 +247,7 @@ export default function SrlHistory() {
         {activeTab === "audit" && (
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
             {auditLoading ? (
-              <div className="flex items-center justify-center py-16"><Loader2 size={24} className="animate-spin text-[#51AF37]" /></div>
+              <div className="flex items-center justify-center py-16"><Loader2 size={24} className="animate-spin text-[#56A837]" /></div>
             ) : displayedAudit.length === 0 ? (
               <div className="text-center py-16"><FileText size={32} className="text-gray-200 mx-auto mb-3" /><p className="text-sm text-gray-400">No audit events recorded yet</p></div>
             ) : (

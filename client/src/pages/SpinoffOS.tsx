@@ -54,18 +54,18 @@ function StepBar({ current }: { current: number }) {
               <div
                 className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200"
                 style={{
-                  background: done ? "#51AF37" : active ? "#1a2332" : "#f3f4f6",
-                  border: active ? "2px solid #51AF37" : "2px solid transparent",
+                  background: done ? "#56A837" : active ? "#1a2332" : "#f3f4f6",
+                  border: active ? "2px solid #56A837" : "2px solid transparent",
                 }}
               >
                 {done
                   ? <CheckCircle2 size={16} color="white" />
-                  : <Icon size={15} color={active ? "#51AF37" : "#9ca3af"} />
+                  : <Icon size={15} color={active ? "#56A837" : "#9ca3af"} />
                 }
               </div>
               <span
                 className="text-xs font-medium"
-                style={{ color: active ? "#1a2332" : done ? "#51AF37" : "#9ca3af" }}
+                style={{ color: active ? "#1a2332" : done ? "#56A837" : "#9ca3af" }}
               >
                 {step.label}
               </span>
@@ -73,7 +73,7 @@ function StepBar({ current }: { current: number }) {
             {i < STEPS.length - 1 && (
               <div
                 className="w-12 h-0.5 mb-5 mx-1 transition-all duration-300"
-                style={{ background: current > step.id ? "#51AF37" : "#e5e7eb" }}
+                style={{ background: current > step.id ? "#56A837" : "#e5e7eb" }}
               />
             )}
           </div>
@@ -97,8 +97,8 @@ function FounderSelectCard({
     <div
       className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all duration-150"
       style={{
-        borderColor: selected ? "#51AF37" : "#e5e7eb",
-        background: selected ? "#51AF3708" : "white",
+        borderColor: selected ? "#56A837" : "#e5e7eb",
+        background: selected ? "#56A83708" : "white",
       }}
       onClick={onToggle}
     >
@@ -144,7 +144,7 @@ function ExecutionPlanView({
             {plan.planTitle}
           </h3>
           <div className="flex items-center gap-2 mt-1">
-            <Badge variant="outline" className="text-xs" style={{ borderColor: "#51AF37", color: "#51AF37" }}>
+            <Badge variant="outline" className="text-xs" style={{ borderColor: "#56A837", color: "#56A837" }}>
               {plan.status}
             </Badge>
             <span className="text-xs text-gray-400">
@@ -193,10 +193,10 @@ function SpinoffListItem({
 }) {
   const statusColors: Record<string, string> = {
     Draft: "#9ca3af",
-    "Under Review": "#F49C13",
-    Approved: "#51AF37",
+    "Under Review": "#F69111",
+    Approved: "#56A837",
     Rejected: "#ef4444",
-    Launched: "#3A97D3",
+    Launched: "#3B85BA",
   };
   return (
     <div
@@ -246,7 +246,7 @@ export default function SpinoffOS() {
   const [tagline, setTagline] = useState("");
   const [sector, setSector] = useState("");
   const [channel, setChannel] = useState<"B2B" | "D2C" | "B2B2C">("B2B");
-  const [brandColor, setBrandColor] = useState("#51AF37");
+  const [brandColor, setBrandColor] = useState("#56A837");
   const [classification, setClassification] = useState<"Sustaining" | "Disruptive-NewMarket" | "Disruptive-LowEnd">("Sustaining");
   const [engineOfGrowth, setEngineOfGrowth] = useState<"Sticky" | "Viral" | "Paid">("Sticky");
   const [burnRate, setBurnRate] = useState(15000);
@@ -374,7 +374,7 @@ export default function SpinoffOS() {
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#3A97D315", color: "#3A97D3" }}>
+                <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#3B85BA15", color: "#3B85BA" }}>
                   Spin-Off OS
                 </span>
               </div>
@@ -407,13 +407,13 @@ export default function SpinoffOS() {
                     key={o.id}
                     className="flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all"
                     style={{
-                      borderColor: selectedOppId === o.id ? "#51AF37" : "#e5e7eb",
-                      background: selectedOppId === o.id ? "#51AF3708" : "white",
+                      borderColor: selectedOppId === o.id ? "#56A837" : "#e5e7eb",
+                      background: selectedOppId === o.id ? "#56A83708" : "white",
                     }}
                     onClick={() => setSelectedOppId(o.id)}
                   >
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: "#51AF3715" }}>
-                      <Package size={14} style={{ color: "#51AF37" }} />
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: "#56A83715" }}>
+                      <Package size={14} style={{ color: "#56A837" }} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-gray-900">{o.name}</p>
@@ -422,7 +422,7 @@ export default function SpinoffOS() {
                         <p className="text-xs text-gray-400 mt-1 line-clamp-2">{o.problemStatement}</p>
                       )}
                     </div>
-                    {selectedOppId === o.id && <CheckCircle2 size={16} style={{ color: "#51AF37", flexShrink: 0 }} />}
+                    {selectedOppId === o.id && <CheckCircle2 size={16} style={{ color: "#56A837", flexShrink: 0 }} />}
                   </div>
                 ))}
               </div>
@@ -607,7 +607,7 @@ export default function SpinoffOS() {
 
               <Button
                 className="w-full gap-2 h-11 text-sm font-semibold"
-                style={{ background: "#51AF37", color: "white" }}
+                style={{ background: "#56A837", color: "white" }}
                 onClick={handleCreateAndGenerate}
                 disabled={createConfig.isPending || generatePlan.isPending}
               >
@@ -655,16 +655,16 @@ export default function SpinoffOS() {
     const currentStatus = activeConfig?.status ?? "Draft";
 
     const STATUS_FLOW: Record<string, { next: string; label: string; icon: typeof CheckSquare; color: string }[]> = {
-      Draft:          [{ next: "Under Review", label: "Submit for Review", icon: Eye,          color: "#F49C13" }],
-      "Under Review": [{ next: "Approved",     label: "Approve",          icon: CheckSquare,  color: "#51AF37" },
+      Draft:          [{ next: "Under Review", label: "Submit for Review", icon: Eye,          color: "#F69111" }],
+      "Under Review": [{ next: "Approved",     label: "Approve",          icon: CheckSquare,  color: "#56A837" },
                        { next: "Rejected",     label: "Reject",           icon: XCircle,      color: "#ef4444" }],
-      Approved:       [{ next: "Launched",     label: "Mark as Launched", icon: PlayCircle,   color: "#3A97D3" }],
+      Approved:       [{ next: "Launched",     label: "Mark as Launched", icon: PlayCircle,   color: "#3B85BA" }],
       Rejected:       [{ next: "Draft",        label: "Reopen as Draft",  icon: RefreshCw,    color: "#9ca3af" }],
       Launched:       [],
     };
     const nextActions = STATUS_FLOW[currentStatus] ?? [];
     const statusColors: Record<string, string> = {
-      Draft: "#9ca3af", "Under Review": "#F49C13", Approved: "#51AF37", Rejected: "#ef4444", Launched: "#3A97D3",
+      Draft: "#9ca3af", "Under Review": "#F69111", Approved: "#56A837", Rejected: "#ef4444", Launched: "#3B85BA",
     };
 
     return (
@@ -673,7 +673,7 @@ export default function SpinoffOS() {
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#3A97D315", color: "#3A97D3" }}>
+                <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#3B85BA15", color: "#3B85BA" }}>
                   Spin-Off OS
                 </span>
                 <span
@@ -773,7 +773,7 @@ export default function SpinoffOS() {
                   <div className="space-y-3">
                     {historyQuery.data.map((entry: { id: number; fromStatus: string | null; toStatus: string; reviewedBy: string | null; reason: string | null; createdAt: Date }) => {
                       const statusColors: Record<string, string> = {
-                        Draft: "#9ca3af", "Under Review": "#F49C13", Approved: "#51AF37", Rejected: "#ef4444", Launched: "#3A97D3",
+                        Draft: "#9ca3af", "Under Review": "#F69111", Approved: "#56A837", Rejected: "#ef4444", Launched: "#3B85BA",
                       };
                       return (
                         <div key={entry.id} className="flex items-start gap-3">
@@ -823,7 +823,7 @@ export default function SpinoffOS() {
               <p className="text-sm text-gray-400 font-medium mb-4">No execution plan generated yet</p>
               <Button
                 size="sm"
-                style={{ background: "#51AF37", color: "white" }}
+                style={{ background: "#56A837", color: "white" }}
                 onClick={() => generatePlan.mutate({ spinoffConfigId: activeConfigId })}
                 disabled={generatePlan.isPending}
               >
@@ -845,7 +845,7 @@ export default function SpinoffOS() {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#3A97D315", color: "#3A97D3" }}>
+              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#3B85BA15", color: "#3B85BA" }}>
                 Intelligence
               </span>
             </div>
@@ -859,7 +859,7 @@ export default function SpinoffOS() {
           <Button
             size="sm"
             className="gap-1.5 text-xs"
-            style={{ background: "#51AF37", color: "white" }}
+            style={{ background: "#56A837", color: "white" }}
             onClick={() => { setStep(1); setViewMode("wizard"); }}
           >
             <GitBranch size={13} /> New Spin-Off
@@ -872,9 +872,9 @@ export default function SpinoffOS() {
         <div className="grid grid-cols-4 gap-4 mb-8">
           {[
             { label: "Total Spin-Offs", value: configs.length, icon: GitBranch, color: "#1a2332" },
-            { label: "Approved", value: configs.filter((c: { status: string | null }) => c.status === "Approved").length, icon: CheckCircle2, color: "#51AF37" },
-            { label: "Under Review", value: configs.filter((c: { status: string | null }) => c.status === "Under Review").length, icon: Eye, color: "#F49C13" },
-            { label: "Launched", value: configs.filter((c: { status: string | null }) => c.status === "Launched").length, icon: Rocket, color: "#3A97D3" },
+            { label: "Approved", value: configs.filter((c: { status: string | null }) => c.status === "Approved").length, icon: CheckCircle2, color: "#56A837" },
+            { label: "Under Review", value: configs.filter((c: { status: string | null }) => c.status === "Under Review").length, icon: Eye, color: "#F69111" },
+            { label: "Launched", value: configs.filter((c: { status: string | null }) => c.status === "Launched").length, icon: Rocket, color: "#3B85BA" },
           ].map(({ label, value, icon: Icon, color }) => (
             <div key={label} className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
               <div className="flex items-center gap-2 mb-1">
@@ -896,7 +896,7 @@ export default function SpinoffOS() {
             </p>
             <Button
               size="sm"
-              style={{ background: "#51AF37", color: "white" }}
+              style={{ background: "#56A837", color: "white" }}
               onClick={() => { setStep(1); setViewMode("wizard"); }}
             >
               <GitBranch size={13} className="mr-1.5" /> Create First Spin-Off

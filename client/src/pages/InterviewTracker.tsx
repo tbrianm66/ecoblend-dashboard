@@ -16,10 +16,10 @@ import {
 } from "lucide-react";
 
 const VENTURES = [
-  { id: "ecoblend-rd", name: "EcoRace", color: "#51AF37" },
-  { id: "ecoblend",    name: "EcoComp",     color: "#51AF37" },
-  { id: "bebus",       name: "BEBUS",        color: "#3A97D3" },
-  { id: "tone",        name: "TONE",         color: "#F49C13" },
+  { id: "ecoblend-rd", name: "EcoRace", color: "#56A837" },
+  { id: "ecoblend",    name: "EcoComp",     color: "#56A837" },
+  { id: "bebus",       name: "BEBUS",        color: "#3B85BA" },
+  { id: "tone",        name: "TONE",         color: "#F69111" },
   { id: "real",        name: "REAL",         color: "#ef4444" },
   { id: "pipe",        name: "PIPE",         color: "#0ea5e9" },
 ];
@@ -248,7 +248,7 @@ export default function InterviewTracker() {
           {[
             { label: "Interviews Logged", value: totalInterviews, sub: "discovery sessions", color: "#16a34a" },
             { label: "AI Summaries", value: withAiSummary, sub: "auto-generated", color: "#7c3aed" },
-            { label: "VRL Stages Covered", value: `${vrlCoverage}/4`, sub: "stages validated", color: "#3A97D3" },
+            { label: "VRL Stages Covered", value: `${vrlCoverage}/4`, sub: "stages validated", color: "#3B85BA" },
           ].map(k => (
             <div key={k.label} className="vos-metric">
               <span className="vos-metric-label">{k.label}</span>
@@ -291,7 +291,7 @@ export default function InterviewTracker() {
               <InterviewCard
                 key={interview.id}
                 interview={interview}
-                ventureColor={venture?.color ?? "#51AF37"}
+                ventureColor={venture?.color ?? "#56A837"}
                 onDelete={() => deleteMutation.mutate({ id: interview.id })}
                 onSummarise={(transcript) => handleSummarise(interview.id, transcript)}
                 isSummarising={summarising === interview.id}

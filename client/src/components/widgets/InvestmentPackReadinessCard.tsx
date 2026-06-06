@@ -25,14 +25,14 @@ type ReadinessStatus = "Ready" | "Ready with Warnings" | "Not Ready";
 
 const STATUS_CONFIG: Record<ReadinessStatus, { color: string; bg: string; border: string; icon: React.ReactNode; label: string }> = {
   "Ready": {
-    color: "#51AF37",
+    color: "#56A837",
     bg: "bg-green-50",
     border: "border-green-200",
     icon: <CheckCircle2 size={16} className="text-green-500" />,
     label: "Investment Pack Ready",
   },
   "Ready with Warnings": {
-    color: "#F49C13",
+    color: "#F69111",
     bg: "bg-amber-50",
     border: "border-amber-200",
     icon: <AlertTriangle size={16} className="text-amber-500" />,
@@ -85,7 +85,7 @@ export default function InvestmentPackReadinessCard({ ventureId }: InvestmentPac
           <p
             className="text-lg font-bold"
             style={{
-              color: data.brlScore >= 60 ? "#51AF37" : data.brlScore >= 40 ? "#F49C13" : "#ef4444",
+              color: data.brlScore >= 60 ? "#56A837" : data.brlScore >= 40 ? "#F69111" : "#ef4444",
               fontFamily: "'Prompt', sans-serif",
             }}
           >
@@ -97,7 +97,7 @@ export default function InvestmentPackReadinessCard({ ventureId }: InvestmentPac
           <p
             className="text-lg font-bold"
             style={{
-              color: data.compositeScore >= 60 ? "#51AF37" : data.compositeScore >= 40 ? "#F49C13" : "#ef4444",
+              color: data.compositeScore >= 60 ? "#56A837" : data.compositeScore >= 40 ? "#F69111" : "#ef4444",
               fontFamily: "'Prompt', sans-serif",
             }}
           >
@@ -109,7 +109,7 @@ export default function InvestmentPackReadinessCard({ ventureId }: InvestmentPac
           <p
             className="text-lg font-bold"
             style={{
-              color: data.evidenceConfidence >= 70 ? "#51AF37" : data.evidenceConfidence >= 50 ? "#F49C13" : "#ef4444",
+              color: data.evidenceConfidence >= 70 ? "#56A837" : data.evidenceConfidence >= 50 ? "#F69111" : "#ef4444",
               fontFamily: "'Prompt', sans-serif",
             }}
           >

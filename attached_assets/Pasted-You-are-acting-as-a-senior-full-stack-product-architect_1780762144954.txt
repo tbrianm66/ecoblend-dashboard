@@ -1,0 +1,550 @@
+You are acting as a senior full-stack product architect, database auditor, and governance workflow specialist.
+
+I want you to audit the existing database platform and application at:
+
+https://www.ecoblend.studio
+
+Objective:
+Audit the current platform, database schema, navigation, modules, workflows, data models, permissions, and UI functionality to identify gaps and improvement opportunities required to capture a new “Purpose-Locked Governance Workflow” for protecting a company’s mission, ethics, capital structure, and long-term purpose.
+
+This workflow is based on the following governance logic:
+
+1. A company should define a protected purpose.
+2. That purpose should be translated into a company charter, articles, board pledge, investor policy, reserved matters, and operational metrics.
+3. The platform should track whether company decisions remain aligned with the purpose.
+4. The system should detect mission drift, capital pressure, governance weakness, and stakeholder risk.
+5. Corrective governance actions should be triggered when red flags are detected.
+6. The platform should support recurring reviews: monthly management review, quarterly purpose review, annual constitutional review.
+7. The workflow should protect against:
+   - mission drift
+   - hostile or misaligned capital
+   - boardroom betrayal
+   - weak succession planning
+   - misuse or sale of IP
+   - metric distortion
+   - governance documents becoming decorative rather than operational
+   - shareholder pressure overriding the original purpose
+
+Core workflow to support:
+
+Founder Purpose Definition
+→ Company Purpose Charter
+→ Beneficial Purpose Statement
+→ Mission Lock Design
+→ Governance Structure Selection
+→ Protected Articles / Constitution
+→ Board Mission Pledge
+→ Director Duties & Reserved Matters
+→ Investor Rights Framework
+→ Capital Alignment Decision
+→ Governance Operating System
+→ Monthly / Quarterly / Annual Reviews
+→ Purpose Drift Detection
+→ Corrective Governance Action
+→ Board / Steward / Founder Review
+→ Strategy, Incentive or Capital-Term Correction
+→ Annual Constitutional Review
+→ Return to Purpose Charter
+
+Please audit the platform against this workflow.
+
+Your audit must cover the following areas.
+
+A. DATABASE SCHEMA AUDIT
+
+Review the current database schema and identify whether the following entities exist. If missing, propose new tables, fields, relationships, constraints, indexes, and row-level security requirements.
+
+Required entities:
+
+1. Companies
+   - company_id
+   - company_name
+   - company_type
+   - founder_id
+   - parent_company_id
+   - operating_division
+   - purpose_status
+   - governance_maturity_score
+   - created_at
+   - updated_at
+
+2. Purpose Charter
+   - charter_id
+   - company_id
+   - protected_purpose_statement
+   - founder_intent_statement
+   - beneficial_purpose
+   - stakeholder_commitments
+   - non-negotiable_principles
+   - version_number
+   - approval_status
+   - approved_by
+   - approved_at
+   - review_due_date
+
+3. Mission Lock Design
+   - mission_lock_id
+   - company_id
+   - lock_type
+     Examples: articles protection, steward ownership, trust, foundation, holding company, golden share, board pledge, investor covenant
+   - lock_description
+   - legal_status
+   - implementation_status
+   - responsible_owner
+   - evidence_document_url
+   - review_date
+
+4. Governance Structure
+   - governance_structure_id
+   - company_id
+   - structure_type
+     Examples: standard limited company, public benefit logic, steward ownership, foundation-owned, holding-company controlled
+   - rationale
+   - risks
+   - controls
+   - implementation_status
+
+5. Board Mission Pledge
+   - pledge_id
+   - company_id
+   - director_id
+   - pledge_text
+   - signed_status
+   - signed_at
+   - expiry_or_review_date
+   - breach_status
+
+6. Directors and Stewards
+   - person_id
+   - company_id
+   - role
+   - appointment_date
+   - mission_alignment_score
+   - conflict_of_interest_status
+   - voting_rights
+   - removal_protection
+   - notes
+
+7. Reserved Matters
+   - reserved_matter_id
+   - company_id
+   - matter_category
+     Examples: sale of company, sale of IP, new investment, debt, founder removal, change of purpose, change of articles, licensing of EcoBLEND OS data
+   - approval_threshold
+   - required_approvers
+   - escalation_path
+   - status
+
+8. Investor Alignment
+   - investor_id
+   - company_id
+   - investor_name
+   - investor_type
+   - capital_amount
+   - time_horizon
+   - exit_expectation
+   - control_rights_requested
+   - liquidation_preference
+   - board_seat_requested
+   - mission_alignment_score
+   - risk_rating
+   - approval_status
+   - rejection_reason
+
+9. Capital Decision Log
+   - decision_id
+   - company_id
+   - investor_id
+   - decision_type
+   - decision_summary
+   - purpose_alignment_assessment
+   - financial_impact
+   - governance_impact
+   - approved_by
+   - decision_date
+   - conditions_attached
+
+10. Governance Review Cycle
+   - review_id
+   - company_id
+   - review_type
+     Examples: monthly management review, quarterly purpose review, annual constitutional review
+   - review_period
+   - reviewer
+   - findings
+   - red_flags
+   - corrective_actions_required
+   - review_status
+   - next_review_date
+
+11. Purpose Metrics
+   - metric_id
+   - company_id
+   - metric_name
+   - metric_category
+     Examples: purpose, financial sustainability, stakeholder impact, people/culture, ethics, sustainability, IP protection, capital pressure
+   - target_value
+   - current_value
+   - trend
+   - risk_threshold
+   - data_source
+   - reporting_frequency
+
+12. Purpose Drift Detection
+   - drift_id
+   - company_id
+   - trigger_source
+   - drift_category
+     Examples: capital pressure, leadership behaviour, metric distortion, stakeholder harm, mission-weakening transaction, IP risk, culture drift
+   - severity
+   - evidence
+   - detected_at
+   - assigned_to
+   - status
+
+13. Corrective Governance Actions
+   - action_id
+   - drift_id
+   - company_id
+   - action_type
+   - action_description
+   - owner
+   - deadline
+   - board_approval_required
+   - status
+   - completion_evidence
+   - completed_at
+
+14. Governance Documents
+   - document_id
+   - company_id
+   - document_type
+     Examples: articles, shareholder agreement, board pledge, founder intent letter, investor policy, reserved matters schedule, IP policy, social mission policy
+   - version
+   - status
+   - file_url
+   - approval_date
+   - expiry_or_review_date
+
+15. Audit Trail
+   - audit_id
+   - company_id
+   - user_id
+   - action_type
+   - entity_type
+   - entity_id
+   - old_value
+   - new_value
+   - timestamp
+   - reason_for_change
+
+For each table, recommend:
+- required fields
+- optional fields
+- relationships
+- enum values
+- validation rules
+- role permissions
+- dashboard requirements
+- missing APIs
+- migration risks
+
+B. APPLICATION MODULE AUDIT
+
+Audit the current module structure and determine whether the platform has the right modules to support this governance workflow.
+
+Required modules:
+
+1. Governance Command Centre
+   Purpose:
+   Central dashboard showing company purpose, governance maturity, red flags, review dates, investor alignment, reserved matters, and corrective actions.
+
+2. Purpose Charter Builder
+   Purpose:
+   Guided workflow for creating and versioning the company’s protected purpose, founder intent, stakeholder commitments, and non-negotiable principles.
+
+3. Mission Lock Designer
+   Purpose:
+   Tool for selecting and documenting the governance structure required to protect the company purpose.
+
+4. Constitutional Governance Module
+   Purpose:
+   Tracks articles, shareholder agreements, reserved matters, board powers, voting rights, supermajority protections, and amendment controls.
+
+5. Board and Stewardship Module
+   Purpose:
+   Tracks directors, stewards, board mission pledges, conflicts of interest, mission alignment, voting rights, and board review obligations.
+
+6. Investor Alignment Module
+   Purpose:
+   Screens investors for mission alignment, control risk, exit pressure, debt risk, and governance compatibility.
+
+7. Reserved Matters Register
+   Purpose:
+   Records decisions that require special approval, such as sale of company, sale of IP, new investors, debt, major pivots, purpose amendments, or founder removal.
+
+8. Purpose Metrics Dashboard
+   Purpose:
+   Tracks purpose KPIs, financial sustainability, people/culture indicators, stakeholder impact, sustainability metrics, capital pressure, IP protection, and governance risk.
+
+9. Purpose Drift Detection Module
+   Purpose:
+   Detects red flags and classifies them by risk category, severity, evidence, owner, and required escalation.
+
+10. Corrective Action Tracker
+   Purpose:
+   Tracks corrective governance actions from detection through board review, approval, implementation, and closure.
+
+11. Governance Document Vault
+   Purpose:
+   Stores and versions all critical governance documents, including articles, board pledges, shareholder agreements, investor policies, reserved matters schedules, IP policies, and social mission policies.
+
+12. Annual Constitutional Review Module
+   Purpose:
+   Forces annual review of purpose, structure, board, capital, reserved matters, and governance controls.
+
+C. USER ROLE AND PERMISSION AUDIT
+
+Assess whether the current platform supports the following user roles:
+
+1. Founder
+   - can create purpose charter
+   - can approve mission-lock design
+   - can review investor alignment
+   - can trigger governance review
+
+2. Board Member
+   - can review reserved matters
+   - can approve or reject governance actions
+   - can sign mission pledge
+   - can view drift warnings
+
+3. Steward / Mission Guardian
+   - can review purpose drift
+   - can veto purpose-weakening actions
+   - can approve changes to protected purpose
+
+4. Investor
+   - limited visibility
+   - can view approved governance summary
+   - cannot edit purpose, reserved matters, or drift records
+
+5. Operator / Management
+   - can submit evidence
+   - can update metrics
+   - can report red flags
+   - cannot change constitutional controls
+
+6. Admin
+   - can manage users, roles, permissions, and system configuration
+
+Identify any permission gaps, security risks, or data exposure risks.
+
+D. WORKFLOW AND UX AUDIT
+
+Review whether the current platform supports the following user journeys:
+
+Journey 1:
+Create a new company → define protected purpose → generate charter → assign review date.
+
+Journey 2:
+Select governance structure → document mission lock → upload legal documents → mark implementation status.
+
+Journey 3:
+Create board mission pledge → assign to directors → track signatures → flag unsigned pledges.
+
+Journey 4:
+Add investor → assess alignment → score control risk → approve, reject or renegotiate terms.
+
+Journey 5:
+Create reserved matter → submit decision → route for approval → log decision outcome.
+
+Journey 6:
+Run quarterly purpose review → check metrics → detect red flags → create corrective actions.
+
+Journey 7:
+Detect mission drift → classify severity → escalate to board or steward → approve corrective action → close with evidence.
+
+Journey 8:
+Run annual constitutional review → check articles, purpose, capital, board, metrics, IP protection, and stakeholder commitments → update governance maturity score.
+
+For each journey, identify:
+- existing functionality
+- missing functionality
+- broken or incomplete flows
+- required database changes
+- required UI changes
+- API requirements
+- testing requirements
+
+E. DASHBOARD REQUIREMENTS
+
+Propose a dashboard that includes:
+
+1. Governance Maturity Score
+2. Purpose Alignment Score
+3. Mission Drift Risk Level
+4. Investor Alignment Risk
+5. Board Pledge Completion
+6. Reserved Matters Pending Approval
+7. Corrective Actions Overdue
+8. Documents Requiring Review
+9. Capital Pressure Indicator
+10. IP Protection Status
+11. Stakeholder Commitment Status
+12. Annual Constitutional Review Status
+
+Use status colours:
+- Green: aligned / complete
+- Amber: review required
+- Red: high risk / intervention required
+- Grey: not started or no data
+
+F. SCORING MODEL REQUIREMENTS
+
+Design a simple scoring model for the first MVP.
+
+Governance Maturity Score:
+- Purpose charter complete: 15%
+- Mission lock design complete: 15%
+- Articles / constitutional controls uploaded: 15%
+- Board mission pledge signed: 10%
+- Reserved matters register active: 10%
+- Investor policy active: 10%
+- Purpose metrics active: 10%
+- Governance review cycle active: 10%
+- Corrective action process active: 5%
+
+Purpose Drift Risk:
+- High capital pressure
+- Misaligned investor terms
+- Unapproved reserved matter
+- Missed governance review
+- Declining stakeholder metrics
+- Unsigned board pledge
+- Missing constitutional document
+- Attempted purpose change
+- IP transfer or licensing risk
+
+Investor Alignment Score:
+- mission compatibility
+- time horizon
+- control rights
+- exit pressure
+- debt appetite
+- board influence
+- attitude to reinvestment
+- attitude to stakeholder commitments
+
+G. TECHNICAL AUDIT
+
+Inspect the codebase and identify:
+
+1. Current frontend framework
+2. Current backend framework
+3. Database provider
+4. Authentication method
+5. Role-based access control implementation
+6. Existing tables
+7. Missing migrations
+8. Broken queries
+9. Incomplete APIs
+10. Hardcoded data
+11. Seed data gaps
+12. Components that can be reused
+13. Components that should be refactored
+14. Testing coverage
+15. Error handling
+16. Form validation
+17. Navigation issues
+18. Deployment risks
+
+H. DELIVERABLES REQUIRED
+
+Produce the audit in the following format:
+
+1. Executive Summary
+   - Current platform readiness
+   - Main gaps
+   - Highest-value opportunities
+   - Critical risks
+
+2. Current-State Architecture
+   - Existing modules
+   - Existing database tables
+   - Existing user roles
+   - Existing workflows
+
+3. Gap Analysis
+   Use this table format:
+   - Area
+   - Required capability
+   - Current status
+   - Gap
+   - Severity
+   - Recommendation
+   - Estimated effort
+
+4. Proposed Database Schema
+   Include:
+   - table names
+   - fields
+   - relationships
+   - enum values
+   - indexes
+   - RLS / permissions
+   - migration sequence
+
+5. Proposed Product Backlog
+   Rank by priority:
+   - P0 critical
+   - P1 high
+   - P2 medium
+   - P3 later
+
+6. MVP Build Plan
+   Provide a 4-sprint implementation roadmap.
+
+Sprint 1:
+Database schema, governance entities, migrations, seed data.
+
+Sprint 2:
+Purpose Charter Builder, Mission Lock Designer, Governance Document Vault.
+
+Sprint 3:
+Board Mission Pledge, Reserved Matters Register, Investor Alignment Module.
+
+Sprint 4:
+Purpose Metrics Dashboard, Drift Detection, Corrective Action Tracker, Annual Review.
+
+7. Testing Plan
+   Include:
+   - unit tests
+   - integration tests
+   - permission tests
+   - workflow tests
+   - seed-data tests
+   - dashboard tests
+   - regression tests
+
+8. Example Use Cases
+   Include at least five:
+   - founder creates purpose charter
+   - board signs mission pledge
+   - investor is screened and rejected
+   - purpose drift is detected
+   - corrective action is closed after board review
+
+9. Final Recommendation
+   State whether the current platform should be:
+   - extended
+   - refactored
+   - partially rebuilt
+   - fully rebuilt
+
+Be direct and specific. Do not give generic advice. Inspect the actual code, schema, routes, components, migrations, and database logic before making recommendations.
+
+Important:
+Before proposing new build work, first identify what already exists and can be reused.
+Do not duplicate existing modules unless the existing implementation is structurally weak.
+Highlight any risk that the current data model is not adequate for auditability, governance control, legal defensibility, or future investor due diligence.

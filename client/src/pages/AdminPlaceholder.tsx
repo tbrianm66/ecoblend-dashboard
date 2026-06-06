@@ -15,13 +15,13 @@ const PAGE_META: Record<string, { icon: React.ComponentType<{ size?: number }>; 
     icon: Users,
     label: "Users & Roles",
     description: "Manage platform users, assign roles (Admin, Founder, Coach, Advisor, Investor), and control access permissions.",
-    color: "#3A97D3",
+    color: "#3B85BA",
   },
   "/admin/permissions": {
     icon: ShieldCheck,
     label: "Permissions",
     description: "Configure granular permissions per role and module. Set read, write, approve, and export rights.",
-    color: "#F49C13",
+    color: "#F69111",
   },
   "/admin/templates": {
     icon: LayoutTemplate,
@@ -73,7 +73,7 @@ export default function AdminPlaceholder() {
     icon: SlidersHorizontal,
     label: "Admin",
     description: "This section is coming soon.",
-    color: "#51AF37",
+    color: "#56A837",
   };
   const Icon = meta.icon;
 
@@ -117,7 +117,7 @@ export default function AdminPlaceholder() {
           </p>
         </div>
         <Button onClick={() => navigate("/admin/playbooks")}
-          style={{ background: "#51AF37", color: "#fff" }}>
+          style={{ background: "#56A837", color: "#fff" }}>
           Go to Playbook Library
         </Button>
       </div>

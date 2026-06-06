@@ -29,7 +29,7 @@ function SettingsCard({
   title,
   sub,
   children,
-  accent = "#51AF37",
+  accent = "#56A837",
 }: {
   icon: React.ComponentType<{ size?: number; style?: React.CSSProperties }>;
   title: string;
@@ -301,7 +301,7 @@ export default function AdminWidgetSettings() {
             <div className="flex items-center gap-2 mb-1">
               <span
                 className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded"
-                style={{ background: "#51AF3715", color: "#51AF37" }}
+                style={{ background: "#56A83715", color: "#56A837" }}
               >
                 Admin
               </span>
@@ -330,7 +330,7 @@ export default function AdminWidgetSettings() {
           icon={ToggleLeft}
           title="Global Widget Controls"
           sub="Master switches for the contextual widget system"
-          accent="#51AF37"
+          accent="#56A837"
         >
           <ToggleRow
             id="enableWidgetsGlobally"
@@ -409,7 +409,7 @@ export default function AdminWidgetSettings() {
             <Button
               size="sm"
               className="gap-1.5"
-              style={{ background: "#51AF37" }}
+              style={{ background: "#56A837" }}
               onClick={() => updateGlobal.mutate(global)}
               disabled={updateGlobal.isPending}
             >
@@ -424,7 +424,7 @@ export default function AdminWidgetSettings() {
           icon={Sliders}
           title="Threshold Settings"
           sub="Numeric thresholds that control when warning states and blockers are triggered"
-          accent="#3A97D3"
+          accent="#3B85BA"
         >
           <NumberRow
             label="Evidence Confidence Warning"
@@ -484,7 +484,7 @@ export default function AdminWidgetSettings() {
             <Button
               size="sm"
               className="gap-1.5"
-              style={{ background: "#3A97D3" }}
+              style={{ background: "#3B85BA" }}
               onClick={() => updateThresholds.mutate(thresholds)}
               disabled={updateThresholds.isPending}
             >
@@ -499,7 +499,7 @@ export default function AdminWidgetSettings() {
           icon={Layers}
           title="Module-Level Widget Configuration"
           sub="Enable or disable individual widget types per module"
-          accent="#F49C13"
+          accent="#F69111"
         >
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
@@ -598,8 +598,8 @@ export default function AdminWidgetSettings() {
                         className="text-xs capitalize"
                         style={
                           role === "admin"
-                            ? { color: "#51AF37", borderColor: "#51AF37" }
-                            : { color: "#3A97D3", borderColor: "#3A97D3" }
+                            ? { color: "#56A837", borderColor: "#56A837" }
+                            : { color: "#3B85BA", borderColor: "#3B85BA" }
                         }
                       >
                         {role}

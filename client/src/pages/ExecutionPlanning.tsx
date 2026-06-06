@@ -36,7 +36,7 @@ interface BudgetItem {
 // ── Config ──
 const phaseStatusConfig = {
   not_started: { color: "#6b7280", bg: "#f3f4f6", icon: Clock, label: "Not Started" },
-  in_progress: { color: "#3A97D3", bg: "#dbeafe", icon: Target, label: "In Progress" },
+  in_progress: { color: "#3B85BA", bg: "#dbeafe", icon: Target, label: "In Progress" },
   complete: { color: "#16a34a", bg: "#dcfce7", icon: CheckCircle2, label: "Complete" },
   blocked: { color: "#dc2626", bg: "#fee2e2", icon: Pause, label: "Blocked" },
 };
@@ -182,7 +182,7 @@ export default function ExecutionPlanning() {
               </div>
               <div className="bg-white rounded-xl border p-4" style={{ borderColor: "#e5e7eb" }}>
                 <span className="text-xs font-semibold text-gray-400 uppercase">Spent to Date</span>
-                <p className="text-2xl font-bold" style={{ color: "#3A97D3", fontFamily: "'Prompt', sans-serif" }}>£{(totalActual / 1000).toFixed(0)}k</p>
+                <p className="text-2xl font-bold" style={{ color: "#3B85BA", fontFamily: "'Prompt', sans-serif" }}>£{(totalActual / 1000).toFixed(0)}k</p>
               </div>
               <div className="bg-white rounded-xl border p-4" style={{ borderColor: "#e5e7eb" }}>
                 <span className="text-xs font-semibold text-gray-400 uppercase">Remaining</span>
@@ -216,7 +216,7 @@ export default function ExecutionPlanning() {
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
                             <div className="w-20 h-1.5 rounded-full bg-gray-100 overflow-hidden">
-                              <div className="h-full rounded-full" style={{ width: `${Math.min(100, utilPct)}%`, background: utilPct > 90 ? "#dc2626" : "#3A97D3" }} />
+                              <div className="h-full rounded-full" style={{ width: `${Math.min(100, utilPct)}%`, background: utilPct > 90 ? "#dc2626" : "#3B85BA" }} />
                             </div>
                             <span className="text-[10px] text-gray-400">{utilPct.toFixed(0)}%</span>
                           </div>

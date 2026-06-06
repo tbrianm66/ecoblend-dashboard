@@ -171,8 +171,8 @@ function ScoreRow({
 // ── Verdict badge ─────────────────────────────────────────────────────────────
 function VerdictBadge({ verdict, score }: { verdict: string; score: number }) {
   const cfg = {
-    Strong:   { color: "#51AF37", bg: "#f0fdf4", icon: CheckCircle2 },
-    Moderate: { color: "#F49C13", bg: "#fffbeb", icon: AlertTriangle },
+    Strong:   { color: "#56A837", bg: "#f0fdf4", icon: CheckCircle2 },
+    Moderate: { color: "#F69111", bg: "#fffbeb", icon: AlertTriangle },
     Weak:     { color: "#ef4444", bg: "#fef2f2", icon: XCircle },
   }[verdict] ?? { color: "#9ca3af", bg: "#f9fafb", icon: AlertTriangle };
   const Icon = cfg.icon;
@@ -215,8 +215,8 @@ export default function CoFounderMatrix() {
     onError: () => toast.error("Failed to generate report"),
   });
 
-  const COLOR_A = "#51AF37";
-  const COLOR_B = "#3A97D3";
+  const COLOR_A = "#56A837";
+  const COLOR_B = "#3B85BA";
 
   const profileAName = useMemo(() => profiles.find((p: { id: number }) => p.id === profileIdA)?.name ?? "", [profiles, profileIdA]);
   const profileBName = useMemo(() => profiles.find((p: { id: number }) => p.id === profileIdB)?.name ?? "", [profiles, profileIdB]);
@@ -228,7 +228,7 @@ export default function CoFounderMatrix() {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#51AF3715", color: "#51AF37" }}>
+              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#56A83715", color: "#56A837" }}>
                 Intelligence
               </span>
             </div>
@@ -245,7 +245,7 @@ export default function CoFounderMatrix() {
                 size="sm"
                 variant="outline"
                 className="gap-1.5 text-xs"
-                style={{ borderColor: "#F49C13", color: "#F49C13" }}
+                style={{ borderColor: "#F69111", color: "#F69111" }}
                 onClick={() => downloadPdf.mutate({ profileIdA: profileIdA!, profileIdB: profileIdB! })}
                 disabled={downloadPdf.isPending}
               >
@@ -327,7 +327,7 @@ export default function CoFounderMatrix() {
             <div className="flex items-center gap-4 flex-wrap">
               <VerdictBadge verdict={matrix.verdict} score={matrix.pairingScore} />
               <div className="flex items-center gap-2 text-xs text-gray-400">
-                <span className="px-2 py-1 rounded-full" style={{ background: "#51AF3715", color: "#51AF37" }}>
+                <span className="px-2 py-1 rounded-full" style={{ background: "#56A83715", color: "#56A837" }}>
                   Complementarity: {matrix.complementarity}/100
                 </span>
               </div>
@@ -413,7 +413,7 @@ export default function CoFounderMatrix() {
                 <Button
                   size="sm"
                   className="gap-1.5 text-xs"
-                  style={{ background: "#51AF37", color: "white" }}
+                  style={{ background: "#56A837", color: "white" }}
                   onClick={() => navigate(`/spinoff?founderIds=${matrix.profileA.id},${matrix.profileB.id}`)}
                 >
                   <ArrowRight size={13} /> Open Spin-Off OS

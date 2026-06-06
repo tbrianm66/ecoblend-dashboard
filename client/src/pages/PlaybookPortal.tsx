@@ -24,19 +24,19 @@ const FOLDER_META: Record<SubFolder, { label: string; icon: React.ReactNode; col
   avoid_catch22: {
     label: "Avoid the Catch-22",
     icon: <RefreshCw size={18} />,
-    color: "#51AF37",
+    color: "#56A837",
     description: "Improve data quality through active usage — break the cycle by instrumenting consumer feedback.",
   },
   democratize_quality: {
     label: "Democratize Quality",
     icon: <Users size={18} />,
-    color: "#3A97D3",
+    color: "#3B85BA",
     description: "Distribute data stewardship across every business domain — quality owned by those who create it.",
   },
   embed_operations: {
     label: "Embed Across Operations",
     icon: <Layers size={18} />,
-    color: "#F49C13",
+    color: "#F69111",
     description: "Embed quality checks invisibly into CRM, ERP, and BI pipelines — zero friction for end users.",
   },
   adapt_ai_genai: {
@@ -54,15 +54,15 @@ const FOLDER_META: Record<SubFolder, { label: string; icon: React.ReactNode; col
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  active: "#51AF37",
-  draft: "#F49C13",
+  active: "#56A837",
+  draft: "#F69111",
   deprecated: "#6b7280",
 };
 
 const RUN_STATUS_COLORS: Record<string, string> = {
-  pending: "#F49C13",
-  in_progress: "#3A97D3",
-  completed: "#51AF37",
+  pending: "#F69111",
+  in_progress: "#3B85BA",
+  completed: "#56A837",
   failed: "#EF4444",
   cancelled: "#6b7280",
 };
@@ -109,7 +109,7 @@ function FolderBrowserTab({
               className="gap-1.5 text-xs"
               onClick={() => seedMutation.mutate()}
               disabled={seedMutation.isPending}
-              style={{ borderColor: "#51AF37", color: "#51AF37" }}
+              style={{ borderColor: "#56A837", color: "#56A837" }}
             >
               {seedMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
               Seed Playbooks
@@ -196,7 +196,7 @@ function FolderBrowserTab({
                   <div
                     key={pb.id}
                     className="bg-white rounded-xl border p-5 cursor-pointer hover:shadow-md transition-all duration-200"
-                    style={{ borderColor: "#e5e7eb", borderLeft: `4px solid ${FOLDER_META[pb.subFolder as SubFolder]?.color || "#51AF37"}` }}
+                    style={{ borderColor: "#e5e7eb", borderLeft: `4px solid ${FOLDER_META[pb.subFolder as SubFolder]?.color || "#56A837"}` }}
                     onClick={() => onSelectPlaybook(pb.id)}
                   >
                     <div className="flex items-start justify-between mb-2">
@@ -292,7 +292,7 @@ function PlaybookViewerTab({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-xl border p-6" style={{ borderColor: "#e5e7eb", borderLeft: `4px solid ${folderMeta?.color || "#51AF37"}` }}>
+      <div className="bg-white rounded-xl border p-6" style={{ borderColor: "#e5e7eb", borderLeft: `4px solid ${folderMeta?.color || "#56A837"}` }}>
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
@@ -319,7 +319,7 @@ function PlaybookViewerTab({
             onClick={() => startMutation.mutate({ playbookId: pb.id })}
             disabled={startMutation.isPending || pb.status !== "active"}
             className="gap-1.5"
-            style={{ background: "#51AF37", color: "white" }}
+            style={{ background: "#56A837", color: "white" }}
           >
             {startMutation.isPending ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />}
             Start Run
@@ -327,7 +327,7 @@ function PlaybookViewerTab({
         </div>
 
         {pb.strategicPrinciple && (
-          <div className="mt-4 p-3 rounded-lg text-sm text-gray-700 italic" style={{ background: `${folderMeta?.color || "#51AF37"}08`, borderLeft: `3px solid ${folderMeta?.color || "#51AF37"}` }}>
+          <div className="mt-4 p-3 rounded-lg text-sm text-gray-700 italic" style={{ background: `${folderMeta?.color || "#56A837"}08`, borderLeft: `3px solid ${folderMeta?.color || "#56A837"}` }}>
             "{pb.strategicPrinciple}"
           </div>
         )}
@@ -338,12 +338,12 @@ function PlaybookViewerTab({
         {triggerConditions.length > 0 && (
           <div className="bg-white rounded-xl border p-5" style={{ borderColor: "#e5e7eb" }}>
             <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2" style={{ fontFamily: "'Prompt', sans-serif" }}>
-              <Zap size={14} style={{ color: "#F49C13" }} /> Trigger Conditions
+              <Zap size={14} style={{ color: "#F69111" }} /> Trigger Conditions
             </h3>
             <ul className="space-y-2">
               {triggerConditions.map((t, i) => (
                 <li key={i} className="flex items-start gap-2 text-xs text-gray-600">
-                  <span className="w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center text-white text-[10px] font-bold mt-0.5" style={{ background: "#F49C13" }}>{i + 1}</span>
+                  <span className="w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center text-white text-[10px] font-bold mt-0.5" style={{ background: "#F69111" }}>{i + 1}</span>
                   {t}
                 </li>
               ))}
@@ -354,12 +354,12 @@ function PlaybookViewerTab({
         {kpiEntries.length > 0 && (
           <div className="bg-white rounded-xl border p-5" style={{ borderColor: "#e5e7eb" }}>
             <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2" style={{ fontFamily: "'Prompt', sans-serif" }}>
-              <Target size={14} style={{ color: "#3A97D3" }} /> KPI Entries ({kpiEntries.length})
+              <Target size={14} style={{ color: "#3B85BA" }} /> KPI Entries ({kpiEntries.length})
             </h3>
             <ul className="space-y-2">
               {kpiEntries.map((k, i) => (
                 <li key={i} className="flex items-start gap-2 text-xs text-gray-600">
-                  <CheckCircle2 size={13} className="flex-shrink-0 mt-0.5" style={{ color: k.achieved ? "#51AF37" : "#3A97D3" }} />
+                  <CheckCircle2 size={13} className="flex-shrink-0 mt-0.5" style={{ color: k.achieved ? "#56A837" : "#3B85BA" }} />
                   {k.kpiLabel} {k.actualValue ? `— ${k.actualValue}${k.unit ? ` ${k.unit}` : ""}` : ""}
                 </li>
               ))}
@@ -372,13 +372,13 @@ function PlaybookViewerTab({
       {pb.steps && pb.steps.length > 0 && (
         <div className="bg-white rounded-xl border p-5" style={{ borderColor: "#e5e7eb" }}>
           <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2" style={{ fontFamily: "'Prompt', sans-serif" }}>
-            <Activity size={14} style={{ color: "#51AF37" }} /> Execution Steps ({pb.steps.length})
+            <Activity size={14} style={{ color: "#56A837" }} /> Execution Steps ({pb.steps.length})
           </h3>
           <div className="relative">
             {pb.steps.map((step, i) => (
               <div key={step.id} className="flex gap-4 mb-4 last:mb-0">
                 <div className="flex flex-col items-center">
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style={{ background: folderMeta?.color || "#51AF37" }}>
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style={{ background: folderMeta?.color || "#56A837" }}>
                     {step.stepNumber}
                   </div>
                   {i < pb.steps.length - 1 && <div className="w-0.5 flex-1 mt-1" style={{ background: "#e5e7eb", minHeight: "20px" }} />}
@@ -414,7 +414,7 @@ function PlaybookViewerTab({
       {pb.runs && pb.runs.length > 0 && (
         <div className="bg-white rounded-xl border p-5" style={{ borderColor: "#e5e7eb" }}>
           <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2" style={{ fontFamily: "'Prompt', sans-serif" }}>
-            <Play size={14} style={{ color: "#51AF37" }} /> Recent Runs
+            <Play size={14} style={{ color: "#56A837" }} /> Recent Runs
           </h3>
           <div className="space-y-2">
             {pb.runs.map((run) => (
@@ -530,7 +530,7 @@ function StepRunnerTab({ activeRunId }: { activeRunId: number | null }) {
         <div className="w-full h-2 rounded-full bg-gray-100 overflow-hidden">
           <div
             className="h-full rounded-full transition-all duration-700"
-            style={{ width: `${progressPct}%`, background: run.status === "completed" ? "#51AF37" : "#3A97D3" }}
+            style={{ width: `${progressPct}%`, background: run.status === "completed" ? "#56A837" : "#3B85BA" }}
           />
         </div>
       </div>
@@ -549,8 +549,8 @@ function StepRunnerTab({ activeRunId }: { activeRunId: number | null }) {
                 key={rs.id}
                 className={`rounded-xl border p-4 transition-all ${isActive ? "shadow-sm" : ""}`}
                 style={{
-                  borderColor: isActive ? "#3A97D3" : "#e5e7eb",
-                  background: isActive ? "#3A97D308" : "white",
+                  borderColor: isActive ? "#3B85BA" : "#e5e7eb",
+                  background: isActive ? "#3B85BA08" : "white",
                 }}
               >
                 <div className="flex items-start gap-3">
@@ -600,7 +600,7 @@ function StepRunnerTab({ activeRunId }: { activeRunId: number | null }) {
                               })
                             }
                             disabled={advanceMutation.isPending}
-                            style={{ background: "#51AF37", color: "white" }}
+                            style={{ background: "#56A837", color: "white" }}
                           >
                             {advanceMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
                             Complete Step
@@ -692,9 +692,9 @@ function KpiDashboardTab({ selectedPlaybookId }: { selectedPlaybookId: number | 
       {/* KPI summary strip */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: "Total Entries", value: kpis.length, color: "#3A97D3" },
-          { label: "KPIs Achieved", value: achievedCount, color: "#51AF37" },
-          { label: "Achievement Rate", value: kpis.length > 0 ? `${Math.round((achievedCount / kpis.length) * 100)}%` : "—", color: "#F49C13" },
+          { label: "Total Entries", value: kpis.length, color: "#3B85BA" },
+          { label: "KPIs Achieved", value: achievedCount, color: "#56A837" },
+          { label: "Achievement Rate", value: kpis.length > 0 ? `${Math.round((achievedCount / kpis.length) * 100)}%` : "—", color: "#F69111" },
         ].map((stat) => (
           <div key={stat.label} className="bg-white rounded-xl border p-4" style={{ borderColor: "#e5e7eb" }}>
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">{stat.label}</p>
@@ -709,7 +709,7 @@ function KpiDashboardTab({ selectedPlaybookId }: { selectedPlaybookId: number | 
           <h3 className="text-sm font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
             KPI Entries
           </h3>
-          <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => setShowForm(!showForm)} style={{ borderColor: "#51AF37", color: "#51AF37" }}>
+          <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => setShowForm(!showForm)} style={{ borderColor: "#56A837", color: "#56A837" }}>
             <Plus size={12} /> Record KPI
           </Button>
         </div>
@@ -741,7 +741,7 @@ function KpiDashboardTab({ selectedPlaybookId }: { selectedPlaybookId: number | 
               </label>
             </div>
             <div className="flex gap-2">
-              <Button size="sm" className="text-xs gap-1" onClick={() => recordMutation.mutate({ playbookId: selectedPlaybookId, ...form })} disabled={!form.kpiLabel || recordMutation.isPending} style={{ background: "#51AF37", color: "white" }}>
+              <Button size="sm" className="text-xs gap-1" onClick={() => recordMutation.mutate({ playbookId: selectedPlaybookId, ...form })} disabled={!form.kpiLabel || recordMutation.isPending} style={{ background: "#56A837", color: "white" }}>
                 {recordMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} Save
               </Button>
               <Button size="sm" variant="outline" className="text-xs" onClick={() => setShowForm(false)}>Cancel</Button>
@@ -761,7 +761,7 @@ function KpiDashboardTab({ selectedPlaybookId }: { selectedPlaybookId: number | 
             {kpis.map((kpi) => (
               <div key={kpi.id} className="flex items-center gap-3 p-3 rounded-lg" style={{ background: "#f9fafb" }}>
                 {kpi.achieved ? (
-                  <CheckCircle2 size={15} style={{ color: "#51AF37" }} />
+                  <CheckCircle2 size={15} style={{ color: "#56A837" }} />
                 ) : (
                   <Clock size={15} className="text-gray-400" />
                 )}
@@ -900,7 +900,7 @@ function AiGeneratorTab({ onPlaybookGenerated }: { onPlaybookGenerated: () => vo
               <ul className="space-y-1">
                 {generatedPlaybook.triggerConditions?.map((t: string, i: number) => (
                   <li key={i} className="text-xs text-gray-600 flex items-start gap-1">
-                    <Zap size={11} className="mt-0.5 flex-shrink-0" style={{ color: "#F49C13" }} /> {t}
+                    <Zap size={11} className="mt-0.5 flex-shrink-0" style={{ color: "#F69111" }} /> {t}
                   </li>
                 ))}
               </ul>
@@ -910,7 +910,7 @@ function AiGeneratorTab({ onPlaybookGenerated }: { onPlaybookGenerated: () => vo
               <ul className="space-y-1">
                 {generatedPlaybook.kpis?.map((k: string, i: number) => (
                   <li key={i} className="text-xs text-gray-600 flex items-start gap-1">
-                    <Target size={11} className="mt-0.5 flex-shrink-0" style={{ color: "#3A97D3" }} /> {k}
+                    <Target size={11} className="mt-0.5 flex-shrink-0" style={{ color: "#3B85BA" }} /> {k}
                   </li>
                 ))}
               </ul>
@@ -963,7 +963,7 @@ export default function PlaybookPortal() {
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#51AF3715", color: "#51AF37" }}>
+              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#56A83715", color: "#56A837" }}>
                 Stewardship Portal
               </span>
               <span className="text-xs text-gray-400">·</span>

@@ -9,6 +9,7 @@ import {
   serial,
   text,
   timestamp,
+  unique,
   varchar,
 } from "drizzle-orm/pg-core";
 
@@ -64,12 +65,45 @@ export const ventures = pgTable("ventures", {
   experimentPassRate: doublePrecision("experimentPassRate"),    // passing / completed experiments (%)
   learningVelocity: integer("learningVelocity"),           // validated learning cycles last 30 days
   interviewInsightRate: doublePrecision("interviewInsightRate"), // interviews with validated signal (%)
+  // -- Command Centre (Lean OS) extensions — all nullable, additive only ------
+  currentStage: text("currentStage"),         // intake|problem_validation|...|investment_ready
+  validationStatus: text("validationStatus"), // idea|validating|building|piloting|scaling|paused|pivoting|killed|archived
+  ventureType: text("ventureType"),
+  owner: varchar("owner", { length: 255 }),
+  // -- Lean Startup Workflow State Machine (WorkflowStateService) --------------
+  // workflowStage is the authoritative stage in the sequential lean OS workflow.
+  // Allowed values are enforced at the API layer via LEAN_STAGES enum (see
+  // shared/workflowStages.ts). Never update this column directly — use
+  // WorkflowStateService.advance() or WorkflowStateService.triggerPivot().
+  workflowStage: text("workflowStage"),       // LEAN_STAGE enum: venture_intake → decision_gate
+  pivotRequired: boolean("pivotRequired").default(false),
+  pivotReason: text("pivotReason"),
+  // -- Lean Canvas versioning — tracks latest persisted version number ----------
+  canvasVersion: integer("canvasVersion").default(0),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
 export type Venture = typeof ventures.$inferSelect;
 export type InsertVenture = typeof ventures.$inferInsert;
+
+// -- Venture members (access control) -----------------------------------------
+// Maps users to the ventures they may edit. Venture-scoped write operations
+// authorise the caller against this table (admins bypass it). A venture with no
+// members is "unclaimed" — the first authenticated editor claims it (see the
+// server auth model in discoveryMarket.router.ts).
+export const ventureMembers = pgTable("venture_members", {
+  id: serial("id").primaryKey(),
+  ventureId: varchar("ventureId", { length: 64 }).notNull().references(() => ventures.id),
+  userId: integer("userId").notNull().references(() => users.id),
+  role: text("role").default("editor").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (t) => ({
+  ventureUserUnique: unique("venture_members_venture_user_unique").on(t.ventureId, t.userId),
+}));
+
+export type VentureMember = typeof ventureMembers.$inferSelect;
+export type InsertVentureMember = typeof ventureMembers.$inferInsert;
 
 // -- Milestones ----------------------------------------------------------------
 export const milestones = pgTable("milestones", {
@@ -110,6 +144,13 @@ export const ventureScores = pgTable("venture_scores", {
   trlPercent: integer("trlPercent").notNull(),
   recordedAt: timestamp("recordedAt").defaultNow().notNull(),
   notes: text("notes"),
+  // -- Human review gate (see server/_core/trpc.ts reviewedScoreProcedure) ----
+  // AI-generated scores must not be persisted without a human reviewer.
+  // The reviewedScoreProcedure middleware blocks writes where aiGenerated=true
+  // but humanReviewedBy / humanReviewedAt are absent.
+  humanReviewedBy: varchar("humanReviewedBy", { length: 255 }),
+  humanReviewedAt: timestamp("humanReviewedAt"),
+  aiGenerated: boolean("aiGenerated").default(false),
 });
 
 export type VentureScore = typeof ventureScores.$inferSelect;
@@ -166,6 +207,15 @@ export const experiments = pgTable("experiments", {
   method: text("method"),
   result: text("result"),
   outcome: text("outcome").default("Pending"),
+  // ── Step-3 enforcement fields ──────────────────────────────────────────────
+  // confidence_level: 1-10 integer, mandatory. Router blocks NULL/missing.
+  confidenceLevel: integer("confidenceLevel").default(5).notNull(),
+  // evidence_uri: required when outcome is validated/Pass (router warns if absent)
+  evidenceUri: text("evidenceUri"),
+  // opportunityId: optional FK to opportunities.id — used to mark assumption as
+  // invalidated when the experiment outcome is "invalidated" or "Fail"
+  opportunityId: integer("opportunityId"),
+  // ── end Step-3 enforcement fields ─────────────────────────────────────────
   trlLevelJustified: integer("trlLevelJustified"),  // TRL level this experiment supports
   offeringId: varchar("offeringId", { length: 36 }),
   conductedAt: timestamp("conductedAt"),
@@ -6953,120 +7003,579 @@ export const contingencyPlaybooks = pgTable("contingency_playbooks", {
 export type ContingencyPlaybook = typeof contingencyPlaybooks.$inferSelect;
 export type InsertContingencyPlaybook = typeof contingencyPlaybooks.$inferInsert;
 
-
 // ============================================================================
-// PHASE 5: MISSION PROTECTION FRAMEWORK
+// MODULE 3 — DISCOVERY & MARKET (Lean Startup Evidence Engine)
 // ============================================================================
 
-// -- Mission Integrity Scores (Phase 5A) -----------------------------------
-export const missionIntegrityScores = pgTable("mission_integrity_scores", {
+// -- Customer Segments ---------------------------------------------------------
+export const customerSegments = pgTable("customer_segments", {
+  id:                serial("id").primaryKey(),
+  ventureId:         varchar("ventureId", { length: 64 }).notNull(),
+  segmentName:       varchar("segmentName", { length: 255 }).notNull(),
+  buyerRole:         varchar("buyerRole", { length: 255 }),
+  userRole:          varchar("userRole", { length: 255 }),
+  influencerRole:    varchar("influencerRole", { length: 255 }),
+  decisionMakerRole: varchar("decisionMakerRole", { length: 255 }),
+  problemArea:       text("problemArea"),
+  currentAlternative: text("currentAlternative"),
+  segmentNotes:      text("segmentNotes"),
+  createdAt:         timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:         timestamp("updatedAt").defaultNow().notNull(),
+});
+export type CustomerSegment = typeof customerSegments.$inferSelect;
+export type InsertCustomerSegment = typeof customerSegments.$inferInsert;
+
+// -- Problem Hypotheses --------------------------------------------------------
+export const problemHypotheses = pgTable("problem_hypotheses", {
+  id:                  serial("id").primaryKey(),
+  ventureId:           varchar("ventureId", { length: 64 }).notNull(),
+  customerSegmentId:   integer("customerSegmentId"),
+  hypothesisStatement: text("hypothesisStatement").notNull(),
+  problemType:         varchar("problemType", { length: 128 }),
+  targetCustomer:      varchar("targetCustomer", { length: 255 }),
+  assumedPain:         text("assumedPain"),
+  assumedFrequency:    text("assumedFrequency"),
+  assumedUrgency:      text("assumedUrgency"),
+  assumedBudgetOwner:  text("assumedBudgetOwner"),
+  status:              text("status").default("untested").notNull(),
+  confidenceScore:     integer("confidenceScore").default(0),
+  createdAt:           timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:           timestamp("updatedAt").defaultNow().notNull(),
+});
+export type ProblemHypothesis = typeof problemHypotheses.$inferSelect;
+export type InsertProblemHypothesis = typeof problemHypotheses.$inferInsert;
+
+// -- Customer Interviews -------------------------------------------------------
+export const customerInterviews = pgTable("customer_interviews", {
+  id:                        serial("id").primaryKey(),
+  ventureId:                 varchar("ventureId", { length: 64 }).notNull(),
+  customerSegmentId:         integer("customerSegmentId"),
+  problemHypothesisId:       integer("problemHypothesisId"),
+  contactName:               varchar("contactName", { length: 255 }),
+  organisation:              varchar("organisation", { length: 255 }),
+  roleTitle:                 varchar("roleTitle", { length: 255 }),
+  interviewDate:             varchar("interviewDate", { length: 32 }),
+  interviewType:             varchar("interviewType", { length: 128 }),
+  status:                    text("status").default("logged"),
+  problemMentionedUnprompted: boolean("problemMentionedUnprompted").default(false),
+  currentWorkaround:         text("currentWorkaround"),
+  painScore:                 integer("painScore").default(0),
+  urgencyScore:              integer("urgencyScore").default(0),
+  frequencyScore:            integer("frequencyScore").default(0),
+  budgetSignalScore:         integer("budgetSignalScore").default(0),
+  decisionMakerAccessScore:  integer("decisionMakerAccessScore").default(0),
+  willingnessToTrial:        boolean("willingnessToTrial").default(false),
+  willingnessToPaySignal:    text("willingnessToPaySignal").default("none"),
+  discoveryScore:            integer("discoveryScore").default(0),
+  keyQuote:                  text("keyQuote"),
+  evidenceNotes:             text("evidenceNotes"),
+  contradictionNotes:        text("contradictionNotes"),
+  recommendedDecision:       text("recommendedDecision"),
+  nextAction:                text("nextAction"),
+  createdAt:                 timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:                 timestamp("updatedAt").defaultNow().notNull(),
+});
+export type CustomerInterview = typeof customerInterviews.$inferSelect;
+export type InsertCustomerInterview = typeof customerInterviews.$inferInsert;
+
+// -- Competitors (Discovery & Market) -----------------------------------------
+export const dmCompetitors = pgTable("dm_competitors", {
+  id:                      serial("id").primaryKey(),
+  ventureId:               varchar("ventureId", { length: 64 }).notNull(),
+  problemHypothesisId:     integer("problemHypothesisId"),
+  competitorName:          varchar("competitorName", { length: 255 }).notNull(),
+  competitorType:          text("competitorType").default("direct"),
+  customerSegment:         varchar("customerSegment", { length: 255 }),
+  problemSolved:           text("problemSolved"),
+  strengths:               text("strengths"),
+  weaknesses:              text("weaknesses"),
+  pricingModel:            varchar("pricingModel", { length: 255 }),
+  customerSatisfactionScore: integer("customerSatisfactionScore").default(0),
+  switchingDifficultyScore:  integer("switchingDifficultyScore").default(0),
+  differentiationScore:    integer("differentiationScore").default(0),
+  threatScore:             integer("threatScore").default(0),
+  competitiveRiskScore:    integer("competitiveRiskScore").default(0),
+  notes:                   text("notes"),
+  createdAt:               timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:               timestamp("updatedAt").defaultNow().notNull(),
+});
+export type DmCompetitor = typeof dmCompetitors.$inferSelect;
+export type InsertDmCompetitor = typeof dmCompetitors.$inferInsert;
+
+// -- Demand Signals ------------------------------------------------------------
+export const demandSignals = pgTable("demand_signals", {
   id:                    serial("id").primaryKey(),
   ventureId:             varchar("ventureId", { length: 64 }).notNull(),
-  overallScore:          integer("overallScore").notNull(),           // 0-100
-  financialVsMissionDrift: integer("financialVsMissionDrift").notNull(), // 0-100: divergence between financial and impact metrics
-  stakeholderAlignmentScore: integer("stakeholderAlignmentScore").notNull(), // 0-100: investor/founder/employee alignment
-  governanceStrengthScore: integer("governanceStrengthScore").notNull(),   // 0-100: mission-protecting governance structures
-  leadershipContinuityScore: integer("leadershipContinuityScore").notNull(), // 0-100: succession planning readiness
-  missionDriftTrend:     text("missionDriftTrend").default("Stable"),  // Improving | Stable | Declining
-  lastAssessmentAt:      timestamp("lastAssessmentAt"),
+  problemHypothesisId:   integer("problemHypothesisId"),
+  signalName:            varchar("signalName", { length: 255 }).notNull(),
+  signalType:            text("signalType").default("customer_pull"),
+  sourceName:            varchar("sourceName", { length: 255 }),
+  sourceUrl:             varchar("sourceUrl", { length: 512 }),
+  signalDate:            varchar("signalDate", { length: 32 }),
+  relevanceScore:        integer("relevanceScore").default(0),
+  evidenceStrengthScore: integer("evidenceStrengthScore").default(0),
+  recencyScore:          integer("recencyScore").default(0),
+  commercialImpactScore: integer("commercialImpactScore").default(0),
+  repeatabilityScore:    integer("repeatabilityScore").default(0),
+  demandSignalScore:     integer("demandSignalScore").default(0),
+  evidenceSummary:       text("evidenceSummary"),
+  linkedExperiment:      text("linkedExperiment"),
+  successThreshold:      text("successThreshold"),
   createdAt:             timestamp("createdAt").defaultNow().notNull(),
   updatedAt:             timestamp("updatedAt").defaultNow().notNull(),
 });
-export type MissionIntegrityScore = typeof missionIntegrityScores.$inferSelect;
-export type InsertMissionIntegrityScore = typeof missionIntegrityScores.$inferInsert;
+export type DemandSignal = typeof demandSignals.$inferSelect;
+export type InsertDemandSignal = typeof demandSignals.$inferInsert;
 
-// -- Constitutional Governance (Phase 5B) ----------------------------------
-export const governanceStructures = pgTable("governance_structures", {
-  id:                    varchar("id", { length: 64 }).primaryKey(),
+// -- WTP Tests -----------------------------------------------------------------
+export const wtpTests = pgTable("wtp_tests", {
+  id:                    serial("id").primaryKey(),
   ventureId:             varchar("ventureId", { length: 64 }).notNull(),
-  // Founder Protection Mechanisms
-  founderVetoRights:     boolean("founderVetoRights").default(false),      // Founder can veto mission-critical decisions
-  founderVetoScope:      text("founderVetoScope"),                         // Which decisions require founder veto
-  // Board Composition
-  boardSize:             integer("boardSize"),                                 // Total board seats
-  founderSeats:          integer("founderSeats"),                              // Seats held by founder(s)
-  independentSeats:      integer("independentSeats"),                          // Independent director seats
-  investorSeats:         integer("investorSeats"),                             // Investor-nominated seats
-  missionAlignedSeats:   integer("missionAlignedSeats"),                       // Seats reserved for mission-aligned directors
-  // Stakeholder Rights
-  employeeRepresentation: boolean("employeeRepresentation").default(false), // Employee board seat or advisory role
-  communityRepresentation: boolean("communityRepresentation").default(false), // Community stakeholder representation
-  customerAdvisoryBoard: boolean("customerAdvisoryBoard").default(false),  // Customer feedback mechanism
-  // Mission Protection Clauses
-  missionClauseInBylaws:  boolean("missionClauseInBylaws").default(false), // Explicit mission protection in bylaws
-  missionClauseText:     text("missionClauseText"),                        // Text of mission protection clause
-  // Governance Compliance
-  complianceScore:       integer("complianceScore"),                           // 0-100: governance structure compliance
-  lastReviewAt:          timestamp("lastReviewAt"),
+  problemHypothesisId:   integer("problemHypothesisId"),
+  customerSegmentId:     integer("customerSegmentId"),
+  customerName:          varchar("customerName", { length: 255 }),
+  organisation:          varchar("organisation", { length: 255 }),
+  contactRole:           varchar("contactRole", { length: 255 }),
+  buyerRole:             varchar("buyerRole", { length: 255 }),
+  economicBuyer:         boolean("economicBuyer").default(false),
+  budgetOwnerConfirmed:  boolean("budgetOwnerConfirmed").default(false),
+  budgetOwnerStatus:     text("budgetOwnerStatus").default("unknown"),   // unknown|partial|confirmed
+  budgetOwnerName:       varchar("budgetOwnerName", { length: 255 }),
+  budgetOwnerRole:       varchar("budgetOwnerRole", { length: 255 }),
+  currentSpend:          varchar("currentSpend", { length: 255 }),
+  currentSpendCurrency:  varchar("currentSpendCurrency", { length: 8 }).default("GBP"),
+  currentSpendPeriod:    varchar("currentSpendPeriod", { length: 32 }),
+  valueDriver:           text("valueDriver"),
+  pricingModelTested:    varchar("pricingModelTested", { length: 255 }),
+  priceTested:           varchar("priceTested", { length: 255 }),
+  priceCurrency:         varchar("priceCurrency", { length: 8 }).default("GBP"),
+  pricePeriod:           varchar("pricePeriod", { length: 32 }),
+  testMethod:            text("testMethod").default("pricing_interview"),
+  responseSummary:       text("responseSummary"),
+  evidenceLevel:         integer("evidenceLevel").default(1),
+  evidenceStrengthScore: integer("evidenceStrengthScore").default(0),
+  pricingResponse:       text("pricingResponse").default("none"),         // accepted|negotiating|needs_roi_proof|price_resistance|rejected|none
+  procurementPathway:    text("procurementPathway"),
+  procurementPathwayStatus: text("procurementPathwayStatus").default("unknown"), // unknown|mapped|blocked|feasible|high_friction|validated
+  procurementPathwayNotes: text("procurementPathwayNotes"),
+  decisionProcessNotes:  text("decisionProcessNotes"),
+  objections:            text("objections"),
+  objectionCategory:     text("objectionCategory"),
+  wtpScore:              integer("wtpScore").default(0),
+  recommendedPricingModel: varchar("recommendedPricingModel", { length: 255 }),
+  nextCommercialAction:  text("nextCommercialAction"),
+  nextActionDueDate:     varchar("nextActionDueDate", { length: 32 }),
+  status:                text("status").default("planned"),               // planned|in_progress|completed|blocked|invalidated|converted_to_pilot|converted_to_loi|converted_to_paid_customer
   createdAt:             timestamp("createdAt").defaultNow().notNull(),
   updatedAt:             timestamp("updatedAt").defaultNow().notNull(),
+});
+export type WtpTest = typeof wtpTests.$inferSelect;
+export type InsertWtpTest = typeof wtpTests.$inferInsert;
+
+// -- Market Risks --------------------------------------------------------------
+export const marketRisks = pgTable("market_risks", {
+  id:                    serial("id").primaryKey(),
+  ventureId:             varchar("ventureId", { length: 64 }).notNull(),
+  linkedModule:          varchar("linkedModule", { length: 128 }),
+  linkedRecordId:        integer("linkedRecordId"),
+  riskTitle:             varchar("riskTitle", { length: 255 }).notNull(),
+  riskCategory:          text("riskCategory").default("problem_risk"),
+  riskDescription:       text("riskDescription"),
+  probabilityScore:      integer("probabilityScore").default(1),
+  severityScore:         integer("severityScore").default(1),
+  evidenceConfidenceScore: integer("evidenceConfidenceScore").default(1),
+  marketRiskScore:       integer("marketRiskScore").default(1),
+  evidenceSummary:       text("evidenceSummary"),
+  mitigationPlan:        text("mitigationPlan"),
+  requiredExperiment:    text("requiredExperiment"),
+  owner:                 varchar("owner", { length: 255 }),
+  reviewDate:            varchar("reviewDate", { length: 32 }),
+  status:                text("status").default("open").notNull(),
+  autoGenerated:         boolean("autoGenerated").default(false),
+  createdAt:             timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:             timestamp("updatedAt").defaultNow().notNull(),
+});
+export type MarketRisk = typeof marketRisks.$inferSelect;
+export type InsertMarketRisk = typeof marketRisks.$inferInsert;
+
+// -- Lean Experiments ----------------------------------------------------------
+export const leanExperiments = pgTable("lean_experiments", {
+  id:                  serial("id").primaryKey(),
+  ventureId:           varchar("ventureId", { length: 64 }).notNull(),
+  problemHypothesisId: integer("problemHypothesisId"),
+  experimentName:      varchar("experimentName", { length: 255 }).notNull(),
+  experimentType:      text("experimentType").default("interview"),
+  hypothesisTested:    text("hypothesisTested"),
+  method:              text("method"),
+  successThreshold:    text("successThreshold"),
+  result:             text("result"),
+  learningSummary:     text("learningSummary"),
+  decision:            text("decision"),
+  nextStep:            text("nextStep"),
+  createdAt:           timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:           timestamp("updatedAt").defaultNow().notNull(),
+});
+export type LeanExperiment = typeof leanExperiments.$inferSelect;
+export type InsertLeanExperiment = typeof leanExperiments.$inferInsert;
+
+// -- Lean Canvas (append-only versioning) --------------------------------------
+// Each save inserts a new row with version = max(version)+1 for that venture.
+// The current active version is tracked in ventures.canvasVersion.
+export const leanCanvases = pgTable("lean_canvases", {
+  id:               serial("id").primaryKey(),
+  ventureId:        varchar("ventureId", { length: 64 }).notNull(),
+  version:          integer("version").notNull().default(1),
+  // Nine Lean Canvas blocks
+  problem:          text("problem"),
+  solution:         text("solution"),
+  uniqueValueProp:  text("uniqueValueProp"),
+  customerSegments: text("customerSegments"),
+  channels:         text("channels"),
+  revenueStreams:   text("revenueStreams"),
+  costStructure:    text("costStructure"),
+  keyMetrics:       text("keyMetrics"),
+  unfairAdvantage:  text("unfairAdvantage"),
+  // R&D linkage
+  mvpFormat:        text("mvpFormat"),          // concierge|wizard_of_oz|smoke_test|landing_page|prototype
+  hypothesisTested: text("hypothesisTested"),
+  successCriteria:  text("successCriteria"),
+  notes:            text("notes"),
+  status:           text("status").default("draft"),   // draft|active|archived
+  createdBy:        varchar("createdBy", { length: 255 }),
+  createdAt:        timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:        timestamp("updatedAt").defaultNow().notNull(),
+});
+export type LeanCanvas = typeof leanCanvases.$inferSelect;
+export type InsertLeanCanvas = typeof leanCanvases.$inferInsert;
+
+// -- Product Milestones (R&D prototype & MVP build tracking) -------------------
+export const productMilestones = pgTable("product_milestones", {
+  id:                   serial("id").primaryKey(),
+  ventureId:            varchar("ventureId", { length: 64 }).notNull(),
+  milestoneTitle:       varchar("milestoneTitle", { length: 255 }).notNull(),
+  milestoneType:        text("milestoneType").default("prototype"),  // concierge_mvp|wizard_of_oz|smoke_test|prototype|pilot|production|other
+  mvpFormat:            text("mvpFormat"),          // concierge|wizard_of_oz|smoke_test|landing_page|prototype
+  stage:                text("stage"),              // lean stage slug or free text
+  description:          text("description"),
+  hypothesisTested:     text("hypothesisTested"),
+  successCriteria:      text("successCriteria"),
+  // User testing evidence
+  userTestCount:        integer("userTestCount").default(0),
+  userResponseCaptured: boolean("userResponseCaptured").default(false),
+  participants:         integer("participants").default(0),
+  validated:            integer("validated").default(0),
+  invalidated:          integer("invalidated").default(0),
+  validationRate:       doublePrecision("validationRate"),
+  outcome:              text("outcome"),            // validated|invalidated|inconclusive
+  keyLearning:          text("keyLearning"),
+  // Scheduling
+  targetDate:           varchar("targetDate", { length: 32 }),
+  completedDate:        varchar("completedDate", { length: 32 }),
+  status:               text("status").default("planned").notNull(), // planned|in_progress|completed|blocked
+  evidenceUrl:          text("evidenceUrl"),
+  assignedTo:           varchar("assignedTo", { length: 255 }),
+  // MVP linkage fields (added for test-case Step 2 compliance)
+  failureCriteria:         text("failureCriteria"),
+  leanCanvasVersionAtMvp:  integer("leanCanvasVersionAtMvp"),
+  linkedMvpDefinitionId:   integer("linkedMvpDefinitionId"),   // self-referential FK enforced at DB level
+  createdAt:            timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:            timestamp("updatedAt").defaultNow().notNull(),
+});
+export type ProductMilestone = typeof productMilestones.$inferSelect;
+export type InsertProductMilestone = typeof productMilestones.$inferInsert;
+
+// -- Venture Archive — written when a kill decision is recorded or a venture is manually archived
+export const ventureArchive = pgTable("venture_archive", {
+  id:            serial("id").primaryKey(),
+  ventureId:     varchar("ventureId", { length: 64 }).notNull(),
+  decisionId:    integer("decisionId"),          // FK to cc_decisions.id
+  archiveReason: text("archiveReason"),
+  finalStage:    text("finalStage"),
+  archivedBy:    varchar("archivedBy", { length: 255 }),
+  notes:         text("notes"),
+  status:        text("status").default("archived").notNull(), // archived|restored
+  restoredBy:    varchar("restoredBy", { length: 255 }),
+  restoredAt:    timestamp("restoredAt"),
+  createdAt:     timestamp("createdAt").defaultNow().notNull(),
+});
+export type VentureArchive = typeof ventureArchive.$inferSelect;
+export type InsertVentureArchive = typeof ventureArchive.$inferInsert;
+
+// -- Pivot Log — append-only record of every hypothesis pivot across all canvas fields ---
+export const pivotLog = pgTable("pivot_log", {
+  id:                  serial("id").primaryKey(),
+  ventureId:           varchar("ventureId", { length: 64 }).notNull(),
+  pivotType:           text("pivotType").notNull(), // customer_segment|problem|solution|revenue|channels|…
+  previousHypothesis:  text("previousHypothesis"),
+  newHypothesis:       text("newHypothesis"),
+  triggerEvent:        text("triggerEvent"),
+  loggedBy:            varchar("loggedBy", { length: 255 }),
+  canvasVersion:       integer("canvasVersion"),
+  createdAt:           timestamp("createdAt").defaultNow().notNull(),
+});
+export type PivotLog = typeof pivotLog.$inferSelect;
+export type InsertPivotLog = typeof pivotLog.$inferInsert;
+
+// -- Command Centre (Lean OS) tables -------------------------------------------
+export * from "./schema_cc";
+
+// -- WTP Assessment (commercial validation) tables -----------------------------
+export * from "./schema_wtp";
+
+// ── Purpose-Locked Governance Workflow tables ──────────────────────────────────
+
+export const purposeCharters = pgTable("purpose_charters", {
+  id:                          serial("id").primaryKey(),
+  ventureId:                   text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  protectedPurposeStatement:   text("protectedPurposeStatement").notNull(),
+  founderIntentStatement:      text("founderIntentStatement"),
+  beneficialPurpose:           text("beneficialPurpose"),
+  stakeholderCommitments:      text("stakeholderCommitments"),   // JSON array
+  nonNegotiablePrinciples:     text("nonNegotiablePrinciples"),  // JSON array
+  versionNumber:               integer("versionNumber").notNull().default(1),
+  approvalStatus:              text("approvalStatus").notNull().default("draft"),
+  approvedBy:                  text("approvedBy"),
+  approvedAt:                  timestamp("approvedAt", { withTimezone: true }),
+  reviewDueDate:               date("reviewDueDate"),
+  createdBy:                   text("createdBy"),
+  createdAt:                   timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:                   timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+});
+export type PurposeCharter = typeof purposeCharters.$inferSelect;
+export type InsertPurposeCharter = typeof purposeCharters.$inferInsert;
+
+export const missionLocks = pgTable("mission_locks", {
+  id:                   serial("id").primaryKey(),
+  ventureId:            text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  lockType:             text("lockType").notNull(),
+  lockDescription:      text("lockDescription").notNull(),
+  legalStatus:          text("legalStatus"),
+  implementationStatus: text("implementationStatus").notNull().default("not_started"),
+  responsibleOwner:     text("responsibleOwner"),
+  evidenceDocumentUrl:  text("evidenceDocumentUrl"),
+  reviewDate:           date("reviewDate"),
+  createdAt:            timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:            timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+});
+export type MissionLock = typeof missionLocks.$inferSelect;
+export type InsertMissionLock = typeof missionLocks.$inferInsert;
+
+export const governanceStructures = pgTable("governance_structures", {
+  id:                   serial("id").primaryKey(),
+  ventureId:            text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  structureType:        text("structureType").notNull(),
+  rationale:            text("rationale"),
+  risks:                text("risks"),
+  controls:             text("controls"),
+  implementationStatus: text("implementationStatus").notNull().default("not_started"),
+  createdAt:            timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:            timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
 });
 export type GovernanceStructure = typeof governanceStructures.$inferSelect;
-export type InsertGovernanceStructure = typeof governanceStructures.$inferInsert;
 
-// -- Succession Plans (Phase 5C) -------------------------------------------
-export const successionPlans = pgTable("succession_plans", {
-  id:                    varchar("id", { length: 64 }).primaryKey(),
-  ventureId:             varchar("ventureId", { length: 64 }).notNull(),
-  // Leadership Pipeline
-  currentCeo:            varchar("currentCeo", { length: 255 }),
-  ceoPlanningHorizon:    integer("ceoPlanningHorizon"),                        // Years until planned CEO transition
-  potentialSuccessors:   json("potentialSuccessors"),                      // Array of {name, role, readinessScore}
-  // Mission Continuity
-  founderIntentDocumented: boolean("founderIntentDocumented").default(false), // Founder has documented mission intent
-  founderIntentSummary:  text("founderIntentSummary"),                 // Summary of founder's mission intent
-  institutionalMemorySystem: boolean("institutionalMemorySystem").default(false), // Formal system to preserve mission
-  missionCodexDocument:  text("missionCodexDocument"),                 // Codified mission, values, decision principles
-  // Institutional Memory
-  keyDecisionFrameworks: json("keyDecisionFrameworks"),                    // Array of {decision, framework, rationale}
-  coreValuesDocumented:  json("coreValuesDocumented"),                     // Array of {value, definition, examples}
-  // Succession Readiness
-  successionReadinessScore: integer("successionReadinessScore"),               // 0-100: readiness for leadership transition
-  riskFactors:           json("riskFactors"),                              // Array of {risk, mitigation}
-  lastUpdatedAt:         timestamp("lastUpdatedAt"),
-  createdAt:             timestamp("createdAt").defaultNow().notNull(),
-  updatedAt:             timestamp("updatedAt").defaultNow().notNull(),
+export const governanceDirectors = pgTable("governance_directors", {
+  id:                        serial("id").primaryKey(),
+  ventureId:                 text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  userId:                    integer("userId").references(() => users.id),
+  fullName:                  text("fullName").notNull(),
+  role:                      text("role").notNull().default("non_executive_director"),
+  appointmentDate:           date("appointmentDate"),
+  missionAlignmentScore:     integer("missionAlignmentScore"),
+  conflictOfInterestStatus:  text("conflictOfInterestStatus").notNull().default("none"),
+  votingRights:              boolean("votingRights").notNull().default(true),
+  removalProtection:         boolean("removalProtection").notNull().default(false),
+  pledgeSigned:              boolean("pledgeSigned").notNull().default(false),
+  notes:                     text("notes"),
+  createdAt:                 timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:                 timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
 });
-export type SuccessionPlan = typeof successionPlans.$inferSelect;
-export type InsertSuccessionPlan = typeof successionPlans.$inferInsert;
+export type GovernanceDirector = typeof governanceDirectors.$inferSelect;
+export type InsertGovernanceDirector = typeof governanceDirectors.$inferInsert;
 
-// -- Mission Drift Alerts (Phase 5A) ----------------------------------------
-export const missionDriftAlerts = pgTable("mission_drift_alerts", {
-  id:                    varchar("id", { length: 64 }).primaryKey(),
-  ventureId:             varchar("ventureId", { length: 64 }).notNull(),
-  alertType:             text("alertType").notNull(),  // FinancialVsMissionDivergence | StakeholderMisalignment | GovernanceWeakness | SuccessionVulnerability | LeadershipChange | IncrementalCompromise
-  severity:              text("severity").default("Medium"),  // Low | Medium | High | Critical
-  description:           text("description"),
-  evidence:              text("evidence"),                                  // Data supporting the alert
-  recommendedAction:     text("recommendedAction"),
-  status:                text("status").default("Active"),  // Active | Acknowledged | Mitigating | Resolved
-  acknowledgedAt:        timestamp("acknowledgedAt"),
-  resolvedAt:            timestamp("resolvedAt"),
-  createdAt:             timestamp("createdAt").defaultNow().notNull(),
-  updatedAt:             timestamp("updatedAt").defaultNow().notNull(),
+export const boardPledges = pgTable("board_pledges", {
+  id:                 serial("id").primaryKey(),
+  ventureId:          text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  directorId:         integer("directorId").references(() => governanceDirectors.id),
+  pledgeText:         text("pledgeText").notNull(),
+  signedStatus:       text("signedStatus").notNull().default("pending"),
+  signedAt:           timestamp("signedAt", { withTimezone: true }),
+  expiryOrReviewDate: date("expiryOrReviewDate"),
+  breachStatus:       text("breachStatus").notNull().default("none"),
+  createdAt:          timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:          timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
 });
-export type MissionDriftAlert = typeof missionDriftAlerts.$inferSelect;
-export type InsertMissionDriftAlert = typeof missionDriftAlerts.$inferInsert;
+export type BoardPledge = typeof boardPledges.$inferSelect;
+export type InsertBoardPledge = typeof boardPledges.$inferInsert;
 
-// -- Stakeholder Alignment (Phase 5D - Future) ----------------------------
-export const stakeholderProfiles = pgTable("stakeholder_profiles", {
-  id:                    varchar("id", { length: 64 }).primaryKey(),
-  ventureId:             varchar("ventureId", { length: 64 }).notNull(),
-  stakeholderType:       text("stakeholderType").notNull(),  // Founder | Employee | Investor | Customer | Community | Board | Advisor
-  name:                  varchar("name", { length: 255 }).notNull(),
-  role:                  varchar("role", { length: 128 }),
-  // Incentive Analysis
-  primaryIncentive:      varchar("primaryIncentive", { length: 255 }),     // What drives this stakeholder
-  missionAlignment:      integer("missionAlignment"),                          // 0-100: alignment with venture mission
-  financialAlignment:    integer("financialAlignment"),                        // 0-100: alignment with financial goals
-  // Engagement
-  lastEngagementAt:      timestamp("lastEngagementAt"),
-  feedbackScore:         integer("feedbackScore"),                             // 0-100: satisfaction/engagement
-  // Risk Assessment
-  conflictRisk:          text("conflictRisk").default("Low"),  // Low | Medium | High
-  conflictDescription:   text("conflictDescription"),
-  createdAt:             timestamp("createdAt").defaultNow().notNull(),
-  updatedAt:             timestamp("updatedAt").defaultNow().notNull(),
+export const reservedMatters = pgTable("reserved_matters", {
+  id:                  serial("id").primaryKey(),
+  ventureId:           text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  matterCategory:      text("matterCategory").notNull(),
+  matterTitle:         text("matterTitle").notNull(),
+  matterDescription:   text("matterDescription"),
+  approvalThreshold:   text("approvalThreshold"),
+  requiredApprovers:   text("requiredApprovers"),  // JSON array
+  escalationPath:      text("escalationPath"),
+  status:              text("status").notNull().default("active"),
+  createdAt:           timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:           timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
 });
-export type StakeholderProfile = typeof stakeholderProfiles.$inferSelect;
-export type InsertStakeholderProfile = typeof stakeholderProfiles.$inferInsert;
+export type ReservedMatter = typeof reservedMatters.$inferSelect;
+export type InsertReservedMatter = typeof reservedMatters.$inferInsert;
+
+export const investorAlignment = pgTable("investor_alignment", {
+  id:                        serial("id").primaryKey(),
+  ventureId:                 text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  invContactId:              integer("invContactId"),
+  investorName:              text("investorName").notNull(),
+  investorType:              text("investorType"),
+  capitalAmount:             numeric("capitalAmount", { precision: 15, scale: 2 }),
+  timeHorizon:               text("timeHorizon"),
+  exitExpectation:           text("exitExpectation"),
+  controlRightsRequested:    text("controlRightsRequested"),  // JSON array
+  liquidationPreference:     text("liquidationPreference"),
+  boardSeatRequested:        boolean("boardSeatRequested").notNull().default(false),
+  missionAlignmentScore:     integer("missionAlignmentScore"),
+  controlRiskRating:         text("controlRiskRating"),
+  capitalPressureIndicator:  text("capitalPressureIndicator"),
+  missionDriftRisk:          text("missionDriftRisk"),
+  recommendedDecision:       text("recommendedDecision"),
+  requiredActions:           text("requiredActions"),  // JSON array
+  approvalStatus:            text("approvalStatus").notNull().default("under_review"),
+  rejectionReason:           text("rejectionReason"),
+  createdAt:                 timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:                 timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+});
+export type InvestorAlignment = typeof investorAlignment.$inferSelect;
+export type InsertInvestorAlignment = typeof investorAlignment.$inferInsert;
+
+export const capitalDecisionLog = pgTable("capital_decision_log", {
+  id:                           serial("id").primaryKey(),
+  ventureId:                    text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  investorAlignmentId:          integer("investorAlignmentId").references(() => investorAlignment.id),
+  decisionType:                 text("decisionType").notNull(),
+  decisionSummary:              text("decisionSummary").notNull(),
+  purposeAlignmentAssessment:   text("purposeAlignmentAssessment"),
+  financialImpact:              text("financialImpact"),
+  governanceImpact:             text("governanceImpact"),
+  approvedBy:                   text("approvedBy"),
+  decisionDate:                 date("decisionDate").notNull(),
+  conditionsAttached:           text("conditionsAttached"),
+  decisionStatus:               text("decisionStatus").notNull().default("pending"),
+  createdAt:                    timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:                    timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+});
+export type CapitalDecisionLog = typeof capitalDecisionLog.$inferSelect;
+export type InsertCapitalDecisionLog = typeof capitalDecisionLog.$inferInsert;
+
+export const governanceReviewCycles = pgTable("governance_review_cycles", {
+  id:                          serial("id").primaryKey(),
+  ventureId:                   text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  reviewType:                  text("reviewType").notNull(),
+  reviewPeriod:                text("reviewPeriod").notNull(),
+  reviewer:                    text("reviewer"),
+  findings:                    text("findings"),
+  redFlags:                    text("redFlags"),
+  correctiveActionsRequired:   text("correctiveActionsRequired"),
+  reviewStatus:                text("reviewStatus").notNull().default("scheduled"),
+  nextReviewDate:              date("nextReviewDate"),
+  completedAt:                 timestamp("completedAt", { withTimezone: true }),
+  createdAt:                   timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:                   timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+});
+export type GovernanceReviewCycle = typeof governanceReviewCycles.$inferSelect;
+export type InsertGovernanceReviewCycle = typeof governanceReviewCycles.$inferInsert;
+
+export const purposeMetrics = pgTable("purpose_metrics", {
+  id:                  serial("id").primaryKey(),
+  ventureId:           text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  metricName:          text("metricName").notNull(),
+  metricCategory:      text("metricCategory").notNull(),
+  targetValue:         numeric("targetValue"),
+  currentValue:        numeric("currentValue"),
+  unit:                text("unit"),
+  trend:               text("trend"),
+  riskThreshold:       numeric("riskThreshold"),
+  dataSource:          text("dataSource"),
+  reportingFrequency:  text("reportingFrequency"),
+  lastUpdatedAt:       timestamp("lastUpdatedAt", { withTimezone: true }),
+  createdAt:           timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:           timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+});
+export type PurposeMetric = typeof purposeMetrics.$inferSelect;
+export type InsertPurposeMetric = typeof purposeMetrics.$inferInsert;
+
+export const purposeDriftDetections = pgTable("purpose_drift_detections", {
+  id:             serial("id").primaryKey(),
+  ventureId:      text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  triggerSource:  text("triggerSource").notNull(),
+  driftCategory:  text("driftCategory").notNull(),
+  severity:       text("severity").notNull(),
+  evidence:       text("evidence"),
+  detectedAt:     timestamp("detectedAt", { withTimezone: true }).notNull().defaultNow(),
+  assignedTo:     text("assignedTo"),
+  status:         text("status").notNull().default("open"),
+  resolvedAt:     timestamp("resolvedAt", { withTimezone: true }),
+  createdAt:      timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:      timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+});
+export type PurposeDriftDetection = typeof purposeDriftDetections.$inferSelect;
+export type InsertPurposeDriftDetection = typeof purposeDriftDetections.$inferInsert;
+
+export const correctiveGovernanceActions = pgTable("corrective_governance_actions", {
+  id:                     serial("id").primaryKey(),
+  ventureId:              text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  driftId:                integer("driftId").references(() => purposeDriftDetections.id),
+  actionType:             text("actionType").notNull(),
+  actionDescription:      text("actionDescription").notNull(),
+  owner:                  text("owner").notNull(),
+  deadline:               date("deadline"),
+  boardApprovalRequired:  boolean("boardApprovalRequired").notNull().default(false),
+  boardApprovedAt:        timestamp("boardApprovedAt", { withTimezone: true }),
+  status:                 text("status").notNull().default("open"),
+  completionEvidence:     text("completionEvidence"),
+  completedAt:            timestamp("completedAt", { withTimezone: true }),
+  createdAt:              timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:              timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+});
+export type CorrectiveGovernanceAction = typeof correctiveGovernanceActions.$inferSelect;
+export type InsertCorrectiveGovernanceAction = typeof correctiveGovernanceActions.$inferInsert;
+
+export const governanceDocuments = pgTable("governance_documents", {
+  id:                  serial("id").primaryKey(),
+  ventureId:           text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  documentType:        text("documentType").notNull(),
+  documentTitle:       text("documentTitle").notNull(),
+  version:             integer("version").notNull().default(1),
+  status:              text("status").notNull().default("draft"),
+  fileUrl:             text("fileUrl"),
+  approvalDate:        date("approvalDate"),
+  expiryOrReviewDate:  date("expiryOrReviewDate"),
+  uploadedBy:          text("uploadedBy"),
+  createdAt:           timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:           timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+});
+export type GovernanceDocument = typeof governanceDocuments.$inferSelect;
+export type InsertGovernanceDocument = typeof governanceDocuments.$inferInsert;
+
+export const governanceMaturityScores = pgTable("governance_maturity_scores", {
+  id:                      serial("id").primaryKey(),
+  ventureId:               text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  scoreDate:               date("scoreDate").notNull(),
+  charterScore:            integer("charterScore").notNull().default(0),
+  missionLockScore:        integer("missionLockScore").notNull().default(0),
+  articlesScore:           integer("articlesScore").notNull().default(0),
+  boardPledgeScore:        integer("boardPledgeScore").notNull().default(0),
+  reservedMattersScore:    integer("reservedMattersScore").notNull().default(0),
+  investorPolicyScore:     integer("investorPolicyScore").notNull().default(0),
+  purposeMetricsScore:     integer("purposeMetricsScore").notNull().default(0),
+  reviewCycleScore:        integer("reviewCycleScore").notNull().default(0),
+  correctiveActionScore:   integer("correctiveActionScore").notNull().default(0),
+  totalScore:              integer("totalScore").notNull().default(0),
+  maturityBand:            text("maturityBand"),
+  status:                  text("status"),
+  recommendation:          text("recommendation"),
+  computedAt:              timestamp("computedAt", { withTimezone: true }).notNull().defaultNow(),
+  createdAt:               timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+});
+export type GovernanceMaturityScore = typeof governanceMaturityScores.$inferSelect;

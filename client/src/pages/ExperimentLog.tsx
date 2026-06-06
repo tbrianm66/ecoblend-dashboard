@@ -19,10 +19,10 @@ import {
 } from "lucide-react";
 
 const VENTURES = [
-  { id: "ecoblend-rd", name: "EcoRace", color: "#51AF37" },
-  { id: "ecoblend",    name: "EcoComp",     color: "#51AF37" },
-  { id: "bebus",       name: "BEBUS",        color: "#3A97D3" },
-  { id: "tone",        name: "TONE",         color: "#F49C13" },
+  { id: "ecoblend-rd", name: "EcoRace", color: "#56A837" },
+  { id: "ecoblend",    name: "EcoComp",     color: "#56A837" },
+  { id: "bebus",       name: "BEBUS",        color: "#3B85BA" },
+  { id: "tone",        name: "TONE",         color: "#F69111" },
   { id: "real",        name: "REAL",         color: "#ef4444" },
   { id: "pipe",        name: "PIPE",         color: "#0ea5e9" },
 ];

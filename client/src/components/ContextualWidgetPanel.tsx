@@ -72,22 +72,22 @@ const WIDGET_SENTINEL_IDS: Record<string, string> = {
 function getWidgetsForModule(module: string): WidgetConfig[] {
   switch (module) {
     case "Venture Intake":
-      return [{ id: "me", type: "missing-evidence", label: "Evidence Gaps", color: "#F49C13" }];
+      return [{ id: "me", type: "missing-evidence", label: "Evidence Gaps", color: "#F69111" }];
 
     case "Discovery & Market":
     case "Discovery & Market Validation":
-      return [{ id: "me", type: "missing-evidence", label: "Evidence Gaps", color: "#F49C13" }];
+      return [{ id: "me", type: "missing-evidence", label: "Evidence Gaps", color: "#F69111" }];
 
     case "Research & Technical Validation":
       return [
-        { id: "rd", type: "rd-stage-guidance", label: "R&D Stage", color: "#3A97D3" },
-        { id: "me", type: "missing-evidence", label: "Evidence Gaps", color: "#F49C13" },
+        { id: "rd", type: "rd-stage-guidance", label: "R&D Stage", color: "#3B85BA" },
+        { id: "me", type: "missing-evidence", label: "Evidence Gaps", color: "#F69111" },
       ];
 
     case "Readiness Scoring":
       return [
-        { id: "si", type: "score-improvement", label: "Score Blockers", color: "#51AF37" },
-        { id: "me", type: "missing-evidence", label: "Evidence Gaps", color: "#F49C13" },
+        { id: "si", type: "score-improvement", label: "Score Blockers", color: "#56A837" },
+        { id: "me", type: "missing-evidence", label: "Evidence Gaps", color: "#F69111" },
       ];
 
     case "Risk Intelligence":
@@ -97,13 +97,13 @@ function getWidgetsForModule(module: string): WidgetConfig[] {
       return [{ id: "ip", type: "investment-pack-readiness", label: "Pack Readiness", color: "#8b5cf6" }];
 
     case "Governance":
-      return [{ id: "sg", type: "stage-gate-approval", label: "Stage Gate", color: "#3A97D3" }];
+      return [{ id: "sg", type: "stage-gate-approval", label: "Stage Gate", color: "#3B85BA" }];
 
     case "Execution Planning":
-      return [{ id: "si", type: "score-improvement", label: "Score Blockers", color: "#51AF37" }];
+      return [{ id: "si", type: "score-improvement", label: "Score Blockers", color: "#56A837" }];
 
     default:
-      return [{ id: "me", type: "missing-evidence", label: "Evidence Gaps", color: "#F49C13" }];
+      return [{ id: "me", type: "missing-evidence", label: "Evidence Gaps", color: "#F69111" }];
   }
 }
 

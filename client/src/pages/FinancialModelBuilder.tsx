@@ -28,9 +28,9 @@ import {
   Plus, Trash2, Edit, Send, RefreshCw, ArrowUpRight, ArrowDownRight,
 } from "lucide-react";
 
-const BRAND = "#51AF37";
-const BLUE  = "#3A97D3";
-const AMBER = "#F49C13";
+const BRAND = "#56A837";
+const BLUE  = "#3B85BA";
+const AMBER = "#F69111";
 const RED   = "#ef4444";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -886,7 +886,7 @@ export default function FinancialModelBuilder() {
       {/* Header */}
       <div className="px-8 py-6 border-b" style={{ borderColor: "#e5e7eb" }}>
         <div className="flex items-center gap-3 mb-1">
-          <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#51AF3715", color: BRAND }}>
+          <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#56A83715", color: BRAND }}>
             Sprint 52
           </span>
           <span className="text-xs text-gray-400 font-mono">Financial Intelligence</span>

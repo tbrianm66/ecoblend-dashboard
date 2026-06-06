@@ -6,6 +6,7 @@ import { srlRouter } from "./srl.router";
 import { gdriveWorkspaceRouter } from "./gdriveWorkspace.router";
 import { vrlDashboardV4Router } from "./vrlDashboardV4.router";
 import { spinoffSequenceRouter } from "./spinoffSequence.router";
+import { purposeGovernanceRouter } from "./purposeGovernance.router";
 import { brandPipelineRouter } from "./brandPipeline.router";
 import { insightAutomationRouter } from "./insightAutomation.router";
 import { workflowEngineRouter } from "./workflowEngine.router";
@@ -42,7 +43,8 @@ import { wtpAssessmentRouter } from "./wtpAssessment.router";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { publicProcedure, protectedProcedure, adminProcedure, reviewedScoreProcedure, router } from "./_core/trpc";
+import { workflowStateRouter } from "./workflowState.router";
 import { z } from "zod";
 import { storagePut } from "./storage";
 import { invokeLLM } from "./_core/llm";
@@ -239,8 +241,20 @@ import { playbookRouter } from "./playbook.router";
 import { marketingBrandRouter } from "./marketingBrand.router";
 import { specialistServicesRouter } from "./specialistServices.router";
 import { portfoliosOfferingsRouter } from "./portfoliosOfferings.router";
+import { discoveryMarketRouter, assertVentureAccess } from "./discoveryMarket.router";
+import { commandCentreLeanRouter } from "./commandCentre.lean.router";
+import { wtpRouter } from "./wtp.router";
+import { leanCanvasRouter } from "./leanCanvas.router";
+import { productMilestonesRouter } from "./productMilestones.router";
+import { decisionGateRouter } from "./decisionGate.router";
 
 export const appRouter = router({
+  discoveryMarket: discoveryMarketRouter,
+  commandCentreLean: commandCentreLeanRouter,
+  wtp: wtpRouter,
+  leanCanvas: leanCanvasRouter,
+  productMilestones: productMilestonesRouter,
+  decisionGate: decisionGateRouter,
   startupFailureRisk: startupFailureRiskRouter,
   system: systemRouter,
   coaching: coachingRouter,
@@ -273,17 +287,19 @@ export const appRouter = router({
 
   // ── Ventures ────────────────────────────────────────────────────────────────
   ventures: router({
-    list: publicProcedure.query(async () => {
+    list: protectedProcedure.query(async () => {
       return getAllVentures();
     }),
 
-    get: publicProcedure
+    get: protectedProcedure
       .input(z.object({ id: z.string() }))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
+        const db = (await getDb())!;
+        await assertVentureAccess(db, ctx.user, input.id);
         return getVentureById(input.id);
       }),
 
-    upsert: publicProcedure
+    upsert: protectedProcedure
       .input(z.object({
         id: z.string(),
         name: z.string(),
@@ -306,12 +322,23 @@ export const appRouter = router({
         mmc: z.string().optional(),
         lifecycleStage: z.enum(["Opportunity", "Validation", "Build", "Launch", "Scale"]).optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        const db = (await getDb())!;
+        const isNew = !(await getVentureById(input.id));
+        if (!isNew) {
+          // Existing venture — require membership before allowing update
+          await assertVentureAccess(db, ctx.user, input.id);
+        }
         await upsertVenture(input as any);
+        if (isNew) {
+          // Auto-claim: creator becomes owner so subsequent assertVentureAccess calls succeed
+          const { ventureMembers: vm } = await import("../drizzle/schema");
+          await db.insert(vm).values({ ventureId: input.id, userId: ctx.user.id, role: "owner" }).onConflictDoNothing();
+        }
         return { success: true };
       }),
 
-    updateScores: publicProcedure
+    updateScores: reviewedScoreProcedure
       .input(z.object({
         id: z.string(),
         vrl: z.number().min(1).max(4),
@@ -319,12 +346,24 @@ export const appRouter = router({
         trl: z.number().min(1).max(9),
         trlPercent: z.number().min(0).max(100),
         notes: z.string().optional(),
+        // Human review gate fields (required when aiGenerated=true)
+        aiGenerated:     z.boolean().optional(),
+        humanReviewedBy: z.string().optional(),
+        humanReviewedAt: z.string().datetime().optional(),
       }))
-      .mutation(async ({ input }) => {
-        const { id, notes, ...scores } = input;
+      .mutation(async ({ input, ctx }) => {
+        const db = (await getDb())!;
+        await assertVentureAccess(db, ctx.user, input.id);
+        const { id, notes, aiGenerated, humanReviewedBy, humanReviewedAt, ...scores } = input;
         await updateVenture(id, scores);
-        // Record score history
-        await insertVentureScore({ ventureId: id, ...scores, notes: notes ?? null });
+        await insertVentureScore({
+          ventureId: id,
+          ...scores,
+          notes: notes ?? null,
+          aiGenerated: aiGenerated ?? false,
+          humanReviewedBy: humanReviewedBy ?? null,
+          humanReviewedAt: humanReviewedAt ? new Date(humanReviewedAt) : null,
+        } as any);
         return { success: true };
       }),
   }),
@@ -415,13 +454,17 @@ export const appRouter = router({
 
   // ── Founders ─────────────────────────────────────────────────────────────────
   founders: router({
-    list: publicProcedure
+    list: protectedProcedure
       .input(z.object({ ventureId: z.string() }))
-      .query(async ({ input }) => getFoundersForVenture(input.ventureId)),
+      .query(async ({ input, ctx }) => {
+        const db = (await getDb())!;
+        await assertVentureAccess(db, ctx.user, input.ventureId);
+        return getFoundersForVenture(input.ventureId);
+      }),
 
-    listAll: publicProcedure.query(async () => getAllFounders()),
+    listAll: adminProcedure.query(async () => getAllFounders()),
 
-    add: publicProcedure
+    add: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         name: z.string(),
@@ -434,12 +477,14 @@ export const appRouter = router({
         esopAllocated: z.boolean().optional(),
         linkedIn: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        const db = (await getDb())!;
+        await assertVentureAccess(db, ctx.user, input.ventureId);
         await insertFounder(input as any);
         return { success: true };
       }),
 
-    update: publicProcedure
+    update: protectedProcedure
       .input(z.object({
         id: z.number(),
         name: z.string().optional(),
@@ -452,15 +497,27 @@ export const appRouter = router({
         esopAllocated: z.boolean().optional(),
         linkedIn: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { founders: foundersTable } = await import("../drizzle/schema");
         const { id, ...data } = input;
+        const [existing] = await db.select({ ventureId: foundersTable.ventureId }).from(foundersTable).where(eqOp(foundersTable.id, id));
+        if (!existing) return { success: true };
+        await assertVentureAccess(db, ctx.user, existing.ventureId);
         await updateFounder(id, data as any);
         return { success: true };
       }),
 
-    delete: publicProcedure
+    delete: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { founders: foundersTable } = await import("../drizzle/schema");
+        const [existing] = await db.select({ ventureId: foundersTable.ventureId }).from(foundersTable).where(eqOp(foundersTable.id, input.id));
+        if (!existing) return { success: true };
+        await assertVentureAccess(db, ctx.user, existing.ventureId);
         await deleteFounder(input.id);
         return { success: true };
       }),
@@ -531,36 +588,107 @@ export const appRouter = router({
 
     add: publicProcedure
       .input(z.object({
-        ventureId: z.string(),
-        offeringId: z.string().optional(),
-        title: z.string(),
-        hypothesis: z.string().optional(),
-        method: z.string().optional(),
-        result: z.string().optional(),
-        outcome: z.enum(["Pass", "Fail", "Inconclusive", "Pending"]).optional(),
-        trlLevelJustified: z.number().min(1).max(9).optional(),
-        conductedAt: z.date().optional(),
+        ventureId:          z.string(),
+        offeringId:         z.string().optional(),
+        title:              z.string(),
+        hypothesis:         z.string().optional(),
+        method:             z.string().optional(),
+        result:             z.string().optional(),
+        // Accepts legacy Pass/Fail/Inconclusive/Pending AND lean validated/invalidated/inconclusive
+        outcome:            z.enum(["Pass", "Fail", "Inconclusive", "Pending",
+                                    "validated", "invalidated", "inconclusive"]).optional(),
+        // ── Step-3 enforcement: confidence_level is MANDATORY (1-10) ──────────
+        confidenceLevel:    z.number().int().min(1, "confidence_level must be between 1 and 10")
+                             .max(10, "confidence_level must be between 1 and 10"),
+        evidenceUri:        z.string().optional(),
+        opportunityId:      z.number().int().optional(),
+        trlLevelJustified:  z.number().min(1).max(9).optional(),
+        conductedAt:        z.date().optional(),
       }))
       .mutation(async ({ input }) => {
+        const db = await (await import("./db")).getDb();
+        const { experiments: expsTable, ventures: venturesTable, opportunities: oppsTable } =
+          await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const { TRPCError: Err } = await import("@trpc/server");
+
+        const oc = input.outcome?.toLowerCase();
+        const isValidated    = oc === "pass" || oc === "validated";
+        const isInvalidated  = oc === "fail" || oc === "invalidated";
+
+        // ── Warning gate: validated outcome requires evidence URI ─────────────
+        const warning = (isValidated && !input.evidenceUri?.trim())
+          ? "WARNING: outcome is validated but no evidence_uri was provided. " +
+            "Evidence traceability is required for gate review."
+          : null;
+
         await insertExperiment(input as any);
-        return { success: true };
+
+        if (db && isInvalidated) {
+          // Set pivotRequired on the venture
+          await db.update(venturesTable)
+            .set({ pivotRequired: true, pivotReason: `Experiment invalidated: ${input.title}`, updatedAt: new Date() })
+            .where(eq(venturesTable.id, input.ventureId));
+
+          // If linked to an opportunity, mark it as invalidated
+          if (input.opportunityId) {
+            await db.update(oppsTable)
+              .set({ status: "invalidated", updatedAt: new Date() })
+              .where(eq(oppsTable.id, input.opportunityId));
+          }
+        }
+
+        return { success: true, warning };
       }),
 
     update: publicProcedure
       .input(z.object({
-        id: z.number(),
-        title: z.string().optional(),
-        hypothesis: z.string().optional(),
-        method: z.string().optional(),
-        result: z.string().optional(),
-        outcome: z.enum(["Pass", "Fail", "Inconclusive", "Pending"]).optional(),
-        trlLevelJustified: z.number().min(1).max(9).optional(),
-        conductedAt: z.date().optional(),
+        id:                 z.number(),
+        title:              z.string().optional(),
+        hypothesis:         z.string().optional(),
+        method:             z.string().optional(),
+        result:             z.string().optional(),
+        outcome:            z.enum(["Pass", "Fail", "Inconclusive", "Pending",
+                                    "validated", "invalidated", "inconclusive"]).optional(),
+        // ── Step-3 enforcement: if provided, must be 1-10 ────────────────────
+        confidenceLevel:    z.number().int().min(1).max(10).optional(),
+        evidenceUri:        z.string().optional(),
+        opportunityId:      z.number().int().optional(),
+        trlLevelJustified:  z.number().min(1).max(9).optional(),
+        conductedAt:        z.date().optional(),
+        ventureId:          z.string().optional(), // needed for side-effects below
       }))
       .mutation(async ({ input }) => {
-        const { id, ...data } = input;
+        const { id, ventureId, ...data } = input;
+        const db = await (await import("./db")).getDb();
+        const { ventures: venturesTable, opportunities: oppsTable } =
+          await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+
+        const oc = input.outcome?.toLowerCase();
+        const isValidated   = oc === "pass" || oc === "validated";
+        const isInvalidated = oc === "fail" || oc === "invalidated";
+
+        const warning = (isValidated && !input.evidenceUri?.trim())
+          ? "WARNING: outcome is validated but no evidence_uri was provided. " +
+            "Evidence traceability is required for gate review."
+          : null;
+
         await updateExperiment(id, data as any);
-        return { success: true };
+
+        if (db && isInvalidated && ventureId) {
+          await db.update(venturesTable)
+            .set({ pivotRequired: true, pivotReason: `Experiment invalidated: ${input.title ?? id}`, updatedAt: new Date() })
+            .where(eq(venturesTable.id, ventureId));
+
+          if (input.opportunityId) {
+            await db.update(oppsTable)
+              .set({ status: "invalidated", updatedAt: new Date() })
+              .where(eq(oppsTable.id, input.opportunityId));
+          }
+        }
+
+        return { success: true, warning };
       }),
 
     delete: publicProcedure
@@ -573,13 +701,17 @@ export const appRouter = router({
 
   // ── Interviews ────────────────────────────────────────────────────────────────
   interviews: router({
-    list: publicProcedure
+    list: protectedProcedure
       .input(z.object({ ventureId: z.string() }))
-      .query(async ({ input }) => getInterviewsForVenture(input.ventureId)),
+      .query(async ({ input, ctx }) => {
+        const db = (await getDb())!;
+        await assertVentureAccess(db, ctx.user, input.ventureId);
+        return getInterviewsForVenture(input.ventureId);
+      }),
 
-    listAll: publicProcedure.query(async () => getAllInterviews()),
+    listAll: adminProcedure.query(async () => getAllInterviews()),
 
-    add: publicProcedure
+    add: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         intervieweeName: z.string().optional(),
@@ -593,13 +725,15 @@ export const appRouter = router({
         rawTranscript: z.string().optional(),
         vrlStageRelevant: z.number().min(1).max(4).optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        const db = (await getDb())!;
+        await assertVentureAccess(db, ctx.user, input.ventureId);
         await insertInterview(input as any);
         return { success: true };
       }),
 
     // AI summarisation — takes raw transcript and returns structured summary
-    summarise: publicProcedure
+    summarise: protectedProcedure
       .input(z.object({
         id: z.number(),
         rawTranscript: z.string(),
@@ -666,7 +800,7 @@ Return a JSON object with exactly these fields:
         return { success: true, summary: parsed };
       }),
 
-    update: publicProcedure
+    update: protectedProcedure
       .input(z.object({
         id: z.number(),
         intervieweeName: z.string().optional(),
@@ -680,15 +814,27 @@ Return a JSON object with exactly these fields:
         rawTranscript: z.string().optional(),
         vrlStageRelevant: z.number().min(1).max(4).optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { interviews: interviewsTable } = await import("../drizzle/schema");
         const { id, ...data } = input;
+        const [existing] = await db.select({ ventureId: interviewsTable.ventureId }).from(interviewsTable).where(eqOp(interviewsTable.id, id));
+        if (!existing) return { success: true };
+        await assertVentureAccess(db, ctx.user, existing.ventureId);
         await updateInterview(id, data as any);
         return { success: true };
       }),
 
-    delete: publicProcedure
+    delete: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        const db = (await getDb())!;
+        const { eq: eqOp } = await import("drizzle-orm");
+        const { interviews: interviewsTable } = await import("../drizzle/schema");
+        const [existing] = await db.select({ ventureId: interviewsTable.ventureId }).from(interviewsTable).where(eqOp(interviewsTable.id, input.id));
+        if (!existing) return { success: true };
+        await assertVentureAccess(db, ctx.user, existing.ventureId);
         await deleteInterview(input.id);
         return { success: true };
       }),
@@ -696,17 +842,25 @@ Return a JSON object with exactly these fields:
 
   // ── Financial Snapshots ───────────────────────────────────────────────────────
   financial: router({
-    list: publicProcedure
+    list: protectedProcedure
       .input(z.object({ ventureId: z.string() }))
-      .query(async ({ input }) => getFinancialSnapshotsForVenture(input.ventureId)),
+      .query(async ({ input, ctx }) => {
+        const db = (await getDb())!;
+        await assertVentureAccess(db, ctx.user, input.ventureId);
+        return getFinancialSnapshotsForVenture(input.ventureId);
+      }),
 
-    latest: publicProcedure
+    latest: protectedProcedure
       .input(z.object({ ventureId: z.string() }))
-      .query(async ({ input }) => getLatestFinancialSnapshot(input.ventureId)),
+      .query(async ({ input, ctx }) => {
+        const db = (await getDb())!;
+        await assertVentureAccess(db, ctx.user, input.ventureId);
+        return getLatestFinancialSnapshot(input.ventureId);
+      }),
 
-    latestAll: publicProcedure.query(async () => getAllLatestFinancialSnapshots()),
+    latestAll: adminProcedure.query(async () => getAllLatestFinancialSnapshots()),
 
-    upsert: publicProcedure
+    upsert: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         month: z.string(), // "YYYY-MM"
@@ -718,7 +872,9 @@ Return a JSON object with exactly these fields:
         investmentTarget: z.number().optional(),
         notes: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        const db = (await getDb())!;
+        await assertVentureAccess(db, ctx.user, input.ventureId);
         await upsertFinancialSnapshot(input as any);
         return { success: true };
       }),
@@ -3905,13 +4061,24 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
   // ── Project Management ────────────────────────────────────────────────────
   pm: router({
   // Programs
-  listPrograms: publicProcedure
+  listPrograms: protectedProcedure
     .input(z.object({ ventureId: z.string() }))
-    .query(({ input }) => listPrograms(input.ventureId)),
-  getProgram: publicProcedure
+    .query(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      await assertVentureAccess(db, ctx.user, input.ventureId);
+      return listPrograms(input.ventureId);
+    }),
+  getProgram: protectedProcedure
     .input(z.object({ id: z.number() }))
-    .query(({ input }) => getProgram(input.id)),
-  createProgram: publicProcedure
+    .query(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      const { eq: eqOp } = await import("drizzle-orm");
+      const { venturePrograms: programsTable } = await import("../drizzle/schema");
+      const [row] = await db.select({ ventureId: programsTable.ventureId }).from(programsTable).where(eqOp(programsTable.id, input.id));
+      if (row) await assertVentureAccess(db, ctx.user, row.ventureId);
+      return getProgram(input.id);
+    }),
+  createProgram: protectedProcedure
     .input(z.object({
       ventureId: z.string(),
       name: z.string().min(1),
@@ -3923,8 +4090,12 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       budget: z.number().optional(),
       notes: z.string().optional(),
     }))
-    .mutation(({ input }) => createProgram(input)),
-  updateProgram: publicProcedure
+    .mutation(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      await assertVentureAccess(db, ctx.user, input.ventureId);
+      return createProgram(input);
+    }),
+  updateProgram: protectedProcedure
     .input(z.object({
       id: z.number(),
       name: z.string().optional(),
@@ -3938,16 +4109,40 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       budgetSpent: z.number().optional(),
       notes: z.string().optional(),
     }))
-    .mutation(({ input }) => { const { id, ...rest } = input; return updateProgram(id, rest); }),
-  deleteProgram: publicProcedure
+    .mutation(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      const { eq: eqOp } = await import("drizzle-orm");
+      const { venturePrograms: programsTable } = await import("../drizzle/schema");
+      const { id, ...rest } = input;
+      const [row] = await db.select({ ventureId: programsTable.ventureId }).from(programsTable).where(eqOp(programsTable.id, id));
+      if (!row) return;
+      await assertVentureAccess(db, ctx.user, row.ventureId);
+      return updateProgram(id, rest);
+    }),
+  deleteProgram: protectedProcedure
     .input(z.object({ id: z.number() }))
-    .mutation(({ input }) => deleteProgram(input.id)),
+    .mutation(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      const { eq: eqOp } = await import("drizzle-orm");
+      const { venturePrograms: programsTable } = await import("../drizzle/schema");
+      const [row] = await db.select({ ventureId: programsTable.ventureId }).from(programsTable).where(eqOp(programsTable.id, input.id));
+      if (!row) return;
+      await assertVentureAccess(db, ctx.user, row.ventureId);
+      return deleteProgram(input.id);
+    }),
 
   // Phases
-  listPhases: publicProcedure
+  listPhases: protectedProcedure
     .input(z.object({ programId: z.number() }))
-    .query(({ input }) => listPhases(input.programId)),
-  createPhase: publicProcedure
+    .query(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      const { eq: eqOp } = await import("drizzle-orm");
+      const { venturePrograms: programsTable } = await import("../drizzle/schema");
+      const [prog] = await db.select({ ventureId: programsTable.ventureId }).from(programsTable).where(eqOp(programsTable.id, input.programId));
+      if (prog) await assertVentureAccess(db, ctx.user, prog.ventureId);
+      return listPhases(input.programId);
+    }),
+  createPhase: protectedProcedure
     .input(z.object({
       programId: z.number(),
       ventureId: z.string(),
@@ -3959,8 +4154,12 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       targetEndDate: z.string().optional(),
       notes: z.string().optional(),
     }))
-    .mutation(({ input }) => createPhase(input)),
-  updatePhase: publicProcedure
+    .mutation(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      await assertVentureAccess(db, ctx.user, input.ventureId);
+      return createPhase(input);
+    }),
+  updatePhase: protectedProcedure
     .input(z.object({
       id: z.number(),
       name: z.string().optional(),
@@ -3974,16 +4173,40 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       actualEndDate: z.string().optional(),
       notes: z.string().optional(),
     }))
-    .mutation(({ input }) => { const { id, ...rest } = input; return updatePhase(id, rest); }),
-  deletePhase: publicProcedure
+    .mutation(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      const { eq: eqOp } = await import("drizzle-orm");
+      const { venturePhases: phasesTable } = await import("../drizzle/schema");
+      const { id, ...rest } = input;
+      const [row] = await db.select({ ventureId: phasesTable.ventureId }).from(phasesTable).where(eqOp(phasesTable.id, id));
+      if (!row) return;
+      await assertVentureAccess(db, ctx.user, row.ventureId);
+      return updatePhase(id, rest);
+    }),
+  deletePhase: protectedProcedure
     .input(z.object({ id: z.number() }))
-    .mutation(({ input }) => deletePhase(input.id)),
+    .mutation(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      const { eq: eqOp } = await import("drizzle-orm");
+      const { venturePhases: phasesTable } = await import("../drizzle/schema");
+      const [row] = await db.select({ ventureId: phasesTable.ventureId }).from(phasesTable).where(eqOp(phasesTable.id, input.id));
+      if (!row) return;
+      await assertVentureAccess(db, ctx.user, row.ventureId);
+      return deletePhase(input.id);
+    }),
 
   // Workstreams
-  listWorkstreams: publicProcedure
+  listWorkstreams: protectedProcedure
     .input(z.object({ phaseId: z.number() }))
-    .query(({ input }) => listWorkstreams(input.phaseId)),
-  createWorkstream: publicProcedure
+    .query(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      const { eq: eqOp } = await import("drizzle-orm");
+      const { venturePhases: phasesTable } = await import("../drizzle/schema");
+      const [phase] = await db.select({ ventureId: phasesTable.ventureId }).from(phasesTable).where(eqOp(phasesTable.id, input.phaseId));
+      if (phase) await assertVentureAccess(db, ctx.user, phase.ventureId);
+      return listWorkstreams(input.phaseId);
+    }),
+  createWorkstream: protectedProcedure
     .input(z.object({
       phaseId: z.number(),
       ventureId: z.string(),
@@ -3994,8 +4217,12 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       targetEndDate: z.string().optional(),
       notes: z.string().optional(),
     }))
-    .mutation(({ input }) => createWorkstream(input)),
-  updateWorkstream: publicProcedure
+    .mutation(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      await assertVentureAccess(db, ctx.user, input.ventureId);
+      return createWorkstream(input);
+    }),
+  updateWorkstream: protectedProcedure
     .input(z.object({
       id: z.number(),
       name: z.string().optional(),
@@ -4006,19 +4233,47 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       targetEndDate: z.string().optional(),
       notes: z.string().optional(),
     }))
-    .mutation(({ input }) => { const { id, ...rest } = input; return updateWorkstream(id, rest); }),
-  deleteWorkstream: publicProcedure
+    .mutation(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      const { eq: eqOp } = await import("drizzle-orm");
+      const { ventureWorkstreams: wsTable } = await import("../drizzle/schema");
+      const { id, ...rest } = input;
+      const [row] = await db.select({ ventureId: wsTable.ventureId }).from(wsTable).where(eqOp(wsTable.id, id));
+      if (!row) return;
+      await assertVentureAccess(db, ctx.user, row.ventureId);
+      return updateWorkstream(id, rest);
+    }),
+  deleteWorkstream: protectedProcedure
     .input(z.object({ id: z.number() }))
-    .mutation(({ input }) => deleteWorkstream(input.id)),
+    .mutation(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      const { eq: eqOp } = await import("drizzle-orm");
+      const { ventureWorkstreams: wsTable } = await import("../drizzle/schema");
+      const [row] = await db.select({ ventureId: wsTable.ventureId }).from(wsTable).where(eqOp(wsTable.id, input.id));
+      if (!row) return;
+      await assertVentureAccess(db, ctx.user, row.ventureId);
+      return deleteWorkstream(input.id);
+    }),
 
   // Milestones
-  listMilestonesByVenture: publicProcedure
+  listMilestonesByVenture: protectedProcedure
     .input(z.object({ ventureId: z.string() }))
-    .query(({ input }) => listMilestonesByVenture(input.ventureId)),
-  listMilestones: publicProcedure
+    .query(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      await assertVentureAccess(db, ctx.user, input.ventureId);
+      return listMilestonesByVenture(input.ventureId);
+    }),
+  listMilestones: protectedProcedure
     .input(z.object({ workstreamId: z.number() }))
-    .query(({ input }) => listMilestones(input.workstreamId)),
-  createMilestone: publicProcedure
+    .query(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      const { eq: eqOp } = await import("drizzle-orm");
+      const { ventureWorkstreams: wsTable } = await import("../drizzle/schema");
+      const [ws] = await db.select({ ventureId: wsTable.ventureId }).from(wsTable).where(eqOp(wsTable.id, input.workstreamId));
+      if (ws) await assertVentureAccess(db, ctx.user, ws.ventureId);
+      return listMilestones(input.workstreamId);
+    }),
+  createMilestone: protectedProcedure
     .input(z.object({
       workstreamId: z.number(),
       phaseId: z.number(),
@@ -4029,8 +4284,12 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       targetDate: z.string().optional(),
       completionEvidence: z.string().optional(),
     }))
-    .mutation(({ input }) => createMilestone(input)),
-  updateMilestone: publicProcedure
+    .mutation(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      await assertVentureAccess(db, ctx.user, input.ventureId);
+      return createMilestone(input);
+    }),
+  updateMilestone: protectedProcedure
     .input(z.object({
       id: z.number(),
       title: z.string().optional(),
@@ -4039,8 +4298,14 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       completionEvidence: z.string().optional(),
       milestoneType: z.enum(["Gate Review", "Deliverable", "Decision Point", "External Event", "Funding Milestone", "Launch"]).optional(),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      const { eq: eqOp } = await import("drizzle-orm");
+      const { ventureMilestones: msTable } = await import("../drizzle/schema");
       const { id, ...rest } = input;
+      const [row] = await db.select({ ventureId: msTable.ventureId }).from(msTable).where(eqOp(msTable.id, id));
+      if (!row) return;
+      await assertVentureAccess(db, ctx.user, row.ventureId);
       const result = await updatePmMilestone(id, rest);
       // Fire milestone_overdue trigger when status is set to Overdue
       if (input.status === "Overdue") {
@@ -4048,18 +4313,37 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       }
       return result;
     }),
-  deleteMilestone: publicProcedure
+  deleteMilestone: protectedProcedure
     .input(z.object({ id: z.number() }))
-    .mutation(({ input }) => deletePmMilestone(input.id)),
+    .mutation(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      const { eq: eqOp } = await import("drizzle-orm");
+      const { ventureMilestones: msTable } = await import("../drizzle/schema");
+      const [row] = await db.select({ ventureId: msTable.ventureId }).from(msTable).where(eqOp(msTable.id, input.id));
+      if (!row) return;
+      await assertVentureAccess(db, ctx.user, row.ventureId);
+      return deletePmMilestone(input.id);
+    }),
 
   // Tasks
-  listTasksByVenture: publicProcedure
+  listTasksByVenture: protectedProcedure
     .input(z.object({ ventureId: z.string() }))
-    .query(({ input }) => listTasksByVenture(input.ventureId)),
-  listTasks: publicProcedure
+    .query(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      await assertVentureAccess(db, ctx.user, input.ventureId);
+      return listTasksByVenture(input.ventureId);
+    }),
+  listTasks: protectedProcedure
     .input(z.object({ workstreamId: z.number() }))
-    .query(({ input }) => listTasks(input.workstreamId)),
-  createTask: publicProcedure
+    .query(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      const { eq: eqOp } = await import("drizzle-orm");
+      const { ventureWorkstreams: wsTable } = await import("../drizzle/schema");
+      const [ws] = await db.select({ ventureId: wsTable.ventureId }).from(wsTable).where(eqOp(wsTable.id, input.workstreamId));
+      if (ws) await assertVentureAccess(db, ctx.user, ws.ventureId);
+      return listTasks(input.workstreamId);
+    }),
+  createTask: protectedProcedure
     .input(z.object({
       workstreamId: z.number(),
       ventureId: z.string(),
@@ -4074,8 +4358,12 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       milestoneId: z.number().optional(),
       notes: z.string().optional(),
     }))
-    .mutation(({ input }) => createTask(input)),
-  updateTask: publicProcedure
+    .mutation(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      await assertVentureAccess(db, ctx.user, input.ventureId);
+      return createTask(input);
+    }),
+  updateTask: protectedProcedure
     .input(z.object({
       id: z.number(),
       title: z.string().optional(),
@@ -4089,16 +4377,37 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       actualHours: z.number().optional(),
       notes: z.string().optional(),
     }))
-    .mutation(({ input }) => { const { id, ...rest } = input; return updateTask(id, rest); }),
-  deleteTask: publicProcedure
+    .mutation(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      const { eq: eqOp } = await import("drizzle-orm");
+      const { ventureTasks: tasksTable } = await import("../drizzle/schema");
+      const { id, ...rest } = input;
+      const [row] = await db.select({ ventureId: tasksTable.ventureId }).from(tasksTable).where(eqOp(tasksTable.id, id));
+      if (!row) return;
+      await assertVentureAccess(db, ctx.user, row.ventureId);
+      return updateTask(id, rest);
+    }),
+  deleteTask: protectedProcedure
     .input(z.object({ id: z.number() }))
-    .mutation(({ input }) => deleteTask(input.id)),
+    .mutation(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      const { eq: eqOp } = await import("drizzle-orm");
+      const { ventureTasks: tasksTable } = await import("../drizzle/schema");
+      const [row] = await db.select({ ventureId: tasksTable.ventureId }).from(tasksTable).where(eqOp(tasksTable.id, input.id));
+      if (!row) return;
+      await assertVentureAccess(db, ctx.user, row.ventureId);
+      return deleteTask(input.id);
+    }),
 
   // Resources
-  listResources: publicProcedure
+  listResources: protectedProcedure
     .input(z.object({ ventureId: z.string() }))
-    .query(({ input }) => listResources(input.ventureId)),
-  createResource: publicProcedure
+    .query(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      await assertVentureAccess(db, ctx.user, input.ventureId);
+      return listResources(input.ventureId);
+    }),
+  createResource: protectedProcedure
     .input(z.object({
       ventureId: z.string(),
       programId: z.number().optional(),
@@ -4114,8 +4423,12 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       totalBudgeted: z.number().optional(),
       notes: z.string().optional(),
     }))
-    .mutation(({ input }) => createResource(input)),
-  updateResource: publicProcedure
+    .mutation(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      await assertVentureAccess(db, ctx.user, input.ventureId);
+      return createResource(input);
+    }),
+  updateResource: protectedProcedure
     .input(z.object({
       id: z.number(),
       name: z.string().optional(),
@@ -4129,16 +4442,37 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       endDate: z.string().optional(),
       notes: z.string().optional(),
     }))
-    .mutation(({ input }) => { const { id, ...rest } = input; return updateResource(id, rest); }),
-  deleteResource: publicProcedure
+    .mutation(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      const { eq: eqOp } = await import("drizzle-orm");
+      const { ventureResources: resTable } = await import("../drizzle/schema");
+      const { id, ...rest } = input;
+      const [row] = await db.select({ ventureId: resTable.ventureId }).from(resTable).where(eqOp(resTable.id, id));
+      if (!row) return;
+      await assertVentureAccess(db, ctx.user, row.ventureId);
+      return updateResource(id, rest);
+    }),
+  deleteResource: protectedProcedure
     .input(z.object({ id: z.number() }))
-    .mutation(({ input }) => deleteResource(input.id)),
+    .mutation(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      const { eq: eqOp } = await import("drizzle-orm");
+      const { ventureResources: resTable } = await import("../drizzle/schema");
+      const [row] = await db.select({ ventureId: resTable.ventureId }).from(resTable).where(eqOp(resTable.id, input.id));
+      if (!row) return;
+      await assertVentureAccess(db, ctx.user, row.ventureId);
+      return deleteResource(input.id);
+    }),
 
   // Execution Risks
-  listExecutionRisks: publicProcedure
+  listExecutionRisks: protectedProcedure
     .input(z.object({ ventureId: z.string() }))
-    .query(({ input }) => listExecutionRisks(input.ventureId)),
-  createExecutionRisk: publicProcedure
+    .query(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      await assertVentureAccess(db, ctx.user, input.ventureId);
+      return listExecutionRisks(input.ventureId);
+    }),
+  createExecutionRisk: protectedProcedure
     .input(z.object({
       ventureId: z.string(),
       programId: z.number().optional(),
@@ -4154,8 +4488,12 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       owner: z.string().optional(),
       reviewDate: z.string().optional(),
     }))
-    .mutation(({ input }) => createExecutionRisk(input)),
-  updateExecutionRisk: publicProcedure
+    .mutation(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      await assertVentureAccess(db, ctx.user, input.ventureId);
+      return createExecutionRisk(input);
+    }),
+  updateExecutionRisk: protectedProcedure
     .input(z.object({
       id: z.number(),
       title: z.string().optional(),
@@ -4167,26 +4505,55 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       owner: z.string().optional(),
       reviewDate: z.string().optional(),
     }))
-    .mutation(({ input }) => { const { id, ...rest } = input; return updateExecutionRisk(id, rest); }),
-  deleteExecutionRisk: publicProcedure
+    .mutation(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      const { eq: eqOp } = await import("drizzle-orm");
+      const { executionRisks: risksTable } = await import("../drizzle/schema");
+      const { id, ...rest } = input;
+      const [row] = await db.select({ ventureId: risksTable.ventureId }).from(risksTable).where(eqOp(risksTable.id, id));
+      if (!row) return;
+      await assertVentureAccess(db, ctx.user, row.ventureId);
+      return updateExecutionRisk(id, rest);
+    }),
+  deleteExecutionRisk: protectedProcedure
     .input(z.object({ id: z.number() }))
-    .mutation(({ input }) => deleteExecutionRisk(input.id)),
+    .mutation(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      const { eq: eqOp } = await import("drizzle-orm");
+      const { executionRisks: risksTable } = await import("../drizzle/schema");
+      const [row] = await db.select({ ventureId: risksTable.ventureId }).from(risksTable).where(eqOp(risksTable.id, input.id));
+      if (!row) return;
+      await assertVentureAccess(db, ctx.user, row.ventureId);
+      return deleteExecutionRisk(input.id);
+    }),
 
   // Documents
-  listDocuments: publicProcedure
+  listDocuments: protectedProcedure
     .input(z.object({ ventureId: z.string() }))
-    .query(({ input }) => listDocuments(input.ventureId)),
-  deleteDocument: publicProcedure
+    .query(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      await assertVentureAccess(db, ctx.user, input.ventureId);
+      return listDocuments(input.ventureId);
+    }),
+  deleteDocument: protectedProcedure
     .input(z.object({ id: z.number() }))
-    .mutation(({ input }) => deleteDocument(input.id)),
+    .mutation(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      const { eq: eqOp } = await import("drizzle-orm");
+      const { ventureDocuments: docsTable } = await import("../drizzle/schema");
+      const [row] = await db.select({ ventureId: docsTable.ventureId }).from(docsTable).where(eqOp(docsTable.id, input.id));
+      if (!row) return;
+      await assertVentureAccess(db, ctx.user, row.ventureId);
+      return deleteDocument(input.id);
+    }),
 
   // Portfolio summary
-  portfolioSummary: publicProcedure
+  portfolioSummary: protectedProcedure
     .query(() => getPmPortfolioSummary()),
   }),
 
   commandCentre: router({
-    getLiveMetrics: publicProcedure
+    getLiveMetrics: protectedProcedure
       .query(async () => {
         const [portfolio, vrlDist, funnel, pmHealth, financial, esg, learning] = await Promise.all([
           getPortfolioSummary(),
@@ -4199,9 +4566,9 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         ]);
         return { portfolio, vrlDist, funnel, pmHealth, financial, esg, learning };
       }),
-    getEcosystemNodes: publicProcedure
+    getEcosystemNodes: protectedProcedure
       .query(() => getEcosystemNodes()),
-    upsertEcosystemNode: publicProcedure
+    upsertEcosystemNode: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         posX: z.number().optional(),
@@ -4214,12 +4581,12 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         tooltipText: z.string().optional(),
       }))
       .mutation(({ input }) => upsertEcosystemNode(input)),
-    getRevenueSparklines: publicProcedure
+    getRevenueSparklines: protectedProcedure
       .query(() => getVentureRevenueSparklines()),
-    getOfferingAnalytics: publicProcedure
+    getOfferingAnalytics: protectedProcedure
       .input(z.object({ offeringId: z.string() }))
       .query(({ input }) => getOfferingAnalytics(input.offeringId)),
-    getPortfolioOfferingRollup: publicProcedure
+    getPortfolioOfferingRollup: protectedProcedure
       .input(z.object({ portfolioId: z.string() }))
       .query(({ input }) => getPortfolioOfferingRollup(input.portfolioId)),
   }),
@@ -6135,10 +6502,11 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
     // ── Products ──────────────────────────────────────────────────────────────
     listProducts: protectedProcedure
       .input(z.object({ ventureId: z.string() }))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
         const db = (await getDb())!;
         const { eq: eqOp } = await import("drizzle-orm");
         const { scProducts } = await import("../drizzle/schema");
+        await assertVentureAccess(db, ctx.user, input.ventureId);
         return db.select().from(scProducts).where(eqOp(scProducts.ventureId, input.ventureId));
       }),
 
@@ -6155,25 +6523,32 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
         productionGeography: z.enum(["UK","China","Both","Other"]).optional(),
         targetMarket: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const db = (await getDb())!;
         const { eq: eqOp } = await import("drizzle-orm");
         const { scProducts } = await import("../drizzle/schema");
-        const { id, ...data } = input;
+        const { id, ventureId, ...updateFields } = input;
         if (id) {
-          await db.update(scProducts).set(data).where(eqOp(scProducts.id, id));
+          const [existing] = await db.select({ ventureId: scProducts.ventureId }).from(scProducts).where(eqOp(scProducts.id, id));
+          if (!existing) return { id };
+          await assertVentureAccess(db, ctx.user, existing.ventureId);
+          await db.update(scProducts).set(updateFields).where(eqOp(scProducts.id, id));
           return { id };
         }
-        const [result] = await db.insert(scProducts).values(data);
+        await assertVentureAccess(db, ctx.user, ventureId);
+        const [result] = await db.insert(scProducts).values({ ventureId, ...updateFields });
         return { id: result.insertId };
       }),
 
     deleteProduct: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const db = (await getDb())!;
         const { eq: eqOp } = await import("drizzle-orm");
         const { scProducts } = await import("../drizzle/schema");
+        const [existing] = await db.select({ ventureId: scProducts.ventureId }).from(scProducts).where(eqOp(scProducts.id, input.id));
+        if (!existing) return { success: true };
+        await assertVentureAccess(db, ctx.user, existing.ventureId);
         await db.delete(scProducts).where(eqOp(scProducts.id, input.id));
         return { success: true };
       }),
@@ -6181,10 +6556,11 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
     // ── Prototypes ────────────────────────────────────────────────────────────
     listPrototypes: protectedProcedure
       .input(z.object({ ventureId: z.string(), productId: z.number().optional() }))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
         const db = (await getDb())!;
         const { eq: eqOp, and } = await import("drizzle-orm");
         const { scPrototypes } = await import("../drizzle/schema");
+        await assertVentureAccess(db, ctx.user, input.ventureId);
         if (input.productId) {
           return db.select().from(scPrototypes).where(
             and(eqOp(scPrototypes.ventureId, input.ventureId), eqOp(scPrototypes.productId, input.productId))
@@ -6214,25 +6590,32 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
         manufacturingNotes: z.string().optional(),
         prototypeImageUrl: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const db = (await getDb())!;
         const { eq: eqOp } = await import("drizzle-orm");
         const { scPrototypes } = await import("../drizzle/schema");
-        const { id, ...data } = input;
+        const { id, ventureId, ...updateFields } = input;
         if (id) {
-          await db.update(scPrototypes).set(data).where(eqOp(scPrototypes.id, id));
+          const [existing] = await db.select({ ventureId: scPrototypes.ventureId }).from(scPrototypes).where(eqOp(scPrototypes.id, id));
+          if (!existing) return { id };
+          await assertVentureAccess(db, ctx.user, existing.ventureId);
+          await db.update(scPrototypes).set(updateFields).where(eqOp(scPrototypes.id, id));
           return { id };
         }
-        const [result] = await db.insert(scPrototypes).values(data);
+        await assertVentureAccess(db, ctx.user, ventureId);
+        const [result] = await db.insert(scPrototypes).values({ ventureId, ...updateFields });
         return { id: result.insertId };
       }),
 
     deletePrototype: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const db = (await getDb())!;
         const { eq: eqOp } = await import("drizzle-orm");
         const { scPrototypes } = await import("../drizzle/schema");
+        const [existing] = await db.select({ ventureId: scPrototypes.ventureId }).from(scPrototypes).where(eqOp(scPrototypes.id, input.id));
+        if (!existing) return { success: true };
+        await assertVentureAccess(db, ctx.user, existing.ventureId);
         await db.delete(scPrototypes).where(eqOp(scPrototypes.id, input.id));
         return { success: true };
       }),
@@ -6240,12 +6623,16 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
     // ── Manufacturing ─────────────────────────────────────────────────────────
     getManufacturing: protectedProcedure
       .input(z.object({ productId: z.number() }))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
         const db = (await getDb())!;
         const { eq: eqOp } = await import("drizzle-orm");
         const { scManufacturing } = await import("../drizzle/schema");
         const rows = await db.select().from(scManufacturing).where(eqOp(scManufacturing.productId, input.productId));
-        return rows[0] ?? null;
+        const row = rows[0] ?? null;
+        if (row) {
+          await assertVentureAccess(db, ctx.user, row.ventureId);
+        }
+        return row;
       }),
 
     upsertManufacturing: protectedProcedure
@@ -6267,26 +6654,31 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
         readinessNotes: z.string().optional(),
         toolingStatus: z.enum(["not_started","in_design","ordered","received","validated"]).optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const db = (await getDb())!;
         const { eq: eqOp } = await import("drizzle-orm");
         const { scManufacturing } = await import("../drizzle/schema");
-        const { id, ...data } = input;
+        const { id, ventureId, ...updateFields } = input;
         if (id) {
-          await db.update(scManufacturing).set(data).where(eqOp(scManufacturing.id, id));
+          const [existing] = await db.select({ ventureId: scManufacturing.ventureId }).from(scManufacturing).where(eqOp(scManufacturing.id, id));
+          if (!existing) return { id };
+          await assertVentureAccess(db, ctx.user, existing.ventureId);
+          await db.update(scManufacturing).set(updateFields).where(eqOp(scManufacturing.id, id));
           return { id };
         }
-        const [result] = await db.insert(scManufacturing).values(data);
+        await assertVentureAccess(db, ctx.user, ventureId);
+        const [result] = await db.insert(scManufacturing).values({ ventureId, ...updateFields });
         return { id: result.insertId };
       }),
 
     // ── Suppliers ─────────────────────────────────────────────────────────────
     listSuppliers: protectedProcedure
       .input(z.object({ ventureId: z.string() }))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
         const db = (await getDb())!;
         const { eq: eqOp } = await import("drizzle-orm");
         const { scSuppliers } = await import("../drizzle/schema");
+        await assertVentureAccess(db, ctx.user, input.ventureId);
         return db.select().from(scSuppliers).where(eqOp(scSuppliers.ventureId, input.ventureId));
       }),
 
@@ -6312,25 +6704,32 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
         certifications: z.string().optional(),
         notes: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const db = (await getDb())!;
         const { eq: eqOp } = await import("drizzle-orm");
         const { scSuppliers } = await import("../drizzle/schema");
-        const { id, ...data } = input;
+        const { id, ventureId, ...updateFields } = input;
         if (id) {
-          await db.update(scSuppliers).set(data).where(eqOp(scSuppliers.id, id));
+          const [existing] = await db.select({ ventureId: scSuppliers.ventureId }).from(scSuppliers).where(eqOp(scSuppliers.id, id));
+          if (!existing) return { id };
+          await assertVentureAccess(db, ctx.user, existing.ventureId);
+          await db.update(scSuppliers).set(updateFields).where(eqOp(scSuppliers.id, id));
           return { id };
         }
-        const [result] = await db.insert(scSuppliers).values(data);
+        await assertVentureAccess(db, ctx.user, ventureId);
+        const [result] = await db.insert(scSuppliers).values({ ventureId, ...updateFields });
         return { id: result.insertId };
       }),
 
     deleteSupplier: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const db = (await getDb())!;
         const { eq: eqOp } = await import("drizzle-orm");
         const { scSuppliers } = await import("../drizzle/schema");
+        const [existing] = await db.select({ ventureId: scSuppliers.ventureId }).from(scSuppliers).where(eqOp(scSuppliers.id, input.id));
+        if (!existing) return { success: true };
+        await assertVentureAccess(db, ctx.user, existing.ventureId);
         await db.delete(scSuppliers).where(eqOp(scSuppliers.id, input.id));
         return { success: true };
       }),
@@ -6338,10 +6737,11 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
     // ── Production Orders ─────────────────────────────────────────────────────
     listOrders: protectedProcedure
       .input(z.object({ ventureId: z.string() }))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
         const db = (await getDb())!;
         const { eq: eqOp } = await import("drizzle-orm");
         const { scProductionOrders } = await import("../drizzle/schema");
+        await assertVentureAccess(db, ctx.user, input.ventureId);
         return db.select().from(scProductionOrders).where(eqOp(scProductionOrders.ventureId, input.ventureId));
       }),
 
@@ -6366,25 +6766,32 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
         status: z.enum(["draft","confirmed","in_production","shipped","delivered","cancelled"]).optional(),
         notes: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const db = (await getDb())!;
         const { eq: eqOp } = await import("drizzle-orm");
         const { scProductionOrders } = await import("../drizzle/schema");
-        const { id, ...data } = input;
+        const { id, ventureId, ...updateFields } = input;
         if (id) {
-          await db.update(scProductionOrders).set(data).where(eqOp(scProductionOrders.id, id));
+          const [existing] = await db.select({ ventureId: scProductionOrders.ventureId }).from(scProductionOrders).where(eqOp(scProductionOrders.id, id));
+          if (!existing) return { id };
+          await assertVentureAccess(db, ctx.user, existing.ventureId);
+          await db.update(scProductionOrders).set(updateFields).where(eqOp(scProductionOrders.id, id));
           return { id };
         }
-        const [result] = await db.insert(scProductionOrders).values(data);
+        await assertVentureAccess(db, ctx.user, ventureId);
+        const [result] = await db.insert(scProductionOrders).values({ ventureId, ...updateFields });
         return { id: result.insertId };
       }),
 
     deleteOrder: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const db = (await getDb())!;
         const { eq: eqOp } = await import("drizzle-orm");
         const { scProductionOrders } = await import("../drizzle/schema");
+        const [existing] = await db.select({ ventureId: scProductionOrders.ventureId }).from(scProductionOrders).where(eqOp(scProductionOrders.id, input.id));
+        if (!existing) return { success: true };
+        await assertVentureAccess(db, ctx.user, existing.ventureId);
         await db.delete(scProductionOrders).where(eqOp(scProductionOrders.id, input.id));
         return { success: true };
       }),
@@ -6392,10 +6799,11 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
     // ── Control Tower Summary ─────────────────────────────────────────────────
     getControlTowerSummary: protectedProcedure
       .input(z.object({ ventureId: z.string() }))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
         const db = (await getDb())!;
         const { eq: eqOp } = await import("drizzle-orm");
         const { scProducts, scPrototypes, scManufacturing, scSuppliers, scProductionOrders } = await import("../drizzle/schema");
+        await assertVentureAccess(db, ctx.user, input.ventureId);
 
         const [products, prototypes, suppliers, orders] = await Promise.all([
           db.select().from(scProducts).where(eqOp(scProducts.ventureId, input.ventureId)),
@@ -6900,5 +7308,7 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
   sync: syncRouter,
   vrl: vrlRouter,
   mrlScoring: mrlScoringRouter,
+  workflowState: workflowStateRouter,
+  purposeGovernance: purposeGovernanceRouter,
 });
 export type AppRouter = typeof appRouter;

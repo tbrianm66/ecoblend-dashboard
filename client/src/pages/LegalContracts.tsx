@@ -1,7 +1,7 @@
 // ============================================================
 // LEGAL CONTRACTS MODULE — EcoBlend VBS Dashboard
 // Three tabs: Contracts | Architecture Map | Legal Risk Map
-// Brand: EcoBlend — Green #51AF37, Blue #3A97D3, Orange #F49C13, Navy #1a2332
+// Brand: EcoBlend — Green #56A837, Blue #3B85BA, Orange #F69111, Navy #1a2332
 // ============================================================
 
 import { useState, useRef } from "react";
@@ -40,10 +40,10 @@ interface Contract {
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const VENTURE_OPTIONS = [
-  { id: "ecoblend-rd", label: "EcoRace",      color: "#51AF37" },
-  { id: "bebus",       label: "BEBUS",         color: "#3A97D3" },
-  { id: "tone",        label: "TONE",           color: "#F49C13" },
-  { id: "real",        label: "REAL",           color: "#f1c411" },
+  { id: "ecoblend-rd", label: "EcoRace",      color: "#56A837" },
+  { id: "bebus",       label: "BEBUS",         color: "#3B85BA" },
+  { id: "tone",        label: "TONE",           color: "#F69111" },
+  { id: "real",        label: "REAL",           color: "#F2BB05" },
   { id: "vbs",         label: "VBS (Studio)",   color: "#1a2332" },
 ];
 
@@ -52,9 +52,9 @@ const CATEGORIES: ContractCategory[] = [
 ];
 
 const STATUS_COLOURS: Record<ContractStatus, string> = {
-  Active:         "#51AF37",
+  Active:         "#56A837",
   Draft:          "#9ca3af",
-  "Under Review": "#F49C13",
+  "Under Review": "#F69111",
   Expired:        "#ef4444",
   Terminated:     "#dc2626",
 };
@@ -68,9 +68,9 @@ const CATEGORY_ICONS: Record<ContractCategory, React.ComponentType<{ size?: numb
 };
 
 const CATEGORY_COLOURS: Record<ContractCategory, string> = {
-  "Founder Agreement":   "#3A97D3",
-  "IP Licence":          "#51AF37",
-  "OEM Partnership":     "#F49C13",
+  "Founder Agreement":   "#3B85BA",
+  "IP Licence":          "#56A837",
+  "OEM Partnership":     "#F69111",
   "Charity MoU":         "#ec4899",
   "Investor Term Sheet": "#8b5cf6",
 };
@@ -85,9 +85,9 @@ const LAYER_ICONS: Record<string, React.ComponentType<{ size?: number; style?: R
 
 // Registry status colours
 const REG_STATUS_COLOURS: Record<string, string> = {
-  Active:          "#51AF37",
+  Active:          "#56A837",
   Draft:           "#9ca3af",
-  Pending:         "#F49C13",
+  Pending:         "#F69111",
   "Not Required":  "#6b7280",
   Expired:         "#ef4444",
 };
@@ -95,15 +95,15 @@ const REG_STATUS_COLOURS: Record<string, string> = {
 // Risk zone colours
 const RISK_ZONE_COLOURS: Record<string, string> = {
   High:   "#ef4444",
-  Medium: "#F49C13",
-  Low:    "#51AF37",
+  Medium: "#F69111",
+  Low:    "#56A837",
 };
 
 // Risk status colours
 const RISK_STATUS_COLOURS: Record<string, string> = {
   Open:       "#ef4444",
-  Monitoring: "#F49C13",
-  Mitigated:  "#51AF37",
+  Monitoring: "#F69111",
+  Mitigated:  "#56A837",
   Closed:     "#9ca3af",
 };
 
@@ -443,7 +443,7 @@ function AddContractDialog({ open, onClose, onAdd }: { open: boolean; onClose: (
           <div><label style={labelStyle}>Key Terms (one per line)</label><textarea style={{ ...inputStyle, minHeight: "80px", resize: "vertical" }} value={form.keyTerms} onChange={e => setForm(f => ({ ...f, keyTerms: e.target.value }))} placeholder="4-year vesting schedule&#10;Non-compete: 24 months&#10;Royalty: 3% net revenue" /></div>
           <div><label style={labelStyle}>Notes</label><textarea style={{ ...inputStyle, minHeight: "60px", resize: "vertical" }} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Additional context or commentary..." /></div>
           <div className="flex gap-3 pt-2">
-            <Button onClick={handleAdd} style={{ background: "#51AF37", color: "white", fontFamily: "'Nunito', sans-serif", flex: 1 }}>Add Contract</Button>
+            <Button onClick={handleAdd} style={{ background: "#56A837", color: "white", fontFamily: "'Nunito', sans-serif", flex: 1 }}>Add Contract</Button>
             <Button variant="outline" onClick={onClose} style={{ fontFamily: "'Nunito', sans-serif" }}>Cancel</Button>
           </div>
         </div>
@@ -519,7 +519,7 @@ function ArchitectureMapTab({ onLayerFilter }: { onLayerFilter?: (layerKey: stri
   };
 
   if (layersLoading || registryLoading) {
-    return <div className="flex items-center justify-center py-20"><Loader2 className="animate-spin" size={24} style={{ color: "#51AF37" }} /></div>;
+    return <div className="flex items-center justify-center py-20"><Loader2 className="animate-spin" size={24} style={{ color: "#56A837" }} /></div>;
   }
 
   // Summary counts
@@ -538,9 +538,9 @@ function ArchitectureMapTab({ onLayerFilter }: { onLayerFilter?: (layerKey: stri
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {[
           { label: "Total Contract Types", value: totalContracts, color: "#1a2332" },
-          { label: "Active", value: activeCount, color: "#51AF37" },
+          { label: "Active", value: activeCount, color: "#56A837" },
           { label: "Draft", value: draftCount, color: "#9ca3af" },
-          { label: "Pending", value: pendingCount, color: "#F49C13" },
+          { label: "Pending", value: pendingCount, color: "#F69111" },
           { label: "Critical Risk", value: criticalCount, color: "#ef4444" },
         ].map(s => (
           <div key={s.label} className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb", borderTop: `3px solid ${s.color}` }}>
@@ -555,17 +555,17 @@ function ArchitectureMapTab({ onLayerFilter }: { onLayerFilter?: (layerKey: stri
         const LayerIcon = LAYER_ICONS[layer.layerKey] ?? Layers;
         const layerContracts = registry.filter(r => r.layerKey === layer.layerKey);
         return (
-          <div key={layer.layerKey} className="bg-white rounded-2xl border shadow-sm overflow-hidden" style={{ borderColor: "#e5e7eb", borderLeft: `5px solid ${layer.color ?? "#3A97D3"}` }}>
+          <div key={layer.layerKey} className="bg-white rounded-2xl border shadow-sm overflow-hidden" style={{ borderColor: "#e5e7eb", borderLeft: `5px solid ${layer.color ?? "#3B85BA"}` }}>
             {/* Layer header */}
-            <div className="px-6 py-4 border-b" style={{ borderColor: "#f3f4f6", background: `${layer.color ?? "#3A97D3"}06` }}>
+            <div className="px-6 py-4 border-b" style={{ borderColor: "#f3f4f6", background: `${layer.color ?? "#3B85BA"}06` }}>
               <div className="flex items-center gap-3 justify-between">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${layer.color ?? "#3A97D3"}15` }}>
-                  <LayerIcon size={18} style={{ color: layer.color ?? "#3A97D3" }} />
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${layer.color ?? "#3B85BA"}15` }}>
+                  <LayerIcon size={18} style={{ color: layer.color ?? "#3B85BA" }} />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <h3 className="text-sm font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>{layer.name}</h3>
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: `${layer.color ?? "#3A97D3"}15`, color: layer.color ?? "#3A97D3", fontFamily: "'Nunito', sans-serif" }}>
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: `${layer.color ?? "#3B85BA"}15`, color: layer.color ?? "#3B85BA", fontFamily: "'Nunito', sans-serif" }}>
                       {layerContracts.length} contracts
                     </span>
                   </div>
@@ -575,7 +575,7 @@ function ArchitectureMapTab({ onLayerFilter }: { onLayerFilter?: (layerKey: stri
                   <button
                     onClick={() => onLayerFilter(layer.layerKey)}
                     className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all hover:opacity-80 flex-shrink-0"
-                    style={{ background: `${layer.color ?? "#3A97D3"}12`, color: layer.color ?? "#3A97D3", border: `1px solid ${layer.color ?? "#3A97D3"}30`, fontFamily: "'Nunito', sans-serif" }}
+                    style={{ background: `${layer.color ?? "#3B85BA"}12`, color: layer.color ?? "#3B85BA", border: `1px solid ${layer.color ?? "#3B85BA"}30`, fontFamily: "'Nunito', sans-serif" }}
                   >
                     <Filter size={10} /> Filter Contracts
                   </button>
@@ -615,7 +615,7 @@ function ArchitectureMapTab({ onLayerFilter }: { onLayerFilter?: (layerKey: stri
                         <button
                           onClick={() => updateMetaMutation.mutate({ id: ct.id, expiryDate: editExpiry })}
                           className="text-xs font-semibold px-2 py-1 rounded-lg text-white"
-                          style={{ background: "#3A97D3" }}
+                          style={{ background: "#3B85BA" }}
                         >
                           {updateMetaMutation.isPending ? <Loader2 size={10} className="animate-spin" /> : <CheckCheck size={12} />}
                         </button>
@@ -625,7 +625,7 @@ function ArchitectureMapTab({ onLayerFilter }: { onLayerFilter?: (layerKey: stri
                       <button
                         onClick={() => { setEditExpiryId(ct.id); setEditExpiry(ct.expiryDate ? String(ct.expiryDate) : ""); }}
                         className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg hover:bg-gray-100"
-                        style={{ color: ct.expiryDate ? "#3A97D3" : "#9ca3af", fontFamily: "'Nunito', sans-serif" }}
+                        style={{ color: ct.expiryDate ? "#3B85BA" : "#9ca3af", fontFamily: "'Nunito', sans-serif" }}
                         title={ct.expiryDate ? `Expires: ${ct.expiryDate}` : "Set expiry date"}
                       >
                         <Clock size={10} />
@@ -637,7 +637,7 @@ function ArchitectureMapTab({ onLayerFilter }: { onLayerFilter?: (layerKey: stri
                     {ct.documentUrl ? (
                       <div className="flex items-center gap-1">
                         <a href={ct.documentUrl} target="_blank" rel="noopener noreferrer" className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-blue-50" title="View document">
-                          <Eye size={12} style={{ color: "#3A97D3" }} />
+                          <Eye size={12} style={{ color: "#3B85BA" }} />
                         </a>
                         <button onClick={() => removeDocMutation.mutate({ id: ct.id })} className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-red-50" title="Remove document">
                           <Trash2 size={12} style={{ color: "#ef4444" }} />
@@ -650,7 +650,7 @@ function ArchitectureMapTab({ onLayerFilter }: { onLayerFilter?: (layerKey: stri
                         title="Attach document"
                         disabled={uploadingId === ct.id}
                       >
-                        {uploadingId === ct.id ? <Loader2 size={12} className="animate-spin" style={{ color: "#51AF37" }} /> : <Paperclip size={12} style={{ color: "#9ca3af" }} />}
+                        {uploadingId === ct.id ? <Loader2 size={12} className="animate-spin" style={{ color: "#56A837" }} /> : <Paperclip size={12} style={{ color: "#9ca3af" }} />}
                       </button>
                     )}
 
@@ -674,7 +674,7 @@ function ArchitectureMapTab({ onLayerFilter }: { onLayerFilter?: (layerKey: stri
                         <button
                           onClick={() => updateMutation.mutate({ id: ct.id, status: editStatus as any, owner: editOwner || undefined })}
                           className="text-xs font-semibold px-2 py-1 rounded-lg text-white"
-                          style={{ background: "#51AF37" }}
+                          style={{ background: "#56A837" }}
                         >
                           {updateMutation.isPending ? <Loader2 size={10} className="animate-spin" /> : <CheckCheck size={12} />}
                         </button>
@@ -734,7 +734,7 @@ function LegalRiskMapTab() {
   });
 
   if (isLoading) {
-    return <div className="flex items-center justify-center py-20"><Loader2 className="animate-spin" size={24} style={{ color: "#51AF37" }} /></div>;
+    return <div className="flex items-center justify-center py-20"><Loader2 className="animate-spin" size={24} style={{ color: "#56A837" }} /></div>;
   }
 
   const highRisks = risks.filter(r => r.riskZone === "High");
@@ -762,8 +762,8 @@ function LegalRiskMapTab() {
         {[
           { label: "Total Risk Areas", value: risks.length, color: "#1a2332", icon: ShieldAlert },
           { label: "Open", value: openCount, color: "#ef4444", icon: AlertCircle },
-          { label: "Monitoring", value: monitoringCount, color: "#F49C13", icon: RefreshCw },
-          { label: "Mitigated", value: mitigatedCount, color: "#51AF37", icon: CheckCircle2 },
+          { label: "Monitoring", value: monitoringCount, color: "#F69111", icon: RefreshCw },
+          { label: "Mitigated", value: mitigatedCount, color: "#56A837", icon: CheckCircle2 },
         ].map(s => {
           const Icon = s.icon;
           return (
@@ -799,7 +799,7 @@ function LegalRiskMapTab() {
       {ownerEntries.length > 0 && (
         <div className="bg-white rounded-2xl border shadow-sm p-5" style={{ borderColor: "#e5e7eb" }}>
           <div className="flex items-center gap-2 mb-4">
-            <User size={15} style={{ color: "#3A97D3" }} />
+            <User size={15} style={{ color: "#3B85BA" }} />
             <span className="text-sm font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>Risk Owner Assignments</span>
             <span className="text-xs text-gray-400 ml-auto" style={{ fontFamily: "'Nunito', sans-serif" }}>{ownerEntries.length} owner{ownerEntries.length > 1 ? "s" : ""}</span>
           </div>
@@ -809,18 +809,18 @@ function LegalRiskMapTab() {
               return (
                 <div key={owner} className="rounded-xl border p-4" style={{ borderColor: "#e5e7eb", background: "#f9fafb" }}>
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "#3A97D315" }}>
-                      <User size={12} style={{ color: "#3A97D3" }} />
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "#3B85BA15" }}>
+                      <User size={12} style={{ color: "#3B85BA" }} />
                     </div>
                     <span className="text-xs font-bold text-gray-800 truncate" style={{ fontFamily: "'Nunito', sans-serif" }}>{owner}</span>
                   </div>
                   <div className="flex items-center gap-3 text-xs mb-2" style={{ fontFamily: "'Nunito', sans-serif" }}>
                     <span style={{ color: "#ef4444" }}>{counts.open} Open</span>
-                    <span style={{ color: "#F49C13" }}>{counts.monitoring} Monitoring</span>
-                    <span style={{ color: "#51AF37" }}>{counts.mitigated} Mitigated</span>
+                    <span style={{ color: "#F69111" }}>{counts.monitoring} Monitoring</span>
+                    <span style={{ color: "#56A837" }}>{counts.mitigated} Mitigated</span>
                   </div>
                   <div className="w-full h-1.5 rounded-full bg-gray-200 overflow-hidden">
-                    <div className="h-full rounded-full transition-all duration-500" style={{ width: `${mitigatedPct}%`, background: "#51AF37" }} />
+                    <div className="h-full rounded-full transition-all duration-500" style={{ width: `${mitigatedPct}%`, background: "#56A837" }} />
                   </div>
                   <div className="text-xs text-gray-400 mt-1" style={{ fontFamily: "'Nunito', sans-serif" }}>{mitigatedPct}% mitigated · {counts.total} total</div>
                 </div>
@@ -874,7 +874,7 @@ function LegalRiskMapTab() {
                       <button
                         onClick={() => updateMutation.mutate({ id: risk.id, status: editStatus as any, owner: editOwner || undefined })}
                         className="text-xs font-semibold px-2 py-1 rounded-lg text-white"
-                        style={{ background: "#51AF37" }}
+                        style={{ background: "#56A837" }}
                       >
                         {updateMutation.isPending ? <Loader2 size={10} className="animate-spin" /> : <CheckCheck size={12} />}
                       </button>
@@ -1056,7 +1056,7 @@ export default function LegalContracts() {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <FileText size={16} style={{ color: "#51AF37" }} />
+              <FileText size={16} style={{ color: "#56A837" }} />
               <span className="vos-badge vos-badge-success" style={{ fontSize: "0.65rem" }}>Governance · Legal</span>
             </div>
             <h1 className="vos-page-title mb-1">Legal Contracts</h1>
@@ -1065,7 +1065,7 @@ export default function LegalContracts() {
             </p>
           </div>
           {activeTab === "contracts" && (
-            <Button onClick={() => setAddOpen(true)} className="flex items-center gap-2 text-xs" size="sm" style={{ background: "#51AF37", color: "white" }}>
+            <Button onClick={() => setAddOpen(true)} className="flex items-center gap-2 text-xs" size="sm" style={{ background: "#56A837", color: "white" }}>
               <Plus size={13} /> Add Contract
             </Button>
           )}
@@ -1082,8 +1082,8 @@ export default function LegalContracts() {
                 onClick={() => setActiveTab(tab.key)}
                 className="flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold transition-all border-b-2 -mb-px"
                 style={{
-                  borderColor: isActive ? "#51AF37" : "transparent",
-                  color: isActive ? "#51AF37" : "#6b7280",
+                  borderColor: isActive ? "#56A837" : "transparent",
+                  color: isActive ? "#56A837" : "#6b7280",
                   fontFamily: "'Nunito', sans-serif",
                   background: "transparent",
                 }}
@@ -1103,8 +1103,8 @@ export default function LegalContracts() {
             {/* KPI row */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: "Active", value: activeCount, sub: "contracts", color: "#51AF37", icon: CheckCircle2 },
-                { label: "Under Review", value: reviewCount, sub: "pending sign-off", color: "#F49C13", icon: Clock },
+                { label: "Active", value: activeCount, sub: "contracts", color: "#56A837", icon: CheckCircle2 },
+                { label: "Under Review", value: reviewCount, sub: "pending sign-off", color: "#F69111", icon: Clock },
                 { label: "Draft", value: draftCount, sub: "in progress", color: "#9ca3af", icon: Edit3 },
                 { label: "Expired / Terminated", value: expiredCount, sub: "closed", color: "#ef4444", icon: XCircle },
               ].map(stat => {
@@ -1139,9 +1139,9 @@ export default function LegalContracts() {
 
             {/* Layer filter active banner */}
             {layerFilter && (
-              <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl border" style={{ borderColor: "#3A97D330", background: "#3A97D308" }}>
-                <Filter size={12} style={{ color: "#3A97D3" }} />
-                <span className="text-xs font-semibold" style={{ color: "#3A97D3", fontFamily: "'Nunito', sans-serif" }}>
+              <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl border" style={{ borderColor: "#3B85BA30", background: "#3B85BA08" }}>
+                <Filter size={12} style={{ color: "#3B85BA" }} />
+                <span className="text-xs font-semibold" style={{ color: "#3B85BA", fontFamily: "'Nunito', sans-serif" }}>
                   Filtered by layer: {layerFilter.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase())}
                 </span>
                 <button
@@ -1193,7 +1193,7 @@ export default function LegalContracts() {
                         onClick={() => renewMutation.mutate({ id: c.id })}
                         disabled={renewMutation.isPending}
                         className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all hover:opacity-80 disabled:opacity-50"
-                        style={{ background: "#F49C1315", color: "#d97706", border: "1px solid #fde68a", fontFamily: "'Nunito', sans-serif" }}
+                        style={{ background: "#F6911115", color: "#d97706", border: "1px solid #fde68a", fontFamily: "'Nunito', sans-serif" }}
                       >
                         {renewMutation.isPending ? <Loader2 size={10} className="animate-spin" /> : <RefreshCw size={10} />}
                         Renew

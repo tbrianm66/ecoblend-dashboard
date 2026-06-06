@@ -72,7 +72,7 @@ const priorityColors: Record<string, string> = {
 const STATUS_COLORS: Record<string, string> = {
   "Not Started": "#9ca3af",
   "Gap Analysis": "#f59e0b",
-  "In Progress": "#3A97D3",
+  "In Progress": "#3B85BA",
   "Under Review": "#7c3aed",
   "Certified": "#22c55e",
   "Lapsed": "#ef4444",

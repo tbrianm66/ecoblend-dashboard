@@ -87,9 +87,9 @@ function OverviewTab() {
   const { data: summary } = trpc.investorCrm.summary.get.useQuery({});
 
   const kpis = [
-    { label: "Total Investors", value: summary?.totalInvestors ?? 0, sub: `${summary?.activeInvestors ?? 0} active`, icon: Users, color: "#3A97D3" },
-    { label: "Open Rounds", value: summary?.openRounds ?? 0, sub: `${summary?.closedRounds ?? 0} closed`, icon: TrendingUp, color: "#51AF37" },
-    { label: "Total Raised", value: fmt(summary?.totalRaised), icon: DollarSign, color: "#F49C13" },
+    { label: "Total Investors", value: summary?.totalInvestors ?? 0, sub: `${summary?.activeInvestors ?? 0} active`, icon: Users, color: "#3B85BA" },
+    { label: "Open Rounds", value: summary?.openRounds ?? 0, sub: `${summary?.closedRounds ?? 0} closed`, icon: TrendingUp, color: "#56A837" },
+    { label: "Total Raised", value: fmt(summary?.totalRaised), icon: DollarSign, color: "#F69111" },
     { label: "Cap Table Entries", value: summary?.capTableEntries ?? 0, icon: Building, color: "#8b5cf6" },
   ];
 
@@ -660,7 +660,7 @@ export default function InvestorCRM() {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#51AF3715", color: "#51AF37" }}>Investment</span>
+              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#56A83715", color: "#56A837" }}>Investment</span>
               <span className="text-xs text-gray-400">·</span>
               <span className="text-xs text-gray-400 font-mono">Funding Execution</span>
             </div>

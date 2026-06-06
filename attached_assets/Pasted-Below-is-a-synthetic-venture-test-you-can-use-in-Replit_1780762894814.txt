@@ -1,0 +1,420 @@
+Below is a **synthetic venture test** you can use in Replit to validate whether the governance-management update works in practice. It is designed to test whether the platform can capture purpose, mission lock, board controls, investor alignment, purpose-drift detection, corrective actions, and annual governance review.
+
+The test is based on the *Incorruptible* governance logic: purpose must be legally and operationally protected, not merely written as brand language; the uploaded reference highlights purposeful incorporation, director duty to the corporation itself, shareholder duty, governance fortress mechanisms, board mission pledges, steward ownership, and mission-lock vehicles. 
+
+---
+
+# Synthetic Venture Test: **EcoShield Materials Ltd**
+
+## 1. Test Venture Profile
+
+**Company name:** EcoShield Materials Ltd
+**Parent / studio:** EcoRACE Studio Ltd
+**Sector:** Sustainable protective materials
+**Product:** Recycled basalt-fibre and bio-resin protective panels for e-mobility, sports equipment, and industrial safety
+**Stage:** Pre-seed / prototype validation
+**Founder:** Brian Mcilwaine
+**Purpose status:** Draft purpose charter required
+**Governance maturity target:** 75% minimum before external investment acceptance
+
+## 2. Protected Purpose Statement
+
+> EcoShield Materials Ltd exists to develop and scale sustainable protective material systems that reduce environmental impact, improve safety, and preserve applied engineering knowledge as a long-term company asset.
+
+## 3. Founder Intent Statement
+
+> The company must not become a short-term materials trading business. Its purpose is to build validated engineering knowledge, protect proprietary formulations, and commercialise products through ethical manufacturing, responsible supply chains, and stakeholder-aligned capital.
+
+## 4. Non-Negotiable Principles
+
+| Principle                 | Description                                                                                                                                 |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mission before extraction | Do not accept capital that forces premature harvesting of IP or short-term margin extraction                                                |
+| IP protection             | EcoBLEND OS technical data, material recipes, test data, and supplier intelligence must not be transferred without reserved-matter approval |
+| Sustainable production    | Manufacturing decisions must consider carbon, waste, durability, and supply-chain ethics                                                    |
+| Applied human knowledge   | Expert engineering judgement must remain part of validation, not be replaced by superficial AI scoring                                      |
+| Stakeholder duty          | Decisions must consider customers, employees, supply-chain partners, investors, and social-purpose beneficiaries                            |
+
+---
+
+# Test Objective
+
+The test should prove whether the platform can answer this question:
+
+> “Can the system detect when a promising venture is at risk of abandoning its protected purpose because of investor pressure, weak board controls, or operational shortcuts?”
+
+---
+
+# Synthetic Test Data
+
+## A. Company Record
+
+```json
+{
+  "company_name": "EcoShield Materials Ltd",
+  "company_type": "Portfolio Venture",
+  "parent_company": "EcoRACE Studio Ltd",
+  "operating_division": "ECOCOMP Materials",
+  "founder": "Brian Mcilwaine",
+  "purpose_status": "Draft",
+  "governance_maturity_score": 0,
+  "stage": "Pre-seed",
+  "sector": "Sustainable materials",
+  "created_at": "2026-06-06"
+}
+```
+
+## B. Purpose Charter Record
+
+```json
+{
+  "protected_purpose_statement": "Develop and scale sustainable protective material systems that reduce environmental impact, improve safety, and preserve applied engineering knowledge as a long-term company asset.",
+  "founder_intent_statement": "Do not become a short-term materials trading business. Protect proprietary formulations, validation data, and ethical manufacturing standards.",
+  "beneficial_purpose": "Reduce environmental impact in protective material systems while improving product safety and manufacturing accountability.",
+  "stakeholder_commitments": [
+    "Customers receive validated safety and sustainability claims",
+    "Manufacturing partners follow ethical supply-chain standards",
+    "Investors support long-term value creation",
+    "Technical data remains protected inside EcoBLEND OS",
+    "A proportion of future profits supports social-purpose commitments"
+  ],
+  "non_negotiable_principles": [
+    "No unapproved IP sale",
+    "No investor control that overrides purpose",
+    "No unvalidated sustainability claims",
+    "No manufacturing partner without compliance review",
+    "No product launch without technical validation"
+  ],
+  "approval_status": "Pending Board Review",
+  "review_due_date": "2026-09-06"
+}
+```
+
+## C. Mission Lock Design
+
+```json
+{
+  "lock_type": "Articles Protection + Board Mission Pledge + Reserved Matters + Investor Covenant",
+  "legal_status": "Draft",
+  "implementation_status": "Partially Implemented",
+  "evidence_document_url": null,
+  "responsible_owner": "Founder",
+  "review_date": "2026-09-06"
+}
+```
+
+## D. Reserved Matters Register
+
+```json
+[
+  {
+    "matter_category": "Sale of IP",
+    "approval_threshold": "Founder + Board + Mission Guardian Approval",
+    "required_approvers": ["Founder", "Board Chair", "Mission Guardian"],
+    "status": "Active"
+  },
+  {
+    "matter_category": "New Investment",
+    "approval_threshold": "Board Majority + Founder Approval",
+    "required_approvers": ["Founder", "Board"],
+    "status": "Active"
+  },
+  {
+    "matter_category": "Change of Purpose",
+    "approval_threshold": "Supermajority + Mission Guardian Veto Right",
+    "required_approvers": ["Founder", "Board", "Mission Guardian"],
+    "status": "Active"
+  },
+  {
+    "matter_category": "Manufacturing Partner Approval",
+    "approval_threshold": "Management Proposal + Board Review",
+    "required_approvers": ["Operations Lead", "Board"],
+    "status": "Active"
+  }
+]
+```
+
+---
+
+# Main Test Scenario
+
+## Scenario: Misaligned Investor Offer
+
+EcoShield receives a £500,000 pre-seed investment offer from **Accelerant Capital LLP**.
+
+The offer appears attractive because it funds prototype testing and manufacturing trials. However, the investment terms create serious purpose risk.
+
+## Investor Terms
+
+```json
+{
+  "investor_name": "Accelerant Capital LLP",
+  "investor_type": "Seed VC",
+  "capital_amount": 500000,
+  "time_horizon": "3 years",
+  "exit_expectation": "Trade sale within 36 months",
+  "control_rights_requested": [
+    "Board seat",
+    "Veto over annual budget",
+    "Right to approve IP licensing",
+    "Right to force sale if offer exceeds 3x invested capital"
+  ],
+  "liquidation_preference": "2x participating preference",
+  "board_seat_requested": true,
+  "debt_appetite": "High",
+  "attitude_to_reinvestment": "Low",
+  "attitude_to_stakeholder_commitments": "Weak",
+  "mission_alignment_score": 42,
+  "risk_rating": "High",
+  "approval_status": "Pending Review"
+}
+```
+
+## Expected Platform Behaviour
+
+The system should flag this investor as **high risk** because:
+
+| Risk Area               | Trigger                                                                    |
+| ----------------------- | -------------------------------------------------------------------------- |
+| Exit pressure           | Investor requires trade sale within 36 months                              |
+| IP risk                 | Investor wants approval rights over IP licensing                           |
+| Control risk            | Investor requests board seat and budget veto                               |
+| Mission drift risk      | Investor has weak stakeholder commitment                                   |
+| Capital extraction risk | 2x participating preference creates pressure to prioritise investor return |
+| Founder-control risk    | Forced-sale right could override long-term purpose                         |
+| Governance weakness     | Mission lock is only partially implemented                                 |
+
+Expected result:
+
+```json
+{
+  "investor_alignment_score": 42,
+  "capital_pressure_indicator": "Red",
+  "mission_drift_risk": "High",
+  "recommended_decision": "Reject or Renegotiate",
+  "required_actions": [
+    "Remove forced-sale right",
+    "Remove investor IP licensing veto",
+    "Reduce liquidation preference",
+    "Add mission covenant",
+    "Require investor acceptance of reserved matters",
+    "Complete mission lock before accepting capital"
+  ]
+}
+```
+
+---
+
+# Purpose Drift Trigger Test
+
+After the investment offer is entered, simulate the following management decision:
+
+> Operations proposes using a cheaper overseas supplier that has no sustainability verification, no worker-condition audit, and no documented material traceability.
+
+## Supplier Shortcut Record
+
+```json
+{
+  "decision_type": "Manufacturing Partner Approval",
+  "decision_summary": "Approve low-cost supplier for prototype production to reduce unit cost by 28%.",
+  "purpose_alignment_assessment": "Weak",
+  "financial_impact": "Positive short-term margin improvement",
+  "governance_impact": "Potential breach of sustainability and supply-chain commitments",
+  "evidence": [
+    "No sustainability audit",
+    "No worker-condition verification",
+    "No material traceability documentation",
+    "No lifecycle assessment data"
+  ],
+  "decision_status": "Pending Approval"
+}
+```
+
+## Expected Purpose Drift Detection
+
+```json
+{
+  "drift_category": "Stakeholder Harm / Sustainability Shortcut",
+  "severity": "High",
+  "trigger_source": "Reserved Matter Submission",
+  "evidence": "Supplier lacks sustainability, worker-condition, and traceability documentation.",
+  "assigned_to": "Board Governance Review",
+  "status": "Open"
+}
+```
+
+## Corrective Action Expected
+
+```json
+{
+  "action_type": "Supplier Governance Review",
+  "action_description": "Do not approve supplier until sustainability verification, worker-condition review, traceability documentation, and lifecycle impact evidence are complete.",
+  "owner": "Operations Lead",
+  "deadline": "2026-07-06",
+  "board_approval_required": true,
+  "status": "Open"
+}
+```
+
+---
+
+# Governance Maturity Scoring Test
+
+The platform should calculate the venture’s governance maturity score.
+
+| Governance Component                        | Weight | Test Status         | Score |
+| ------------------------------------------- | -----: | ------------------- | ----: |
+| Purpose charter complete                    |    15% | Draft, not approved |    8% |
+| Mission lock design complete                |    15% | Partial             |    7% |
+| Articles / constitutional controls uploaded |    15% | Missing             |    0% |
+| Board mission pledge signed                 |    10% | Missing             |    0% |
+| Reserved matters register active            |    10% | Active              |   10% |
+| Investor policy active                      |    10% | Draft               |    5% |
+| Purpose metrics active                      |    10% | Partial             |    5% |
+| Governance review cycle active              |    10% | Not started         |    0% |
+| Corrective action process active            |     5% | Active              |    5% |
+
+**Expected governance maturity score:** **40%**
+
+Expected result:
+
+```json
+{
+  "governance_maturity_score": 40,
+  "status": "High Risk",
+  "recommendation": "Do not accept external investment until constitutional controls, board mission pledge, investor policy, and governance review cycle are complete."
+}
+```
+
+---
+
+# Replit Test Prompt
+
+Use this in Replit after the governance-management update has been built.
+
+```text
+You are testing the governance-management functionality of the EcoBLEND / EcoRACE platform.
+
+Create a synthetic venture called EcoShield Materials Ltd and use it to test whether the system can capture, evaluate, and escalate purpose-protection governance risks.
+
+Test Venture:
+- Company name: EcoShield Materials Ltd
+- Parent company: EcoRACE Studio Ltd
+- Division: ECOCOMP Materials
+- Sector: Sustainable protective materials
+- Stage: Pre-seed
+- Product: Recycled basalt-fibre and bio-resin protective panels for e-mobility, sports equipment, and industrial safety
+
+Protected Purpose:
+EcoShield Materials Ltd exists to develop and scale sustainable protective material systems that reduce environmental impact, improve safety, and preserve applied engineering knowledge as a long-term company asset.
+
+Founder Intent:
+The company must not become a short-term materials trading business. Its purpose is to build validated engineering knowledge, protect proprietary formulations, and commercialise products through ethical manufacturing, responsible supply chains, and stakeholder-aligned capital.
+
+Non-Negotiable Principles:
+1. No unapproved IP sale.
+2. No investor control that overrides purpose.
+3. No unvalidated sustainability claims.
+4. No manufacturing partner without compliance review.
+5. No product launch without technical validation.
+
+Required Test Steps:
+
+1. Create the company record.
+2. Create the purpose charter.
+3. Create the mission lock record.
+4. Create reserved matters for:
+   - sale of IP
+   - new investment
+   - change of purpose
+   - manufacturing partner approval
+5. Add a synthetic investor called Accelerant Capital LLP.
+6. Enter the following investor terms:
+   - £500,000 investment
+   - trade sale expected within 36 months
+   - board seat requested
+   - veto over annual budget
+   - right to approve IP licensing
+   - right to force sale if offer exceeds 3x invested capital
+   - 2x participating liquidation preference
+   - low reinvestment tolerance
+   - weak stakeholder commitment
+7. Run the investor-alignment scoring model.
+8. Confirm that the system marks the investor as high risk.
+9. Confirm that the platform recommends Reject or Renegotiate.
+10. Create a proposed manufacturing decision using a cheaper overseas supplier with:
+   - no sustainability audit
+   - no worker-condition verification
+   - no material traceability documentation
+   - no lifecycle assessment data
+11. Submit the decision as a reserved matter.
+12. Confirm that the system detects purpose drift.
+13. Confirm that the drift category is Stakeholder Harm / Sustainability Shortcut.
+14. Confirm severity is High.
+15. Confirm that a corrective governance action is created.
+16. Run the governance maturity score.
+17. Confirm that the expected score is approximately 40%.
+18. Confirm that the system recommends not accepting external investment until constitutional controls, board mission pledge, investor policy, and governance review cycle are complete.
+
+Expected Outputs:
+
+A. Company profile created successfully.
+B. Purpose charter created and marked Pending Board Review.
+C. Mission lock marked Partially Implemented.
+D. Reserved matters register active.
+E. Investor alignment score around 42/100.
+F. Capital pressure indicator marked Red.
+G. Mission drift risk marked High.
+H. Recommended investor decision: Reject or Renegotiate.
+I. Supplier decision escalated to Board Governance Review.
+J. Corrective action created for supplier governance review.
+K. Governance maturity score around 40%.
+L. Overall platform status: High Risk.
+M. Dashboard should show red or amber indicators for:
+   - mission lock
+   - investor alignment
+   - constitutional documents
+   - board pledge
+   - governance review cycle
+   - purpose drift
+   - corrective action
+
+Please inspect the database, API responses, UI pages, dashboard cards, role permissions, and audit trail after completing the test.
+
+Report:
+1. What worked.
+2. What failed.
+3. Which data failed to save.
+4. Which workflow steps were missing.
+5. Which dashboard indicators were incorrect.
+6. Which permissions were too weak or too restrictive.
+7. Which database fields are missing.
+8. Which API endpoints need to be created or fixed.
+9. Which UI components need to be improved.
+10. Whether the governance workflow is ready for a founder demo.
+```
+
+---
+
+# Pass / Fail Criteria
+
+| Test Area          | Pass Condition                               | Fail Condition                                        |
+| ------------------ | -------------------------------------------- | ----------------------------------------------------- |
+| Company creation   | Venture created and linked to EcoRACE Studio | Company exists without parent or division linkage     |
+| Purpose charter    | Charter saved, versioned, and reviewable     | Purpose is plain text only with no approval workflow  |
+| Mission lock       | Lock type and status captured                | No way to record implementation status                |
+| Reserved matters   | Special approvals are routed                 | Decisions bypass approval                             |
+| Investor screening | Misaligned investor flagged red              | Investor only assessed by amount invested             |
+| Purpose drift      | Supplier shortcut triggers high-risk warning | System treats supplier decision as normal procurement |
+| Corrective action  | Action created and assigned                  | Red flag exists with no owner or deadline             |
+| Governance score   | Score reflects missing controls              | Dashboard gives false confidence                      |
+| Audit trail        | Changes are logged                           | No evidence of who changed what                       |
+| Permissions        | Investor cannot edit governance controls     | External user can modify purpose or reserved matters  |
+
+---
+
+# Red Team Notes
+
+The biggest failure mode is that the platform becomes a **governance documentation tool**, not a **governance control system**. A document vault, charter builder, and dashboard are useful, but they do not protect the company unless certain actions are blocked, escalated, or made conditional.
+
+The second failure mode is false scoring precision. A governance maturity score of 40%, 60%, or 80% is only useful if the platform can show the evidence behind the score. Every score should be traceable to documents, decisions, signatures, reviews, and audit logs.

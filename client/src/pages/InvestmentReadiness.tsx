@@ -150,7 +150,7 @@ export default function InvestmentReadiness() {
               { label: "Total Funding Ask", value: fmt(totalAsk), sub: "across all brands", color: "#f59e0b", icon: Target },
               { label: "Total Raised", value: fmt(totalRaised), sub: `${totalAsk > 0 ? Math.round((totalRaised / totalAsk) * 100) : 0}% of target`, color: "#22c55e", icon: TrendingUp },
               { label: "Funding Gap", value: fmt(totalGap), sub: "still required", color: "#ef4444", icon: AlertTriangle },
-              { label: "Combined Burn", value: fmt(totalBurn) + "/mo", sub: "across portfolio", color: "#3A97D3", icon: Zap },
+              { label: "Combined Burn", value: fmt(totalBurn) + "/mo", sub: "across portfolio", color: "#3B85BA", icon: Zap },
             ].map(k => (
               <div key={k.label} className="vos-metric">
                 <div className="flex items-center gap-2 mb-1">
@@ -207,7 +207,7 @@ export default function InvestmentReadiness() {
                     {[
                       { label: "Gap", value: fmt(gap), color: gap > 0 ? "#ef4444" : "#22c55e" },
                       { label: "Burn/mo", value: fmt(f.monthlyBurn), color: "#6b7280" },
-                      { label: "Revenue", value: fmt(f.revenueActual), color: "#3A97D3" },
+                      { label: "Revenue", value: fmt(f.revenueActual), color: "#3B85BA" },
                       { label: "IRL Score", value: irlScore > 0 ? irlScore.toFixed(1) : "—", color: irlScore >= 7 ? "#22c55e" : irlScore >= 4 ? "#f59e0b" : "#9ca3af" },
                     ].map(m => (
                       <div key={m.label} className="rounded-lg p-2 text-center" style={{ background: "#f9fafb" }}>

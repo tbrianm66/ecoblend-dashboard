@@ -54,9 +54,9 @@ import MissionIntegrityBadge from "@/components/MissionIntegrityBadge";
 
 
 const VRL_STAGE_LABELS: Record<number, { label: string; description: string; color: string; bg: string }> = {
-  1: { label: "Stage 1 — Idea", description: "Foundation & Validation Fundamentals", color: "#51AF37", bg: "#51AF3710" },
-  2: { label: "Stage 2 — Validation", description: "Evidence & Commercial Proof", color: "#3A97D3", bg: "#3A97D310" },
-  3: { label: "Stage 3 — MVP / Kick-off", description: "Build & Launch Readiness", color: "#F49C13", bg: "#F49C1310" },
+  1: { label: "Stage 1 — Idea", description: "Foundation & Validation Fundamentals", color: "#56A837", bg: "#56A83710" },
+  2: { label: "Stage 2 — Validation", description: "Evidence & Commercial Proof", color: "#3B85BA", bg: "#3B85BA10" },
+  3: { label: "Stage 3 — MVP / Kick-off", description: "Build & Launch Readiness", color: "#F69111", bg: "#F6911110" },
   4: { label: "Stage 4 — Scale / Go-to-Market", description: "Execution Platform Scope", color: "#8B5CF6", bg: "#8B5CF610" },
 };
 
@@ -629,7 +629,7 @@ export default function BrlAnalytics() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDetailTask(null)}>Cancel</Button>
-            <Button onClick={handleSaveDetail} style={{ background: "#F49C13" }}>Save Details</Button>
+            <Button onClick={handleSaveDetail} style={{ background: "#F69111" }}>Save Details</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

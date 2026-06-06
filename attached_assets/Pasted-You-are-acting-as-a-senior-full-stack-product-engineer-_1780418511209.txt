@@ -1,0 +1,1296 @@
+You are acting as a senior full-stack product engineer, product strategist, and venture studio systems architect.
+
+I am building **EcoBLEND IO**, a Venture Validation OS used by **EcoRACE Studio** to create, validate, and manage a portfolio of ventures using Lean Startup methodology, evidence scoring, venture readiness, and stage-gate decision-making.
+
+The current application has a sidebar module:
+
+**B. Venture Intake**
+
+Your task is to audit the existing Venture Intake module and update or add the required sub-sections based on Lean Startup methodology and the wider EcoBLEND IO workflow.
+
+The Venture Intake module must become the **front-end hypothesis capture and assumption-definition layer** for the entire system.
+
+Its purpose is to stop ventures entering product development before the core assumptions have been made explicit, structured, and ready for testing.
+
+The module should answer:
+
+**“What do we believe, why do we believe it, what is the riskiest assumption, and what must we test first?”**
+
+---
+
+# 1. Audit First
+
+Before adding new functionality, audit the existing Venture Intake module.
+
+Identify:
+
+* Existing routes
+* Existing components
+* Existing database tables
+* Existing forms
+* Existing state management
+* Existing sidebar configuration
+* Existing venture data model
+* Any duplicated venture creation logic
+* Any broken links or unused components
+* Any hard-coded demo data
+* Any missing create/read/update/delete functionality
+
+Do not create duplicate venture tables if a venture table already exists.
+
+Do not create disconnected forms that cannot feed into the Command Centre, Discovery & Market, Proposition & Model, or R&D Hub.
+
+After the audit, implement the update using the existing project conventions.
+
+---
+
+# 2. Strategic Role of Venture Intake
+
+The Venture Intake module should sit before:
+
+* Discovery & Market
+* Proposition & Model
+* R&D Hub
+* Operations & MFG
+* Brand & GTM
+* Command Centre stage-gate review
+
+The Venture Intake module should create the first structured records for:
+
+* Venture idea
+* Founder assumptions
+* Customer segment hypothesis
+* Problem hypothesis
+* Value proposition hypothesis
+* Business model hypothesis
+* Riskiest assumption
+* Initial Lean Canvas
+* Intake decision
+
+Every venture should leave Venture Intake with enough structured information to begin Discovery & Market validation.
+
+The core logic should be:
+
+Idea → Assumptions → Hypotheses → Riskiest Assumption → First Experiment → Intake Decision
+
+---
+
+# 3. Recommended Sub-Sections
+
+Update or add the following sub-sections under **B. Venture Intake**.
+
+If the existing sidebar can support all items, add them as separate sub-sections.
+
+If the sidebar is limited, use tabs within the Venture Intake page.
+
+Required sub-sections:
+
+1. **Idea Capture**
+2. **Founder Assumptions**
+3. **Customer Segment Hypothesis**
+4. **Problem Hypothesis**
+5. **Value Proposition Hypothesis**
+6. **Business Model Hypothesis**
+7. **Riskiest Assumption Test**
+8. **Initial Lean Canvas**
+9. **Intake Decision**
+
+Preferred sidebar structure:
+
+B. Venture Intake
+
+* Idea Capture
+* Assumptions
+* Hypotheses
+* Riskiest Assumption
+* Lean Canvas
+* Intake Decision
+
+If using tabs, structure the page as:
+
+* Overview
+* Idea Capture
+* Assumptions
+* Hypotheses
+* Lean Canvas
+* Decision
+
+---
+
+# 4. Core Data Model
+
+Use existing tables where possible. If required, create or extend the following tables.
+
+If the Command Centre update already created some of these tables, reuse them. Do not duplicate.
+
+---
+
+## ventures
+
+Use the existing venture table if already present.
+
+Required fields:
+
+* id
+* name
+* description
+* venture_type
+* current_stage
+* status
+* owner
+* source
+* strategic_fit_score
+* created_at
+* updated_at
+
+Suggested venture_type options:
+
+* portfolio_venture
+* internal_platform
+* product_division
+* spv
+* research_project
+* partner_project
+
+Suggested current_stage default:
+
+* intake
+
+Suggested status default:
+
+* idea
+
+---
+
+## venture_ideas
+
+Fields:
+
+* id
+* venture_id
+* idea_title
+* idea_summary
+* origin_source
+* target_sector
+* target_customer
+* problem_area
+* proposed_solution
+* why_now
+* strategic_relevance
+* sustainability_relevance
+* data_moat_potential
+* founder_notes
+* created_at
+* updated_at
+
+origin_source options:
+
+* founder_idea
+* customer_problem
+* university_research
+* supplier_signal
+* market_signal
+* regulatory_signal
+* portfolio_extension
+* partner_request
+* operational_problem
+
+---
+
+## founder_assumptions
+
+Fields:
+
+* id
+* venture_id
+* assumption_title
+* assumption_statement
+* assumption_category
+* importance_score
+* uncertainty_score
+* evidence_exists
+* evidence_summary
+* risk_level
+* created_at
+* updated_at
+
+assumption_category options:
+
+* customer
+* problem
+* value_proposition
+* solution
+* pricing
+* channel
+* technical
+* manufacturing
+* supply_chain
+* sustainability
+* regulatory
+* data_access
+* operations
+* investment
+
+risk_level options:
+
+* low
+* medium
+* high
+* critical
+
+---
+
+## venture_hypotheses
+
+If this table already exists from Command Centre, reuse it and extend it if needed.
+
+Fields:
+
+* id
+* venture_id
+* module_source
+* hypothesis_type
+* hypothesis_statement
+* target_customer
+* expected_behaviour
+* success_metric
+* test_method
+* assumption_risk_level
+* status
+* confidence_score
+* evidence_summary
+* created_at
+* updated_at
+
+module_source default:
+
+* venture_intake
+
+hypothesis_type options:
+
+* customer_segment
+* problem
+* value_proposition
+* solution
+* business_model
+* pricing
+* channel
+* operational
+* manufacturing
+* sustainability
+* data_access
+* regulatory
+
+status options:
+
+* untested
+* testing
+* validated
+* invalidated
+* pivot_required
+* paused
+
+---
+
+## riskiest_assumptions
+
+Fields:
+
+* id
+* venture_id
+* assumption_id
+* hypothesis_id
+* assumption_statement
+* reason_it_is_risky
+* impact_if_false
+* evidence_required
+* proposed_test
+* test_priority_score
+* recommended_first_experiment
+* created_at
+* updated_at
+
+---
+
+## lean_canvas_records
+
+Fields:
+
+* id
+* venture_id
+* customer_segments
+* problem
+* existing_alternatives
+* unique_value_proposition
+* solution
+* channels
+* revenue_streams
+* cost_structure
+* key_metrics
+* unfair_advantage
+* high_level_concept
+* version_number
+* created_at
+* updated_at
+
+---
+
+## intake_decisions
+
+Fields:
+
+* id
+* venture_id
+* decision_type
+* decision_summary
+* readiness_score
+* assumption_risk_score
+* strategic_fit_score
+* evidence_gap_summary
+* recommended_next_module
+* recommended_first_experiment
+* decision_status
+* reviewer_notes
+* created_at
+* updated_at
+
+decision_type options:
+
+* reject
+* archive
+* research_more
+* begin_customer_discovery
+* begin_market_discovery
+* create_experiment
+* pivot_before_discovery
+* proceed_to_discovery_and_market
+
+decision_status options:
+
+* recommended
+* pending_review
+* approved
+* rejected
+* implemented
+
+---
+
+# 5. Sub-Section: Idea Capture
+
+## Purpose
+
+This sub-section captures the venture idea in a structured way.
+
+It should prevent vague ideas from entering the validation process.
+
+## Required UI
+
+Create or update an Idea Capture page with:
+
+* Venture selector
+* Add new venture idea button
+* Idea capture form
+* Idea list/table
+* Strategic relevance card
+* Sustainability relevance card
+* Data moat potential card
+* Recommended next step
+
+## Idea Capture Form Fields
+
+Required fields:
+
+* Idea title
+* Idea summary
+* Origin source
+* Target sector
+* Target customer
+* Problem area
+* Proposed solution
+* Why now?
+* Strategic relevance
+* Sustainability relevance
+* Data moat potential
+* Founder notes
+
+## Required Output
+
+For each idea, show:
+
+* Venture name
+* Target sector
+* Target customer
+* Problem area
+* Origin source
+* Strategic relevance
+* Current status
+* Recommended next step
+
+## Lean Startup Logic
+
+The system should not treat an idea as valid. It should label all new ideas as:
+
+* Assumption-led
+* Unvalidated
+* Requires hypothesis definition
+
+---
+
+# 6. Sub-Section: Founder Assumptions
+
+## Purpose
+
+This sub-section captures what the founder believes to be true before evidence exists.
+
+This is critical because early ventures often fail when assumptions are hidden or treated as facts.
+
+## Required UI
+
+Create an assumptions table and form.
+
+Fields:
+
+* Venture
+* Assumption title
+* Assumption statement
+* Assumption category
+* Importance score: 1–5
+* Uncertainty score: 1–5
+* Evidence exists: yes/no
+* Evidence summary
+* Risk level
+
+## Scoring Logic
+
+Calculate Assumption Risk Score:
+
+Assumption Risk Score = Importance Score × Uncertainty Score
+
+Interpretation:
+
+* 1–5 = Low
+* 6–10 = Medium
+* 11–18 = High
+* 19–25 = Critical
+
+If Evidence Exists = no and Assumption Risk Score is above 15, flag as a high-risk untested assumption.
+
+## Required Output
+
+Show:
+
+* Total assumptions
+* High-risk assumptions
+* Critical assumptions
+* Assumptions without evidence
+* Top 5 assumptions to test
+
+## Auto-Generation
+
+Allow user to convert an assumption into:
+
+* Customer segment hypothesis
+* Problem hypothesis
+* Value proposition hypothesis
+* Business model hypothesis
+* Riskiest assumption record
+* Lean experiment proposal
+
+---
+
+# 7. Sub-Section: Customer Segment Hypothesis
+
+## Purpose
+
+This sub-section defines who the venture believes the customer is.
+
+It should clearly distinguish between:
+
+* Buyer
+* User
+* Influencer
+* Decision-maker
+* Economic buyer
+* Gatekeeper
+
+## Required UI
+
+Create a form and table for customer segment hypotheses.
+
+Fields:
+
+* Venture
+* Customer segment name
+* Buyer role
+* User role
+* Influencer role
+* Decision-maker role
+* Economic buyer
+* Gatekeeper
+* Sector
+* Geography
+* Use case
+* Current alternative
+* Expected behaviour
+* Success metric
+* Test method
+* Status
+
+## Required Output
+
+Show:
+
+* Segment clarity score
+* Buyer/user distinction
+* Decision-maker visibility
+* Current alternative
+* Recommended discovery test
+
+## Segment Clarity Score
+
+Calculate:
+
+Segment Clarity Score =
+Buyer Role Completeness × 20%
+
+* User Role Completeness × 20%
+* Decision-Maker Completeness × 20%
+* Use Case Completeness × 20%
+* Current Alternative Completeness × 20%
+
+Convert to 0–100.
+
+If score is below 60, show warning:
+
+“Customer segment is not sufficiently defined for discovery interviews.”
+
+---
+
+# 8. Sub-Section: Problem Hypothesis
+
+## Purpose
+
+This sub-section defines the customer problem to test.
+
+The system should force the user to separate:
+
+* The problem
+* The proposed solution
+* The evidence required
+* The expected customer behaviour
+
+## Required UI
+
+Create a problem hypothesis form and table.
+
+Fields:
+
+* Venture
+* Customer segment
+* Problem statement
+* Problem type
+* Who experiences the problem?
+* Current workaround
+* Expected pain level: 1–5
+* Expected frequency: 1–5
+* Expected urgency: 1–5
+* Expected budget owner
+* Evidence required
+* Test method
+* Success metric
+* Status
+
+Problem type options:
+
+* cost
+* time
+* quality
+* compliance
+* sustainability
+* reliability
+* safety
+* performance
+* access
+* data_fragmentation
+* operational_complexity
+
+## Required Output
+
+Show:
+
+* Problem definition quality score
+* Expected pain/urgency/frequency
+* Current workaround
+* Discovery interview recommendation
+* Evidence required before moving to Discovery & Market
+
+## Problem Definition Score
+
+Calculate:
+
+Problem Definition Score =
+Problem Statement Completeness × 20%
+
+* Customer Segment Link × 20%
+* Current Workaround Completeness × 20%
+* Evidence Required Completeness × 20%
+* Success Metric Completeness × 20%
+
+If below 60, show warning:
+
+“Problem hypothesis is too vague to validate.”
+
+---
+
+# 9. Sub-Section: Value Proposition Hypothesis
+
+## Purpose
+
+This sub-section defines why the customer should care.
+
+It should not allow generic statements such as “AI-powered”, “sustainable”, “innovative”, or “data-driven” unless linked to measurable customer value.
+
+## Required UI
+
+Create a value proposition hypothesis form and table.
+
+Fields:
+
+* Venture
+* Linked customer segment
+* Linked problem hypothesis
+* Value proposition statement
+* Customer job-to-be-done
+* Pain relieved
+* Gain created
+* Measurable customer outcome
+* Differentiation claim
+* Evidence required
+* Test method
+* Success metric
+* Status
+
+## Required Output
+
+Show:
+
+* Value proposition clarity score
+* Customer outcome clarity
+* Differentiation strength
+* Evidence required
+* Recommended validation experiment
+
+## Value Proposition Quality Score
+
+Calculate:
+
+Value Proposition Quality Score =
+Customer Job Completeness × 20%
+
+* Pain Relieved Completeness × 20%
+* Gain Created Completeness × 20%
+* Measurable Outcome Completeness × 25%
+* Evidence Required Completeness × 15%
+
+If measurable customer outcome is missing, show warning:
+
+“Value proposition is not measurable.”
+
+---
+
+# 10. Sub-Section: Business Model Hypothesis
+
+## Purpose
+
+This sub-section defines how the venture might create, deliver, and capture value.
+
+It should connect early assumptions to later WTP Assessment and Proposition & Model.
+
+## Required UI
+
+Create a business model hypothesis form and table.
+
+Fields:
+
+* Venture
+* Customer segment
+* Value proposition
+* Revenue model
+* Pricing assumption
+* Delivery model
+* Sales channel
+* Cost drivers
+* Key partners
+* Scalability assumption
+* Evidence required
+* Test method
+* Success metric
+* Status
+
+Revenue model options:
+
+* subscription
+* licence
+* paid_pilot
+* consultancy_plus_platform
+* product_sales
+* service_fee
+* success_fee
+* data_partnership
+* co_development
+* venture_studio_equity
+* transaction_fee
+
+## Required Output
+
+Show:
+
+* Business model readiness score
+* Revenue model assumption
+* Pricing assumption
+* Delivery model assumption
+* Scalability risk
+* Recommended WTP or commercial validation test
+
+## Business Model Readiness Score
+
+Calculate:
+
+Business Model Readiness Score =
+Revenue Model Completeness × 20%
+
+* Pricing Assumption Completeness × 20%
+* Delivery Model Completeness × 20%
+* Channel Completeness × 20%
+* Evidence Required Completeness × 20%
+
+If below 60, show warning:
+
+“Business model hypothesis is incomplete.”
+
+---
+
+# 11. Sub-Section: Riskiest Assumption Test
+
+## Purpose
+
+This sub-section identifies the assumption most likely to invalidate the venture.
+
+This is central to Lean Startup methodology.
+
+## Required UI
+
+Create a Riskiest Assumption page with:
+
+* Venture selector
+* Ranked assumption list
+* Top riskiest assumption card
+* Add/edit riskiest assumption form
+* Recommended first experiment
+* Create experiment button
+
+## Required Fields
+
+* Venture
+* Linked assumption
+* Linked hypothesis
+* Assumption statement
+* Reason it is risky
+* Impact if false
+* Evidence required
+* Proposed test
+* Recommended first experiment
+
+## Priority Score
+
+Calculate Test Priority Score:
+
+Test Priority Score =
+Assumption Risk Score × 50%
+
+* Impact If False Score × 30%
+* Evidence Gap Score × 20%
+
+Use 1–5 scales and convert to 0–100.
+
+## Required Output
+
+Show:
+
+* Top riskiest assumption
+* Why it matters
+* What evidence is required
+* What test should be run first
+* Whether the venture is ready for Discovery & Market
+
+## Integration
+
+Create button:
+
+“Create Lean Experiment”
+
+This should create a record in lean_experiments with:
+
+* venture_id
+* hypothesis_id
+* experiment_name
+* experiment_type
+* method
+* success_threshold
+* status = proposed
+* module_source = venture_intake
+
+---
+
+# 12. Sub-Section: Initial Lean Canvas
+
+## Purpose
+
+This sub-section creates a first-pass Lean Canvas for the venture.
+
+The Lean Canvas should be versioned because it will change as evidence is gathered.
+
+## Required UI
+
+Create a Lean Canvas page with editable blocks:
+
+1. Customer Segments
+2. Problem
+3. Existing Alternatives
+4. Unique Value Proposition
+5. Solution
+6. Channels
+7. Revenue Streams
+8. Cost Structure
+9. Key Metrics
+10. Unfair Advantage
+11. High-Level Concept
+
+## Required Features
+
+* Save Lean Canvas version
+* Duplicate previous version
+* Compare versions if feasible
+* Link canvas blocks to hypotheses
+* Show incomplete blocks
+* Export or copy summary
+
+## Required Output
+
+Show:
+
+* Canvas completeness score
+* Missing blocks
+* Linked hypotheses
+* Recommended next update
+* Latest version number
+
+## Canvas Completeness Score
+
+Calculate percentage of completed blocks.
+
+If below 70, show warning:
+
+“Lean Canvas is incomplete. Do not progress to Discovery & Market until core blocks are defined.”
+
+---
+
+# 13. Sub-Section: Intake Decision
+
+## Purpose
+
+This sub-section decides whether the venture should proceed to validation.
+
+It should not approve ventures based only on enthusiasm.
+
+## Required UI
+
+Create Intake Decision page with:
+
+* Venture selector
+* Readiness scorecard
+* Assumption risk summary
+* Evidence gap summary
+* Recommended first experiment
+* Recommended next module
+* Decision form
+* Approval status
+
+## Intake Readiness Score
+
+Calculate:
+
+Intake Readiness Score =
+Idea Completeness × 15%
+
+* Segment Clarity × 15%
+* Problem Definition × 20%
+* Value Proposition Quality × 15%
+* Business Model Readiness × 10%
+* Lean Canvas Completeness × 10%
+* Riskiest Assumption Defined × 15%
+
+Output categories:
+
+* 0–39 = Not ready
+* 40–59 = Needs more definition
+* 60–79 = Ready for initial discovery
+* 80–100 = Strong intake package
+
+## Decision Logic
+
+If Intake Readiness Score is below 40:
+
+* Recommend: reject, archive, or redefine idea
+
+If 40–59:
+
+* Recommend: research more and complete missing hypotheses
+
+If 60–79:
+
+* Recommend: begin customer discovery
+
+If 80–100:
+
+* Recommend: proceed to Discovery & Market and create first experiment
+
+If critical assumptions exist with no test defined:
+
+* Override recommendation: define riskiest assumption test first
+
+## Decision Options
+
+Allow reviewer to choose:
+
+* Reject
+* Archive
+* Research more
+* Begin customer discovery
+* Begin market discovery
+* Create first experiment
+* Pivot before discovery
+* Proceed to Discovery & Market
+
+## Required Integration
+
+When an Intake Decision is approved:
+
+* Update venture status
+* Update venture current_stage
+* Create a lean_decision record if that table exists
+* Create a command_alert if action is required
+* Push first experiment to Experiment Queue if created
+* Make the venture visible in Command Centre
+
+---
+
+# 14. Integration With Other Modules
+
+The Venture Intake module must feed the rest of the EcoBLEND IO system.
+
+## Command Centre
+
+Send:
+
+* Venture status
+* Intake readiness score
+* Riskiest assumption
+* First experiment
+* Intake decision
+* Missing evidence warnings
+
+## Discovery & Market
+
+Send:
+
+* Customer segment hypothesis
+* Problem hypothesis
+* Value proposition hypothesis
+* First customer discovery experiment
+
+## Proposition & Model
+
+Send:
+
+* Business model hypothesis
+* Value proposition hypothesis
+* Lean Canvas record
+
+## R&D Hub
+
+Send:
+
+* Solution hypothesis
+* MVP-related assumptions
+* Technical assumptions
+
+## Operations & MFG
+
+Send:
+
+* Manufacturing assumptions
+* Supply chain assumptions
+* Delivery model assumptions
+
+## Brand & GTM
+
+Send:
+
+* Channel assumptions
+* Positioning assumptions
+* Customer segment hypothesis
+
+---
+
+# 15. UI Design Requirements
+
+Match the existing EcoBLEND IO style:
+
+* Dark sidebar
+* Professional venture studio interface
+* Clean white or light main content area
+* Rounded cards
+* Status badges
+* Clear visual hierarchy
+* Minimal icons
+* Executive SaaS aesthetic
+
+Use consistent colours:
+
+* Green = ready / validated / approved
+* Amber = incomplete / needs more evidence
+* Red = high risk / blocked / invalidated
+* Grey = untested / draft
+* Blue = in progress / testing
+
+Each sub-section should include:
+
+* Header
+* Short explanation
+* Venture selector
+* Primary action button
+* Table or structured card layout
+* Scorecard
+* Warning panel
+* Next action recommendation
+
+---
+
+# 16. Reusable Components
+
+Create or reuse:
+
+* VentureSelector
+* ScoreCard
+* StatusBadge
+* RiskBadge
+* HypothesisCard
+* AssumptionTable
+* HypothesisTable
+* LeanCanvasGrid
+* IntakeReadinessPanel
+* NextActionPanel
+* EmptyState
+* FormDrawer
+* ConfirmationModal
+
+Create reusable utilities:
+
+* calculateAssumptionRiskScore()
+* calculateSegmentClarityScore()
+* calculateProblemDefinitionScore()
+* calculateValuePropositionQualityScore()
+* calculateBusinessModelReadinessScore()
+* calculateRiskiestAssumptionPriorityScore()
+* calculateLeanCanvasCompletenessScore()
+* calculateIntakeReadinessScore()
+* generateIntakeDecisionRecommendation()
+* generateMissingIntakeWarnings()
+* createFirstExperimentFromRiskiestAssumption()
+
+---
+
+# 17. Seed Data
+
+Create realistic seed data for at least four ventures:
+
+1. BEBUS
+2. ECOCOMP
+3. REAL
+4. TONE
+
+Example data:
+
+## BEBUS
+
+Idea:
+A reliability intelligence venture for zero-emission bus and coach operators.
+
+Problem hypothesis:
+UK bus operators experience avoidable downtime because reliability data is fragmented across OEMs, suppliers, and maintenance teams.
+
+Customer segment hypothesis:
+Engineering directors and fleet maintenance managers at bus operators.
+
+Value proposition hypothesis:
+Reduce avoidable downtime and improve supplier accountability through structured reliability intelligence.
+
+Business model hypothesis:
+Paid pilot followed by consultancy-plus-platform subscription.
+
+Riskiest assumption:
+Operators will share operational reliability data with a new venture.
+
+## ECOCOMP
+
+Idea:
+Sustainable composite formulation venture for manufacturers.
+
+Problem hypothesis:
+Manufacturers need validated eco-material formulations that meet performance, compliance, and production requirements without increasing risk.
+
+Customer segment hypothesis:
+Product manufacturers seeking lower-carbon materials.
+
+Value proposition hypothesis:
+Validated sustainable material formulations reduce product development uncertainty and improve compliance readiness.
+
+Business model hypothesis:
+Licensing plus paid formulation development.
+
+Riskiest assumption:
+Manufacturers will pay for formulation intelligence before full-scale production proof exists.
+
+## REAL
+
+Idea:
+Sustainable combat sports protection and equipment brand.
+
+Problem hypothesis:
+Combat sports customers want sustainable protective equipment but will not compromise on durability, performance, or brand credibility.
+
+Customer segment hypothesis:
+Combat sports athletes, gyms, and specialist retailers.
+
+Value proposition hypothesis:
+High-performance protective equipment using credible sustainable materials.
+
+Business model hypothesis:
+D2C product sales plus gym partnerships.
+
+Riskiest assumption:
+Customers will pay a premium for sustainability if performance is equal.
+
+## TONE
+
+Idea:
+Sustainable modular equipment systems for creative industry operators.
+
+Problem hypothesis:
+Creative production teams face cost, storage, and environmental pressure from conventional equipment systems.
+
+Customer segment hypothesis:
+Creative production operators, studios, and equipment managers.
+
+Value proposition hypothesis:
+Modular sustainable equipment reduces storage burden, lifecycle cost, and environmental impact.
+
+Business model hypothesis:
+Product sales plus rental or licensing model.
+
+Riskiest assumption:
+Creative operators will change existing procurement habits for sustainability and modularity benefits.
+
+---
+
+# 18. Testing Requirements
+
+Test that:
+
+* A new venture idea can be created
+* A venture can be selected across all sub-sections
+* Founder assumptions can be added and scored
+* Assumptions can be converted into hypotheses
+* Customer segment hypotheses save correctly
+* Problem hypotheses save correctly
+* Value proposition hypotheses save correctly
+* Business model hypotheses save correctly
+* Riskiest assumption can be defined
+* A first Lean experiment can be created from the riskiest assumption
+* Lean Canvas saves and versions correctly
+* Intake Readiness Score calculates correctly
+* Intake Decision updates venture status and stage
+* Intake data appears in Command Centre
+* Relevant hypotheses appear in Discovery & Market
+* Empty states do not crash
+* Existing data is not overwritten
+* Duplicate venture records are not created
+
+---
+
+# 19. Acceptance Criteria
+
+The update is complete when:
+
+* Venture Intake has a coherent Lean Startup workflow.
+* Every venture idea becomes structured before validation.
+* Founder assumptions are explicitly captured.
+* Hypotheses are created and categorised.
+* The riskiest assumption is identified.
+* A first experiment can be created.
+* An Initial Lean Canvas can be saved and versioned.
+* An Intake Decision can be made.
+* Venture status and stage update correctly.
+* Command Centre receives intake status and warnings.
+* Discovery & Market can reuse customer/problem/value hypotheses.
+* The UI remains consistent with the existing EcoBLEND IO design.
+* Seed data demonstrates the full workflow for BEBUS, ECOCOMP, REAL, and TONE.
+
+---
+
+# 20. Critical Failure Modes to Avoid
+
+Avoid these mistakes:
+
+1. **Creating another static intake form**
+   Venture Intake must be a hypothesis-definition workflow, not a generic idea submission form.
+
+2. **Confusing assumptions with evidence**
+   Founder beliefs must be labelled as assumptions until tested.
+
+3. **Allowing vague hypotheses**
+   Customer, problem, value proposition, and business model hypotheses must have test methods and success metrics.
+
+4. **Skipping the riskiest assumption**
+   The system must identify what could kill the venture fastest.
+
+5. **Disconnected module logic**
+   Intake data must feed Command Centre, Discovery & Market, Proposition & Model, and R&D Hub.
+
+6. **Duplicate venture records**
+   Reuse the existing venture model where available.
+
+7. **Premature validation**
+   Intake should not mark ventures as validated. It should mark them as ready or not ready for testing.
+
+8. **No stage-gate consequence**
+   Approved intake decisions must update venture stage and status.
+
+---
+
+# 21. Final Developer Output Required
+
+After completing the audit and implementation, provide:
+
+1. Summary of the existing Venture Intake audit
+2. What was changed
+3. Files modified
+4. New tables or migrations added
+5. Existing tables reused
+6. Assumptions made
+7. Features not completed
+8. Bugs found
+9. Recommended next development step
+
+The strategic objective is to make **B. Venture Intake** the structured entry point for Lean Startup validation inside EcoBLEND IO.

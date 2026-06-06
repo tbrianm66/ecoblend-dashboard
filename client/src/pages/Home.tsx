@@ -5,7 +5,7 @@
 // Spacing: 8px grid (8/16/24/40px)
 // ============================================================
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import HubSpokeDiagram from "@/components/HubSpokeDiagram";
 import { VRL_STAGES, TRL_LEVELS, Venture } from "@/lib/data";
@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { exportPortfolioPdf, exportInvestorPack } from "@/lib/exportPdf";
 import { trpc } from "@/lib/trpc";
-import MissionIntegrityBadge from "@/components/MissionIntegrityBadge";
+import { useHypothesisStore, selectVrlByVenture } from "@/stores/hypothesisStore";
 
 const HERO_BG = "https://d2xsxph8kpxj0f.cloudfront.net/310419663031397390/ggmroLG8ezURUZiLzGveTG/ecoblend-hero-bg-4sozsAnSEGXN6NLMPzPbzp.webp";
 
@@ -29,9 +29,9 @@ const HERO_BG = "https://d2xsxph8kpxj0f.cloudfront.net/310419663031397390/ggmroL
 const LIFECYCLE_STAGES = ["Idea", "Validation", "MVP", "Market Entry", "Scale"];
 
 const statusConfig: Record<string, { bg: string; color: string; dot: string }> = {
-  "Active":      { bg: "#e8f7e3", color: "#2d9856", dot: "#51AF37" },
-  "Pre-Launch":  { bg: "#fef3dc", color: "#b45309", dot: "#F49C13" },
-  "Scaling":     { bg: "#e0f0fb", color: "#096ba7", dot: "#3A97D3" },
+  "Active":      { bg: "#E9F6E3", color: "#3D8526", dot: "#56A837" },
+  "Pre-Launch":  { bg: "#FEF0D9", color: "#b45309", dot: "#F69111" },
+  "Scaling":     { bg: "#E4EFF7", color: "#2C6690", dot: "#3B85BA" },
   "Paused":      { bg: "#f3f4f6", color: "#6b7280", dot: "#9ca3af" },
 };
 
@@ -82,21 +82,21 @@ function LifecycleStrip({ currentStage }: { currentStage: string }) {
             <div
               className="flex items-center gap-1 px-2 py-0.5 rounded"
               style={{
-                background: active ? "#51AF3718" : done ? "#51AF370a" : "transparent",
-                border: active ? "1px solid #51AF3740" : "1px solid transparent",
+                background: active ? "#56A83718" : done ? "#56A8370a" : "transparent",
+                border: active ? "1px solid #56A83740" : "1px solid transparent",
               }}
             >
               {done ? (
-                <CheckCircle2 size={9} style={{ color: "#51AF37" }} />
+                <CheckCircle2 size={9} style={{ color: "#56A837" }} />
               ) : active ? (
-                <Zap size={9} style={{ color: "#51AF37" }} />
+                <Zap size={9} style={{ color: "#56A837" }} />
               ) : (
                 <Circle size={9} style={{ color: "#d1d5db" }} />
               )}
               <span
                 className="text-xs font-medium"
                 style={{
-                  color: active ? "#2d9856" : done ? "#51AF37" : "#9ca3af",
+                  color: active ? "#3D8526" : done ? "#56A837" : "#9ca3af",
                   fontSize: "0.65rem",
                   fontFamily: "'Inter', sans-serif",
                   fontWeight: active ? 700 : 500,
@@ -106,7 +106,7 @@ function LifecycleStrip({ currentStage }: { currentStage: string }) {
               </span>
             </div>
             {i < LIFECYCLE_STAGES.length - 1 && (
-              <ArrowRight size={8} style={{ color: i < idx ? "#51AF3760" : "#e5e7eb", margin: "0 1px" }} />
+              <ArrowRight size={8} style={{ color: i < idx ? "#56A83760" : "#e5e7eb", margin: "0 1px" }} />
             )}
           </div>
         );
@@ -117,12 +117,12 @@ function LifecycleStrip({ currentStage }: { currentStage: string }) {
 
 // ── Venture Card ───────────────────────────────────────────────────────────
 const ENGINE_COLORS: Record<string, { bg: string; color: string; label: string }> = {
-  Sticky:  { bg: "#e0f0fb", color: "#096ba7", label: "Sticky" },
+  Sticky:  { bg: "#E4EFF7", color: "#2C6690", label: "Sticky" },
   Viral:   { bg: "#f0fdf4", color: "#15803d", label: "Viral" },
-  Paid:    { bg: "#fef3dc", color: "#b45309", label: "Paid" },
+  Paid:    { bg: "#FEF0D9", color: "#b45309", label: "Paid" },
 };
 function VentureCard({
-  venture, onClick, onEdit, onEditMilestones, computedVrlScore, computedVrlLevel, engineOfGrowth,
+  venture, onClick, onEdit, onEditMilestones, computedVrlScore, computedVrlLevel, engineOfGrowth, pivot, hypothesisVrl,
 }: {
   venture: Venture;
   onClick: () => void;
@@ -131,8 +131,16 @@ function VentureCard({
   computedVrlScore?: number;
   computedVrlLevel?: number;
   engineOfGrowth?: string | null;
+  pivot?: boolean;
+  hypothesisVrl?: { vrl: number; stageLabel: string };
 }) {
   const vrlStage = VRL_STAGES[venture.vrl - 1];
+  // When the venture is driven by the Lean Startup Hypothesis Register, the
+  // primary VRL readout + progress bar reflect the live 0-9 engine score.
+  const hypDriven = hypothesisVrl !== undefined;
+  const vrlBarPercent = hypDriven
+    ? Math.round((hypothesisVrl.vrl / 9) * 100)
+    : Math.round(((venture.vrl - 1) / 4 + venture.vrlPercent / 400) * 100);
   const trlLevel = TRL_LEVELS[venture.trl - 1];
   const status = statusConfig[venture.status] ?? statusConfig["Paused"];
   const lifecycleStage = lifecycleStageFromVrl(venture.vrl);
@@ -206,6 +214,16 @@ function VentureCard({
                 {ENGINE_COLORS[engineOfGrowth].label}
               </span>
             )}
+            {pivot && (
+              <span
+                className="vos-badge"
+                style={{ background: "rgba(220,38,38,0.10)", color: "#dc2626", fontSize: "0.6rem" }}
+                title="A core assumption was invalidated — pivot required"
+              >
+                <Zap size={8} className="mr-0.5" />
+                Pivot Initiated
+              </span>
+            )}
             <button
               onClick={onEdit}
               className="w-6 h-6 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
@@ -229,24 +247,26 @@ function VentureCard({
           <div>
             <div className="flex justify-between items-center mb-1">
               <span className="flex items-center gap-1.5 text-xs font-medium text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>
-                <TrendingUp size={10} style={{ color: "#51AF37" }} />
-                VRL {venture.vrl} — {vrlStage?.label}
+                <TrendingUp size={10} style={{ color: "#56A837" }} />
+                {hypDriven
+                  ? <>VRL {hypothesisVrl.vrl.toFixed(1)} — {hypothesisVrl.stageLabel}</>
+                  : <>VRL {venture.vrl} — {vrlStage?.label}</>}
               </span>
               <div className="flex items-center gap-2">
                 {computedVrlScore !== undefined && (
-                  <span className="text-xs font-mono font-bold px-1.5 py-0.5 rounded" style={{ background: "#51AF3715", color: "#51AF37" }}>
+                  <span className="text-xs font-mono font-bold px-1.5 py-0.5 rounded" style={{ background: "#56A83715", color: "#56A837" }}>
                     Score: {computedVrlScore.toFixed(1)}/9
                   </span>
                 )}
-                <span className="text-xs font-mono text-gray-400">{venture.vrlPercent}%</span>
+                <span className="text-xs font-mono text-gray-400">{vrlBarPercent}%</span>
               </div>
             </div>
             <div className="vos-progress-track">
               <div
                 className="vos-progress-fill"
                 style={{
-                  width: `${((venture.vrl - 1) / 4 + venture.vrlPercent / 400) * 100}%`,
-                  background: "#51AF37",
+                  width: `${vrlBarPercent}%`,
+                  background: "#56A837",
                 }}
               />
             </div>
@@ -255,7 +275,7 @@ function VentureCard({
           <div>
             <div className="flex justify-between items-center mb-1">
               <span className="flex items-center gap-1.5 text-xs font-medium text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>
-                <FlaskConical size={10} style={{ color: "#3A97D3" }} />
+                <FlaskConical size={10} style={{ color: "#3B85BA" }} />
                 TRL {venture.trl} — {trlLevel?.label}
               </span>
               <span className="text-xs font-mono text-gray-400">{venture.trlPercent}%</span>
@@ -265,7 +285,7 @@ function VentureCard({
                 className="vos-progress-fill"
                 style={{
                   width: `${((venture.trl - 1) / 9 + venture.trlPercent / 900) * 100}%`,
-                  background: "#3A97D3",
+                  background: "#3B85BA",
                 }}
               />
             </div>
@@ -314,8 +334,19 @@ export default function Home() {
     : 0;
   // VRL portfolio scores (computed via scoring engine)
   const { data: vrlPortfolioScores = [] } = trpc.vrlScoring.portfolioScores.useQuery();
-  const avgComputedVrl = vrlPortfolioScores.length > 0
-    ? (vrlPortfolioScores.reduce((sum, v) => sum + v.vrlScore, 0) / vrlPortfolioScores.length).toFixed(1)
+  // Live VRL driven by the Lean Startup Hypothesis Register
+  const hypotheses = useHypothesisStore((s) => s.hypotheses);
+  const vrlByVenture = useMemo(() => selectVrlByVenture(hypotheses), [hypotheses]);
+  // Effective VRL score per venture: hypothesis-driven when present, else the
+  // server-computed score. The AVG widget averages every venture that has a score.
+  const effectiveVrlScore = (ventureId: string): number | undefined =>
+    vrlByVenture[ventureId]?.vrl ??
+    vrlPortfolioScores.find((s) => s.ventureId === ventureId)?.vrlScore;
+  const avgVrlValues = portfolioBrands
+    .map((v) => effectiveVrlScore(v.id))
+    .filter((x): x is number => x !== undefined);
+  const avgComputedVrl = avgVrlValues.length > 0
+    ? (avgVrlValues.reduce((sum, x) => sum + x, 0) / avgVrlValues.length).toFixed(1)
     : "--";
   // Innovation Accounting: experiment pass rate + engine of growth
   const { data: leanMetrics = [] } = trpc.leanMetrics.portfolioSummary.useQuery();
@@ -396,7 +427,7 @@ export default function Home() {
                 variant="outline"
                 className="gap-1.5 text-xs h-8"
                 onClick={() => exportPortfolioPdf(ventures)}
-                style={{ borderColor: "#3A97D3", color: "#3A97D3", borderRadius: "8px" }}
+                style={{ borderColor: "#3B85BA", color: "#3B85BA", borderRadius: "8px" }}
               >
                 <FileDown size={12} /> Export PDF
               </Button>
@@ -429,21 +460,21 @@ export default function Home() {
             label="Active Ventures"
             value={stats.activeVentures}
             sub={`of ${stats.totalVentures} total`}
-            accent="#51AF37"
+            accent="#56A837"
             icon={TrendingUp}
           />
           <MetricTile
             label="Avg VRL Score"
             value={avgComputedVrl}
             sub="computed, 0-9 scale"
-            accent="#51AF37"
+            accent="#56A837"
             icon={TrendingUp}
           />
           <MetricTile
             label="Avg TRL Level"
             value={stats.avgTrl.toFixed(1)}
             sub="of 9 levels"
-            accent="#3A97D3"
+            accent="#3B85BA"
             icon={FlaskConical}
           />
           <MetricTile
@@ -457,7 +488,7 @@ export default function Home() {
             label="Exp. Pass Rate"
             value={avgPassRate !== null ? `${avgPassRate}%` : "--"}
             sub={avgPassRate !== null ? "innovation accounting" : "no experiments yet"}
-            accent="#F49C13"
+            accent="#F69111"
             icon={Zap}
           />
           <MetricTile
@@ -467,8 +498,6 @@ export default function Home() {
             accent="#10b981"
             icon={Leaf}
           />
-          {/* Mission Integrity Index tile */}
-          <MissionIntegrityBadge variant="tile" className="col-span-1" />
         </div>
 
         {/* ── Main grid: Hub diagram + Venture cards ── */}
@@ -485,10 +514,10 @@ export default function Home() {
               </div>
               <div className="flex items-center gap-3">
                 <span className="flex items-center gap-1.5 text-xs text-gray-400" style={{ fontFamily: "'Inter', sans-serif" }}>
-                  <span className="w-3 h-0.5 rounded inline-block" style={{ background: "#51AF37" }} /> VRL
+                  <span className="w-3 h-0.5 rounded inline-block" style={{ background: "#56A837" }} /> VRL
                 </span>
                 <span className="flex items-center gap-1.5 text-xs text-gray-400" style={{ fontFamily: "'Inter', sans-serif" }}>
-                  <span className="w-3 h-0.5 rounded inline-block" style={{ background: "#3A97D3" }} /> TRL
+                  <span className="w-3 h-0.5 rounded inline-block" style={{ background: "#3B85BA" }} /> TRL
                 </span>
               </div>
             </div>
@@ -515,6 +544,7 @@ export default function Home() {
             {portfolioBrands.map((venture) => {
               const vrlScore = vrlPortfolioScores.find(s => s.ventureId === venture.id);
               const leanEntry = leanMetrics.find((m: any) => m.id === venture.id);
+              const hypVrl = vrlByVenture[venture.id];
               return (
                 <VentureCard
                   key={venture.id}
@@ -522,9 +552,11 @@ export default function Home() {
                   onClick={() => handleVentureClick(venture.id)}
                   onEdit={(e) => handleEditClick(e, venture)}
                   onEditMilestones={(e) => handleMilestonesClick(e, venture)}
-                  computedVrlScore={vrlScore?.vrlScore}
+                  computedVrlScore={hypVrl?.vrl ?? vrlScore?.vrlScore}
                   computedVrlLevel={vrlScore?.vrlLevel}
                   engineOfGrowth={leanEntry?.engineOfGrowth}
+                  pivot={hypVrl?.pivot}
+                  hypothesisVrl={hypVrl ? { vrl: hypVrl.vrl, stageLabel: hypVrl.stageLabel } : undefined}
                 />
               );
             })}

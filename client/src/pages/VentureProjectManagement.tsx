@@ -133,8 +133,8 @@ function KpiTile({ label, value, sub, accent, icon: Icon }: {
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-start gap-3 shadow-sm">
       <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-        style={{ background: `${accent ?? "#51AF37"}18` }}>
-        <Icon size={18} style={{ color: accent ?? "#51AF37" }} />
+        style={{ background: `${accent ?? "#56A837"}18` }}>
+        <Icon size={18} style={{ color: accent ?? "#56A837" }} />
       </div>
       <div>
         <div className="text-xs font-semibold uppercase tracking-widest text-gray-400">{label}</div>
@@ -264,7 +264,7 @@ export default function VentureProjectManagement() {
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <ClipboardList size={18} style={{ color: "#51AF37" }} />
+              <ClipboardList size={18} style={{ color: "#56A837" }} />
               <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">Project Management</span>
             </div>
             <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
@@ -291,9 +291,9 @@ export default function VentureProjectManagement() {
         {/* KPI row */}
         {summary && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
-            <KpiTile label="Active Programs" value={summary.activePrograms} sub={`of ${summary.totalPrograms} total`} accent="#51AF37" icon={Layers} />
-            <KpiTile label="Overdue Tasks" value={summary.overdueTasks} sub={`of ${summary.totalTasks} tasks`} accent="#F49C13" icon={AlertTriangle} />
-            <KpiTile label="Milestone Progress" value={`${summary.milestoneCompletionRate}%`} sub={`${summary.completedMilestones}/${summary.totalMilestones} done`} accent="#3A97D3" icon={Target} />
+            <KpiTile label="Active Programs" value={summary.activePrograms} sub={`of ${summary.totalPrograms} total`} accent="#56A837" icon={Layers} />
+            <KpiTile label="Overdue Tasks" value={summary.overdueTasks} sub={`of ${summary.totalTasks} tasks`} accent="#F69111" icon={AlertTriangle} />
+            <KpiTile label="Milestone Progress" value={`${summary.milestoneCompletionRate}%`} sub={`${summary.completedMilestones}/${summary.totalMilestones} done`} accent="#3B85BA" icon={Target} />
             <KpiTile label="Critical Risks" value={summary.criticalRisks} sub={`of ${summary.totalRisks} open risks`} accent="#ef4444" icon={ShieldAlert} />
           </div>
         )}
@@ -308,7 +308,7 @@ export default function VentureProjectManagement() {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-1.5 px-4 py-3 text-xs font-semibold border-b-2 transition-colors ${
                 activeTab === tab.id
-                  ? "border-[#51AF37] text-[#51AF37]"
+                  ? "border-[#56A837] text-[#56A837]"
                   : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
@@ -327,7 +327,7 @@ export default function VentureProjectManagement() {
               <h2 className="text-sm font-bold text-gray-700">
                 {selectedVentureName} — Programs
               </h2>
-              <Button size="sm" className="gap-1.5 text-xs h-8" style={{ background: "#51AF37" }}
+              <Button size="sm" className="gap-1.5 text-xs h-8" style={{ background: "#56A837" }}
                 onClick={() => setShowProgramDialog(true)}>
                 <Plus size={13} /> New Program
               </Button>
@@ -342,7 +342,7 @@ export default function VentureProjectManagement() {
                 <Layers size={32} className="mx-auto mb-3 text-gray-300" />
                 <p className="text-sm font-semibold text-gray-500">No programs yet</p>
                 <p className="text-xs text-gray-400 mt-1">Create a program to start organising this venture's execution</p>
-                <Button size="sm" className="mt-4 gap-1.5 text-xs" style={{ background: "#51AF37" }}
+                <Button size="sm" className="mt-4 gap-1.5 text-xs" style={{ background: "#56A837" }}
                   onClick={() => setShowProgramDialog(true)}>
                   <Plus size={13} /> Create First Program
                 </Button>
@@ -470,7 +470,7 @@ export default function VentureProjectManagement() {
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-bold text-gray-700">{selectedVentureName} — Resources</h2>
-              <Button size="sm" className="gap-1.5 text-xs h-8" style={{ background: "#51AF37" }}
+              <Button size="sm" className="gap-1.5 text-xs h-8" style={{ background: "#56A837" }}
                 onClick={() => setShowResourceDialog(true)}>
                 <Plus size={13} /> Add Resource
               </Button>
@@ -479,7 +479,7 @@ export default function VentureProjectManagement() {
               <div className="text-center py-16 bg-white rounded-xl border border-dashed border-gray-300">
                 <Users size={32} className="mx-auto mb-3 text-gray-300" />
                 <p className="text-sm font-semibold text-gray-500">No resources allocated</p>
-                <Button size="sm" className="mt-4 gap-1.5 text-xs" style={{ background: "#51AF37" }}
+                <Button size="sm" className="mt-4 gap-1.5 text-xs" style={{ background: "#56A837" }}
                   onClick={() => setShowResourceDialog(true)}>
                   <Plus size={13} /> Add First Resource
                 </Button>
@@ -521,7 +521,7 @@ export default function VentureProjectManagement() {
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-bold text-gray-700">{selectedVentureName} — Execution Risk Register</h2>
-              <Button size="sm" className="gap-1.5 text-xs h-8" style={{ background: "#51AF37" }}
+              <Button size="sm" className="gap-1.5 text-xs h-8" style={{ background: "#56A837" }}
                 onClick={() => setShowRiskDialog(true)}>
                 <Plus size={13} /> Log Risk
               </Button>
@@ -530,7 +530,7 @@ export default function VentureProjectManagement() {
               <div className="text-center py-16 bg-white rounded-xl border border-dashed border-gray-300">
                 <ShieldAlert size={32} className="mx-auto mb-3 text-gray-300" />
                 <p className="text-sm font-semibold text-gray-500">No execution risks logged</p>
-                <Button size="sm" className="mt-4 gap-1.5 text-xs" style={{ background: "#51AF37" }}
+                <Button size="sm" className="mt-4 gap-1.5 text-xs" style={{ background: "#56A837" }}
                   onClick={() => setShowRiskDialog(true)}>
                   <Plus size={13} /> Log First Risk
                 </Button>
@@ -742,8 +742,8 @@ function ProgramCard({
       {/* Program header */}
       <div className="flex items-center gap-3 p-4 cursor-pointer hover:bg-gray-50 transition-colors"
         onClick={onToggle}>
-        <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-[#51AF37]/10">
-          <Layers size={14} style={{ color: "#51AF37" }} />
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-[#56A837]/10">
+          <Layers size={14} style={{ color: "#56A837" }} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
@@ -947,7 +947,7 @@ function CreateProgramDialog({ open, onClose, onSubmit, loading }: {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} className="text-sm">Cancel</Button>
-          <Button onClick={handleSubmit} disabled={!name.trim() || loading} className="text-sm" style={{ background: "#51AF37" }}>
+          <Button onClick={handleSubmit} disabled={!name.trim() || loading} className="text-sm" style={{ background: "#56A837" }}>
             {loading ? "Creating…" : "Create Program"}
           </Button>
         </DialogFooter>
@@ -991,7 +991,7 @@ function CreatePhaseDialog({ open, onClose, onSubmit, loading }: {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} className="text-sm">Cancel</Button>
-          <Button onClick={handleSubmit} disabled={!name.trim() || loading} className="text-sm" style={{ background: "#51AF37" }}>
+          <Button onClick={handleSubmit} disabled={!name.trim() || loading} className="text-sm" style={{ background: "#56A837" }}>
             {loading ? "Adding…" : "Add Phase"}
           </Button>
         </DialogFooter>
@@ -1031,7 +1031,7 @@ function CreateWorkstreamDialog({ open, onClose, onSubmit, loading }: {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} className="text-sm">Cancel</Button>
-          <Button onClick={handleSubmit} disabled={!name.trim() || loading} className="text-sm" style={{ background: "#51AF37" }}>
+          <Button onClick={handleSubmit} disabled={!name.trim() || loading} className="text-sm" style={{ background: "#56A837" }}>
             {loading ? "Adding…" : "Add Workstream"}
           </Button>
         </DialogFooter>
@@ -1088,7 +1088,7 @@ function CreateTaskDialog({ open, onClose, onSubmit, loading }: {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} className="text-sm">Cancel</Button>
-          <Button onClick={handleSubmit} disabled={!title.trim() || loading} className="text-sm" style={{ background: "#51AF37" }}>
+          <Button onClick={handleSubmit} disabled={!title.trim() || loading} className="text-sm" style={{ background: "#56A837" }}>
             {loading ? "Creating…" : "Create Task"}
           </Button>
         </DialogFooter>
@@ -1131,7 +1131,7 @@ function EditTaskDialog({ task, onClose, onSubmit, loading }: {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} className="text-sm">Cancel</Button>
-          <Button onClick={() => onSubmit({ kanbanStatus: status, priority, assignee: assignee || undefined, dueDate: dueDate || undefined, actualHours: actualHours ? parseFloat(actualHours) : undefined })} disabled={loading} className="text-sm" style={{ background: "#51AF37" }}>
+          <Button onClick={() => onSubmit({ kanbanStatus: status, priority, assignee: assignee || undefined, dueDate: dueDate || undefined, actualHours: actualHours ? parseFloat(actualHours) : undefined })} disabled={loading} className="text-sm" style={{ background: "#56A837" }}>
             {loading ? "Saving…" : "Save Changes"}
           </Button>
         </DialogFooter>
@@ -1173,7 +1173,7 @@ function CreateMilestoneDialog({ open, onClose, onSubmit, loading }: {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} className="text-sm">Cancel</Button>
-          <Button onClick={handleSubmit} disabled={!title.trim() || loading} className="text-sm" style={{ background: "#51AF37" }}>
+          <Button onClick={handleSubmit} disabled={!title.trim() || loading} className="text-sm" style={{ background: "#56A837" }}>
             {loading ? "Adding…" : "Add Milestone"}
           </Button>
         </DialogFooter>
@@ -1229,7 +1229,7 @@ function CreateResourceDialog({ open, onClose, onSubmit, loading }: {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} className="text-sm">Cancel</Button>
-          <Button onClick={handleSubmit} disabled={!name.trim() || loading} className="text-sm" style={{ background: "#51AF37" }}>
+          <Button onClick={handleSubmit} disabled={!name.trim() || loading} className="text-sm" style={{ background: "#56A837" }}>
             {loading ? "Adding…" : "Add Resource"}
           </Button>
         </DialogFooter>
@@ -1289,7 +1289,7 @@ function CreateRiskDialog({ open, onClose, onSubmit, loading }: {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} className="text-sm">Cancel</Button>
-          <Button onClick={handleSubmit} disabled={!title.trim() || loading} className="text-sm" style={{ background: "#51AF37" }}>
+          <Button onClick={handleSubmit} disabled={!title.trim() || loading} className="text-sm" style={{ background: "#56A837" }}>
             {loading ? "Logging…" : "Log Risk"}
           </Button>
         </DialogFooter>

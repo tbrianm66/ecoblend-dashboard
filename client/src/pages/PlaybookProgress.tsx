@@ -1,7 +1,7 @@
 // ============================================================
 // ECOBLEND PLAYBOOK PROGRESS
 // DB-backed: trpc.brl.getCompletions + trpc.brl.toggleTask
-// Brand: EcoBlend — Green #51AF37, Blue #3A97D3, Orange #F49C13
+// Brand: EcoBlend — Green #56A837, Blue #3B85BA, Orange #F69111
 // Typography: Prompt (headings) + Nunito (body)
 // ============================================================
 
@@ -12,10 +12,10 @@ import { BookOpen, CheckCircle2, Circle, ChevronDown, ChevronUp, Lock, Zap, Load
 import { toast } from "sonner";
 
 const VENTURE_OPTIONS = [
-  { id: "ecoblend-rd", label: "EcoRace", color: "#51AF37" },
-  { id: "bebus",       label: "BEBUS",   color: "#3A97D3" },
-  { id: "tone",        label: "TONE",    color: "#F49C13" },
-  { id: "real",        label: "REAL",    color: "#f1c411" },
+  { id: "ecoblend-rd", label: "EcoRace", color: "#56A837" },
+  { id: "bebus",       label: "BEBUS",   color: "#3B85BA" },
+  { id: "tone",        label: "TONE",    color: "#F69111" },
+  { id: "real",        label: "REAL",    color: "#F2BB05" },
 ];
 
 interface PlaybookTask {
@@ -42,7 +42,7 @@ const buildPhases = (): PlaybookPhase[] => [
     label: "Fundamentals",
     taskRange: "Tasks 1–17",
     vrlStage: "VRL 1",
-    color: "#51AF37",
+    color: "#56A837",
     tasks: [
       { id: "t1",  number: 1,  label: "Supply & Demand Analysis",           description: "Identify the core supply and demand dynamics in your target market" },
       { id: "t2",  number: 2,  label: "Market Research",                    description: "Conduct primary and secondary market research to size the opportunity" },
@@ -69,7 +69,7 @@ const buildPhases = (): PlaybookPhase[] => [
     label: "Kickoff",
     taskRange: "Tasks 18–43",
     vrlStage: "VRL 2",
-    color: "#3A97D3",
+    color: "#3B85BA",
     tasks: [
       { id: "t18", number: 18, label: "Evaluate Problems & Trends",          description: "Identify the top 3 macro trends driving the problem space" },
       { id: "t19", number: 19, label: "Identify Your MVPs",                  description: "Define the Minimum Viable Product for each identified solution" },
@@ -105,7 +105,7 @@ const buildPhases = (): PlaybookPhase[] => [
     label: "Go-to-Market",
     taskRange: "Tasks 44–75",
     vrlStage: "VRL 3",
-    color: "#F49C13",
+    color: "#F69111",
     tasks: [
       { id: "t44", number: 44, label: "Design Operating Model",              description: "Document the end-to-end operating model and key processes" },
       { id: "t45", number: 45, label: "Set Up Business Insurance",           description: "Obtain appropriate business insurance coverage" },
@@ -329,7 +329,7 @@ export default function PlaybookProgress() {
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <BookOpen size={16} style={{ color: "#51AF37" }} />
+              <BookOpen size={16} style={{ color: "#56A837" }} />
               <span className="vos-badge vos-badge-success" style={{ fontSize: "0.65rem" }}>EcoBlend Playbook</span>
             </div>
             <h1 className="vos-page-title mb-1">Playbook Progress Tracker</h1>
@@ -339,7 +339,7 @@ export default function PlaybookProgress() {
           </div>
           {ventureData && (
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border" style={{ background: "#f0fdf4", borderColor: "#86efac" }}>
-              <Zap size={13} style={{ color: "#51AF37" }} />
+              <Zap size={13} style={{ color: "#56A837" }} />
               <span className="text-xs font-bold" style={{ color: "#166534" }}>Live VRL: Stage {ventureData.vrl} — auto-synced</span>
             </div>
           )}
@@ -420,7 +420,7 @@ export default function PlaybookProgress() {
               <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-700"
-                  style={{ width: `${overallPct}%`, background: "linear-gradient(90deg, #51AF37, #3A97D3, #F49C13, #9333ea)" }}
+                  style={{ width: `${overallPct}%`, background: "linear-gradient(90deg, #56A837, #3B85BA, #F69111, #9333ea)" }}
                 />
               </div>
             </div>

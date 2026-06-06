@@ -98,8 +98,8 @@ function RadarChart({ inputs, isVetoed }: { inputs: Record<string, number>; isVe
       {/* Data polygon */}
       <path
         d={dataPath}
-        fill={isVetoed ? "rgba(239,68,68,0.15)" : "rgba(81,175,55,0.15)"}
-        stroke={isVetoed ? "#ef4444" : "#51AF37"}
+        fill={isVetoed ? "rgba(239,68,68,0.15)" : "rgba(86, 168, 55,0.15)"}
+        stroke={isVetoed ? "#ef4444" : "#56A837"}
         strokeWidth="1.5"
       />
 
@@ -151,7 +151,7 @@ function RadarChart({ inputs, isVetoed }: { inputs: Record<string, number>; isVe
       })}
 
       {/* Centre score */}
-      <text x={cx} y={cy - 8} textAnchor="middle" fontSize="28" fontWeight="bold" fill={isVetoed ? "#ef4444" : "#51AF37"} fontFamily="monospace">
+      <text x={cx} y={cy - 8} textAnchor="middle" fontSize="28" fontWeight="bold" fill={isVetoed ? "#ef4444" : "#56A837"} fontFamily="monospace">
         {isVetoed ? "0" : Math.round(DIMS.reduce((s, d) => s + (inputs[d.key] ?? 0), 0) / DIMS.length)}
       </text>
       <text x={cx} y={cy + 14} textAnchor="middle" fontSize="9" fill="#6b7280" fontFamily="monospace">
@@ -184,7 +184,7 @@ export default function VrlResults() {
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-[#0D1117] gap-4">
         <div className="text-gray-400 text-sm">No VRL assessment found for this venture.</div>
-        <Button onClick={() => navigate("/vrl-assessment")} style={{ background: "#51AF37", color: "#fff" }}>
+        <Button onClick={() => navigate("/vrl-assessment")} style={{ background: "#56A837", color: "#fff" }}>
           Submit First Assessment <ChevronRight size={16} className="ml-1" />
         </Button>
       </div>
@@ -200,7 +200,7 @@ export default function VrlResults() {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#51AF3715", color: "#51AF37" }}>
+              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#56A83715", color: "#56A837" }}>
                 VRL Results
               </span>
               <span className="text-xs text-gray-500 font-mono">{ventureId}</span>
@@ -215,7 +215,7 @@ export default function VrlResults() {
           <Button
             onClick={() => navigate("/vrl-assessment")}
             size="sm"
-            style={{ background: "#51AF37", color: "#fff" }}
+            style={{ background: "#56A837", color: "#fff" }}
           >
             New Assessment
           </Button>
@@ -242,7 +242,7 @@ export default function VrlResults() {
               onClick={() => setActiveTab(tab)}
               className="px-4 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all"
               style={{
-                background: activeTab === tab ? "#51AF37" : "transparent",
+                background: activeTab === tab ? "#56A837" : "transparent",
                 color: activeTab === tab ? "#fff" : "#9ca3af",
                 border: activeTab === tab ? "none" : "1px solid #30363d",
               }}

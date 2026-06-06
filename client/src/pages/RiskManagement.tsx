@@ -36,7 +36,7 @@ const VRL_STAGES = [
   { id: 6, label: "Scale Ready" },
 ];
 const CATEGORY_COLORS: Record<string, string> = {
-  Technical: "#3A97D3", Market: "#F49C13", Commercial: "#51AF37",
+  Technical: "#3B85BA", Market: "#F69111", Commercial: "#56A837",
   Financial: "#e53e3e", Operational: "#805ad5", Strategic: "#2d3748",
 };
 
@@ -50,9 +50,9 @@ function getRiskLevel(score: number): "Low"|"Medium"|"High"|"Critical" {
 function getRiskColor(level: string): string {
   switch (level) {
     case "Critical": return "#e53e3e";
-    case "High": return "#F49C13";
-    case "Medium": return "#3A97D3";
-    default: return "#51AF37";
+    case "High": return "#F69111";
+    case "Medium": return "#3B85BA";
+    default: return "#56A837";
   }
 }
 function getRiskBg(level: string): string {
@@ -84,7 +84,7 @@ function RiskHeatmap({ risks }: { risks: any[] }) {
   return (
     <div>
       <div className="flex items-center gap-2 mb-3">
-        <Activity size={14} style={{ color: "#3A97D3" }} />
+        <Activity size={14} style={{ color: "#3B85BA" }} />
         <span className="text-xs font-semibold uppercase tracking-widest text-gray-500">Risk Heatmap — Likelihood × Impact</span>
       </div>
       <div className="flex gap-2">
@@ -138,7 +138,7 @@ function CategoryChart({ risks }: { risks: any[] }) {
   return (
     <div>
       <div className="flex items-center gap-2 mb-3">
-        <BarChart2 size={14} style={{ color: "#51AF37" }} />
+        <BarChart2 size={14} style={{ color: "#56A837" }} />
         <span className="text-xs font-semibold uppercase tracking-widest text-gray-500">Risks by Category</span>
       </div>
       <div className="flex flex-col gap-2">
@@ -502,7 +502,7 @@ export default function RiskManagement() {
             <div className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Adj. VRI %</div>
             {adjustedVri ? (
               <>
-                <div className="text-3xl font-bold" style={{ color: adjustedVri.totalPenalty < 0 ? "#e53e3e" : "#51AF37", fontFamily: "'Prompt', sans-serif" }}>
+                <div className="text-3xl font-bold" style={{ color: adjustedVri.totalPenalty < 0 ? "#e53e3e" : "#56A837", fontFamily: "'Prompt', sans-serif" }}>
                   {adjustedVri.adjustedPercent}%
                 </div>
                 <div className="text-xs text-gray-400">
@@ -643,7 +643,7 @@ export default function RiskManagement() {
             {adjustedVri && (
               <div className="bg-white rounded-2xl border p-6 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
                 <div className="flex items-center gap-2 mb-4">
-                  <AlertTriangle size={14} style={{ color: "#F49C13" }} />
+                  <AlertTriangle size={14} style={{ color: "#F69111" }} />
                   <span className="text-xs font-semibold uppercase tracking-widest text-gray-500">Adjusted Venture Readiness Index (VRI)</span>
                 </div>
                 <div className="flex items-center gap-8 flex-wrap">
@@ -664,7 +664,7 @@ export default function RiskManagement() {
                   <div className="text-2xl text-gray-300">=</div>
                   <div className="text-center">
                     <div className="text-xs text-gray-400 mb-1">Adjusted VRI %</div>
-                    <div className="text-3xl font-bold" style={{ color: adjustedVri.totalPenalty < 0 ? "#e53e3e" : "#51AF37", fontFamily: "'Prompt', sans-serif" }}>
+                    <div className="text-3xl font-bold" style={{ color: adjustedVri.totalPenalty < 0 ? "#e53e3e" : "#56A837", fontFamily: "'Prompt', sans-serif" }}>
                       {adjustedVri.adjustedPercent}%
                     </div>
                   </div>
@@ -682,7 +682,7 @@ export default function RiskManagement() {
           <div className="bg-white rounded-2xl border shadow-sm" style={{ borderColor: "#e5e7eb" }}>
             <div className="p-4 border-b" style={{ borderColor: "#e5e7eb" }}>
               <div className="flex items-center gap-2">
-                <AlertTriangle size={14} style={{ color: "#F49C13" }} />
+                <AlertTriangle size={14} style={{ color: "#F69111" }} />
                 <span className="text-sm font-semibold text-gray-700">FMEA Engineering Risk Register</span>
                 <span className="text-xs text-gray-400 ml-auto">{fmeaRisks.length} engineering failure modes</span>
               </div>

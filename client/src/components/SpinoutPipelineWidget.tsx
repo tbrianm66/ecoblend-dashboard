@@ -17,9 +17,9 @@ import {
 // ── Colour helpers ────────────────────────────────────────────────────────────
 const GATE_COLORS: Record<string, { bg: string; text: string; label: string }> = {
   not_ready:      { bg: "#ef444415", text: "#ef4444", label: "Not Ready" },
-  approaching:    { bg: "#F49C1315", text: "#F49C13", label: "Approaching" },
-  ready_to_review:{ bg: "#3A97D315", text: "#3A97D3", label: "Ready to Review" },
-  approved:       { bg: "#51AF3715", text: "#51AF37", label: "Approved" },
+  approaching:    { bg: "#F6911115", text: "#F69111", label: "Approaching" },
+  ready_to_review:{ bg: "#3B85BA15", text: "#3B85BA", label: "Ready to Review" },
+  approved:       { bg: "#56A83715", text: "#56A837", label: "Approved" },
   launched:       { bg: "#9B59B615", text: "#9B59B6", label: "Launched" },
 };
 
@@ -84,9 +84,9 @@ function BlueprintCard({
   const isAboveGate = blueprint.overallScore >= 40;
 
   const domainScores = [
-    { key: "talentScore",      label: "Talent",  score: blueprint.talentScore,      color: "#51AF37" },
-    { key: "supplyChainScore", label: "Supply",  score: blueprint.supplyChainScore,  color: "#3A97D3" },
-    { key: "financeScore",     label: "Finance", score: blueprint.financeScore,      color: "#F49C13" },
+    { key: "talentScore",      label: "Talent",  score: blueprint.talentScore,      color: "#56A837" },
+    { key: "supplyChainScore", label: "Supply",  score: blueprint.supplyChainScore,  color: "#3B85BA" },
+    { key: "financeScore",     label: "Finance", score: blueprint.financeScore,      color: "#F69111" },
     { key: "marketScore",      label: "Market",  score: blueprint.marketScore,       color: "#9B59B6" },
     { key: "technologyScore",  label: "Tech",    score: blueprint.technologyScore,   color: "#14b8a6" },
     { key: "governanceScore",  label: "Gov",     score: blueprint.governanceScore,   color: "#6b7280" },
@@ -141,7 +141,7 @@ function BlueprintCard({
             )}
             <span
               className="text-sm font-bold"
-              style={{ color: isAboveGate ? "#51AF37" : "#F49C13" }}
+              style={{ color: isAboveGate ? "#56A837" : "#F69111" }}
             >
               {blueprint.overallScore}%
             </span>
@@ -153,8 +153,8 @@ function BlueprintCard({
             style={{
               width: `${blueprint.overallScore}%`,
               background: isAboveGate
-                ? "linear-gradient(90deg, #51AF37, #3A97D3)"
-                : "linear-gradient(90deg, #F49C13, #ef4444)",
+                ? "linear-gradient(90deg, #56A837, #3B85BA)"
+                : "linear-gradient(90deg, #F69111, #ef4444)",
             }}
           />
           {/* 40% gate marker */}
@@ -204,7 +204,7 @@ function BlueprintCard({
             size="sm"
             variant="outline"
             className="h-6 text-xs px-2 gap-1"
-            style={{ borderColor: "#51AF37", color: "#51AF37" }}
+            style={{ borderColor: "#56A837", color: "#56A837" }}
             onClick={(e) => {
               e.stopPropagation();
               onNavigate("/spinoff");
@@ -234,9 +234,9 @@ export default function SpinoutPipelineWidget() {
           <div className="flex items-center gap-2">
             <div
               className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, #51AF3720, #3A97D320)" }}
+              style={{ background: "linear-gradient(135deg, #56A83720, #3B85BA20)" }}
             >
-              <Rocket size={16} style={{ color: "#51AF37" }} />
+              <Rocket size={16} style={{ color: "#56A837" }} />
             </div>
             <div>
               <CardTitle className="text-sm font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
@@ -264,11 +264,11 @@ export default function SpinoutPipelineWidget() {
               <p className="text-xs text-gray-400">Blueprints</p>
             </div>
             <div className="text-center">
-              <p className="text-lg font-bold" style={{ color: "#3A97D3" }}>{summary.readyToReview}</p>
+              <p className="text-lg font-bold" style={{ color: "#3B85BA" }}>{summary.readyToReview}</p>
               <p className="text-xs text-gray-400">Ready</p>
             </div>
             <div className="text-center">
-              <p className="text-lg font-bold" style={{ color: "#F49C13" }}>{summary.approaching}</p>
+              <p className="text-lg font-bold" style={{ color: "#F69111" }}>{summary.approaching}</p>
               <p className="text-xs text-gray-400">Approaching</p>
             </div>
             <div className="text-center">
@@ -290,9 +290,9 @@ export default function SpinoutPipelineWidget() {
           <div className="text-center py-10">
             <div
               className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3"
-              style={{ background: "#51AF3710" }}
+              style={{ background: "#56A83710" }}
             >
-              <Rocket size={22} style={{ color: "#51AF37" }} />
+              <Rocket size={22} style={{ color: "#56A837" }} />
             </div>
             <p className="text-sm font-semibold text-gray-700 mb-1">No Blueprints Yet</p>
             <p className="text-xs text-gray-400 max-w-xs mx-auto mb-4">

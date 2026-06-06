@@ -1,0 +1,305 @@
+This looks like a state/navigation persistence bug, not a database issue by default.
+
+From the screenshot, the app is probably resetting the active route/state to:
+
+Command Centre → Portfolio Overview
+
+whenever a sub-folder/module is opened. The common causes are:
+
+1. The sidebar click is updating local UI state, but the route is not persisted.
+    On render/refresh/error, the app falls back to the default module.
+2. A runtime error occurs inside the selected sub-module component.
+    React then remounts or redirects to the default dashboard.
+3. The active module/submodule is stored in component state rather than URL params or global state.
+    On any re-render, mobile resize, or data refresh, it resets.
+4. The database query for that sub-folder returns null/undefined.
+    The app may interpret missing content as “go back to default”.
+5. There may be a mobile layout/sidebar bug.
+    The screenshot shows the sidebar taking up too much of the viewport, suggesting responsive state and navigation state may be interfering.
+
+Use this Replit prompt:
+
+⸻
+
+Replit Debug Prompt: Module Sub-Folder Crash / Navigation Reset
+
+I need you to audit and fix a navigation/state bug in the EcoBlend VBS Analytics Dashboard app.
+
+Problem
+
+Every time I open a sub-folder inside any module, the app crashes or resets back to:
+
+Command Centre → Portfolio Overview
+
+The expected behaviour is that when I open any module or sub-folder, the selected module should stay open and the correct sub-folder content should render.
+
+Current visible issue
+
+The app appears to default back to the command centre portfolio dashboard instead of preserving the selected module/sub-folder. This occurs when navigating into sub-folders inside the sidebar modules.
+
+Please investigate the root cause across frontend routing, sidebar state, component rendering, and database/content loading.
+
+⸻
+
+Audit Requirements
+
+1. Check routing and navigation state
+
+Review how the app handles:
+
+* Active module
+* Active section
+* Active sub-folder
+* Selected dashboard view
+* URL routing
+* Sidebar expanded/collapsed state
+
+Identify whether navigation is stored only in local component state.
+
+If so, refactor navigation so that the active module/sub-folder is persisted using one of the following:
+
+* URL route parameters
+* Search parameters
+* A global store
+* A robust persisted navigation state
+
+The selected sub-folder should not reset when components re-render.
+
+⸻
+
+2. Check default fallback behaviour
+
+Find any logic that automatically defaults to:
+
+Command Centre → Portfolio Overview
+
+Examples may include:
+
+selectedModule || "command-centre"
+selectedSection || "portfolio-overview"
+navigate("/command-centre/portfolio-overview")
+setActiveModule("command-centre")
+setActiveSubModule("portfolio-overview")
+
+Audit whether this fallback is being triggered after failed renders, missing data, undefined values, or sidebar clicks.
+
+The default fallback should only happen on first load, not after every failed module navigation.
+
+⸻
+
+3. Check sub-folder component errors
+
+For every module and sub-folder, confirm that the corresponding component exists and imports correctly.
+
+Check for:
+
+* Missing component imports
+* Incorrect file paths
+* Case-sensitive import errors
+* Undefined props
+* Missing data fields
+* Broken map/filter calls on undefined arrays
+* Null database responses
+* Components not exported correctly
+* Conditional rendering errors
+
+Add proper error boundaries so that one broken sub-folder does not crash the full dashboard.
+
+Expected behaviour:
+
+* If a sub-folder component fails, show a local error state.
+* Do not redirect the user back to Portfolio Overview.
+
+⸻
+
+4. Check database/content dependencies
+
+Audit whether each module/sub-folder expects database records.
+
+For each module and sub-folder, verify:
+
+* Database table exists
+* Required rows exist
+* Foreign keys are correct
+* Module IDs match frontend IDs
+* Sub-folder IDs match frontend IDs
+* Required fields are not null
+* Queries return valid data
+* Empty states are handled correctly
+
+If a database query returns no data, the app should display:
+
+No data available for this module yet
+
+It should not crash or redirect.
+
+⸻
+
+5. Check sidebar click handlers
+
+Review all sidebar navigation click handlers.
+
+Confirm that clicking a module/sub-folder:
+
+* Updates the correct active module
+* Updates the correct active sub-folder
+* Does not accidentally trigger the parent module default
+* Does not bubble the click event into another handler
+* Does not collapse/reset state unexpectedly
+* Does not call a global reset function
+
+Check whether nested sidebar clicks need:
+
+event.stopPropagation()
+
+or refactored click handling.
+
+⸻
+
+6. Check mobile/responsive behaviour
+
+The screenshot shows the sidebar taking up a large part of the screen on mobile.
+
+Audit the responsive layout for:
+
+* iPhone viewport handling
+* Sidebar width
+* Main content overflow
+* Hidden/collapsed mobile sidebar
+* Touch click behaviour
+* Route persistence during resize
+* Re-render caused by viewport changes
+
+On mobile, the sidebar should not force the main dashboard into an unusable narrow column.
+
+⸻
+
+Required Fixes
+
+Please implement the following:
+
+A. Persistent route-based navigation
+
+Each module/sub-folder should have a stable route such as:
+
+/dashboard/command-centre/portfolio-overview
+/dashboard/venture-intake/founder-profile
+/dashboard/discovery-market/problem-validation
+/dashboard/readiness-scoring/vrl
+/dashboard/risk-intelligence/technical-risk
+
+The app should render content based on the route, not only local state.
+
+⸻
+
+B. Safe fallback logic
+
+Only default to Portfolio Overview when:
+
+* The user first opens the dashboard with no route
+* The route is invalid
+* The selected module does not exist
+
+Do not default back because of missing data or a component error.
+
+⸻
+
+C. Error boundaries
+
+Add an error boundary around module/sub-folder content.
+
+If a module crashes, show:
+
+This module failed to load.
+Error: [error message]
+Return to dashboard
+
+Do not reset the whole app.
+
+⸻
+
+D. Loading and empty states
+
+For every module/sub-folder, add:
+
+Loading module...
+
+and:
+
+No records found for this module yet.
+
+This prevents undefined database responses from crashing the UI.
+
+⸻
+
+E. Module registry audit
+
+Create or audit a central module registry that maps:
+
+* Module name
+* Module slug
+* Sub-folder name
+* Sub-folder slug
+* Component
+* Required database tables
+* Status: complete / partial / missing
+
+Example structure:
+
+const moduleRegistry = {
+  "command-centre": {
+    label: "Command Centre",
+    defaultSubModule: "portfolio-overview",
+    subModules: {
+      "portfolio-overview": {
+        label: "Portfolio Overview",
+        component: PortfolioOverview,
+        requiredTables: ["ventures", "readiness_scores"]
+      }
+    }
+  }
+}
+
+Use this registry as the single source of truth for routing and sidebar rendering.
+
+⸻
+
+Testing Requirements
+
+After fixing, test the following:
+
+1. Open every top-level module.
+2. Open every sub-folder.
+3. Refresh the page while inside each sub-folder.
+4. Confirm the same sub-folder remains open.
+5. Confirm no sub-folder redirects to Portfolio Overview unless the route is invalid.
+6. Test on desktop viewport.
+7. Test on iPhone/mobile viewport.
+8. Test with empty database records.
+9. Test with missing optional fields.
+10. Confirm errors are displayed locally and do not crash the full dashboard.
+
+⸻
+
+Deliverables
+
+Please provide:
+
+1. A root-cause report explaining why the app was resetting.
+2. A list of files changed.
+3. A fixed navigation architecture.
+4. A module/sub-folder registry.
+5. Error boundaries for module rendering.
+6. Loading and empty states.
+7. Confirmation that every module/sub-folder has been tested.
+8. A list of any missing database tables, missing records, or incomplete modules.
+
+⸻
+
+Important Instruction
+
+Do not redesign the dashboard visually yet. This task is specifically to stabilise the navigation, module routing, sidebar state, database dependency handling, and mobile usability. Once stable, we can then proceed to module-by-module development.
+
+⸻
+
+The main assumption to challenge here is that the “database” is causing the crash. It may be, but the visible behaviour is more consistent with a frontend routing/state fallback problem. The database audit is still necessary, but Replit should first trace the route/state reset and any runtime errors in the browser console.

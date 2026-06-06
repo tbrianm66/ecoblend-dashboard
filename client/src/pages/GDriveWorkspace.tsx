@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { FolderOpen, Plus, Shield, CheckCircle, Clock, AlertCircle, ExternalLink, RefreshCw } from "lucide-react";
 
 const MODULE_COLORS: Record<string, string> = {
-  "00": "#1a2332", "01": "#3A97D3", "02": "#51AF37", "03": "#F49C13",
+  "00": "#1a2332", "01": "#3B85BA", "02": "#56A837", "03": "#F69111",
   "04": "#8B5CF6", "05": "#06B6D4", "06": "#EC4899", "07": "#10B981",
   "08": "#EF4444", "09": "#F59E0B", "10": "#6B7280",
 };
@@ -68,7 +68,7 @@ export default function GDriveWorkspace() {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#51AF3715", color: "#51AF37" }}>Sprint 72</span>
+              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#56A83715", color: "#56A837" }}>Sprint 72</span>
               <span className="text-xs text-gray-400">·</span>
               <span className="text-xs text-gray-400 font-mono">V4 Architecture Brief — Section 1</span>
             </div>
@@ -76,7 +76,7 @@ export default function GDriveWorkspace() {
             <p className="text-sm text-gray-500 max-w-xl">11-folder taxonomy per V4 spec. Automated provisioning of venture workspaces with role-based permission matrix across all 6 lead roles.</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => setShowCreate(!showCreate)} style={{ borderColor: "#51AF37", color: "#51AF37" }}>
+            <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => setShowCreate(!showCreate)} style={{ borderColor: "#56A837", color: "#56A837" }}>
               <Plus size={13} /> New Workspace
             </Button>
           </div>
@@ -86,7 +86,7 @@ export default function GDriveWorkspace() {
       <div className="p-8">
         {/* Create Form */}
         {showCreate && (
-          <Card className="mb-6 border-2" style={{ borderColor: "#51AF37" }}>
+          <Card className="mb-6 border-2" style={{ borderColor: "#56A837" }}>
             <CardHeader><CardTitle className="text-base">Provision New Venture Workspace</CardTitle></CardHeader>
             <CardContent>
               <div className="grid grid-cols-3 gap-4 mb-4">

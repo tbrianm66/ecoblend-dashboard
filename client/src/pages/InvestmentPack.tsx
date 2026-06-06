@@ -109,8 +109,8 @@ export default function InvestmentPack() {
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <Banknote size={18} style={{ color: "#F49C13" }} />
-              <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#F49C13" }}>Module 11</span>
+              <Banknote size={18} style={{ color: "#F69111" }} />
+              <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#F69111" }}>Module 11</span>
             </div>
             <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
               Investment Readiness Pack

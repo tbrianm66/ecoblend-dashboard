@@ -33,21 +33,21 @@ interface RDProject {
 // ── Stage Configuration ──
 const STAGES = [
   { key: "concept", label: "Concept", icon: Lightbulb, color: "#7c3aed", description: "Ideation, literature review, feasibility analysis" },
-  { key: "simulation", label: "Simulation", icon: Cpu, color: "#3A97D3", description: "Modelling, digital twin, computational validation" },
-  { key: "prototyping", label: "Prototyping", icon: Wrench, color: "#F49C13", description: "Physical build, lab testing, performance measurement" },
-  { key: "integration", label: "Integration", icon: Plug, color: "#51AF37", description: "System integration, field testing, production handoff" },
+  { key: "simulation", label: "Simulation", icon: Cpu, color: "#3B85BA", description: "Modelling, digital twin, computational validation" },
+  { key: "prototyping", label: "Prototyping", icon: Wrench, color: "#F69111", description: "Physical build, lab testing, performance measurement" },
+  { key: "integration", label: "Integration", icon: Plug, color: "#56A837", description: "System integration, field testing, production handoff" },
 ];
 
 const statusConfig = {
-  in_progress: { label: "In Progress", color: "#3A97D3", icon: Clock },
-  gate_pending: { label: "Gate Pending", color: "#F49C13", icon: AlertTriangle },
+  in_progress: { label: "In Progress", color: "#3B85BA", icon: Clock },
+  gate_pending: { label: "Gate Pending", color: "#F69111", icon: AlertTriangle },
   gate_passed: { label: "Gate Passed", color: "#16a34a", icon: CheckCircle2 },
   blocked: { label: "Blocked", color: "#dc2626", icon: Pause },
 };
 
 const classColors = {
   iterative: { color: "#16a34a", bg: "#dcfce7" },
-  adjacent: { color: "#3A97D3", bg: "#dbeafe" },
+  adjacent: { color: "#3B85BA", bg: "#dbeafe" },
   moonshot: { color: "#7c3aed", bg: "#ede9fe" },
 };
 
@@ -57,7 +57,7 @@ const SAMPLE_PROJECTS: RDProject[] = [
     id: "rd-1",
     title: "Hemp-Flax Composite Panel v3",
     ventureName: "EcoBlend Materials",
-    ventureColor: "#51AF37",
+    ventureColor: "#56A837",
     classification: "iterative",
     stage: "prototyping",
     stageStatus: "in_progress",
@@ -113,7 +113,7 @@ const SAMPLE_PROJECTS: RDProject[] = [
     id: "rd-4",
     title: "Automotive Door Panel Integration",
     ventureName: "EcoBlend Materials",
-    ventureColor: "#51AF37",
+    ventureColor: "#56A837",
     classification: "iterative",
     stage: "integration",
     stageStatus: "gate_passed",
@@ -146,8 +146,8 @@ export default function RDHub() {
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <Microscope size={18} style={{ color: "#3A97D3" }} />
-              <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#3A97D3" }}>Module 5</span>
+              <Microscope size={18} style={{ color: "#3B85BA" }} />
+              <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#3B85BA" }}>Module 5</span>
             </div>
             <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Prompt', sans-serif" }}>
               R&D Hub
@@ -176,7 +176,7 @@ export default function RDHub() {
             <Button
               size="sm"
               className="gap-2"
-              style={{ background: "#3A97D3" }}
+              style={{ background: "#3B85BA" }}
               onClick={() => toast.info("New R&D project form — coming in next build")}
             >
               <Plus size={14} /> New Project

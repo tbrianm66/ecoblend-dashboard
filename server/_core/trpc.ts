@@ -43,3 +43,38 @@ export const adminProcedure = t.procedure.use(
     });
   }),
 );
+
+// ── Human-review gate for venture scores ────────────────────────────────────
+// Every mutation that writes to venture_scores must carry both humanReviewedBy
+// and humanReviewedAt — regardless of whether the score is AI-generated or
+// manually entered.  No score may be persisted without a named reviewer.
+//
+// Usage: swap protectedProcedure → reviewedScoreProcedure on any mutation that
+// calls insertVentureScore / updateVentureScores.
+const requireHumanReviewForAllScores = t.middleware(async ({ ctx, next, rawInput }) => {
+  if (!ctx.user) {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: UNAUTHED_ERR_MSG });
+  }
+
+  const input = rawInput as Record<string, unknown> | null | undefined;
+  if (input && typeof input === "object") {
+    const hasReviewer =
+      typeof input.humanReviewedBy === "string" && input.humanReviewedBy.trim().length > 0;
+    const hasTimestamp = Boolean(input.humanReviewedAt);
+    if (!hasReviewer || !hasTimestamp) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message:
+          "Score write blocked — human_reviewed_by is required. " +
+          "Provide both humanReviewedBy (reviewer name) and humanReviewedAt (ISO timestamp) " +
+          "for every score write, whether AI-generated or manually entered.",
+      });
+    }
+  }
+
+  return next({
+    ctx: { ...ctx, user: ctx.user },
+  });
+});
+
+export const reviewedScoreProcedure = t.procedure.use(requireHumanReviewForAllScores);

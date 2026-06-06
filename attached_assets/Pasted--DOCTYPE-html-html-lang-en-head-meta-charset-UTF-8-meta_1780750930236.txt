@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BEBUS VeloCargo — Lean Startup Test Case</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8f9fa;color:#1a1a1a;font-size:14px;padding:20px}
+  .page{max-width:900px;margin:0 auto}
+  h1{font-size:22px;font-weight:600;color:#1A3C2A;margin-bottom:4px}
+  .subtitle{font-size:14px;color:#555;margin-bottom:20px}
+  .venture-header{background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:20px;margin-bottom:20px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+  .vh-item label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#888;display:block;margin-bottom:3px}
+  .vh-item span{font-size:13px;font-weight:500;color:#1a1a1a}
+  .stage-block{background:#fff;border:1px solid #e0e0e0;border-radius:12px;margin-bottom:10px;overflow:hidden}
+  .stage-header{padding:14px 18px;display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none}
+  .stage-header:hover{background:#f5f5f5}
+  .stage-num{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
+  .num-teal{background:#E1F5EE;color:#0F6E56}
+  .num-red{background:#FCEBEB;color:#A32D2D}
+  .num-gray{background:#F1EFE8;color:#5F5E5A}
+  .stage-title{font-size:15px;font-weight:500;flex:1}
+  .badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:6px}
+  .badge-green{background:#EAF3DE;color:#3B6D11}
+  .badge-red{background:#FCEBEB;color:#A32D2D}
+  .badge-gray{background:#F1EFE8;color:#5F5E5A}
+  .badge-teal{background:#E1F5EE;color:#0F6E56}
+  .veto-tag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:5px;background:#FCEBEB;color:#A32D2D;margin-left:8px}
+  .stage-body{padding:0 18px 18px;display:none}
+  .stage-body.open{display:block}
+  .section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#888;margin:14px 0 6px}
+  .input-row{background:#f8f9fa;border-radius:8px;padding:10px 14px;margin:6px 0}
+  .input-row .field{font-weight:600;font-size:13px;margin-bottom:3px}
+  .input-row .value{font-family:monospace;font-size:12px;color:#444;line-height:1.6}
+  .gate-block{border-radius:8px;padding:12px 14px;margin:10px 0}
+  .gate-pass{background:#EAF3DE;border:1px solid #97C459}
+  .gate-fail{background:#FCEBEB;border:1px solid #F09595}
+  .gate-warn{background:#FAEEDA;border:1px solid #FAC775}
+  .gate-title{font-size:13px;font-weight:600;margin-bottom:4px}
+  .gate-pass .gate-title{color:#3B6D11}
+  .gate-fail .gate-title{color:#A32D2D}
+  .gate-warn .gate-title{color:#854F0B}
+  .gate-body{font-size:12px;color:#444;line-height:1.6}
+  .pivot-note{background:#EEEDFE;border:1px solid #AFA9EC;border-radius:8px;padding:10px 14px;font-size:12px;color:#534AB7;margin:8px 0;line-height:1.6}
+  .check-item{font-size:13px;color:#1a1a1a;padding:5px 0;display:flex;gap:8px;align-items:flex-start}
+  .check-item i{font-size:16px;margin-top:1px;flex-shrink:0}
+  .icon-green{color:#3B6D11}
+  .icon-amber{color:#854F0B}
+  .expand-btn{font-size:13px;color:#0F6E56;cursor:pointer;background:none;border:none;text-decoration:underline;margin-bottom:14px;padding:0}
+  .replit-box{background:#f8f9fa;border:1px solid #e0e0e0;border-radius:12px;padding:16px;margin-top:20px}
+  .replit-box p{font-size:13px;font-weight:600;margin-bottom:10px;color:#1a1a1a}
+  .copy-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;font-size:13px;cursor:pointer;border-radius:8px;border:1px solid #ccc;background:#fff;color:#1a1a1a;margin-bottom:10px}
+  .copy-btn:hover{background:#f5f5f5}
+  pre.replit-cmd{font-size:12px;font-family:monospace;background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:12px;line-height:1.7;white-space:pre-wrap;color:#333}
+</style>
+</head>
+<body>
+<div class="page">
+<h1>BEBUS VeloCargo — Lean Startup Workflow Test Case</h1>
+<p class="subtitle">Hypothetical venture walking all 15 stages including two deliberate gate failure tests and the human review gate enforcement check</p>
+
+<div class="venture-header">
+  <div class="vh-item"><label>Venture name</label><span>BEBUS-001 — VeloCargo</span></div>
+  <div class="vh-item"><label>Sector</label><span>Mobility — last-mile logistics</span></div>
+  <div class="vh-item"><label>SPV brand</label><span>BEBUS</span></div>
+  <div class="vh-item" style="grid-column:1/-1"><label>Hypothesis</label><span>Urban last-mile delivery fleets need reengineered lightweight composite cargo frames to reduce per-km energy use by 18–25%</span></div>
+  <div class="vh-item"><label>Founder</label><span>Alex Mercer (test user)</span></div>
+  <div class="vh-item"><label>Test objective</label><span>Walk all 15 lean stages — verify WorkflowStateService enforces transitions at every gate</span></div>
+</div>
+
+<button class="expand-btn" onclick="toggleAll()">Expand all stages</button>
+
+<!-- Stage 1 -->
+<div class="stage-block">
+  <div class="stage-header" onclick="toggle(this)">
+    <div class="stage-num num-teal">1</div>
+    <div class="stage-title">Venture intake</div>
+    <span class="badge badge-green">Enter &amp; assert</span>
+  </div>
+  <div class="stage-body">
+    <p class="section-label">What to enter</p>
+    <div class="input-row"><div class="field">name</div><div class="value">"VeloCargo"</div></div>
+    <div class="input-row"><div class="field">description</div><div class="value">"Composite cargo frame reengineering for urban EV delivery fleets. Reduces tare weight by 30%, extending range per charge."</div></div>
+    <div class="input-row"><div class="field">tenant_id</div><div class="value">spv_bebus</div></div>
+    <div class="input-row"><div class="field">stage</div><div class="value">intake</div></div>
+    <p class="section-label">What to assert</p>
+    <div class="check-item"><i class="ti ti-circle-check icon-green"></i>Venture record created with UUID</div>
+    <div class="check-item"><i class="ti ti-circle-check icon-green"></i>workflow_stage = "intake" set on ventures table</div>
+    <div class="check-item"><i class="ti ti-circle-check icon-green"></i>tenant_id = spv_bebus (RLS isolation confirmed)</div>
+    <div class="check-item"><i class="ti ti-alert-circle icon-amber"></i>Attempt to skip to interview stage without completing assumptions — system must BLOCK</div>
+  </div>
+</div>
+
+<!-- Stage 2 -->
+<div class="stage-block">
+  <div class="stage-header" onclick="toggle(this)">
+    <div class="stage-num num-teal">2</div>
+    <div class="stage-title">Define founder assumptions</div>
+    <span class="badge badge-green">Enter &amp; assert</span>
+  </div>
+  <div class="stage-body">
+    <p class="section-label">Enter three assumptions</p>
+    <div class="input-row"><div class="field">Assumption 1 — customer</div><div class="value">hypothesis_text: "Fleet managers at logistics SMEs (10–50 vehicles) are the primary decision maker for component upgrades" | assumption_type: customer | assumption_status: untested</div></div>
+    <div class="input-row"><div class="field">Assumption 2 — problem</div><div class="value">hypothesis_text: "Energy cost per km is the #1 operational pain point for last-mile EV fleets in UK urban zones" | assumption_type: problem | assumption_status: untested</div></div>
+    <div class="input-row"><div class="field">Assumption 3 — pricing</div><div class="value">hypothesis_text: "Fleet managers have budget authority for component upgrades below £2,000 per vehicle without board approval" | assumption_type: pricing | assumption_status: untested</div></div>
+    <p class="section-label">What to assert</p>
+    <div class="check-item"><i class="ti ti-circle-check icon-green"></i>All 3 records created in opportunities table with version = 1</div>
+    <div class="check-item"><i class="ti ti-circle-check icon-green"></i>workflow_stage advances to "assumptions_defined"</div>
+    <div class="check-item"><i class="ti ti-alert-circle icon-amber"></i>Update Assumption 2 — system must create version = 2 record, NOT overwrite version = 1 (append-only)</div>
+  </div>
+</div>
+
+<!-- Stage 3 -->
+<div class="stage-block">
+  <div class="stage-header" onclick="toggle(this)">
+    <div class="stage-num num-teal">3</div>
+    <div class="stage-title">Customer discovery — interview log</div>
+    <span class="badge badge-green">Enter &amp; assert</span>
+  </div>
+  <div class="stage-body">
+    <p class="section-label">Enter 5 interviews with deliberate variation</p>
+    <div class="input-row"><div class="field">Interview 1 — Fleet manager, DHL SME partner</div><div class="value">pain_score: 8 | urgency_score: 7 | budget_holder: true | decision_maker_access: true | problem_validated: true</div></div>
+    <div class="input-row"><div class="field">Interview 2 — Operations director, courier co.</div><div class="value">pain_score: 6 | urgency_score: 5 | budget_holder: false | decision_maker_access: false | problem_validated: true</div></div>
+    <div class="input-row"><div class="field">Interview 3 — Procurement manager, grocery delivery</div><div class="value">pain_score: 9 | urgency_score: 8 | budget_holder: true | decision_maker_access: true | problem_validated: true</div></div>
+    <div class="input-row"><div class="field">Interview 4 — Fleet engineer (not a buyer)</div><div class="value">pain_score: 7 | urgency_score: 4 | budget_holder: false | decision_maker_access: false | problem_validated: true</div></div>
+    <div class="input-row"><div class="field">Interview 5 — Van rental company manager</div><div class="value">pain_score: 3 | urgency_score: 2 | budget_holder: true | decision_maker_access: true | problem_validated: false</div></div>
+    <p class="section-label">What to assert</p>
+    <div class="check-item"><i class="ti ti-circle-check icon-green"></i>All 5 interviews written to interviews table with venture_id</div>
+    <div class="check-item"><i class="ti ti-circle-check icon-green"></i>Aggregate: 4/5 problem_validated = true (80%) | avg pain_score = 6.6 | avg urgency_score = 5.2</div>
+    <div class="check-item"><i class="ti ti-alert-circle icon-amber"></i>First, attempt to trigger Problem Validated gate with only 2 interviews entered — system must BLOCK (minimum 3 required)</div>
+  </div>
+</div>
+
+<!-- Stage 4 — Gate Fail -->
+<div class="stage-block">
+  <div class="stage-header" onclick="toggle(this)">
+    <div class="stage-num num-red">4</div>
+    <div class="stage-title">Problem validated gate <span class="veto-tag">Gate fail test</span></div>
+    <span class="badge badge-red">Test failure</span>
+  </div>
+  <div class="stage-body">
+    <div class="gate-fail">
+      <div class="gate-title"><i class="ti ti-x"></i> Scenario A — attempt gate with only 2 interviews</div>
+      <div class="gate-body">Expected: system blocks with error "Minimum 3 validated interviews required". workflow_stage must NOT advance. Record gate_status = "failed" in cc_stage_gate_reviews.</div>
+    </div>
+    <div class="gate-pass">
+      <div class="gate-title"><i class="ti ti-check"></i> Scenario B — gate passes with all 5 interviews</div>
+      <div class="gate-body">gate_type: "problem_validated" | evidence_count: 5 | validation_rate: 80% | gate_status: "passed" | human_reviewed_by: must NOT be NULL. workflow_stage advances to "competitor_mapping".</div>
+    </div>
+    <div class="pivot-note"><i class="ti ti-arrows-exchange"></i> Pivot trigger check: temporarily set 4 of 5 interviews to problem_validated = false (40% rate). System must set pivot_required = true and route back to "assumptions_defined". Restore data after confirming.</div>
+  </div>
+</div>
+
+<!-- Stage 5 -->
+<div class="stage-block">
+  <div class="stage-header" onclick="toggle(this)">
+    <div class="stage-num num-teal">5</div>
+    <div class="stage-title">Competitor mapping</div>
+    <span class="badge badge-green">Enter &amp; assert</span>
+  </div>
+  <div class="stage-body">
+    <div class="input-row"><div class="field">Competitor 1 — Direct</div><div class="value">competitor_name: "Lightweight Automotive Composites Ltd" | competitor_type: direct | competitive_risk_score: 6 | switching_friction_score: 4</div></div>
+    <div class="input-row"><div class="field">Competitor 2 — Substitute</div><div class="value">competitor_name: "Aluminium frame upgrade kits (OEM standard)" | competitor_type: substitute | competitive_risk_score: 8 | switching_friction_score: 7</div></div>
+    <div class="input-row"><div class="field">Competitor 3 — Status quo</div><div class="value">competitor_name: "Do nothing / run existing fleet" | competitor_type: status_quo | competitive_risk_score: 9 | switching_friction_score: 9</div></div>
+    <div class="check-item" style="margin-top:10px"><i class="ti ti-alert-circle icon-amber"></i>AUDIT CHECK: if competitors table does not exist (MISSING per audit Layer 1.5), this step throws — confirms the gap</div>
+  </div>
+</div>
+
+<!-- Stage 6 -->
+<div class="stage-block">
+  <div class="stage-header" onclick="toggle(this)">
+    <div class="stage-num num-teal">6</div>
+    <div class="stage-title">Demand signals &amp; WTP assessment</div>
+    <span class="badge badge-green">Enter &amp; assert</span>
+  </div>
+  <div class="stage-body">
+    <div class="input-row"><div class="field">Signal 1 — regulatory</div><div class="value">signal_type: regulatory | source: "EU 2035 ICE phase-out + UK ZEV mandate" | signal_strength: 9</div></div>
+    <div class="input-row"><div class="field">Signal 2 — customer pull</div><div class="value">signal_type: customer_pull | source: "3 of 5 interviewees asked about pricing unprompted" | signal_strength: 7</div></div>
+    <div class="input-row"><div class="field">WTP experiment</div><div class="value">experiment_type: wtp | pricing_model_tested: "£1,400 per frame unit (fleet discount at 10+ units)" | budget_owner_confirmed: true | procurement_pathway_validated: false | commitment_type: verbal | wtp_validated: true</div></div>
+    <div class="gate-warn" style="margin-top:10px">
+      <div class="gate-title"><i class="ti ti-alert-triangle"></i> WTP gate — partially passed</div>
+      <div class="gate-body">procurement_pathway_validated = false. System should surface warning before advancing. gate_status = "partially_passed". Risk flag auto-added to market risk log.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Stage 7 — Human Review Gate -->
+<div class="stage-block">
+  <div class="stage-header" onclick="toggle(this)">
+    <div class="stage-num num-red">7</div>
+    <div class="stage-title">Human review gate enforcement <span class="veto-tag">Critical test</span></div>
+    <span class="badge badge-red">Test enforcement</span>
+  </div>
+  <div class="stage-body">
+    <div class="gate-fail">
+      <div class="gate-title"><i class="ti ti-x"></i> Attempt to write VRL score without human_reviewed_by — most critical test</div>
+      <div class="gate-body">Expected: tRPC middleware blocks mutation. Returns: "Score write blocked — human_reviewed_by is required." venture_scores must have ZERO new records after this attempt. This confirms the 0% enforcement finding from the audit is now fixed.</div>
+    </div>
+    <div class="gate-pass">
+      <div class="gate-title"><i class="ti ti-check"></i> Correct path — set reviewer and resubmit</div>
+      <div class="gate-body">human_reviewed_by: "alex.mercer@bebus.group" | human_reviewed_at: now(). Score writes: venture_id, score_type="BRL", score_value=4.2, evidence_ids=[interview_1,2,3], human_reviewed_by, human_reviewed_at. Assert ALL fields non-NULL.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Stages 8–14 -->
+<div class="stage-block">
+  <div class="stage-header" onclick="toggle(this)">
+    <div class="stage-num num-teal">8</div>
+    <div class="stage-title">R&amp;D Hub — Lean Canvas &amp; MVP definition</div>
+    <span class="badge badge-green">Enter &amp; assert</span>
+  </div>
+  <div class="stage-body">
+    <div class="input-row"><div class="field">Lean Canvas v1</div><div class="value">problem: "EV last-mile fleets carry 30% unnecessary tare weight" | solution: "30% lighter composite frame — same load rating" | unique_value_prop: "18–25% energy reduction, BEBUS TRL-validated" | customer_segment: "Fleet managers, 10–50 vehicle SME logistics operators, UK urban" | revenue_streams: "B2B component supply at £1,400/unit" | lean_canvas_version: 1</div></div>
+    <div class="input-row"><div class="field">MVP definition</div><div class="value">mvp_format: concierge | hypothesis_to_test: "Fleet manager will commit to paid pilot (10 units) after seeing TRL 4 load test results" | success_criteria: "3 paid pilot LOIs at ≥£1,200/unit within 8 weeks"</div></div>
+    <div class="check-item" style="margin-top:10px"><i class="ti ti-alert-circle icon-amber"></i>AUDIT CHECK: if lean_canvas table is MISSING, this throws — confirms Build 2 priority</div>
+  </div>
+</div>
+
+<div class="stage-block">
+  <div class="stage-header" onclick="toggle(this)">
+    <div class="stage-num num-gray">9–14</div>
+    <div class="stage-title">Prototype → MRL ops → Brand &amp; GTM → Market risk log</div>
+    <span class="badge badge-gray">Summary entries</span>
+  </div>
+  <div class="stage-body">
+    <div class="input-row"><div class="field">Stage 9 — Prototype milestone</div><div class="value">milestone_type: concierge_mvp | user_test_count: 3 | user_response_captured: true</div></div>
+    <div class="input-row"><div class="field">Stage 10 — Solution experiment</div><div class="value">experiment_type: solution_validation | participants: 3 | validated: 2 | invalidated: 1 | outcome: validated | key_learning: "Fleet managers need 3rd-party load test cert, not just our data"</div></div>
+    <div class="input-row"><div class="field">Stage 11 — MVP evidence gate</div><div class="value">Validation rate = 67% (2/3). If threshold = 60% → gate PASSES. Assert: gate_status = "passed", human_reviewed_by set, workflow_stage = "operations_mfg"</div></div>
+    <div class="input-row"><div class="field">Stage 12 — MRL assessment</div><div class="value">mrl_level: 2 | supplier_assumptions_tested: false | cost_assumptions_tested: true | SCR sub-score: 1.8 — BELOW floor of 2.0. TRL/MRL sync engine must fire alert.</div></div>
+    <div class="input-row"><div class="field">Stage 13 — GTM experiment</div><div class="value">experiment_type: channel_test | channel_tested: "fleet manager LinkedIn outreach" | messaging_variant: "TRL-validated 18% energy saving" | conversion_rate: 0.12 | outcome: inconclusive</div></div>
+    <div class="input-row"><div class="field">Stage 14 — Market risk log</div><div class="value">risk_category: market | risk_type: competition → score 7 | risk_type: timing → score 5. Assert: stale_flag = false (reviewed within 30 days)</div></div>
+  </div>
+</div>
+
+<!-- Stage 15 — Decision Gate -->
+<div class="stage-block">
+  <div class="stage-header" onclick="toggle(this)">
+    <div class="stage-num num-teal">15</div>
+    <div class="stage-title">Command Centre review → Decision gate</div>
+    <span class="badge badge-teal">Final gates</span>
+  </div>
+  <div class="stage-body">
+    <div class="input-row"><div class="field">Review session</div><div class="value">evidence_confidence_score: 6.8 | vrl_score_at_review: 4.2 (BRL) + 3.0 (TRL) | risk_score_at_review: 6.5 | notes: "SCR floor breach on MRL blocks advance — needs 3 qualified suppliers"</div></div>
+    <div class="gate-fail">
+      <div class="gate-title"><i class="ti ti-x"></i> Test: "Advance" blocked while MRL SCR floor unresolved</div>
+      <div class="gate-body">WorkflowStateService.canAdvanceStage() returns false. MRL SCR = 1.8, below floor 2.0. System returns specific blocker reason — must not be a generic error.</div>
+    </div>
+    <div class="gate-warn">
+      <div class="gate-title"><i class="ti ti-clock"></i> Test: record "Hold — pending evidence"</div>
+      <div class="gate-body">decision: hold_pending_evidence | rationale: "Awaiting 3 qualified supplier quotes to resolve SCR floor breach" | next_review_date: +30 days. Assert: workflow_stage = "hold", pivot_required = false.</div>
+    </div>
+    <div class="gate-fail">
+      <div class="gate-title"><i class="ti ti-archive"></i> Test: Kill decision — archive must require learnings</div>
+      <div class="gate-body">decision: kill | rationale: "Procurement pathway unvalidatable — OEM cycles exceed 18 months". Assert: venture_archive created | learnings_captured is NOT NULL. If NULL — system must BLOCK the archive write.</div>
+    </div>
+  </div>
+</div>
+
+<div class="replit-box">
+  <p>Paste into Replit after building the WorkflowStateService:</p>
+  <button class="copy-btn" onclick="copyCmd()"><i class="ti ti-copy"></i> Copy Replit run instruction</button>
+  <pre class="replit-cmd" id="replitCmd">Run the BEBUS VeloCargo test case end-to-end using the synthetic data provided. Create the venture record, walk it through all 15 lean startup stages in sequence, and assert the conditions at each stage. Specifically test and report pass/fail for these 5 enforcement checks:
+
+1. Stage 3 gate — system BLOCKS Problem Validated gate when fewer than 3 interviews are entered
+2. Stage 4 pivot trigger — setting 4/5 interviews to problem_validated=false fires pivot_required=true and routes back to assumptions_defined stage
+3. Stage 7 human review gate — tRPC middleware BLOCKS any write to venture_scores where human_reviewed_by is NULL
+4. Stage 12 MRL sync — SCR sub-score of 1.8 (below floor 2.0) fires a TRL/MRL sync alert
+5. Stage 15 advance block — WorkflowStateService.canAdvanceStage() returns false while MRL SCR floor is unresolved, with a specific blocker reason (not a generic error)
+
+For each check: report PASS (enforcement worked as expected) or FAIL (enforcement did not fire). List any stages where a MISSING table caused an exception rather than an enforcement block — these confirm the gap list from the audit Layer 1 findings.</pre>
+</div>
+
+</div>
+<script>
+function toggle(h){h.nextElementSibling.classList.toggle('open')}
+function toggleAll(){
+  const b=document.querySelectorAll('.stage-body');
+  const all=[...b].every(x=>x.classList.contains('open'));
+  b.forEach(x=>all?x.classList.remove('open'):x.classList.add('open'));
+  document.querySelector('.expand-btn').textContent=all?'Expand all stages':'Collapse all stages';
+}
+function copyCmd(){
+  navigator.clipboard.writeText(document.getElementById('replitCmd').innerText.trim()).then(()=>{
+    const b=document.querySelector('.copy-btn');
+    b.innerHTML='<i class="ti ti-check"></i> Copied';
+    setTimeout(()=>{b.innerHTML='<i class="ti ti-copy"></i> Copy Replit run instruction';},2000);
+  });
+}
+</script>
+</body>
+</html>

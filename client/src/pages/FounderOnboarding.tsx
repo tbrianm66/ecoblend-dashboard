@@ -291,7 +291,7 @@ export default function FounderOnboarding() {
             <Button className="w-full gap-2" style={{ background: form.brandColor, color: "white" }} onClick={() => navigate("/matching")}>
               <Shuffle size={15} /> Find Founder Matches &amp; Opportunities
             </Button>
-            <Button className="w-full gap-2" variant="outline" style={{ borderColor: "#3A97D3", color: "#3A97D3" }} onClick={() => navigate("/spinoff")}>
+            <Button className="w-full gap-2" variant="outline" style={{ borderColor: "#3B85BA", color: "#3B85BA" }} onClick={() => navigate("/spinoff")}>
               <GitBranch size={15} /> Launch Spin-Off OS
             </Button>
             <Button variant="outline" className="w-full" onClick={() => navigate("/")}>

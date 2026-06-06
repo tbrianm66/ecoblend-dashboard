@@ -41,10 +41,10 @@ type QcType = "pre_production" | "in_line" | "pre_shipment_aql";
 type FreightType = "sea" | "air" | "rail" | "road";
 
 const PHASES: { id: Phase; label: string; short: string; color: string }[] = [
-  { id: "uk_prototype", label: "UK Prototype", short: "UK R&D", color: "#3A97D3" },
-  { id: "china_feasibility", label: "China Feasibility", short: "Feasibility", color: "#F49C13" },
+  { id: "uk_prototype", label: "UK Prototype", short: "UK R&D", color: "#3B85BA" },
+  { id: "china_feasibility", label: "China Feasibility", short: "Feasibility", color: "#F69111" },
   { id: "pilot_production", label: "Pilot Production", short: "Pilot", color: "#8B5CF6" },
-  { id: "scale_manufacturing", label: "Scale Manufacturing", short: "Scale", color: "#51AF37" },
+  { id: "scale_manufacturing", label: "Scale Manufacturing", short: "Scale", color: "#56A837" },
 ];
 
 const TIER_LABELS: Record<SupplierTier, string> = {
@@ -55,9 +55,9 @@ const TIER_LABELS: Record<SupplierTier, string> = {
 };
 
 const TIER_COLORS: Record<SupplierTier, string> = {
-  tier1_oem: "#51AF37",
-  tier2_components: "#3A97D3",
-  tier3_raw_materials: "#F49C13",
+  tier1_oem: "#56A837",
+  tier2_components: "#3B85BA",
+  tier3_raw_materials: "#F69111",
   tier4_tooling: "#8B5CF6",
 };
 
@@ -75,10 +75,10 @@ const FREIGHT_LABELS: Record<FreightType, string> = {
 };
 
 const FREIGHT_COLORS: Record<FreightType, string> = {
-  sea: "#3A97D3",
-  air: "#F49C13",
+  sea: "#3B85BA",
+  air: "#F69111",
   rail: "#8B5CF6",
-  road: "#51AF37",
+  road: "#56A837",
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -129,10 +129,10 @@ function OverviewTab({ ventureId, onSelectProject }: { ventureId: string; onSele
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "Playbook Projects", value: summary?.projects ?? 0, icon: Factory, color: "#3A97D3" },
-          { label: "Suppliers Onboarded", value: summary?.suppliers ?? 0, icon: Globe, color: "#51AF37" },
+          { label: "Playbook Projects", value: summary?.projects ?? 0, icon: Factory, color: "#3B85BA" },
+          { label: "Suppliers Onboarded", value: summary?.suppliers ?? 0, icon: Globe, color: "#56A837" },
           { label: "QC Pass Rate", value: `${summary?.qcPassRate ?? 0}%`, icon: ClipboardCheck, color: "#8B5CF6" },
-          { label: "Active Shipments", value: summary?.activeShipments ?? 0, icon: Ship, color: "#F49C13" },
+          { label: "Active Shipments", value: summary?.activeShipments ?? 0, icon: Ship, color: "#F69111" },
         ].map(({ label, value, icon: Icon, color }) => (
           <Card key={label} className="border shadow-sm">
             <CardContent className="p-5 flex items-center gap-4">
@@ -353,7 +353,7 @@ function UkPrototypeTab({ ventureId }: { ventureId: string }) {
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" className="gap-1.5 text-xs" style={{ background: "#3A97D3" }}
+            <Button size="sm" className="gap-1.5 text-xs" style={{ background: "#3B85BA" }}
               onClick={() => setEditing(null)}>
               <Plus size={13} /> New Project
             </Button>
@@ -395,9 +395,9 @@ function UkPrototypeTab({ ventureId }: { ventureId: string }) {
 
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
                   {[
-                    { label: "TRL Level", value: `TRL ${project.trlLevel}`, color: "#3A97D3" },
-                    { label: "Target Unit Cost", value: project.targetUnitCostGbp ? `£${project.targetUnitCostGbp.toFixed(2)}` : "—", color: "#51AF37" },
-                    { label: "Material Cost", value: project.materialCostGbp ? `£${project.materialCostGbp.toFixed(2)}` : "—", color: "#F49C13" },
+                    { label: "TRL Level", value: `TRL ${project.trlLevel}`, color: "#3B85BA" },
+                    { label: "Target Unit Cost", value: project.targetUnitCostGbp ? `£${project.targetUnitCostGbp.toFixed(2)}` : "—", color: "#56A837" },
+                    { label: "Material Cost", value: project.materialCostGbp ? `£${project.materialCostGbp.toFixed(2)}` : "—", color: "#F69111" },
                     { label: "Margin", value: `${project.marginPercent}%`, color: "#8B5CF6" },
                   ].map(({ label, value, color }) => (
                     <div key={label} className="rounded-lg p-3" style={{ background: `${color}0d` }}>
@@ -414,7 +414,7 @@ function UkPrototypeTab({ ventureId }: { ventureId: string }) {
                     <span>{project.trlLevel ?? 1}/9</span>
                   </div>
                   <div className="w-full h-2 rounded-full bg-gray-100 overflow-hidden">
-                    <div className="h-full rounded-full transition-all duration-700" style={{ width: `${((project.trlLevel ?? 1) / 9) * 100}%`, background: "#3A97D3" }} />
+                    <div className="h-full rounded-full transition-all duration-700" style={{ width: `${((project.trlLevel ?? 1) / 9) * 100}%`, background: "#3B85BA" }} />
                   </div>
                 </div>
 
@@ -494,7 +494,7 @@ function ChinaFeasibilityTab({ ventureId }: { ventureId: string }) {
             <h4 className="font-semibold text-sm text-gray-700">Supplier Ecosystem</h4>
             <Dialog open={supplierDialog} onOpenChange={setSupplierDialog}>
               <DialogTrigger asChild>
-                <Button size="sm" className="gap-1.5 text-xs" style={{ background: "#F49C13" }}
+                <Button size="sm" className="gap-1.5 text-xs" style={{ background: "#F69111" }}
                   onClick={() => { setEditingSupplier(null); setSupplierForm({ supplierName: "", tier: "tier1_oem", country: "China", city: "", contactName: "", contactEmail: "", nnnAgreement: "none", manufacturingContract: "none", toolingOwnership: "none", blackBoxComponents: 0, riskScore: 50, auditScore: 0, qualityScore: 0, isDualSource: 0, notes: "" }); }}>
                   <Plus size={13} /> Add Supplier
                 </Button>
@@ -682,9 +682,9 @@ function PilotScaleTab({ ventureId }: { ventureId: string }) {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {[
               { label: "Pilot Volume", value: `${(selectedProject.pilotVolume || 0).toLocaleString()} units`, color: "#8B5CF6" },
-              { label: "Scale Volume", value: `${(selectedProject.scaleVolume || 0).toLocaleString()} units`, color: "#51AF37" },
-              { label: "Total Unit Cost", value: selectedProject.materialCostGbp ? `£${((selectedProject.materialCostGbp || 0) + (selectedProject.labourCostGbp || 0) + (selectedProject.overheadCostGbp || 0) + (selectedProject.logisticsCostGbp || 0)).toFixed(2)}` : "—", color: "#3A97D3" },
-              { label: "Selling Price", value: selectedProject.materialCostGbp ? `£${(((selectedProject.materialCostGbp || 0) + (selectedProject.labourCostGbp || 0) + (selectedProject.overheadCostGbp || 0) + (selectedProject.logisticsCostGbp || 0)) * (1 + (selectedProject.marginPercent || 30) / 100)).toFixed(2)}` : "—", color: "#F49C13" },
+              { label: "Scale Volume", value: `${(selectedProject.scaleVolume || 0).toLocaleString()} units`, color: "#56A837" },
+              { label: "Total Unit Cost", value: selectedProject.materialCostGbp ? `£${((selectedProject.materialCostGbp || 0) + (selectedProject.labourCostGbp || 0) + (selectedProject.overheadCostGbp || 0) + (selectedProject.logisticsCostGbp || 0)).toFixed(2)}` : "—", color: "#3B85BA" },
+              { label: "Selling Price", value: selectedProject.materialCostGbp ? `£${(((selectedProject.materialCostGbp || 0) + (selectedProject.labourCostGbp || 0) + (selectedProject.overheadCostGbp || 0) + (selectedProject.logisticsCostGbp || 0)) * (1 + (selectedProject.marginPercent || 30) / 100)).toFixed(2)}` : "—", color: "#F69111" },
             ].map(({ label, value, color }) => (
               <div key={label} className="rounded-xl p-4" style={{ background: `${color}0d`, border: `1px solid ${color}20` }}>
                 <p className="text-xs text-gray-400 font-semibold">{label}</p>
@@ -706,9 +706,9 @@ function PilotScaleTab({ ventureId }: { ventureId: string }) {
                     <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `£${(v / 1000).toFixed(0)}k`} />
                     <Tooltip formatter={(v: number) => `£${v.toLocaleString()}`} />
                     <Legend />
-                    <Bar dataKey="Material" stackId="cost" fill="#51AF37" />
-                    <Bar dataKey="Labour" stackId="cost" fill="#3A97D3" />
-                    <Bar dataKey="Overhead" stackId="cost" fill="#F49C13" />
+                    <Bar dataKey="Material" stackId="cost" fill="#56A837" />
+                    <Bar dataKey="Labour" stackId="cost" fill="#3B85BA" />
+                    <Bar dataKey="Overhead" stackId="cost" fill="#F69111" />
                     <Bar dataKey="Logistics" stackId="cost" fill="#8B5CF6" />
                     <Bar dataKey="Revenue" fill="#1a2332" opacity={0.15} />
                   </BarChart>
@@ -763,9 +763,9 @@ function IpProtectionTab({ ventureId }: { ventureId: string }) {
         <>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             {[
-              { label: "NNN Agreements Signed", value: ipStats.nnnSigned, total: suppliers?.length ?? 0, color: "#51AF37", icon: Shield },
-              { label: "NNN Agreements Sent", value: ipStats.nnnSent, total: suppliers?.length ?? 0, color: "#F49C13", icon: FileText },
-              { label: "Manufacturing Contracts Signed", value: ipStats.contractSigned, total: suppliers?.length ?? 0, color: "#3A97D3", icon: ClipboardCheck },
+              { label: "NNN Agreements Signed", value: ipStats.nnnSigned, total: suppliers?.length ?? 0, color: "#56A837", icon: Shield },
+              { label: "NNN Agreements Sent", value: ipStats.nnnSent, total: suppliers?.length ?? 0, color: "#F69111", icon: FileText },
+              { label: "Manufacturing Contracts Signed", value: ipStats.contractSigned, total: suppliers?.length ?? 0, color: "#3B85BA", icon: ClipboardCheck },
               { label: "Full Tooling Ownership", value: ipStats.toolingFull, total: suppliers?.length ?? 0, color: "#8B5CF6", icon: Package },
               { label: "Black-Box Components", value: ipStats.blackBox, total: suppliers?.length ?? 0, color: "#EF4444", icon: Lock },
               { label: "Dual-Sourced Suppliers", value: ipStats.dualSource, total: suppliers?.length ?? 0, color: "#06B6D4", icon: Globe },
@@ -819,7 +819,7 @@ function IpProtectionTab({ ventureId }: { ventureId: string }) {
                           <td className="py-2 px-2 text-center"><StatusBadge status={s.toolingOwnership || "none"} /></td>
                           <td className="py-2 px-2 text-center">{s.blackBoxComponents ? <CheckCircle2 size={13} className="text-green-500 mx-auto" /> : <Circle size={13} className="text-gray-300 mx-auto" />}</td>
                           <td className="py-2 px-2 text-center">{s.isDualSource ? <CheckCircle2 size={13} className="text-blue-500 mx-auto" /> : <Circle size={13} className="text-gray-300 mx-auto" />}</td>
-                          <td className="py-2 pl-2 text-right font-bold" style={{ color: (s.riskScore || 0) > 70 ? "#EF4444" : (s.riskScore || 0) > 40 ? "#F49C13" : "#51AF37" }}>
+                          <td className="py-2 pl-2 text-right font-bold" style={{ color: (s.riskScore || 0) > 70 ? "#EF4444" : (s.riskScore || 0) > 40 ? "#F69111" : "#56A837" }}>
                             {s.riskScore}
                           </td>
                         </tr>
@@ -888,10 +888,10 @@ function QcLogisticsTab({ ventureId }: { ventureId: string }) {
           {/* KPI row */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {[
-              { label: "QC Reports", value: qcReports?.length ?? 0, color: "#3A97D3" },
-              { label: "QC Pass Rate", value: `${passRate}%`, color: passRate >= 80 ? "#51AF37" : passRate >= 60 ? "#F49C13" : "#EF4444" },
+              { label: "QC Reports", value: qcReports?.length ?? 0, color: "#3B85BA" },
+              { label: "QC Pass Rate", value: `${passRate}%`, color: passRate >= 80 ? "#56A837" : passRate >= 60 ? "#F69111" : "#EF4444" },
               { label: "Total Shipments", value: shipments?.length ?? 0, color: "#8B5CF6" },
-              { label: "Total Logistics Cost", value: `£${totalFreightCost.toLocaleString()}`, color: "#F49C13" },
+              { label: "Total Logistics Cost", value: `£${totalFreightCost.toLocaleString()}`, color: "#F69111" },
             ].map(({ label, value, color }) => (
               <div key={label} className="rounded-xl p-4" style={{ background: `${color}0d`, border: `1px solid ${color}20` }}>
                 <p className="text-xs text-gray-400 font-semibold">{label}</p>
@@ -905,7 +905,7 @@ function QcLogisticsTab({ ventureId }: { ventureId: string }) {
             <h4 className="font-semibold text-sm text-gray-700">QC Inspection Reports</h4>
             <Dialog open={qcDialog} onOpenChange={setQcDialog}>
               <DialogTrigger asChild>
-                <Button size="sm" className="gap-1.5 text-xs" style={{ background: "#3A97D3" }}>
+                <Button size="sm" className="gap-1.5 text-xs" style={{ background: "#3B85BA" }}>
                   <Plus size={13} /> Add QC Report
                 </Button>
               </DialogTrigger>
@@ -1143,7 +1143,7 @@ export default function ChinaManufacturingPlaybook() {
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#F49C1315", color: "#F49C13" }}>
+              <span className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: "#F6911115", color: "#F69111" }}>
                 Supply Chain
               </span>
               <span className="text-xs text-gray-400">·</span>

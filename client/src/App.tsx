@@ -14,6 +14,8 @@ import { SelectedVentureProvider } from "./contexts/SelectedVentureContext";
 import Sidebar from "./components/Sidebar";
 import Home from "./pages/Home";
 import VentureDetail from "./pages/VentureDetail";
+import DecisionGate from "./pages/ventures/DecisionGate";
+import VentureArchive from "./pages/ventures/VentureArchive";
 import VrlAnalytics from "./pages/VrlAnalytics";
 import VrlAssessmentForm from "./pages/VrlAssessmentForm";
 import VrlResults from "./pages/VrlResults";
@@ -87,10 +89,24 @@ import AdminWidgetAnalytics from "./pages/AdminWidgetAnalytics";
 import AdminWidgetSettings from "./pages/AdminWidgetSettings";
 import AdminProductionReadiness from "./pages/AdminProductionReadiness";
 import ModulePlaceholder from "./pages/ModulePlaceholder";
+import PortfolioOverviewTabs from "./pages/command/PortfolioOverviewTabs";
+import CommandCentreTabs from "./pages/command/CommandCentreTabs";
+import PipelineTabs from "./pages/command/PipelineTabs";
+import VentureStatus from "./pages/command/VentureStatus";
+import AlertsApprovals from "./pages/command/AlertsApprovals";
 import VentureIntake from "./pages/VentureIntake";
-import WTPAssessment from "./pages/WTPAssessment";
+import ProblemStatement from "./pages/ProblemStatement";
+import HypothesisRegister from "./pages/HypothesisRegister";
+import CustomerDiscovery from "./pages/discovery/CustomerDiscovery";
+import CompetitorMapping from "./pages/discovery/CompetitorMapping";
+import DemandSignals from "./pages/discovery/DemandSignals";
+import WTPAssessment from "./pages/discovery/WTPAssessment";
+import MarketRiskLog from "./pages/discovery/MarketRiskLog";
+import DiscoveryExperimentLog from "./pages/discovery/ExperimentLog";
 import ReadinessScoring from "./pages/ReadinessScoring";
 import RDHub from "./pages/RDHub";
+import LeanCanvas from "./pages/lean/LeanCanvas";
+import Prototypes from "./pages/rnd/Prototypes";
 import RiskIntelligence from "./pages/RiskIntelligence";
 import InvestmentPack from "./pages/InvestmentPack";
 import GovernanceHub from "./pages/GovernanceHub";
@@ -100,7 +116,7 @@ function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
-      <Route path="/" component={Home} />
+      <Route path="/" component={PortfolioOverviewTabs} />
       <Route path="/venture/:id" component={VentureDetail} />
       <Route path="/vrl" component={VrlAnalytics} />
       <Route path="/trl" component={TrlAnalytics} />
@@ -121,7 +137,7 @@ function Router() {
       <Route path="/legal" component={LegalContracts} />
       <Route path="/pr" component={BrandPR} />
       <Route path="/specialists" component={SpecialistServices} />
-      <Route path="/pipeline" component={OpportunityPipeline} />
+      <Route path="/pipeline" component={PipelineTabs} />
       <Route path="/experiments" component={ExperimentLog} />
       <Route path="/founders" component={FounderProfiles} />
       <Route path="/academic" component={AcademicResearch} />
@@ -132,7 +148,7 @@ function Router() {
       <Route path="/people-intelligence" component={PeopleIntelligence} />
       <Route path="/poi" component={ProductOpportunityIntelligence} />
       <Route path="/project-management" component={VentureProjectManagement} />
-      <Route path="/command-centre" component={CommandCentre} />
+      <Route path="/command-centre" component={CommandCentreTabs} />
       <Route path="/matching" component={FounderMatching} />
       <Route path="/spinoff" component={SpinoffOS} />
       <Route path="/co-founder-matrix" component={CoFounderMatrix} />
@@ -193,25 +209,28 @@ function Router() {
       <Route path="/intake" component={VentureIntake} />
       <Route path="/intake/founder" component={ModulePlaceholder} />
       <Route path="/intake/strategic-fit" component={ModulePlaceholder} />
-      <Route path="/intake/problem" component={ModulePlaceholder} />
-      <Route path="/intake/hypotheses" component={ModulePlaceholder} />
+      <Route path="/intake/problem" component={ProblemStatement} />
+      <Route path="/intake/hypotheses" component={HypothesisRegister} />
       {/* Module 3: Discovery & Market Validation */}
-      <Route path="/discovery" component={ModulePlaceholder} />
-      <Route path="/discovery/competitors" component={ModulePlaceholder} />
-      <Route path="/discovery/demand" component={ModulePlaceholder} />
+      <Route path="/discovery" component={CustomerDiscovery} />
+      <Route path="/discovery/competitors" component={CompetitorMapping} />
+      <Route path="/discovery/demand" component={DemandSignals} />
       <Route path="/discovery/wtp" component={WTPAssessment} />
-      <Route path="/discovery/market-risk" component={ModulePlaceholder} />
+      <Route path="/discovery/market-risk" component={MarketRiskLog} />
+      <Route path="/discovery/experiments" component={DiscoveryExperimentLog} />
       {/* Module 4: Proposition & Business Model */}
       <Route path="/proposition" component={ModulePlaceholder} />
       <Route path="/proposition/bmc" component={ModulePlaceholder} />
       <Route path="/proposition/revenue" component={ModulePlaceholder} />
       <Route path="/proposition/economics" component={ModulePlaceholder} />
       <Route path="/proposition/channels" component={ModulePlaceholder} />
+      {/* Lean Canvas — append-only versioned canvas */}
+      <Route path="/lean/canvas" component={LeanCanvas} />
       {/* Module 5: R&D Hub */}
       <Route path="/rnd" component={RDHub} />
       <Route path="/rnd/experiments" component={ModulePlaceholder} />
       <Route path="/rnd/kpis" component={ModulePlaceholder} />
-      <Route path="/rnd/prototypes" component={ModulePlaceholder} />
+      <Route path="/rnd/prototypes" component={Prototypes} />
       <Route path="/rnd/ip" component={ModulePlaceholder} />
       {/* Module 6: Operations & Manufacturing */}
       <Route path="/operations" component={ModulePlaceholder} />
@@ -269,9 +288,14 @@ function Router() {
       <Route path="/governance/audit" component={GovernanceHub} />
       <Route path="/governance/ip" component={IpManagement} />
       <Route path="/governance/legal" component={LegalContracts} />
+      {/* Decision Gate + Venture Archive */}
+      <Route path="/decision-gate" component={DecisionGate} />
+      <Route path="/ventures/archive" component={VentureArchive} />
+      <Route path="/ventures/:id/decision" component={DecisionGate} />
+      <Route path="/ventures/:id/archive" component={VentureArchive} />
       {/* Command Centre extras */}
-      <Route path="/venture-status" component={ModulePlaceholder} />
-      <Route path="/alerts" component={ModulePlaceholder} />
+      <Route path="/venture-status" component={VentureStatus} />
+      <Route path="/alerts" component={AlertsApprovals} />
       {/* ECOBLEND OS Agentic Validation Platform v2 (self-contained namespace) */}
       <Route path="/v2" component={V2App} />
       <Route path="/v2/:rest*" component={V2App} />
@@ -288,9 +312,9 @@ function AppShell() {
     return <Router />;
   }
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-gray-50">
       <Sidebar />
-      <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
         <Router />
       </div>
     </div>
