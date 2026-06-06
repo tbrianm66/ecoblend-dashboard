@@ -112,6 +112,14 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    id: "lean",
+    label: "4b. Lean Canvas",
+    defaultOpen: false,
+    items: [
+      { id: "lean-canvas", label: "Lean Canvas", icon: "LayoutTemplate", href: "/lean/canvas" },
+    ],
+  },
+  {
     id: "rnd",
     label: "5. R&D Hub",
     defaultOpen: false,
@@ -119,8 +127,8 @@ const NAV_GROUPS: NavGroup[] = [
       { id: "rnd-hub",         label: "R&D Hub",             icon: "FlaskConical",    href: "/rnd" },
       { id: "rnd-experiments", label: "Validation Experiments",icon: "TestTube2",      href: "/rnd/experiments" },
       { id: "rnd-kpis",        label: "Technical KPIs",      icon: "BarChart3",       href: "/rnd/kpis" },
-      { id: "rnd-prototypes",  label: "Prototype Testing",   icon: "Cog",            href: "/rnd/prototypes" },
-      { id: "rnd-ip",          label: "IP Tracker",          icon: "Lock",           href: "/rnd/ip" },
+      { id: "rnd-prototypes",  label: "Prototype Testing",   icon: "Cog",             href: "/rnd/prototypes" },
+      { id: "rnd-ip",          label: "IP Tracker",          icon: "Lock",            href: "/rnd/ip" },
     ],
   },
   {

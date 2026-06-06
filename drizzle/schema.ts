@@ -78,6 +78,8 @@ export const ventures = pgTable("ventures", {
   workflowStage: text("workflowStage"),       // LEAN_STAGE enum: venture_intake → decision_gate
   pivotRequired: boolean("pivotRequired").default(false),
   pivotReason: text("pivotReason"),
+  // -- Lean Canvas versioning — tracks latest persisted version number ----------
+  canvasVersion: integer("canvasVersion").default(0),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
@@ -7206,6 +7208,68 @@ export const leanExperiments = pgTable("lean_experiments", {
 });
 export type LeanExperiment = typeof leanExperiments.$inferSelect;
 export type InsertLeanExperiment = typeof leanExperiments.$inferInsert;
+
+// -- Lean Canvas (append-only versioning) --------------------------------------
+// Each save inserts a new row with version = max(version)+1 for that venture.
+// The current active version is tracked in ventures.canvasVersion.
+export const leanCanvases = pgTable("lean_canvases", {
+  id:               serial("id").primaryKey(),
+  ventureId:        varchar("ventureId", { length: 64 }).notNull(),
+  version:          integer("version").notNull().default(1),
+  // Nine Lean Canvas blocks
+  problem:          text("problem"),
+  solution:         text("solution"),
+  uniqueValueProp:  text("uniqueValueProp"),
+  customerSegments: text("customerSegments"),
+  channels:         text("channels"),
+  revenueStreams:   text("revenueStreams"),
+  costStructure:    text("costStructure"),
+  keyMetrics:       text("keyMetrics"),
+  unfairAdvantage:  text("unfairAdvantage"),
+  // R&D linkage
+  mvpFormat:        text("mvpFormat"),          // concierge|wizard_of_oz|smoke_test|landing_page|prototype
+  hypothesisTested: text("hypothesisTested"),
+  successCriteria:  text("successCriteria"),
+  notes:            text("notes"),
+  status:           text("status").default("draft"),   // draft|active|archived
+  createdBy:        varchar("createdBy", { length: 255 }),
+  createdAt:        timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:        timestamp("updatedAt").defaultNow().notNull(),
+});
+export type LeanCanvas = typeof leanCanvases.$inferSelect;
+export type InsertLeanCanvas = typeof leanCanvases.$inferInsert;
+
+// -- Product Milestones (R&D prototype & MVP build tracking) -------------------
+export const productMilestones = pgTable("product_milestones", {
+  id:                   serial("id").primaryKey(),
+  ventureId:            varchar("ventureId", { length: 64 }).notNull(),
+  milestoneTitle:       varchar("milestoneTitle", { length: 255 }).notNull(),
+  milestoneType:        text("milestoneType").default("prototype"),  // concierge_mvp|wizard_of_oz|smoke_test|prototype|pilot|production|other
+  mvpFormat:            text("mvpFormat"),          // concierge|wizard_of_oz|smoke_test|landing_page|prototype
+  stage:                text("stage"),              // lean stage slug or free text
+  description:          text("description"),
+  hypothesisTested:     text("hypothesisTested"),
+  successCriteria:      text("successCriteria"),
+  // User testing evidence
+  userTestCount:        integer("userTestCount").default(0),
+  userResponseCaptured: boolean("userResponseCaptured").default(false),
+  participants:         integer("participants").default(0),
+  validated:            integer("validated").default(0),
+  invalidated:          integer("invalidated").default(0),
+  validationRate:       doublePrecision("validationRate"),
+  outcome:              text("outcome"),            // validated|invalidated|inconclusive
+  keyLearning:          text("keyLearning"),
+  // Scheduling
+  targetDate:           varchar("targetDate", { length: 32 }),
+  completedDate:        varchar("completedDate", { length: 32 }),
+  status:               text("status").default("planned").notNull(), // planned|in_progress|completed|blocked
+  evidenceUrl:          text("evidenceUrl"),
+  assignedTo:           varchar("assignedTo", { length: 255 }),
+  createdAt:            timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:            timestamp("updatedAt").defaultNow().notNull(),
+});
+export type ProductMilestone = typeof productMilestones.$inferSelect;
+export type InsertProductMilestone = typeof productMilestones.$inferInsert;
 
 // -- Command Centre (Lean OS) tables -------------------------------------------
 export * from "./schema_cc";

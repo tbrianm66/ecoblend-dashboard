@@ -227,11 +227,15 @@ import { portfoliosOfferingsRouter } from "./portfoliosOfferings.router";
 import { discoveryMarketRouter, assertVentureAccess } from "./discoveryMarket.router";
 import { commandCentreLeanRouter } from "./commandCentre.lean.router";
 import { wtpRouter } from "./wtp.router";
+import { leanCanvasRouter } from "./leanCanvas.router";
+import { productMilestonesRouter } from "./productMilestones.router";
 
 export const appRouter = router({
   discoveryMarket: discoveryMarketRouter,
   commandCentreLean: commandCentreLeanRouter,
   wtp: wtpRouter,
+  leanCanvas: leanCanvasRouter,
+  productMilestones: productMilestonesRouter,
   startupFailureRisk: startupFailureRiskRouter,
   system: systemRouter,
   coaching: coachingRouter,

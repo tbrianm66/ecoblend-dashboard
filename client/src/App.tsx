@@ -103,6 +103,8 @@ import MarketRiskLog from "./pages/discovery/MarketRiskLog";
 import DiscoveryExperimentLog from "./pages/discovery/ExperimentLog";
 import ReadinessScoring from "./pages/ReadinessScoring";
 import RDHub from "./pages/RDHub";
+import LeanCanvas from "./pages/lean/LeanCanvas";
+import Prototypes from "./pages/rnd/Prototypes";
 import RiskIntelligence from "./pages/RiskIntelligence";
 import InvestmentPack from "./pages/InvestmentPack";
 import GovernanceHub from "./pages/GovernanceHub";
@@ -220,11 +222,13 @@ function Router() {
       <Route path="/proposition/revenue" component={ModulePlaceholder} />
       <Route path="/proposition/economics" component={ModulePlaceholder} />
       <Route path="/proposition/channels" component={ModulePlaceholder} />
+      {/* Lean Canvas — append-only versioned canvas */}
+      <Route path="/lean/canvas" component={LeanCanvas} />
       {/* Module 5: R&D Hub */}
       <Route path="/rnd" component={RDHub} />
       <Route path="/rnd/experiments" component={ModulePlaceholder} />
       <Route path="/rnd/kpis" component={ModulePlaceholder} />
-      <Route path="/rnd/prototypes" component={ModulePlaceholder} />
+      <Route path="/rnd/prototypes" component={Prototypes} />
       <Route path="/rnd/ip" component={ModulePlaceholder} />
       {/* Module 6: Operations & Manufacturing */}
       <Route path="/operations" component={ModulePlaceholder} />
