@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import {
   ventures,
   ccPivotLogs,
@@ -8,6 +8,7 @@ import {
   customerInterviews,
   wtpTests,
   experiments,
+  ventureArchive,
 } from "../drizzle/schema";
 import { getDb } from "./db";
 import {
@@ -174,18 +175,45 @@ export class WorkflowStateService {
   }
 
   // ── advance ──────────────────────────────────────────────────────────────
-  // Calls canAdvanceStage and, if allowed, updates ventures.workflowStage.
+  // Requires a prior "advance" decision record before permitting the transition.
+  // Use workflowState.recordDecision({ decision: "advance", nextStage }) from
+  // the Decision Gate UI — it records the decision AND advances in one transaction.
+  // This method is the fallback for direct callers and enforces the gate.
   async advance(
     ventureId: string,
     targetStage: LeanStage,
   ): Promise<{ success: boolean; blockers: string[] }> {
+    const db = await getDb();
+    if (!db) throw new Error("Database unavailable");
+
+    // ── Decision Gate: a prior approved "advance" decision is required ────
+    const decisionRows = await db
+      .select({ id: ccDecisions.id, createdAt: ccDecisions.createdAt })
+      .from(ccDecisions)
+      .where(
+        and(
+          eq(ccDecisions.ventureId, ventureId),
+          eq(ccDecisions.recommendedAction, "advance"),
+          eq(ccDecisions.decisionStatus, "approved"),
+        ),
+      )
+      .orderBy(desc(ccDecisions.createdAt))
+      .limit(1);
+
+    if (decisionRows.length === 0) {
+      return {
+        success: false,
+        blockers: [
+          "A decision record is required before advancing. Record an 'Advance' decision " +
+          "via the Decision Gate (/ventures/<id>/decision) for this venture first.",
+        ],
+      };
+    }
+
     const check = await this.canAdvanceStage(ventureId, targetStage);
     if (!check.allowed) {
       return { success: false, blockers: check.blockers };
     }
-
-    const db = await getDb();
-    if (!db) throw new Error("Database unavailable");
 
     await db
       .update(ventures)
@@ -276,6 +304,14 @@ export class WorkflowStateService {
         .returning({ id: ccDecisions.id });
 
       if (decision === "kill") {
+        // Capture current stage before kill sets it to "decision_gate"
+        const stageRow = await tx
+          .select({ workflowStage: ventures.workflowStage })
+          .from(ventures)
+          .where(eq(ventures.id, ventureId))
+          .limit(1);
+        const finalStage = stageRow[0]?.workflowStage ?? "decision_gate";
+
         await tx
           .update(ventures)
           .set({
@@ -285,6 +321,16 @@ export class WorkflowStateService {
             updatedAt:        new Date(),
           })
           .where(eq(ventures.id, ventureId));
+
+        // Write venture_archive record for kill decision
+        await tx.insert(ventureArchive).values({
+          ventureId,
+          decisionId:    inserted[0].id,
+          archiveReason: rationale,
+          finalStage,
+          archivedBy:    decidedBy,
+          status:        "archived",
+        });
 
         await tx.insert(ccAlerts).values({
           ventureId,

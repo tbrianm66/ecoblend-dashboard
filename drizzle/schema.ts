@@ -7275,6 +7275,23 @@ export const productMilestones = pgTable("product_milestones", {
 export type ProductMilestone = typeof productMilestones.$inferSelect;
 export type InsertProductMilestone = typeof productMilestones.$inferInsert;
 
+// -- Venture Archive — written when a kill decision is recorded or a venture is manually archived
+export const ventureArchive = pgTable("venture_archive", {
+  id:            serial("id").primaryKey(),
+  ventureId:     varchar("ventureId", { length: 64 }).notNull(),
+  decisionId:    integer("decisionId"),          // FK to cc_decisions.id
+  archiveReason: text("archiveReason"),
+  finalStage:    text("finalStage"),
+  archivedBy:    varchar("archivedBy", { length: 255 }),
+  notes:         text("notes"),
+  status:        text("status").default("archived").notNull(), // archived|restored
+  restoredBy:    varchar("restoredBy", { length: 255 }),
+  restoredAt:    timestamp("restoredAt"),
+  createdAt:     timestamp("createdAt").defaultNow().notNull(),
+});
+export type VentureArchive = typeof ventureArchive.$inferSelect;
+export type InsertVentureArchive = typeof ventureArchive.$inferInsert;
+
 // -- Pivot Log — append-only record of every hypothesis pivot across all canvas fields ---
 export const pivotLog = pgTable("pivot_log", {
   id:                  serial("id").primaryKey(),
