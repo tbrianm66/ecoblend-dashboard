@@ -7321,3 +7321,261 @@ export * from "./schema_cc";
 
 // -- WTP Assessment (commercial validation) tables -----------------------------
 export * from "./schema_wtp";
+
+// ── Purpose-Locked Governance Workflow tables ──────────────────────────────────
+
+export const purposeCharters = pgTable("purpose_charters", {
+  id:                          serial("id").primaryKey(),
+  ventureId:                   text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  protectedPurposeStatement:   text("protectedPurposeStatement").notNull(),
+  founderIntentStatement:      text("founderIntentStatement"),
+  beneficialPurpose:           text("beneficialPurpose"),
+  stakeholderCommitments:      text("stakeholderCommitments"),   // JSON array
+  nonNegotiablePrinciples:     text("nonNegotiablePrinciples"),  // JSON array
+  versionNumber:               integer("versionNumber").notNull().default(1),
+  approvalStatus:              text("approvalStatus").notNull().default("draft"),
+  approvedBy:                  text("approvedBy"),
+  approvedAt:                  timestamp("approvedAt", { withTimezone: true }),
+  reviewDueDate:               date("reviewDueDate"),
+  createdBy:                   text("createdBy"),
+  createdAt:                   timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:                   timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+});
+export type PurposeCharter = typeof purposeCharters.$inferSelect;
+export type InsertPurposeCharter = typeof purposeCharters.$inferInsert;
+
+export const missionLocks = pgTable("mission_locks", {
+  id:                   serial("id").primaryKey(),
+  ventureId:            text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  lockType:             text("lockType").notNull(),
+  lockDescription:      text("lockDescription").notNull(),
+  legalStatus:          text("legalStatus"),
+  implementationStatus: text("implementationStatus").notNull().default("not_started"),
+  responsibleOwner:     text("responsibleOwner"),
+  evidenceDocumentUrl:  text("evidenceDocumentUrl"),
+  reviewDate:           date("reviewDate"),
+  createdAt:            timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:            timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+});
+export type MissionLock = typeof missionLocks.$inferSelect;
+export type InsertMissionLock = typeof missionLocks.$inferInsert;
+
+export const governanceStructures = pgTable("governance_structures", {
+  id:                   serial("id").primaryKey(),
+  ventureId:            text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  structureType:        text("structureType").notNull(),
+  rationale:            text("rationale"),
+  risks:                text("risks"),
+  controls:             text("controls"),
+  implementationStatus: text("implementationStatus").notNull().default("not_started"),
+  createdAt:            timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:            timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+});
+export type GovernanceStructure = typeof governanceStructures.$inferSelect;
+
+export const governanceDirectors = pgTable("governance_directors", {
+  id:                        serial("id").primaryKey(),
+  ventureId:                 text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  userId:                    integer("userId").references(() => users.id),
+  fullName:                  text("fullName").notNull(),
+  role:                      text("role").notNull().default("non_executive_director"),
+  appointmentDate:           date("appointmentDate"),
+  missionAlignmentScore:     integer("missionAlignmentScore"),
+  conflictOfInterestStatus:  text("conflictOfInterestStatus").notNull().default("none"),
+  votingRights:              boolean("votingRights").notNull().default(true),
+  removalProtection:         boolean("removalProtection").notNull().default(false),
+  pledgeSigned:              boolean("pledgeSigned").notNull().default(false),
+  notes:                     text("notes"),
+  createdAt:                 timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:                 timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+});
+export type GovernanceDirector = typeof governanceDirectors.$inferSelect;
+export type InsertGovernanceDirector = typeof governanceDirectors.$inferInsert;
+
+export const boardPledges = pgTable("board_pledges", {
+  id:                 serial("id").primaryKey(),
+  ventureId:          text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  directorId:         integer("directorId").references(() => governanceDirectors.id),
+  pledgeText:         text("pledgeText").notNull(),
+  signedStatus:       text("signedStatus").notNull().default("pending"),
+  signedAt:           timestamp("signedAt", { withTimezone: true }),
+  expiryOrReviewDate: date("expiryOrReviewDate"),
+  breachStatus:       text("breachStatus").notNull().default("none"),
+  createdAt:          timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:          timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+});
+export type BoardPledge = typeof boardPledges.$inferSelect;
+export type InsertBoardPledge = typeof boardPledges.$inferInsert;
+
+export const reservedMatters = pgTable("reserved_matters", {
+  id:                  serial("id").primaryKey(),
+  ventureId:           text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  matterCategory:      text("matterCategory").notNull(),
+  matterTitle:         text("matterTitle").notNull(),
+  matterDescription:   text("matterDescription"),
+  approvalThreshold:   text("approvalThreshold"),
+  requiredApprovers:   text("requiredApprovers"),  // JSON array
+  escalationPath:      text("escalationPath"),
+  status:              text("status").notNull().default("active"),
+  createdAt:           timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:           timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+});
+export type ReservedMatter = typeof reservedMatters.$inferSelect;
+export type InsertReservedMatter = typeof reservedMatters.$inferInsert;
+
+export const investorAlignment = pgTable("investor_alignment", {
+  id:                        serial("id").primaryKey(),
+  ventureId:                 text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  invContactId:              integer("invContactId"),
+  investorName:              text("investorName").notNull(),
+  investorType:              text("investorType"),
+  capitalAmount:             numeric("capitalAmount", { precision: 15, scale: 2 }),
+  timeHorizon:               text("timeHorizon"),
+  exitExpectation:           text("exitExpectation"),
+  controlRightsRequested:    text("controlRightsRequested"),  // JSON array
+  liquidationPreference:     text("liquidationPreference"),
+  boardSeatRequested:        boolean("boardSeatRequested").notNull().default(false),
+  missionAlignmentScore:     integer("missionAlignmentScore"),
+  controlRiskRating:         text("controlRiskRating"),
+  capitalPressureIndicator:  text("capitalPressureIndicator"),
+  missionDriftRisk:          text("missionDriftRisk"),
+  recommendedDecision:       text("recommendedDecision"),
+  requiredActions:           text("requiredActions"),  // JSON array
+  approvalStatus:            text("approvalStatus").notNull().default("under_review"),
+  rejectionReason:           text("rejectionReason"),
+  createdAt:                 timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:                 timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+});
+export type InvestorAlignment = typeof investorAlignment.$inferSelect;
+export type InsertInvestorAlignment = typeof investorAlignment.$inferInsert;
+
+export const capitalDecisionLog = pgTable("capital_decision_log", {
+  id:                           serial("id").primaryKey(),
+  ventureId:                    text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  investorAlignmentId:          integer("investorAlignmentId").references(() => investorAlignment.id),
+  decisionType:                 text("decisionType").notNull(),
+  decisionSummary:              text("decisionSummary").notNull(),
+  purposeAlignmentAssessment:   text("purposeAlignmentAssessment"),
+  financialImpact:              text("financialImpact"),
+  governanceImpact:             text("governanceImpact"),
+  approvedBy:                   text("approvedBy"),
+  decisionDate:                 date("decisionDate").notNull(),
+  conditionsAttached:           text("conditionsAttached"),
+  decisionStatus:               text("decisionStatus").notNull().default("pending"),
+  createdAt:                    timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:                    timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+});
+export type CapitalDecisionLog = typeof capitalDecisionLog.$inferSelect;
+export type InsertCapitalDecisionLog = typeof capitalDecisionLog.$inferInsert;
+
+export const governanceReviewCycles = pgTable("governance_review_cycles", {
+  id:                          serial("id").primaryKey(),
+  ventureId:                   text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  reviewType:                  text("reviewType").notNull(),
+  reviewPeriod:                text("reviewPeriod").notNull(),
+  reviewer:                    text("reviewer"),
+  findings:                    text("findings"),
+  redFlags:                    text("redFlags"),
+  correctiveActionsRequired:   text("correctiveActionsRequired"),
+  reviewStatus:                text("reviewStatus").notNull().default("scheduled"),
+  nextReviewDate:              date("nextReviewDate"),
+  completedAt:                 timestamp("completedAt", { withTimezone: true }),
+  createdAt:                   timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:                   timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+});
+export type GovernanceReviewCycle = typeof governanceReviewCycles.$inferSelect;
+export type InsertGovernanceReviewCycle = typeof governanceReviewCycles.$inferInsert;
+
+export const purposeMetrics = pgTable("purpose_metrics", {
+  id:                  serial("id").primaryKey(),
+  ventureId:           text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  metricName:          text("metricName").notNull(),
+  metricCategory:      text("metricCategory").notNull(),
+  targetValue:         numeric("targetValue"),
+  currentValue:        numeric("currentValue"),
+  unit:                text("unit"),
+  trend:               text("trend"),
+  riskThreshold:       numeric("riskThreshold"),
+  dataSource:          text("dataSource"),
+  reportingFrequency:  text("reportingFrequency"),
+  lastUpdatedAt:       timestamp("lastUpdatedAt", { withTimezone: true }),
+  createdAt:           timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:           timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+});
+export type PurposeMetric = typeof purposeMetrics.$inferSelect;
+export type InsertPurposeMetric = typeof purposeMetrics.$inferInsert;
+
+export const purposeDriftDetections = pgTable("purpose_drift_detections", {
+  id:             serial("id").primaryKey(),
+  ventureId:      text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  triggerSource:  text("triggerSource").notNull(),
+  driftCategory:  text("driftCategory").notNull(),
+  severity:       text("severity").notNull(),
+  evidence:       text("evidence"),
+  detectedAt:     timestamp("detectedAt", { withTimezone: true }).notNull().defaultNow(),
+  assignedTo:     text("assignedTo"),
+  status:         text("status").notNull().default("open"),
+  resolvedAt:     timestamp("resolvedAt", { withTimezone: true }),
+  createdAt:      timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:      timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+});
+export type PurposeDriftDetection = typeof purposeDriftDetections.$inferSelect;
+export type InsertPurposeDriftDetection = typeof purposeDriftDetections.$inferInsert;
+
+export const correctiveGovernanceActions = pgTable("corrective_governance_actions", {
+  id:                     serial("id").primaryKey(),
+  ventureId:              text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  driftId:                integer("driftId").references(() => purposeDriftDetections.id),
+  actionType:             text("actionType").notNull(),
+  actionDescription:      text("actionDescription").notNull(),
+  owner:                  text("owner").notNull(),
+  deadline:               date("deadline"),
+  boardApprovalRequired:  boolean("boardApprovalRequired").notNull().default(false),
+  boardApprovedAt:        timestamp("boardApprovedAt", { withTimezone: true }),
+  status:                 text("status").notNull().default("open"),
+  completionEvidence:     text("completionEvidence"),
+  completedAt:            timestamp("completedAt", { withTimezone: true }),
+  createdAt:              timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:              timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+});
+export type CorrectiveGovernanceAction = typeof correctiveGovernanceActions.$inferSelect;
+export type InsertCorrectiveGovernanceAction = typeof correctiveGovernanceActions.$inferInsert;
+
+export const governanceDocuments = pgTable("governance_documents", {
+  id:                  serial("id").primaryKey(),
+  ventureId:           text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  documentType:        text("documentType").notNull(),
+  documentTitle:       text("documentTitle").notNull(),
+  version:             integer("version").notNull().default(1),
+  status:              text("status").notNull().default("draft"),
+  fileUrl:             text("fileUrl"),
+  approvalDate:        date("approvalDate"),
+  expiryOrReviewDate:  date("expiryOrReviewDate"),
+  uploadedBy:          text("uploadedBy"),
+  createdAt:           timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:           timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+});
+export type GovernanceDocument = typeof governanceDocuments.$inferSelect;
+export type InsertGovernanceDocument = typeof governanceDocuments.$inferInsert;
+
+export const governanceMaturityScores = pgTable("governance_maturity_scores", {
+  id:                      serial("id").primaryKey(),
+  ventureId:               text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  scoreDate:               date("scoreDate").notNull(),
+  charterScore:            integer("charterScore").notNull().default(0),
+  missionLockScore:        integer("missionLockScore").notNull().default(0),
+  articlesScore:           integer("articlesScore").notNull().default(0),
+  boardPledgeScore:        integer("boardPledgeScore").notNull().default(0),
+  reservedMattersScore:    integer("reservedMattersScore").notNull().default(0),
+  investorPolicyScore:     integer("investorPolicyScore").notNull().default(0),
+  purposeMetricsScore:     integer("purposeMetricsScore").notNull().default(0),
+  reviewCycleScore:        integer("reviewCycleScore").notNull().default(0),
+  correctiveActionScore:   integer("correctiveActionScore").notNull().default(0),
+  totalScore:              integer("totalScore").notNull().default(0),
+  maturityBand:            text("maturityBand"),
+  status:                  text("status"),
+  recommendation:          text("recommendation"),
+  computedAt:              timestamp("computedAt", { withTimezone: true }).notNull().defaultNow(),
+  createdAt:               timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+});
+export type GovernanceMaturityScore = typeof governanceMaturityScores.$inferSelect;
