@@ -14,6 +14,8 @@ import { SelectedVentureProvider } from "./contexts/SelectedVentureContext";
 import Sidebar from "./components/Sidebar";
 import Home from "./pages/Home";
 import VentureDetail from "./pages/VentureDetail";
+import DecisionGate from "./pages/ventures/DecisionGate";
+import VentureArchive from "./pages/ventures/VentureArchive";
 import VrlAnalytics from "./pages/VrlAnalytics";
 import VrlAssessmentForm from "./pages/VrlAssessmentForm";
 import VrlResults from "./pages/VrlResults";
@@ -286,6 +288,11 @@ function Router() {
       <Route path="/governance/audit" component={GovernanceHub} />
       <Route path="/governance/ip" component={IpManagement} />
       <Route path="/governance/legal" component={LegalContracts} />
+      {/* Decision Gate + Venture Archive */}
+      <Route path="/decision-gate" component={DecisionGate} />
+      <Route path="/ventures/archive" component={VentureArchive} />
+      <Route path="/ventures/:id/decision" component={DecisionGate} />
+      <Route path="/ventures/:id/archive" component={VentureArchive} />
       {/* Command Centre extras */}
       <Route path="/venture-status" component={VentureStatus} />
       <Route path="/alerts" component={AlertsApprovals} />

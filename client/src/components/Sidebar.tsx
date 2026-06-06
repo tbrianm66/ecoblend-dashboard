@@ -22,6 +22,7 @@ import {
   ChevronDown, ChevronRight, Bell, X,
   Target, Compass, Building2, Shield, Map, HandCoins,
   UserCheck, Brain, GitBranch, Sliders, CheckSquare,
+  ShieldCheck, Archive,
 } from "lucide-react";
 import { useVentures } from "@/contexts/VentureContext";
 import GlobalVentureSelector from "@/components/GlobalVentureSelector";
@@ -42,6 +43,7 @@ const iconMap: Record<string, React.ComponentType<{ size?: number; className?: s
   BookOpenCheck, LayoutTemplate, Plug, Code2, SlidersHorizontal,
   Target, Compass, Building2, Shield, Map, HandCoins,
   UserCheck, Brain, GitBranch, Sliders, CheckSquare,
+  ShieldCheck, Archive,
 };
 
 interface NavItem {
@@ -72,6 +74,8 @@ const NAV_GROUPS: NavGroup[] = [
       { id: "cc-pipeline",  label: "Opportunity Pipeline", icon: "Lightbulb",       href: "/pipeline" },
       { id: "cc-status",    label: "Venture Status",       icon: "Target",          href: "/venture-status" },
       { id: "cc-alerts",    label: "Alerts & Approvals",   icon: "AlertTriangle",   href: "/alerts" },
+      { id: "cc-decision",  label: "Decision Gate",        icon: "ShieldCheck",     href: "/decision-gate" },
+      { id: "cc-archive",   label: "Venture Archive",      icon: "Archive",         href: "/ventures/archive" },
     ],
   },
   {

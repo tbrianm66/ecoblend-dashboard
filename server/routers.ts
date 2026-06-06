@@ -229,6 +229,7 @@ import { commandCentreLeanRouter } from "./commandCentre.lean.router";
 import { wtpRouter } from "./wtp.router";
 import { leanCanvasRouter } from "./leanCanvas.router";
 import { productMilestonesRouter } from "./productMilestones.router";
+import { decisionGateRouter } from "./decisionGate.router";
 
 export const appRouter = router({
   discoveryMarket: discoveryMarketRouter,
@@ -236,6 +237,7 @@ export const appRouter = router({
   wtp: wtpRouter,
   leanCanvas: leanCanvasRouter,
   productMilestones: productMilestonesRouter,
+  decisionGate: decisionGateRouter,
   startupFailureRisk: startupFailureRiskRouter,
   system: systemRouter,
   coaching: coachingRouter,
