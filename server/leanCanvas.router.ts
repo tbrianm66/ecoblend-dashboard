@@ -156,6 +156,7 @@ export const leanCanvasRouter = router({
         .where(eq(ventures.id, input.ventureId));
 
       // ── Pivot detection: write pivot_log when tracked fields change ───────
+      let pivotLogged = false;
       if (prevRow && nextVersion > 1) {
         for (const { key, pivotType } of PIVOT_FIELDS) {
           const prevVal = (prevRow as any)[key] ?? null;
@@ -170,8 +171,18 @@ export const leanCanvasRouter = router({
               loggedBy:           input.loggedBy ?? input.createdBy ?? null,
               canvasVersion:      nextVersion,
             });
+            pivotLogged = true;
           }
         }
+      }
+
+      // ── Auto-clear pivotRequired once a pivot_log entry is written ────────
+      // A canvas revision that records a hypothesis change resolves the pivot flag.
+      if (pivotLogged) {
+        await db
+          .update(ventures)
+          .set({ pivotRequired: false, pivotReason: null, updatedAt: new Date() })
+          .where(eq(ventures.id, input.ventureId));
       }
 
       return inserted[0];

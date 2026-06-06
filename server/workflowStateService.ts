@@ -9,6 +9,7 @@ import {
   wtpTests,
   experiments,
   ventureArchive,
+  pivotLog,
 } from "../drizzle/schema";
 import { getDb } from "./db";
 import {
@@ -106,10 +107,10 @@ export class WorkflowStateService {
       }
     }
 
-    // Exit criterion: minimum solution validation rate
+    // Exit criterion: minimum solution validation rate + veto gate
     if (criteria.minValidationRate !== undefined) {
       const rows = await db
-        .select({ outcome: experiments.outcome })
+        .select({ id: experiments.id, title: experiments.title, outcome: experiments.outcome, createdAt: experiments.createdAt })
         .from(experiments)
         .where(
           and(
@@ -117,12 +118,68 @@ export class WorkflowStateService {
             sql`${experiments.outcome} IS NOT NULL`,
           ),
         );
-      const validated = rows.filter(r => r.outcome?.toLowerCase() === "pass").length;
+
+      // Normalise: accept "validated" or "pass" as confirmed; "invalidated" or "fail" as vetoed
+      const isValidated   = (oc: string | null | undefined) => {
+        const v = oc?.toLowerCase();
+        return v === "pass" || v === "validated";
+      };
+      const isInvalidated = (oc: string | null | undefined) => {
+        const v = oc?.toLowerCase();
+        return v === "fail" || v === "invalidated";
+      };
+
+      const validated = rows.filter(r => isValidated(r.outcome)).length;
       const rate = rows.length > 0 ? validated / rows.length : 0;
       if (rate < criteria.minValidationRate) {
         blockers.push(
           `Experiment validation rate ${(rate * 100).toFixed(0)}% is below the required ` +
           `${(criteria.minValidationRate * 100).toFixed(0)}% to exit "${currentStage}".`,
+        );
+      }
+
+      // ── Veto gate: any single "invalidated" experiment overrides the rate ──
+      // Scope: only experiments created AFTER the most recent pivot_log entry are
+      // considered. A canvas pivot that records a hypothesis change resolves
+      // pre-pivot invalidations; post-pivot invalidations still trigger the veto.
+      const pivotRow = await db
+        .select({ createdAt: ccPivotLogs.dateLogged })
+        .from(ccPivotLogs)
+        .where(eq(ccPivotLogs.ventureId, ventureId))
+        .orderBy(sql`${ccPivotLogs.dateLogged} DESC`)
+        .limit(1);
+
+      // Also check the lean pivot_log for canvas-driven pivots
+      const leanPivotRow = await db
+        .select({ createdAt: pivotLog.createdAt })
+        .from(pivotLog)
+        .where(eq(pivotLog.ventureId, ventureId))
+        .orderBy(sql`${pivotLog.createdAt} DESC`)
+        .limit(1);
+
+      // Use the most recent pivot date from either log
+      const pivotDates = [
+        pivotRow[0]?.createdAt ? new Date(pivotRow[0].createdAt) : null,
+        leanPivotRow[0]?.createdAt ?? null,
+      ].filter(Boolean) as Date[];
+      const lastPivotAt = pivotDates.length > 0
+        ? new Date(Math.max(...pivotDates.map(d => d.getTime())))
+        : null;
+
+      const vetoExps = rows.filter(r => {
+        if (!isInvalidated(r.outcome)) return false;
+        // If a pivot has occurred, only veto on post-pivot experiments
+        if (lastPivotAt && (r as any).createdAt) {
+          return new Date((r as any).createdAt) > lastPivotAt;
+        }
+        return true; // no pivot yet — all invalidated experiments count
+      });
+      if (vetoExps.length > 0) {
+        const names = vetoExps.map(r => `"${r.title}" (id ${r.id})`).join(", ");
+        blockers.push(
+          `Veto gate: ${vetoExps.length} experiment(s) returned an invalidated result ` +
+          `after the last pivot, directly contradicting a success criterion — ${names}. ` +
+          `A further pivot and new canvas version are required before this gate can pass.`,
         );
       }
     }

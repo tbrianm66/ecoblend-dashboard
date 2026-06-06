@@ -1,0 +1,21 @@
+Create the ECOCOMP BioForm synthetic venture (ECOCOMP-002) and run the Step 3 test case in full sequence:
+
+A. Update the concierge_mvp prototype milestone to status="complete". Confirm workflow_stage does NOT advance on build completion alone.
+
+B. Enter all 4 experiments (2 validated, 1 invalidated, 1 inconclusive). For each:
+   - Confirm confidence_level is enforced as a mandatory field (attempt NULL — expect block)
+   - Confirm validated experiments require evidence_uri (attempt validated result with no URI — expect warning)
+   - After Experiment 3 is saved as "invalidated": confirm pivot_required=true is set on the venture AND the "pricing" assumption in opportunities is updated to status="invalidated"
+
+C. Attempt the MVP evidence gate with 50% validation rate. Confirm WorkflowStateService.canAdvanceStage() returns false with a specific error naming Experiment 3 as the blocker. Then separately test: raise validation rate to 75% by changing Exp 4 to "validated" — confirm gate STILL blocks because Exp 3 directly contradicts a success criterion (veto gate logic).
+
+D. Create Lean Canvas v3 with the revised solution hypothesis. Confirm:
+   - 3 rows exist in lean_canvas for this venture (SELECT COUNT — expect 3)
+   - pivot_required clears automatically after pivot_log entry is saved
+   - Attempt to clear pivot_required WITHOUT creating pivot_log — confirm system blocks
+
+E. Enter Experiments 5 and 6 (both validated). Confirm validation rate is now 67%. Attempt the MVP evidence gate — confirm it PASSES. Confirm workflow_stage advances to "operations_mfg". Then test the human review gate: attempt to write the BRL score to venture_scores with human_reviewed_by=NULL — confirm middleware blocks. Retry with reviewer set — confirm write succeeds.
+
+F. Run all 6 SQL verification queries and report PASS/FAIL with exact output or error message for each.
+
+Final summary: report (1) total enforcement blocks that correctly fired, (2) total blocks that failed to fire, (3) total tables/fields that threw exceptions because they were MISSING, (4) any field written as NULL when it should have been blocked.

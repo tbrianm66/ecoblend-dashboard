@@ -557,36 +557,107 @@ export const appRouter = router({
 
     add: publicProcedure
       .input(z.object({
-        ventureId: z.string(),
-        offeringId: z.string().optional(),
-        title: z.string(),
-        hypothesis: z.string().optional(),
-        method: z.string().optional(),
-        result: z.string().optional(),
-        outcome: z.enum(["Pass", "Fail", "Inconclusive", "Pending"]).optional(),
-        trlLevelJustified: z.number().min(1).max(9).optional(),
-        conductedAt: z.date().optional(),
+        ventureId:          z.string(),
+        offeringId:         z.string().optional(),
+        title:              z.string(),
+        hypothesis:         z.string().optional(),
+        method:             z.string().optional(),
+        result:             z.string().optional(),
+        // Accepts legacy Pass/Fail/Inconclusive/Pending AND lean validated/invalidated/inconclusive
+        outcome:            z.enum(["Pass", "Fail", "Inconclusive", "Pending",
+                                    "validated", "invalidated", "inconclusive"]).optional(),
+        // ── Step-3 enforcement: confidence_level is MANDATORY (1-10) ──────────
+        confidenceLevel:    z.number().int().min(1, "confidence_level must be between 1 and 10")
+                             .max(10, "confidence_level must be between 1 and 10"),
+        evidenceUri:        z.string().optional(),
+        opportunityId:      z.number().int().optional(),
+        trlLevelJustified:  z.number().min(1).max(9).optional(),
+        conductedAt:        z.date().optional(),
       }))
       .mutation(async ({ input }) => {
+        const db = await (await import("./db")).getDb();
+        const { experiments: expsTable, ventures: venturesTable, opportunities: oppsTable } =
+          await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const { TRPCError: Err } = await import("@trpc/server");
+
+        const oc = input.outcome?.toLowerCase();
+        const isValidated    = oc === "pass" || oc === "validated";
+        const isInvalidated  = oc === "fail" || oc === "invalidated";
+
+        // ── Warning gate: validated outcome requires evidence URI ─────────────
+        const warning = (isValidated && !input.evidenceUri?.trim())
+          ? "WARNING: outcome is validated but no evidence_uri was provided. " +
+            "Evidence traceability is required for gate review."
+          : null;
+
         await insertExperiment(input as any);
-        return { success: true };
+
+        if (db && isInvalidated) {
+          // Set pivotRequired on the venture
+          await db.update(venturesTable)
+            .set({ pivotRequired: true, pivotReason: `Experiment invalidated: ${input.title}`, updatedAt: new Date() })
+            .where(eq(venturesTable.id, input.ventureId));
+
+          // If linked to an opportunity, mark it as invalidated
+          if (input.opportunityId) {
+            await db.update(oppsTable)
+              .set({ status: "invalidated", updatedAt: new Date() })
+              .where(eq(oppsTable.id, input.opportunityId));
+          }
+        }
+
+        return { success: true, warning };
       }),
 
     update: publicProcedure
       .input(z.object({
-        id: z.number(),
-        title: z.string().optional(),
-        hypothesis: z.string().optional(),
-        method: z.string().optional(),
-        result: z.string().optional(),
-        outcome: z.enum(["Pass", "Fail", "Inconclusive", "Pending"]).optional(),
-        trlLevelJustified: z.number().min(1).max(9).optional(),
-        conductedAt: z.date().optional(),
+        id:                 z.number(),
+        title:              z.string().optional(),
+        hypothesis:         z.string().optional(),
+        method:             z.string().optional(),
+        result:             z.string().optional(),
+        outcome:            z.enum(["Pass", "Fail", "Inconclusive", "Pending",
+                                    "validated", "invalidated", "inconclusive"]).optional(),
+        // ── Step-3 enforcement: if provided, must be 1-10 ────────────────────
+        confidenceLevel:    z.number().int().min(1).max(10).optional(),
+        evidenceUri:        z.string().optional(),
+        opportunityId:      z.number().int().optional(),
+        trlLevelJustified:  z.number().min(1).max(9).optional(),
+        conductedAt:        z.date().optional(),
+        ventureId:          z.string().optional(), // needed for side-effects below
       }))
       .mutation(async ({ input }) => {
-        const { id, ...data } = input;
+        const { id, ventureId, ...data } = input;
+        const db = await (await import("./db")).getDb();
+        const { ventures: venturesTable, opportunities: oppsTable } =
+          await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+
+        const oc = input.outcome?.toLowerCase();
+        const isValidated   = oc === "pass" || oc === "validated";
+        const isInvalidated = oc === "fail" || oc === "invalidated";
+
+        const warning = (isValidated && !input.evidenceUri?.trim())
+          ? "WARNING: outcome is validated but no evidence_uri was provided. " +
+            "Evidence traceability is required for gate review."
+          : null;
+
         await updateExperiment(id, data as any);
-        return { success: true };
+
+        if (db && isInvalidated && ventureId) {
+          await db.update(venturesTable)
+            .set({ pivotRequired: true, pivotReason: `Experiment invalidated: ${input.title ?? id}`, updatedAt: new Date() })
+            .where(eq(venturesTable.id, ventureId));
+
+          if (input.opportunityId) {
+            await db.update(oppsTable)
+              .set({ status: "invalidated", updatedAt: new Date() })
+              .where(eq(oppsTable.id, input.opportunityId));
+          }
+        }
+
+        return { success: true, warning };
       }),
 
     delete: publicProcedure

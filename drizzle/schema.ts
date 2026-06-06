@@ -207,6 +207,15 @@ export const experiments = pgTable("experiments", {
   method: text("method"),
   result: text("result"),
   outcome: text("outcome").default("Pending"),
+  // ── Step-3 enforcement fields ──────────────────────────────────────────────
+  // confidence_level: 1-10 integer, mandatory. Router blocks NULL/missing.
+  confidenceLevel: integer("confidenceLevel").default(5).notNull(),
+  // evidence_uri: required when outcome is validated/Pass (router warns if absent)
+  evidenceUri: text("evidenceUri"),
+  // opportunityId: optional FK to opportunities.id — used to mark assumption as
+  // invalidated when the experiment outcome is "invalidated" or "Fail"
+  opportunityId: integer("opportunityId"),
+  // ── end Step-3 enforcement fields ─────────────────────────────────────────
   trlLevelJustified: integer("trlLevelJustified"),  // TRL level this experiment supports
   offeringId: varchar("offeringId", { length: 36 }),
   conductedAt: timestamp("conductedAt"),
