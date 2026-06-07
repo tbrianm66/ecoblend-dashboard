@@ -287,7 +287,7 @@ export const appRouter = router({
 
   // ── Ventures ────────────────────────────────────────────────────────────────
   ventures: router({
-    list: protectedProcedure.query(async () => {
+    list: publicProcedure.query(async () => {
       return getAllVentures();
     }),
 
@@ -4548,7 +4548,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
     }),
 
   // Portfolio summary
-  portfolioSummary: protectedProcedure
+  portfolioSummary: publicProcedure
     .query(() => getPmPortfolioSummary()),
   }),
 
