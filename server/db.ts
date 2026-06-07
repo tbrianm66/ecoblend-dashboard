@@ -1,6 +1,6 @@
 import { eq, desc, and, inArray, gt } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
-import mysql from "mysql2/promise";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
 import {
   InsertUser,
   InsertContractDocument,
@@ -66,18 +66,11 @@ let _db: ReturnType<typeof drizzle> | null = null;
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      const url = process.env.DATABASE_URL;
-      const parsed = new URL(url.split('?')[0]);
-      // TiDB Cloud uses MySQL protocol — use mysql2 driver
-      const pool = mysql.createPool({
-        host: parsed.hostname,
-        port: parseInt(parsed.port) || 4000,
-        user: parsed.username,
-        password: parsed.password,
-        database: parsed.pathname.slice(1),
-        ssl: { rejectUnauthorized: true },
-        waitForConnections: true,
-        connectionLimit: 10,
+      const pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: process.env.NODE_ENV === "production"
+          ? { rejectUnauthorized: false }
+          : undefined,
       });
       _db = drizzle(pool);
     } catch (error) {

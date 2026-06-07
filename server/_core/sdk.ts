@@ -256,7 +256,35 @@ class SDKServer {
     } as GetUserInfoWithJwtResponse;
   }
 
+  /**
+   * Dev-mode: create or fetch a local admin user when no OAuth server is configured.
+   * This path is only reachable in non-production environments.
+   */
+  private async getOrCreateDevUser(): Promise<User> {
+    const DEV_OPEN_ID = "dev-local-admin";
+    let user = await db.getUserByOpenId(DEV_OPEN_ID);
+    if (!user) {
+      await db.upsertUser({
+        openId: DEV_OPEN_ID,
+        name: "Dev Admin",
+        email: "dev@ecoblend.local",
+        loginMethod: "dev",
+        lastSignedIn: new Date(),
+        role: "admin",
+      });
+      user = await db.getUserByOpenId(DEV_OPEN_ID);
+    }
+    if (!user) throw ForbiddenError("Dev user creation failed");
+    return user;
+  }
+
   async authenticateRequest(req: Request): Promise<User> {
+    // Dev-mode bypass: when no OAuth server is configured and not in production,
+    // auto-authenticate as a local admin so the app is usable without OAuth setup.
+    if (!ENV.oAuthServerUrl && !ENV.isProduction) {
+      return this.getOrCreateDevUser();
+    }
+
     // Regular authentication flow
     const cookies = this.parseCookies(req.headers.cookie);
     const sessionCookie = cookies.get(COOKIE_NAME);
