@@ -7579,3 +7579,70 @@ export const governanceMaturityScores = pgTable("governance_maturity_scores", {
   createdAt:               timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
 });
 export type GovernanceMaturityScore = typeof governanceMaturityScores.$inferSelect;
+
+// ── Mission Protection Framework Tables ──────────────────────────────────────
+
+export const missionIntegrityScores = pgTable("mission_integrity_scores", {
+  id:                          text("id").primaryKey(),
+  ventureId:                   text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  overallScore:                integer("overallScore").notNull().default(0),
+  financialVsMissionDrift:     integer("financialVsMissionDrift").notNull().default(0),
+  stakeholderAlignmentScore:   integer("stakeholderAlignmentScore").notNull().default(0),
+  governanceStrengthScore:     integer("governanceStrengthScore").notNull().default(0),
+  leadershipContinuityScore:   integer("leadershipContinuityScore").notNull().default(0),
+  missionDriftTrend:           text("missionDriftTrend").notNull().default("Stable"),
+  lastAssessmentAt:            timestamp("lastAssessmentAt", { withTimezone: true }),
+  createdAt:                   timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:                   timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+});
+export type MissionIntegrityScore = typeof missionIntegrityScores.$inferSelect;
+
+export const missionDriftAlerts = pgTable("mission_drift_alerts", {
+  id:                text("id").primaryKey(),
+  ventureId:         text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  alertType:         text("alertType").notNull(),
+  severity:          text("severity").notNull().default("Medium"),
+  description:       text("description"),
+  evidence:          text("evidence"),
+  recommendedAction: text("recommendedAction"),
+  status:            text("status").notNull().default("Active"),
+  resolvedAt:        timestamp("resolvedAt", { withTimezone: true }),
+  resolvedBy:        text("resolvedBy"),
+  createdAt:         timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:         timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+});
+export type MissionDriftAlert = typeof missionDriftAlerts.$inferSelect;
+
+export const successionPlans = pgTable("succession_plans", {
+  id:                         text("id").primaryKey(),
+  ventureId:                  text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  potentialSuccessors:        json("potentialSuccessors"),
+  founderIntentDocumented:    boolean("founderIntentDocumented").notNull().default(false),
+  founderIntentSummary:       text("founderIntentSummary"),
+  institutionalMemorySystem:  boolean("institutionalMemorySystem").notNull().default(false),
+  missionCodexDocument:       text("missionCodexDocument"),
+  keyDecisionFrameworks:      text("keyDecisionFrameworks"),
+  coreValuesDocumented:       text("coreValuesDocumented"),
+  successionReadinessScore:   integer("successionReadinessScore").notNull().default(0),
+  lastUpdatedAt:              timestamp("lastUpdatedAt", { withTimezone: true }),
+  createdAt:                  timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:                  timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+});
+export type SuccessionPlan = typeof successionPlans.$inferSelect;
+
+export const stakeholderProfiles = pgTable("stakeholder_profiles", {
+  id:                   text("id").primaryKey(),
+  ventureId:            text("ventureId").notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  stakeholderType:      text("stakeholderType").notNull().default("Employee"),
+  name:                 text("name").notNull(),
+  role:                 text("role"),
+  primaryIncentive:     text("primaryIncentive"),
+  missionAlignment:     integer("missionAlignment"),
+  financialAlignment:   integer("financialAlignment"),
+  feedbackScore:        integer("feedbackScore"),
+  conflictRisk:         text("conflictRisk").notNull().default("Low"),
+  conflictDescription:  text("conflictDescription"),
+  createdAt:            timestamp("createdAt", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:            timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
+});
+export type StakeholderProfile = typeof stakeholderProfiles.$inferSelect;
