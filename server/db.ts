@@ -141,8 +141,13 @@ export async function deleteContractDocument(id: number) {
 // ── Ventures ──────────────────────────────────────────────────────────────────
 export async function getAllVentures() {
   const db = await getDb();
-  if (!db) return [];
-  return db.select().from(ventures).orderBy(ventures.createdAt);
+  if (!db) {
+    console.log("[getAllVentures] DB unavailable — returning []");
+    return [];
+  }
+  const rows = await db.select().from(ventures).orderBy(ventures.createdAt);
+  console.log(`[getAllVentures] raw DB result: ${rows.length} row(s)`, rows.map(v => ({ id: v.id, name: v.name, isInternalLab: v.isInternalLab })));
+  return rows;
 }
 
 export async function getVentureById(id: string) {

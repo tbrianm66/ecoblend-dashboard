@@ -230,28 +230,40 @@ function buildStageGateContext(
 }
 
 async function loadVentureBundle(d: Db, ventureId: string): Promise<VentureBundle | null> {
-  const [venture] = await d.select().from(ventures).where(eq(ventures.id, ventureId));
-  if (!venture) return null;
-  const [hyp, exp, ev, dec, rev, iv, cp, sg, wt, rk] = await Promise.all([
-    d.select().from(ccHypotheses).where(eq(ccHypotheses.ventureId, ventureId)),
-    d.select().from(ccExperiments).where(eq(ccExperiments.ventureId, ventureId)),
-    d.select().from(ccEvidence).where(eq(ccEvidence.ventureId, ventureId)),
-    d.select().from(ccDecisions).where(eq(ccDecisions.ventureId, ventureId)),
-    d.select().from(ccStageGateReviews).where(eq(ccStageGateReviews.ventureId, ventureId)),
-    d.select().from(customerInterviews).where(eq(customerInterviews.ventureId, ventureId)),
-    d.select().from(dmCompetitors).where(eq(dmCompetitors.ventureId, ventureId)),
-    d.select().from(demandSignals).where(eq(demandSignals.ventureId, ventureId)),
-    d.select().from(wtpTests).where(eq(wtpTests.ventureId, ventureId)),
-    d.select().from(marketRisks).where(eq(marketRisks.ventureId, ventureId)),
-  ]);
-  return { venture, hypotheses: hyp, experiments: exp, evidence: ev, decisions: dec, reviews: rev, interviews: iv, competitors: cp, signals: sg, wtps: wt, risks: rk };
+  try {
+    const [venture] = await d.select().from(ventures).where(eq(ventures.id, ventureId));
+    if (!venture) {
+      console.log(`[loadVentureBundle] venture not found for id="${ventureId}"`);
+      return null;
+    }
+    const [hyp, exp, ev, dec, rev, iv, cp, sg, wt, rk] = await Promise.all([
+      d.select().from(ccHypotheses).where(eq(ccHypotheses.ventureId, ventureId)),
+      d.select().from(ccExperiments).where(eq(ccExperiments.ventureId, ventureId)),
+      d.select().from(ccEvidence).where(eq(ccEvidence.ventureId, ventureId)),
+      d.select().from(ccDecisions).where(eq(ccDecisions.ventureId, ventureId)),
+      d.select().from(ccStageGateReviews).where(eq(ccStageGateReviews.ventureId, ventureId)),
+      d.select().from(customerInterviews).where(eq(customerInterviews.ventureId, ventureId)),
+      d.select().from(dmCompetitors).where(eq(dmCompetitors.ventureId, ventureId)),
+      d.select().from(demandSignals).where(eq(demandSignals.ventureId, ventureId)),
+      d.select().from(wtpTests).where(eq(wtpTests.ventureId, ventureId)),
+      d.select().from(marketRisks).where(eq(marketRisks.ventureId, ventureId)),
+    ]);
+    return { venture, hypotheses: hyp, experiments: exp, evidence: ev, decisions: dec, reviews: rev, interviews: iv, competitors: cp, signals: sg, wtps: wt, risks: rk };
+  } catch (err) {
+    console.error(`[loadVentureBundle] ERROR for ventureId="${ventureId}":`, err);
+    return null;
+  }
 }
 
 async function loadAllBundles(d: Db): Promise<VentureBundle[]> {
   const vs = await d.select().from(ventures);
+  console.log(`[loadAllBundles] raw ventures from DB: ${vs.length}`, vs.map(v => ({ id: v.id, name: v.name, isInternalLab: v.isInternalLab })));
   const portfolio = vs.filter((v) => !v.isInternalLab);
+  console.log(`[loadAllBundles] after isInternalLab filter: ${portfolio.length}`);
   const bundles = await Promise.all(portfolio.map((v) => loadVentureBundle(d, v.id)));
-  return bundles.filter((b): b is VentureBundle => b !== null);
+  const valid = bundles.filter((b): b is VentureBundle => b !== null);
+  console.log(`[loadAllBundles] valid bundles returned: ${valid.length}`);
+  return valid;
 }
 
 /** Idempotently sync auto-generated alerts for a venture (upsert by dedupeKey). */

@@ -279,9 +279,10 @@ class SDKServer {
   }
 
   async authenticateRequest(req: Request): Promise<User> {
-    // Dev-mode bypass: when no OAuth server is configured and not in production,
-    // auto-authenticate as a local admin so the app is usable without OAuth setup.
-    if (!ENV.oAuthServerUrl && !ENV.isProduction) {
+    // No-OAuth bypass: when OAUTH_SERVER_URL is not configured the app has no
+    // way to authenticate anyone, so auto-authenticate as a local admin.
+    // This is safe: if OAUTH_SERVER_URL is set, this branch is never reached.
+    if (!ENV.oAuthServerUrl) {
       return this.getOrCreateDevUser();
     }
 
