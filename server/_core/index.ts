@@ -58,12 +58,13 @@ const scriptSrc = [
 ].filter(Boolean).join(" ");
 
 const CSP = [
-  "default-src 'none'",
+  "default-src 'self'",
   `script-src ${scriptSrc}`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' https://fonts.gstatic.com",
+  "font-src 'self' data: https://fonts.gstatic.com",
+  "manifest-src 'self'",
   "img-src 'self' data: blob: https://d2xsxph8kpxj0f.cloudfront.net https://maps.googleapis.com https://maps.gstatic.com",
-  "connect-src 'self' https://forge.butterfly-effect.dev",
+  "connect-src 'self' https://forge.butterfly-effect.dev https://www.ecoblend.io https://ecoblend.io",
   "worker-src blob:",
   "frame-ancestors 'none'",
   "base-uri 'self'",
