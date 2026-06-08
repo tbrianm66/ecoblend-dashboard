@@ -7646,3 +7646,89 @@ export const stakeholderProfiles = pgTable("stakeholder_profiles", {
   updatedAt:            timestamp("updatedAt", { withTimezone: true }).notNull().defaultNow(),
 });
 export type StakeholderProfile = typeof stakeholderProfiles.$inferSelect;
+
+// ============================================================================
+// VENTURE INTAKE — Lean hypothesis-capture layer (Module 2)
+// New tables: vi_ideas, vi_assumptions, vi_riskiest, vi_decisions
+// Reuses: ventures, cc_hypotheses (moduleSource='venture_intake'), lean_canvases
+// ============================================================================
+import { boolean as pgBool } from "drizzle-orm/pg-core";
+
+// -- Venture Ideas -------------------------------------------------------------
+export const viIdeas = pgTable("vi_ideas", {
+  id:                       serial("id").primaryKey(),
+  ventureId:                varchar("ventureId", { length: 64 }).notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  ideaTitle:                varchar("ideaTitle", { length: 255 }).notNull(),
+  ideaSummary:              text("ideaSummary"),
+  originSource:             varchar("originSource", { length: 64 }),
+  targetSector:             varchar("targetSector", { length: 128 }),
+  targetCustomer:           text("targetCustomer"),
+  problemArea:              text("problemArea"),
+  proposedSolution:         text("proposedSolution"),
+  whyNow:                   text("whyNow"),
+  strategicRelevance:       text("strategicRelevance"),
+  sustainabilityRelevance:  text("sustainabilityRelevance"),
+  dataMoatPotential:        text("dataMoatPotential"),
+  founderNotes:             text("founderNotes"),
+  createdAt:                timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:                timestamp("updatedAt").defaultNow().notNull(),
+});
+export type ViIdea = typeof viIdeas.$inferSelect;
+export type InsertViIdea = typeof viIdeas.$inferInsert;
+
+// -- Founder Assumptions -------------------------------------------------------
+export const viAssumptions = pgTable("vi_assumptions", {
+  id:                   serial("id").primaryKey(),
+  ventureId:            varchar("ventureId", { length: 64 }).notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  assumptionTitle:      varchar("assumptionTitle", { length: 255 }).notNull(),
+  assumptionStatement:  text("assumptionStatement").notNull(),
+  assumptionCategory:   varchar("assumptionCategory", { length: 64 }),
+  importanceScore:      integer("importanceScore").default(3),     // 1-5
+  uncertaintyScore:     integer("uncertaintyScore").default(3),    // 1-5
+  evidenceExists:       boolean("evidenceExists").default(false),
+  evidenceSummary:      text("evidenceSummary"),
+  riskLevel:            varchar("riskLevel", { length: 16 }),      // low|medium|high|critical
+  createdAt:            timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:            timestamp("updatedAt").defaultNow().notNull(),
+});
+export type ViAssumption = typeof viAssumptions.$inferSelect;
+export type InsertViAssumption = typeof viAssumptions.$inferInsert;
+
+// -- Riskiest Assumptions ------------------------------------------------------
+export const viRiskiest = pgTable("vi_riskiest", {
+  id:                          serial("id").primaryKey(),
+  ventureId:                   varchar("ventureId", { length: 64 }).notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  assumptionId:                integer("assumptionId"),
+  hypothesisId:                integer("hypothesisId"),
+  assumptionStatement:         text("assumptionStatement").notNull(),
+  reasonItIsRisky:             text("reasonItIsRisky"),
+  impactIfFalse:               text("impactIfFalse"),
+  evidenceRequired:            text("evidenceRequired"),
+  proposedTest:                text("proposedTest"),
+  testPriorityScore:           integer("testPriorityScore").default(0),  // 0-100
+  recommendedFirstExperiment:  text("recommendedFirstExperiment"),
+  createdAt:                   timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:                   timestamp("updatedAt").defaultNow().notNull(),
+});
+export type ViRiskiest = typeof viRiskiest.$inferSelect;
+export type InsertViRiskiest = typeof viRiskiest.$inferInsert;
+
+// -- Intake Decisions ----------------------------------------------------------
+export const viDecisions = pgTable("vi_decisions", {
+  id:                          serial("id").primaryKey(),
+  ventureId:                   varchar("ventureId", { length: 64 }).notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  decisionType:                varchar("decisionType", { length: 64 }),
+  decisionSummary:             text("decisionSummary"),
+  readinessScore:              integer("readinessScore").default(0),       // 0-100
+  assumptionRiskScore:         integer("assumptionRiskScore").default(0),  // 0-100
+  strategicFitScore:           integer("strategicFitScore").default(0),    // 0-100
+  evidenceGapSummary:          text("evidenceGapSummary"),
+  recommendedNextModule:       varchar("recommendedNextModule", { length: 64 }),
+  recommendedFirstExperiment:  text("recommendedFirstExperiment"),
+  decisionStatus:              varchar("decisionStatus", { length: 32 }).default("pending_review"),
+  reviewerNotes:               text("reviewerNotes"),
+  createdAt:                   timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:                   timestamp("updatedAt").defaultNow().notNull(),
+});
+export type ViDecision = typeof viDecisions.$inferSelect;
+export type InsertViDecision = typeof viDecisions.$inferInsert;

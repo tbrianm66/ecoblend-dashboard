@@ -247,6 +247,7 @@ import { wtpRouter } from "./wtp.router";
 import { leanCanvasRouter } from "./leanCanvas.router";
 import { productMilestonesRouter } from "./productMilestones.router";
 import { decisionGateRouter } from "./decisionGate.router";
+import { intakeRouter } from "./intake.router";
 
 export const appRouter = router({
   discoveryMarket: discoveryMarketRouter,
