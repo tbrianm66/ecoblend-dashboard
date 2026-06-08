@@ -95,8 +95,11 @@ import PipelineTabs from "./pages/command/PipelineTabs";
 import VentureStatus from "./pages/command/VentureStatus";
 import AlertsApprovals from "./pages/command/AlertsApprovals";
 import VentureIntake from "./pages/VentureIntake";
-import ProblemStatement from "./pages/ProblemStatement";
-import HypothesisRegister from "./pages/HypothesisRegister";
+import IdeaCapture from "./pages/intake/IdeaCapture";
+import FounderAssumptions from "./pages/intake/FounderAssumptions";
+import IntakeHypotheses from "./pages/intake/IntakeHypotheses";
+import RiskiestAssumption from "./pages/intake/RiskiestAssumption";
+import IntakeDecision from "./pages/intake/IntakeDecision";
 import CustomerDiscovery from "./pages/discovery/CustomerDiscovery";
 import CompetitorMapping from "./pages/discovery/CompetitorMapping";
 import DemandSignals from "./pages/discovery/DemandSignals";
@@ -207,10 +210,11 @@ function Router() {
       {/* ── New Architecture Routes (Modules 2-15) ── */}
       {/* Module 2: Venture Intake */}
       <Route path="/intake" component={VentureIntake} />
-      <Route path="/intake/founder" component={ModulePlaceholder} />
-      <Route path="/intake/strategic-fit" component={ModulePlaceholder} />
-      <Route path="/intake/problem" component={ProblemStatement} />
-      <Route path="/intake/hypotheses" component={HypothesisRegister} />
+      <Route path="/intake/idea-capture" component={IdeaCapture} />
+      <Route path="/intake/assumptions" component={FounderAssumptions} />
+      <Route path="/intake/hypotheses" component={IntakeHypotheses} />
+      <Route path="/intake/riskiest" component={RiskiestAssumption} />
+      <Route path="/intake/decision" component={IntakeDecision} />
       {/* Module 3: Discovery & Market Validation */}
       <Route path="/discovery" component={CustomerDiscovery} />
       <Route path="/discovery/competitors" component={CompetitorMapping} />

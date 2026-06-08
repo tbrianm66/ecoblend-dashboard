@@ -83,11 +83,13 @@ const NAV_GROUPS: NavGroup[] = [
     label: "2. Venture Intake",
     defaultOpen: false,
     items: [
-      { id: "intake-form",       label: "New Venture Intake",   icon: "Rocket",          href: "/intake" },
-      { id: "intake-founder",    label: "Founder Profile",      icon: "UserCircle2",     href: "/intake/founder" },
-      { id: "intake-strategic",  label: "Strategic Fit",        icon: "Compass",         href: "/intake/strategic-fit" },
-      { id: "intake-problem",    label: "Problem Statement",    icon: "Target",          href: "/intake/problem" },
-      { id: "intake-hypotheses", label: "Hypothesis Register",  icon: "FlaskConical",    href: "/intake/hypotheses" },
+      { id: "intake-hub",         label: "Intake Overview",      icon: "Rocket",          href: "/intake" },
+      { id: "intake-idea",        label: "Idea Capture",         icon: "Lightbulb",       href: "/intake/idea-capture" },
+      { id: "intake-assumptions", label: "Assumptions",          icon: "ShieldAlert",     href: "/intake/assumptions" },
+      { id: "intake-hypotheses",  label: "Hypotheses",           icon: "FlaskConical",    href: "/intake/hypotheses" },
+      { id: "intake-riskiest",    label: "Riskiest Assumption",  icon: "AlertTriangle",   href: "/intake/riskiest" },
+      { id: "intake-canvas",      label: "Lean Canvas",          icon: "LayoutTemplate",  href: "/lean/canvas" },
+      { id: "intake-decision",    label: "Intake Decision",      icon: "CheckSquare",     href: "/intake/decision" },
     ],
   },
   {

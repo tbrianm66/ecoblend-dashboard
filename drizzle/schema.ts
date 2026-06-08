@@ -7652,7 +7652,6 @@ export type StakeholderProfile = typeof stakeholderProfiles.$inferSelect;
 // New tables: vi_ideas, vi_assumptions, vi_riskiest, vi_decisions
 // Reuses: ventures, cc_hypotheses (moduleSource='venture_intake'), lean_canvases
 // ============================================================================
-import { boolean as pgBool } from "drizzle-orm/pg-core";
 
 // -- Venture Ideas -------------------------------------------------------------
 export const viIdeas = pgTable("vi_ideas", {

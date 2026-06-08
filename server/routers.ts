@@ -256,6 +256,7 @@ export const appRouter = router({
   leanCanvas: leanCanvasRouter,
   productMilestones: productMilestonesRouter,
   decisionGate: decisionGateRouter,
+  intake: intakeRouter,
   startupFailureRisk: startupFailureRiskRouter,
   system: systemRouter,
   coaching: coachingRouter,
