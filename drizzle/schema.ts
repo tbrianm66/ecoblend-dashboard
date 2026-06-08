@@ -7235,18 +7235,63 @@ export const leanCanvases = pgTable("lean_canvases", {
   costStructure:    text("costStructure"),
   keyMetrics:       text("keyMetrics"),
   unfairAdvantage:  text("unfairAdvantage"),
+  // Two additional blocks (11-block spec)
+  existingAlternatives: text("existingAlternatives"),
+  highLevelConcept:     text("highLevelConcept"),
   // R&D linkage
   mvpFormat:        text("mvpFormat"),          // concierge|wizard_of_oz|smoke_test|landing_page|prototype
   hypothesisTested: text("hypothesisTested"),
   successCriteria:  text("successCriteria"),
   notes:            text("notes"),
   status:           text("status").default("draft"),   // draft|active|archived
+  // Canvas-level metadata
+  canvasTitle:        varchar("canvasTitle", { length: 255 }),
+  overallStatus:      text("overallStatus").default("draft"),  // draft|assumption_led|testing|partially_validated|validated|pivot_required|archived
+  versionLabel:       varchar("versionLabel", { length: 255 }),
+  changeSummary:      text("changeSummary"),
+  reasonForChange:    text("reasonForChange"),   // new_canvas|discovery_learning|wtp_learning|competitor_learning|demand_signal_learning|pricing_learning|unit_economics_learning|mvp_learning|gtm_learning|pivot|stage_gate_review
+  evidenceTrigger:    text("evidenceTrigger"),
   createdBy:        varchar("createdBy", { length: 255 }),
   createdAt:        timestamp("createdAt").defaultNow().notNull(),
   updatedAt:        timestamp("updatedAt").defaultNow().notNull(),
 });
 export type LeanCanvas = typeof leanCanvases.$inferSelect;
 export type InsertLeanCanvas = typeof leanCanvases.$inferInsert;
+
+// -- Lean Canvas Blocks (per-block metadata overlay, keyed by canvasId + blockType) ---
+export const leanCanvasBlocks = pgTable("lean_canvas_blocks", {
+  id:                   serial("id").primaryKey(),
+  canvasId:             integer("canvasId").notNull(),   // FK → lean_canvases.id
+  ventureId:            varchar("ventureId", { length: 64 }).notNull(),
+  blockType:            text("blockType").notNull(),     // customer_segments|problem|existing_alternatives|unique_value_proposition|solution|channels|revenue_streams|cost_structure|key_metrics|unfair_advantage|high_level_concept
+  blockStatus:          text("blockStatus").default("assumption"), // assumption|testing|validated|invalidated|pivoted|incomplete
+  evidenceStatus:       text("evidenceStatus").default("no_evidence"), // no_evidence|weak_evidence|moderate_evidence|strong_evidence|contradicted
+  confidenceScore:      integer("confidenceScore").default(0),  // 0–100
+  linkedHypothesisId:   varchar("linkedHypothesisId", { length: 128 }), // free ref to any hypothesis record
+  contradictionSummary: text("contradictionSummary"),
+  blockNotes:           text("blockNotes"),
+  createdAt:            timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:            timestamp("updatedAt").defaultNow().notNull(),
+});
+export type LeanCanvasBlock = typeof leanCanvasBlocks.$inferSelect;
+export type InsertLeanCanvasBlock = typeof leanCanvasBlocks.$inferInsert;
+
+// -- Lean Canvas Block Evidence Links (polymorphic evidence refs per block) -------
+export const leanCanvasBlockEvidenceLinks = pgTable("lean_canvas_block_evidence_links", {
+  id:                    serial("id").primaryKey(),
+  canvasBlockId:         integer("canvasBlockId").notNull(), // FK → lean_canvas_blocks.id
+  ventureId:             varchar("ventureId", { length: 64 }).notNull(),
+  evidenceSourceType:    text("evidenceSourceType").notNull(), // customer_interview|wtp_test|demand_signal|competitor|pricing_experiment|lean_experiment|evidence_claim|other
+  evidenceSourceId:      integer("evidenceSourceId"),         // id in the referenced table (nullable for 'other')
+  evidenceSourceLabel:   varchar("evidenceSourceLabel", { length: 255 }), // human-readable label
+  evidenceRelationship:  text("evidenceRelationship").default("supports"), // supports|contradicts|partially_supports|inconclusive
+  evidenceStrengthScore: integer("evidenceStrengthScore").default(50), // 0–100
+  notes:                 text("notes"),
+  createdAt:             timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:             timestamp("updatedAt").defaultNow().notNull(),
+});
+export type LeanCanvasBlockEvidenceLink = typeof leanCanvasBlockEvidenceLinks.$inferSelect;
+export type InsertLeanCanvasBlockEvidenceLink = typeof leanCanvasBlockEvidenceLinks.$inferInsert;
 
 // -- Product Milestones (R&D prototype & MVP build tracking) -------------------
 export const productMilestones = pgTable("product_milestones", {

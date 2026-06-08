@@ -1,0 +1,1108 @@
+You are acting as a senior full-stack product engineer, venture studio systems architect, and Lean Startup product strategist.
+
+I am building **EcoBLEND IO**, a Venture Validation OS used by **EcoRACE Studio** to validate multiple ventures using Lean Startup methodology, evidence scoring, readiness levels, and stage-gate decision-making.
+
+The current application includes the module:
+
+**4. Proposition & Model**
+
+Within this module there is a sub-module:
+
+**4B. Lean Canvas**
+
+Your task is to audit and update the **4B. Lean Canvas** module.
+
+The Lean Canvas must not be a static business planning form. It must become a live, versioned, evidence-linked business model validation tool.
+
+The purpose of this module is to answer:
+
+**“Does this venture have a coherent, testable, evidence-supported business model, or are we still operating on assumptions?”**
+
+The Lean Canvas should help the venture team move through:
+
+**Assumption → Hypothesis → Experiment → Evidence → Learning → Canvas Update → Pivot / Persevere Decision**
+
+---
+
+# 1. Audit First
+
+Before implementing changes, audit the existing 4B. Lean Canvas module.
+
+Identify:
+
+* Existing route path
+* Existing component files
+* Existing UI layout
+* Existing database tables
+* Existing local state or mock data
+* Existing form fields
+* Existing save/update logic
+* Existing venture selector behaviour
+* Existing links to Proposition & Model
+* Existing links to Venture Intake
+* Existing links to Discovery & Market
+* Existing links to WTP Assessment
+* Existing links to Command Centre
+* Existing links to R&D Hub
+* Existing links to Market Risk Log
+* Any broken navigation
+* Any duplicated Lean Canvas records
+* Any hard-coded seed data
+* Any missing CRUD functionality
+
+Do not create duplicate venture, hypothesis, experiment, evidence, decision, or pivot tables if they already exist.
+
+Reuse existing shared tables where possible.
+
+After the audit, provide a short summary before making changes.
+
+---
+
+# 2. Strategic Role of 4B. Lean Canvas
+
+The Lean Canvas should sit inside **Proposition & Model** and act as the structured business model snapshot for each venture.
+
+It should pull from:
+
+* Venture Intake
+* Founder assumptions
+* Customer segment hypothesis
+* Problem hypothesis
+* Value proposition hypothesis
+* Business model hypothesis
+* Customer Discovery
+* Competitor Mapping
+* Demand Signals
+* WTP Assessment
+* Unit Economics
+* Revenue Model Test
+* Business Model Risk Log
+
+It should push outputs to:
+
+* Command Centre
+* Model Readiness Decision
+* R&D Hub
+* Brand & GTM
+* Stage-Gate Review
+* Market Risk Log
+* Pivot History
+
+The Lean Canvas should show what is:
+
+* Assumed
+* Being tested
+* Validated
+* Invalidated
+* Pivoted
+* Missing evidence
+* Ready for MVP definition
+
+---
+
+# 3. Required Lean Canvas Blocks
+
+Implement the Lean Canvas using the following blocks:
+
+1. **Customer Segments**
+2. **Problem**
+3. **Existing Alternatives**
+4. **Unique Value Proposition**
+5. **Solution**
+6. **Channels**
+7. **Revenue Streams**
+8. **Cost Structure**
+9. **Key Metrics**
+10. **Unfair Advantage**
+11. **High-Level Concept**
+
+Each block must support:
+
+* Editable content
+* Linked hypothesis
+* Linked evidence
+* Evidence status
+* Confidence score
+* Block status
+* Notes
+* Last updated date
+
+Block status options:
+
+* assumption
+* testing
+* validated
+* invalidated
+* pivoted
+* incomplete
+
+Evidence status options:
+
+* no_evidence
+* weak_evidence
+* moderate_evidence
+* strong_evidence
+* contradicted
+
+---
+
+# 4. Required Data Model
+
+Use existing project conventions. If the app uses Supabase/PostgreSQL, create a migration. If it uses another persistence method, adapt cleanly but preserve this structure.
+
+Reuse existing tables where available:
+
+* ventures
+* venture_hypotheses
+* evidence_records
+* lean_experiments
+* lean_decisions
+* pivot_logs
+* market_risks
+* command_alerts
+
+Create or extend the following tables if needed.
+
+---
+
+## lean_canvas_records
+
+Fields:
+
+* id
+* venture_id
+* canvas_title
+* version_number
+* version_label
+* overall_status
+* completeness_score
+* evidence_confidence_score
+* model_readiness_score
+* created_by
+* created_at
+* updated_at
+
+overall_status options:
+
+* draft
+* assumption_led
+* testing
+* partially_validated
+* validated
+* pivot_required
+* archived
+
+---
+
+## lean_canvas_blocks
+
+Fields:
+
+* id
+* canvas_id
+* venture_id
+* block_type
+* block_title
+* block_content
+* linked_hypothesis_id
+* linked_evidence_ids
+* linked_experiment_ids
+* block_status
+* evidence_status
+* confidence_score
+* contradiction_summary
+* notes
+* created_at
+* updated_at
+
+block_type options:
+
+* customer_segments
+* problem
+* existing_alternatives
+* unique_value_proposition
+* solution
+* channels
+* revenue_streams
+* cost_structure
+* key_metrics
+* unfair_advantage
+* high_level_concept
+
+---
+
+## lean_canvas_versions
+
+Fields:
+
+* id
+* venture_id
+* canvas_id
+* version_number
+* version_label
+* change_summary
+* reason_for_change
+* evidence_trigger
+* created_at
+* updated_at
+
+reason_for_change options:
+
+* new_canvas
+* discovery_learning
+* wtp_learning
+* competitor_learning
+* demand_signal_learning
+* pricing_learning
+* unit_economics_learning
+* mvp_learning
+* gtm_learning
+* pivot
+* stage_gate_review
+
+---
+
+## lean_canvas_block_evidence_links
+
+Fields:
+
+* id
+* canvas_block_id
+* evidence_record_id
+* evidence_relationship
+* evidence_strength_score
+* notes
+* created_at
+* updated_at
+
+evidence_relationship options:
+
+* supports
+* contradicts
+* partially_supports
+* inconclusive
+
+---
+
+# 5. Lean Canvas UI Requirements
+
+Create or update the 4B. Lean Canvas screen with the following UI structure:
+
+## Header
+
+Show:
+
+* Page title: Lean Canvas
+* Short description:
+  “A live, versioned business model canvas linked to hypotheses, experiments, evidence, and pivot decisions.”
+* Venture selector
+* Canvas version selector
+* Create new version button
+* Duplicate latest version button
+* Export summary button
+
+## Main canvas grid
+
+Display all 11 Lean Canvas blocks in a clean grid layout.
+
+Each block should show:
+
+* Block title
+* Current content
+* Block status badge
+* Evidence status badge
+* Confidence score
+* Linked hypothesis count
+* Linked evidence count
+* Last updated date
+* Edit button
+
+## Block detail drawer/modal
+
+When clicking a block, open an edit drawer or modal.
+
+The drawer should include:
+
+* Block type
+* Block content
+* Linked hypothesis selector
+* Linked evidence selector
+* Linked experiment selector
+* Block status
+* Evidence status
+* Confidence score
+* Contradiction summary
+* Notes
+* Save button
+
+## Side panel
+
+Add a right-side or lower summary panel showing:
+
+* Canvas completeness score
+* Evidence confidence score
+* Model readiness score
+* Missing blocks
+* Contradicted blocks
+* Blocks without linked evidence
+* Recommended next action
+* Pivot warning if relevant
+
+---
+
+# 6. Block-Level Guidance
+
+Each Lean Canvas block should include a short help note so the user knows what to enter.
+
+## Customer Segments
+
+Prompt:
+“Who are the specific customers, users, buyers, influencers, and decision-makers?”
+
+Required links:
+
+* Customer segment hypothesis
+* Customer Discovery evidence
+
+Warning:
+If no customer segment hypothesis is linked, show:
+“Customer segment is not linked to validation evidence.”
+
+---
+
+## Problem
+
+Prompt:
+“What painful, frequent, urgent, or expensive problem is the customer trying to solve?”
+
+Required links:
+
+* Problem hypothesis
+* Customer interview evidence
+* Current workaround evidence
+
+Warning:
+If no customer interview evidence exists, show:
+“Problem is still assumption-led.”
+
+---
+
+## Existing Alternatives
+
+Prompt:
+“What does the customer use today instead of this solution?”
+
+Required links:
+
+* Competitor Mapping
+* Customer Discovery
+* Substitute/status quo evidence
+
+Warning:
+If blank, show:
+“Existing alternatives must be defined before positioning is credible.”
+
+---
+
+## Unique Value Proposition
+
+Prompt:
+“What measurable customer outcome does this venture create that alternatives do not?”
+
+Required links:
+
+* Value proposition hypothesis
+* WTP evidence
+* Differentiation evidence
+
+Warning:
+If the statement uses vague language such as ‘AI-powered’, ‘sustainable’, ‘innovative’, or ‘data-driven’ without a measurable outcome, show:
+“Value proposition is generic. Link it to measurable customer value.”
+
+---
+
+## Solution
+
+Prompt:
+“What is the smallest solution or MVP required to test the value proposition?”
+
+Required links:
+
+* R&D Hub
+* MVP definition
+* Solution hypothesis
+
+Warning:
+If Solution is more detailed than Problem or UVP, show:
+“Potential solution bias detected. Validate the customer problem before expanding the solution.”
+
+---
+
+## Channels
+
+Prompt:
+“How will the venture reach, engage, and convert the target customer?”
+
+Required links:
+
+* Brand & GTM
+* Channel hypothesis
+* GTM experiment evidence
+
+Warning:
+If no channel test exists, show:
+“Channel assumption is untested.”
+
+---
+
+## Revenue Streams
+
+Prompt:
+“How will this venture capture value?”
+
+Required links:
+
+* WTP Assessment
+* Revenue Model Test
+* Pricing Experiment
+
+Warning:
+If WTP Score is below 60, show:
+“Revenue model confidence is limited by weak WTP evidence.”
+
+---
+
+## Cost Structure
+
+Prompt:
+“What are the main costs required to build, deliver, sell, and support the solution?”
+
+Required links:
+
+* Unit Economics
+* Operations & MFG
+* Supplier or delivery cost evidence
+
+Warning:
+If cost structure is missing, show:
+“Unit economics cannot be assessed without cost structure.”
+
+---
+
+## Key Metrics
+
+Prompt:
+“What actionable metrics prove progress through validated learning?”
+
+Required links:
+
+* Lean experiments
+* Evidence records
+* Command Centre scorecards
+
+Required principle:
+Avoid vanity metrics.
+
+Examples of acceptable metrics:
+
+* Interview-to-pilot conversion
+* WTP evidence level
+* Paid pilot conversion rate
+* CAC/LTV ratio
+* Retention rate
+* Repeat purchase rate
+* Prototype test success rate
+* Supplier validation pass rate
+* Procurement progression rate
+
+Warning:
+If metrics are vague, such as total views, followers, or general interest, show:
+“Potential vanity metric. Use actionable, auditable metrics.”
+
+---
+
+## Unfair Advantage
+
+Prompt:
+“What advantage would be difficult for competitors to copy?”
+
+Relevant EcoBLEND examples:
+
+* Proprietary technical data
+* Trade secret formulations
+* Controlled access to repeatability knowledge
+* Validated supplier data
+* Domain expertise
+* University/industry knowledge network
+* Federated learning dataset potential
+* Repeatable venture validation intelligence
+
+Warning:
+If advantage is generic, show:
+“Unfair advantage is not defensible enough.”
+
+---
+
+## High-Level Concept
+
+Prompt:
+“How would you describe this venture in one clear sentence?”
+
+Example:
+“Reliability intelligence for zero-emission bus operators.”
+
+Warning:
+If longer than 25 words, show:
+“High-level concept should be concise enough for immediate understanding.”
+
+---
+
+# 7. Scoring Logic
+
+Create reusable scoring utilities.
+
+## Canvas Completeness Score
+
+Calculate:
+
+Canvas Completeness Score =
+Completed Blocks / 11 × 100
+
+Completed means the block has non-empty content.
+
+Interpretation:
+
+* 0–39 = Incomplete
+* 40–69 = Partially complete
+* 70–89 = Complete but evidence review required
+* 90–100 = Structurally complete
+
+---
+
+## Canvas Evidence Confidence Score
+
+For each block, calculate block confidence:
+
+Block Confidence =
+Hypothesis Link Score × 25%
+
+* Evidence Link Score × 35%
+* Evidence Strength Score × 25%
+* No Contradiction Score × 15%
+
+Where:
+
+Hypothesis Link Score:
+
+* Has linked hypothesis = 100
+* No linked hypothesis = 0
+
+Evidence Link Score:
+
+* Has linked evidence = 100
+* No linked evidence = 0
+
+Evidence Strength Score:
+
+* strong_evidence = 100
+* moderate_evidence = 70
+* weak_evidence = 40
+* no_evidence = 0
+* contradicted = 0
+
+No Contradiction Score:
+
+* no contradiction = 100
+* contradiction exists = 0
+
+Canvas Evidence Confidence Score =
+Average of all block confidence scores
+
+---
+
+## Model Readiness Score
+
+Calculate:
+
+Model Readiness Score =
+Canvas Completeness Score × 30%
+
+* Canvas Evidence Confidence Score × 40%
+* WTP Score × 15%
+* Unit Economics Confidence Score × 10%
+* inverse Business Model Risk Score × 5%
+
+If WTP Score is missing, cap Model Readiness Score at 70.
+
+If Unique Value Proposition has no measurable customer outcome, cap score at 60.
+
+If Revenue Streams has no WTP evidence, cap score at 60.
+
+If Problem has no customer discovery evidence, cap score at 50.
+
+If more than three blocks are contradicted, cap score at 40.
+
+Interpretation:
+
+* 0–39 = Not ready
+* 40–59 = Needs evidence
+* 60–79 = Ready for limited MVP definition
+* 80–100 = Strong model readiness
+
+---
+
+# 8. Versioning Requirements
+
+The Lean Canvas must be versioned.
+
+Required functionality:
+
+* Create new canvas
+* Save canvas
+* Duplicate latest canvas version
+* Add version label
+* Add change summary
+* Add reason for change
+* Link version change to evidence trigger
+* Compare current version with previous version if feasible
+* Archive older versions without deleting them
+
+Version number logic:
+
+* First canvas = v1
+* Duplicated canvas = latest version + 1
+* Do not overwrite previous version history
+
+When a block changes significantly, prompt the user:
+
+“Does this change represent a pivot?”
+
+If yes, create or prompt for a Pivot History record.
+
+---
+
+# 9. Pivot Integration
+
+The Lean Canvas must integrate with Pivot History.
+
+Prompt for pivot creation when:
+
+* Customer Segments changes materially
+* Problem changes materially
+* Unique Value Proposition changes materially
+* Revenue Streams changes materially
+* Channels changes materially
+* Solution changes materially
+* Unfair Advantage changes materially
+
+Pivot types:
+
+* Customer segment pivot
+* Customer need pivot
+* Value proposition pivot
+* Revenue model pivot
+* Pricing pivot
+* Channel pivot
+* Business architecture pivot
+* Platform pivot
+* Technology pivot
+* Value capture pivot
+
+Pivot record should include:
+
+* Venture
+* Pivot type
+* Previous block content
+* New block content
+* Evidence trigger
+* Reason for pivot
+* Linked canvas version
+* Next hypothesis to test
+
+---
+
+# 10. Evidence Integration
+
+Each Lean Canvas block must be able to link to evidence records.
+
+Evidence relationship types:
+
+* supports
+* contradicts
+* partially_supports
+* inconclusive
+
+Evidence sources should include:
+
+* Customer interviews
+* WTP tests
+* Demand signals
+* Competitor mapping
+* Pricing experiments
+* Prototype tests
+* MVP tests
+* Supplier tests
+* GTM experiments
+* Regulatory evidence
+* Academic evidence
+* Unit economics evidence
+
+If a block has contradicting evidence, show a visible warning:
+
+“Evidence contradicts this canvas block. Review before advancing venture stage.”
+
+If a block has no evidence but is marked validated, prevent save or show critical warning:
+
+“Block cannot be marked validated without linked evidence.”
+
+---
+
+# 11. Auto-Risk and Alert Logic
+
+The Lean Canvas module should create risks and alerts automatically.
+
+## Auto-create risks
+
+Create a Business Model Risk or Market Risk when:
+
+* Problem block has no customer discovery evidence
+* Customer Segments block has no linked segment hypothesis
+* UVP block has no measurable customer outcome
+* Revenue Streams block has no WTP evidence
+* Cost Structure block is blank
+* Key Metrics block contains vanity metrics
+* Unfair Advantage block is generic
+* More than three blocks have weak or no evidence
+* Any block is contradicted by evidence
+* Model Readiness Score is below 50
+
+## Auto-create Command Centre alerts
+
+Create a command alert when:
+
+* Venture is moved to R&D Hub but Model Readiness Score is below 60
+* Venture is moved to MVP Validation but Lean Canvas is incomplete
+* Revenue Streams is unsupported by WTP evidence
+* Problem is unsupported by customer discovery evidence
+* A canvas change suggests a pivot but no pivot log exists
+* Canvas has not been updated after major WTP or customer discovery learning
+
+Alert severity:
+
+* Critical = stage progression attempted with weak canvas evidence
+* High = core block missing or contradicted
+* Medium = incomplete evidence links
+* Low = canvas requires routine update
+
+---
+
+# 12. Integration With Stage-Gate Logic
+
+The Lean Canvas should influence whether a venture can progress from:
+
+**Proposition & Model → R&D Hub → MVP Validation**
+
+Stage-gate rule:
+
+A venture should not progress to R&D Hub unless:
+
+* Canvas Completeness Score is 70 or above
+* Model Readiness Score is 60 or above
+* Problem block has customer discovery evidence
+* Customer Segments block has linked hypothesis
+* Unique Value Proposition has measurable customer outcome
+* Revenue Streams has WTP evidence or an explicit WTP experiment is active
+* Key Metrics are actionable
+* No critical canvas risks are unresolved
+
+If these requirements are not met, show:
+
+“Lean Canvas is not ready to support MVP definition.”
+
+---
+
+# 13. Export / Summary Requirements
+
+Add an export or copy-summary function.
+
+The export should include:
+
+* Venture name
+* Canvas version
+* Date updated
+* All 11 Lean Canvas blocks
+* Status of each block
+* Evidence status of each block
+* Linked hypotheses
+* Linked evidence summary
+* Completeness score
+* Evidence confidence score
+* Model readiness score
+* Key risks
+* Recommended next action
+* Pivot history summary if available
+
+This can initially be a copy-to-clipboard markdown summary. Do not overbuild PDF export unless already supported elsewhere in the app.
+
+---
+
+# 14. Seed Data
+
+Create realistic seed Lean Canvas data for:
+
+1. BEBUS
+2. ECOCOMP
+3. REAL
+4. TONE
+
+## BEBUS Lean Canvas Seed
+
+Customer Segments:
+UK bus operators, fleet engineering teams, engineering directors, maintenance managers, supplier quality teams.
+
+Problem:
+Zero-emission bus operators experience avoidable downtime because reliability data is fragmented across OEMs, suppliers, and maintenance teams.
+
+Existing Alternatives:
+OEM support, internal maintenance teams, Excel reliability logs, consultancy reports, supplier meetings.
+
+Unique Value Proposition:
+Reduce avoidable downtime and improve supplier accountability through structured reliability intelligence.
+
+Solution:
+Reliability intelligence workflow combining defect capture, root-cause tracking, supplier evidence, and readiness scoring.
+
+Channels:
+Founder-led sales, bus operator network, industry partnerships, reliability engineering case studies.
+
+Revenue Streams:
+Paid pilot followed by consultancy-plus-platform subscription.
+
+Cost Structure:
+Engineering analysis, platform development, data onboarding, customer support, supplier engagement.
+
+Key Metrics:
+Paid pilot conversion, downtime issue resolution rate, WTP evidence level, budget-holder introductions, reliability data access.
+
+Unfair Advantage:
+Founder reliability engineering expertise, BEBUS domain knowledge, proprietary operational learning, repeatable reliability intelligence templates.
+
+High-Level Concept:
+Reliability intelligence for zero-emission bus operators.
+
+---
+
+## ECOCOMP Lean Canvas Seed
+
+Customer Segments:
+Manufacturers seeking sustainable composite materials, product designers, sustainability leads, innovation teams.
+
+Problem:
+Manufacturers need lower-carbon materials that meet performance, compliance, and production requirements without increasing technical risk.
+
+Existing Alternatives:
+Conventional composites, supplier material sheets, internal R&D, sustainability consultants, university research.
+
+Unique Value Proposition:
+Validated sustainable composite formulations that reduce development uncertainty and compliance risk.
+
+Solution:
+Formulation intelligence, material validation workflow, supplier evidence, performance data capture, compliance readiness scoring.
+
+Channels:
+Industry partnerships, university links, manufacturer pilots, sustainability innovation programmes.
+
+Revenue Streams:
+Formulation development fee, licensing, paid validation sprint, data partnership.
+
+Cost Structure:
+Materials testing, formulation development, supplier coordination, certification support, platform data capture.
+
+Key Metrics:
+Paid formulation sprint conversion, formulation validation pass rate, licensing interest, WTP evidence level, customer technical data shared.
+
+Unfair Advantage:
+Proprietary formulation data, trade secrets, repeatability knowledge, controlled access to materials intelligence.
+
+High-Level Concept:
+Sustainable formulation intelligence for composite manufacturers.
+
+---
+
+## REAL Lean Canvas Seed
+
+Customer Segments:
+Combat sports athletes, gyms, coaches, specialist retailers, performance-focused customers.
+
+Problem:
+Combat sports customers want credible sustainable protective equipment but will not compromise on performance, durability, or brand trust.
+
+Existing Alternatives:
+Traditional synthetic protective equipment, established fight brands, low-cost imports, gym supplier relationships.
+
+Unique Value Proposition:
+High-performance combat sports equipment using credible sustainable materials without compromising durability.
+
+Solution:
+Prototype protective equipment, sustainable material selection, athlete testing, performance validation, gym partner feedback.
+
+Channels:
+D2C, gym partnerships, athlete ambassadors, combat sports events, specialist retailers.
+
+Revenue Streams:
+Product sales, gym bundles, limited edition drops, wholesale partnerships.
+
+Cost Structure:
+Product design, prototyping, materials, manufacturing, athlete testing, D2C marketing.
+
+Key Metrics:
+Prototype test pass rate, pre-order conversion, repeat purchase intent, gym partner interest, WTP premium evidence.
+
+Unfair Advantage:
+REAL brand ownership, sustainable material intelligence, founder product development experience, sport-specific validation data.
+
+High-Level Concept:
+Sustainable high-performance equipment for combat sports.
+
+---
+
+## TONE Lean Canvas Seed
+
+Customer Segments:
+Creative production teams, studios, equipment managers, event operators, production companies.
+
+Problem:
+Creative operators face cost, storage, transport, and environmental pressure from conventional production equipment systems.
+
+Existing Alternatives:
+Traditional equipment suppliers, rental houses, custom-built rigs, internal storage, disposable or short-life equipment.
+
+Unique Value Proposition:
+Modular sustainable equipment systems that reduce storage burden, lifecycle cost, and production waste.
+
+Solution:
+Modular equipment system, sustainable materials, rental/product hybrid model, lifecycle tracking, production workflow fit.
+
+Channels:
+Creative industry partnerships, studio pilots, production case studies, event sector relationships.
+
+Revenue Streams:
+Product sales, rental model, service contract, licensing, partner distribution.
+
+Cost Structure:
+Design, materials, manufacturing, logistics, maintenance, rental asset management.
+
+Key Metrics:
+Pilot adoption rate, storage cost reduction, rental utilisation, repeat booking rate, WTP evidence level.
+
+Unfair Advantage:
+Cross-sector engineering knowledge, sustainable design system, reusable product architecture, venture studio data layer.
+
+High-Level Concept:
+Modular sustainable equipment for creative production teams.
+
+---
+
+# 15. Testing Requirements
+
+Test that:
+
+* Lean Canvas page loads without crashing
+* Venture selector filters canvas records correctly
+* New canvas can be created
+* Latest canvas can be duplicated as a new version
+* Canvas block can be edited and saved
+* Block status updates correctly
+* Evidence status updates correctly
+* Linked hypotheses save correctly
+* Linked evidence saves correctly
+* Canvas completeness score calculates correctly
+* Evidence confidence score calculates correctly
+* Model readiness score calculates correctly
+* Missing block warnings appear correctly
+* Generic UVP warnings appear correctly
+* Vanity metric warnings appear correctly
+* Contradicted evidence warnings appear correctly
+* Canvas cannot be marked validated without evidence
+* Pivot prompt appears after significant block changes
+* Canvas summary can be copied/exported
+* Command Centre receives canvas alerts
+* R&D Hub progression warning appears if canvas readiness is weak
+* Existing data is not overwritten
+* Empty states display correctly
+
+---
+
+# 16. Acceptance Criteria
+
+The 4B Lean Canvas update is complete when:
+
+* Each venture has a versioned Lean Canvas.
+* All 11 Lean Canvas blocks are editable.
+* Each block can link to hypotheses and evidence.
+* Each block has a status and evidence status.
+* Canvas completeness is calculated.
+* Canvas evidence confidence is calculated.
+* Model readiness is calculated.
+* Weak or missing evidence generates warnings.
+* Critical issues generate risks or Command Centre alerts.
+* Significant changes can trigger pivot logging.
+* Lean Canvas can support stage-gate readiness decisions.
+* Lean Canvas data can be exported or copied as a structured summary.
+* BEBUS, ECOCOMP, REAL, and TONE have seed Lean Canvas records.
+* The module matches the existing EcoBLEND IO design language.
+
+---
+
+# 17. Critical Failure Modes to Avoid
+
+Avoid these mistakes:
+
+1. **Static canvas theatre**
+   Do not create a polished canvas that is disconnected from evidence.
+
+2. **No version control**
+   Canvas changes must be tracked over time.
+
+3. **No evidence links**
+   A Lean Canvas block should not be treated as validated unless evidence supports it.
+
+4. **No pivot memory**
+   Major changes must prompt pivot logging.
+
+5. **Generic business model language**
+   Warn against vague UVP, channel, metric, and unfair advantage statements.
+
+6. **False readiness**
+   Do not allow the venture to appear ready for MVP build when customer, problem, revenue, or WTP evidence is missing.
+
+7. **Duplicated data structures**
+   Reuse existing venture, hypothesis, evidence, experiment, and decision records.
+
+8. **Overbuilding export**
+   Start with markdown/copy summary before PDF or deck generation.
+
+9. **No cross-module integration**
+   The canvas must feed Command Centre, Proposition & Model readiness, R&D Hub, Brand & GTM, and Market Risk Log.
+
+10. **Ignoring EcoBLEND data moat**
+    For relevant ventures, the Unfair Advantage block should explicitly support proprietary technical data, repeatability knowledge, trade secrets, controlled access, and scalable product intelligence.
+
+---
+
+# 18. Final Developer Output Required
+
+After completing the audit and implementation, provide:
+
+1. Summary of the Lean Canvas audit
+2. Existing files and components found
+3. What was changed
+4. Files modified
+5. New database tables or migrations added
+6. Existing tables reused
+7. Assumptions made
+8. Features not completed
+9. Bugs found
+10. Recommended next development step
+
+The strategic objective is to make **4B. Lean Canvas** a live, versioned, evidence-linked business model validation layer inside EcoBLEND IO, rather than a static template.
