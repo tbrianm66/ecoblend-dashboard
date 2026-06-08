@@ -89,6 +89,7 @@ import AdminWidgetAnalytics from "./pages/AdminWidgetAnalytics";
 import AdminWidgetSettings from "./pages/AdminWidgetSettings";
 import AdminProductionReadiness from "./pages/AdminProductionReadiness";
 import ModulePlaceholder from "./pages/ModulePlaceholder";
+import SustainabilityHub from "./pages/sustainability/SustainabilityHub";
 import PortfolioOverviewTabs from "./pages/command/PortfolioOverviewTabs";
 import CommandCentreTabs from "./pages/command/CommandCentreTabs";
 import PipelineTabs from "./pages/command/PipelineTabs";
@@ -262,7 +263,7 @@ function Router() {
       <Route path="/gtm/campaigns" component={ModulePlaceholder} />
       <Route path="/gtm/sales" component={ModulePlaceholder} />
       {/* Module 8: Sustainability & Impact */}
-      <Route path="/sustainability" component={ModulePlaceholder} />
+      <Route path="/sustainability" component={SustainabilityHub} />
       <Route path="/sustainability/impact" component={ModulePlaceholder} />
       <Route path="/sustainability/lca" component={ModulePlaceholder} />
       <Route path="/sustainability/circularity" component={ModulePlaceholder} />

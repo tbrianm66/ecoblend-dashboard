@@ -7932,3 +7932,19 @@ export const pmRisks = pgTable("pm_risks", {
 });
 export type PmRisk = typeof pmRisks.$inferSelect;
 export type InsertPmRisk = typeof pmRisks.$inferInsert;
+
+// ── Module 8: Sustainability Hub ─────────────────────────────────────────────
+export const sustainabilityHub = pgTable("sustainability_hub", {
+  id:                serial("id").primaryKey(),
+  ventureId:         varchar("ventureId", { length: 64 }).notNull().unique().references(() => ventures.id, { onDelete: "cascade" }),
+  overallScore:      integer("overallScore").default(0),
+  primaryImpactType: varchar("primaryImpactType", { length: 128 }).default("carbon_reduction"),
+  lcaStatus:         varchar("lcaStatus", { length: 32 }).default("not_started"),
+  carbonStatus:      varchar("carbonStatus", { length: 32 }).default("not_started"),
+  circularityStatus: varchar("circularityStatus", { length: 32 }).default("not_started"),
+  esgStatus:         varchar("esgStatus", { length: 32 }).default("not_started"),
+  createdAt:         timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:         timestamp("updatedAt").defaultNow().notNull(),
+});
+export type SustainabilityHub = typeof sustainabilityHub.$inferSelect;
+export type InsertSustainabilityHub = typeof sustainabilityHub.$inferInsert;
