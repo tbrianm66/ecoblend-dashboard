@@ -47,7 +47,7 @@ externalPort = 3001
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["node", "dist/index.js"]
+run = ["node", "--import", "tsx/esm", "server/_core/index.ts"]
 build = ["pnpm", "build"]
 
 [postMerge]

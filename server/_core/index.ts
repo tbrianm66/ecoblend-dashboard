@@ -11,6 +11,7 @@ import { handleSSEConnection, type SSEUserContext } from "../sse";
 import { sdk } from "./sdk";
 import { getDb } from "../db";
 import { ventureMembers } from "../../drizzle/schema";
+import { seedProductionIfEmpty } from "../seedProduction";
 import { eq } from "drizzle-orm";
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -140,6 +141,9 @@ async function startServer() {
   } else {
     serveStatic(app);
   }
+
+  // Seed production DB if empty (no-op when data already exists)
+  await seedProductionIfEmpty();
 
   const preferredPort = parseInt(process.env.PORT || "3000");
   const port = await findAvailablePort(preferredPort);
