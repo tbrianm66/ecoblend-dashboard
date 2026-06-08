@@ -248,6 +248,7 @@ import { leanCanvasRouter } from "./leanCanvas.router";
 import { productMilestonesRouter } from "./productMilestones.router";
 import { decisionGateRouter } from "./decisionGate.router";
 import { intakeRouter } from "./intake.router";
+import { propositionRouter } from "./proposition.router";
 
 export const appRouter = router({
   discoveryMarket: discoveryMarketRouter,
@@ -257,6 +258,7 @@ export const appRouter = router({
   productMilestones: productMilestonesRouter,
   decisionGate: decisionGateRouter,
   intake: intakeRouter,
+  proposition: propositionRouter,
   startupFailureRisk: startupFailureRiskRouter,
   system: systemRouter,
   coaching: coachingRouter,

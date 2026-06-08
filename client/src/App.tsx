@@ -100,6 +100,15 @@ import FounderAssumptions from "./pages/intake/FounderAssumptions";
 import IntakeHypotheses from "./pages/intake/IntakeHypotheses";
 import RiskiestAssumption from "./pages/intake/RiskiestAssumption";
 import IntakeDecision from "./pages/intake/IntakeDecision";
+import PropositionOverview from "./pages/proposition/PropositionOverview";
+import ValuePropositionCanvas from "./pages/proposition/ValuePropositionCanvas";
+import JobsToBeDone from "./pages/proposition/JobsToBeDone";
+import BusinessModelHypothesis from "./pages/proposition/BusinessModelHypothesis";
+import RevenueModelTest from "./pages/proposition/RevenueModelTest";
+import UnitEconomics from "./pages/proposition/UnitEconomics";
+import BusinessModelRiskLog from "./pages/proposition/BusinessModelRiskLog";
+import PivotHistory from "./pages/proposition/PivotHistory";
+import ModelReadinessDecision from "./pages/proposition/ModelReadinessDecision";
 import CustomerDiscovery from "./pages/discovery/CustomerDiscovery";
 import CompetitorMapping from "./pages/discovery/CompetitorMapping";
 import DemandSignals from "./pages/discovery/DemandSignals";
@@ -222,12 +231,16 @@ function Router() {
       <Route path="/discovery/wtp" component={WTPAssessment} />
       <Route path="/discovery/market-risk" component={MarketRiskLog} />
       <Route path="/discovery/experiments" component={DiscoveryExperimentLog} />
-      {/* Module 4: Proposition & Business Model */}
-      <Route path="/proposition" component={ModulePlaceholder} />
-      <Route path="/proposition/bmc" component={ModulePlaceholder} />
-      <Route path="/proposition/revenue" component={ModulePlaceholder} />
-      <Route path="/proposition/economics" component={ModulePlaceholder} />
-      <Route path="/proposition/channels" component={ModulePlaceholder} />
+      {/* Module 4: Proposition & Model */}
+      <Route path="/proposition" component={PropositionOverview} />
+      <Route path="/proposition/value-proposition" component={ValuePropositionCanvas} />
+      <Route path="/proposition/jtbd" component={JobsToBeDone} />
+      <Route path="/proposition/business-model" component={BusinessModelHypothesis} />
+      <Route path="/proposition/revenue-model" component={RevenueModelTest} />
+      <Route path="/proposition/unit-economics" component={UnitEconomics} />
+      <Route path="/proposition/risks" component={BusinessModelRiskLog} />
+      <Route path="/proposition/pivot-history" component={PivotHistory} />
+      <Route path="/proposition/decision" component={ModelReadinessDecision} />
       {/* Lean Canvas — append-only versioned canvas */}
       <Route path="/lean/canvas" component={LeanCanvas} />
       {/* Module 5: R&D Hub */}

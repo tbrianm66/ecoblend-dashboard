@@ -7731,3 +7731,159 @@ export const viDecisions = pgTable("vi_decisions", {
 });
 export type ViDecision = typeof viDecisions.$inferSelect;
 export type InsertViDecision = typeof viDecisions.$inferInsert;
+
+// ============================================================================
+// PROPOSITION & MODEL — Lean evidence layer (Module 4)
+// Tables: pm_value_propositions, pm_jtbd, pm_bm_hypotheses,
+//         pm_revenue_tests, pm_unit_economics, pm_risks
+// Reuses: ventures, pivot_log, cc_hypotheses, lean_canvases, wtp tables
+// ============================================================================
+
+// -- Value Propositions -------------------------------------------------------
+export const pmValuePropositions = pgTable("pm_value_propositions", {
+  id:                          serial("id").primaryKey(),
+  ventureId:                   varchar("ventureId", { length: 64 }).notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  segmentHypothesisId:         integer("segmentHypothesisId"),
+  problemHypothesisId:         integer("problemHypothesisId"),
+  title:                       varchar("title", { length: 255 }).notNull(),
+  statement:                   text("statement").notNull(),
+  customerJob:                 text("customerJob"),
+  painsRelieved:               text("painsRelieved"),
+  gainsCreated:                text("gainsCreated"),
+  measurableOutcome:           text("measurableOutcome"),
+  differentiationClaim:        text("differentiationClaim"),
+  evidenceRequired:            text("evidenceRequired"),
+  productsServices:            text("productsServices"),
+  currentAlternatives:         text("currentAlternatives"),
+  buyingTriggers:              text("buyingTriggers"),
+  adoptionBarriers:            text("adoptionBarriers"),
+  status:                      varchar("status", { length: 32 }).default("draft"),
+  confidenceScore:             integer("confidenceScore").default(0),
+  createdAt:                   timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:                   timestamp("updatedAt").defaultNow().notNull(),
+});
+export type PmValueProposition = typeof pmValuePropositions.$inferSelect;
+export type InsertPmVP = typeof pmValuePropositions.$inferInsert;
+
+// -- Jobs-to-be-Done ----------------------------------------------------------
+export const pmJtbd = pgTable("pm_jtbd", {
+  id:                      serial("id").primaryKey(),
+  ventureId:               varchar("ventureId", { length: 64 }).notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  jobTitle:                varchar("jobTitle", { length: 255 }).notNull(),
+  jobStatement:            text("jobStatement").notNull(),
+  functionalJob:           text("functionalJob"),
+  emotionalJob:            text("emotionalJob"),
+  socialJob:               text("socialJob"),
+  currentSolution:         text("currentSolution"),
+  desiredOutcome:          text("desiredOutcome"),
+  outcomeMetric:           text("outcomeMetric"),
+  importanceScore:         integer("importanceScore").default(3),   // 1-5
+  satisfactionScore:       integer("satisfactionScore").default(3), // 1-5
+  opportunityScore:        integer("opportunityScore").default(0),  // 0-100
+  evidenceSummary:         text("evidenceSummary"),
+  status:                  varchar("status", { length: 32 }).default("untested"),
+  createdAt:               timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:               timestamp("updatedAt").defaultNow().notNull(),
+});
+export type PmJtbd = typeof pmJtbd.$inferSelect;
+export type InsertPmJtbd = typeof pmJtbd.$inferInsert;
+
+// -- Business Model Hypotheses ------------------------------------------------
+export const pmBmHypotheses = pgTable("pm_bm_hypotheses", {
+  id:                       serial("id").primaryKey(),
+  ventureId:                varchar("ventureId", { length: 64 }).notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  valuePropositionId:       integer("valuePropositionId"),
+  revenueModel:             varchar("revenueModel", { length: 64 }),
+  pricingAssumption:        text("pricingAssumption"),
+  deliveryModel:            text("deliveryModel"),
+  salesChannel:             text("salesChannel"),
+  costDrivers:              text("costDrivers"),
+  keyPartners:              text("keyPartners"),
+  scalabilityAssumption:    text("scalabilityAssumption"),
+  unfairAdvantage:          text("unfairAdvantage"),
+  dataMoatAssumption:       text("dataMoatAssumption"),
+  sustainabilityAssumption: text("sustainabilityAssumption"),
+  evidenceRequired:         text("evidenceRequired"),
+  testMethod:               text("testMethod"),
+  successMetric:            text("successMetric"),
+  status:                   varchar("status", { length: 32 }).default("draft"),
+  confidenceScore:          integer("confidenceScore").default(0),
+  createdAt:                timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:                timestamp("updatedAt").defaultNow().notNull(),
+});
+export type PmBmHypothesis = typeof pmBmHypotheses.$inferSelect;
+export type InsertPmBm = typeof pmBmHypotheses.$inferInsert;
+
+// -- Revenue Model Tests ------------------------------------------------------
+export const pmRevenueTests = pgTable("pm_revenue_tests", {
+  id:                    serial("id").primaryKey(),
+  ventureId:             varchar("ventureId", { length: 64 }).notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  bmHypothesisId:        integer("bmHypothesisId"),
+  revenueModelTested:    varchar("revenueModelTested", { length: 64 }),
+  testMethod:            varchar("testMethod", { length: 64 }),
+  targetSegment:         text("targetSegment"),
+  pricePointTested:      text("pricePointTested"),
+  valueMetric:           text("valueMetric"),
+  expectedBehaviour:     text("expectedBehaviour"),
+  sampleSize:            integer("sampleSize").default(0),
+  positiveResponses:     integer("positiveResponses").default(0),
+  negativeResponses:     integer("negativeResponses").default(0),
+  conversionRate:        integer("conversionRate").default(0),   // 0-100
+  revenueSignalScore:    integer("revenueSignalScore").default(0), // 0-100
+  learningSummary:       text("learningSummary"),
+  recommendedNextTest:   text("recommendedNextTest"),
+  status:                varchar("status", { length: 32 }).default("planned"),
+  createdAt:             timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:             timestamp("updatedAt").defaultNow().notNull(),
+});
+export type PmRevenueTest = typeof pmRevenueTests.$inferSelect;
+export type InsertPmRevenueTest = typeof pmRevenueTests.$inferInsert;
+
+// -- Unit Economics Models ----------------------------------------------------
+export const pmUnitEconomics = pgTable("pm_unit_economics", {
+  id:                       serial("id").primaryKey(),
+  ventureId:                varchar("ventureId", { length: 64 }).notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  bmHypothesisId:           integer("bmHypothesisId"),
+  modelName:                varchar("modelName", { length: 255 }).notNull(),
+  customerAcquisitionCost:  integer("customerAcquisitionCost"),  // £
+  lifetimeValue:            integer("lifetimeValue"),             // £
+  grossMarginPct:           integer("grossMarginPct"),            // %
+  contributionMargin:       integer("contributionMargin"),        // £
+  deliveryCost:             integer("deliveryCost"),              // £
+  supportCost:              integer("supportCost"),               // £
+  setupCost:                integer("setupCost"),                 // £
+  expectedPaybackMonths:    integer("expectedPaybackMonths"),
+  averageContractValue:     integer("averageContractValue"),      // £
+  expectedChurnRate:        integer("expectedChurnRate"),         // %
+  repeatPurchaseRate:       integer("repeatPurchaseRate"),        // %
+  assumptionsSummary:       text("assumptionsSummary"),
+  confidenceLevel:          varchar("confidenceLevel", { length: 32 }).default("assumption_only"),
+  createdAt:                timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:                timestamp("updatedAt").defaultNow().notNull(),
+});
+export type PmUnitEconomics = typeof pmUnitEconomics.$inferSelect;
+export type InsertPmUE = typeof pmUnitEconomics.$inferInsert;
+
+// -- Proposition Risks --------------------------------------------------------
+export const pmRisks = pgTable("pm_risks", {
+  id:                      serial("id").primaryKey(),
+  ventureId:               varchar("ventureId", { length: 64 }).notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  linkedRecordType:        varchar("linkedRecordType", { length: 64 }),
+  linkedRecordId:          integer("linkedRecordId"),
+  riskTitle:               varchar("riskTitle", { length: 255 }).notNull(),
+  riskCategory:            varchar("riskCategory", { length: 64 }),
+  riskDescription:         text("riskDescription"),
+  probabilityScore:        integer("probabilityScore").default(3),        // 1-5
+  severityScore:           integer("severityScore").default(3),           // 1-5
+  evidenceConfidenceScore: integer("evidenceConfidenceScore").default(3), // 1-5
+  riskScore:               integer("riskScore").default(27),              // P*S*E (1-125)
+  mitigationPlan:          text("mitigationPlan"),
+  requiredExperiment:      text("requiredExperiment"),
+  owner:                   varchar("owner", { length: 255 }),
+  reviewDate:              varchar("reviewDate", { length: 32 }),
+  status:                  varchar("status", { length: 32 }).default("open"),
+  createdAt:               timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:               timestamp("updatedAt").defaultNow().notNull(),
+});
+export type PmRisk = typeof pmRisks.$inferSelect;
+export type InsertPmRisk = typeof pmRisks.$inferInsert;

@@ -1,0 +1,1462 @@
+You are acting as a senior full-stack product engineer, venture studio systems architect, and Lean Startup product strategist.
+
+I am building **EcoBLEND IO**, a Venture Validation OS for **EcoRACE Studio**.
+
+The platform manages multiple portfolio ventures, including:
+
+* BEBUS
+* ECOCOMP
+* REAL
+* TONE
+* Future portfolio ventures
+
+The app already includes a Lean Startup workflow across:
+
+A. Command Centre
+B. Venture Intake
+C. Discovery & Market
+D. Proposition & Model
+E. R&D Hub
+F. Operations & MFG
+G. Brand & GTM
+
+Your task is to audit and develop the **D. Proposition & Model** module.
+
+This module should sit immediately after early Discovery & Market evidence and before R&D Hub / MVP build.
+
+The purpose of the Proposition & Model module is to convert customer discovery, market evidence, WTP assessment, and competitive insight into a structured, testable business model.
+
+The module must answer:
+
+**“Can this validated customer problem become a repeatable, scalable, investable business model?”**
+
+Do not build this as a static business-planning form.
+
+Build it as a Lean Startup evidence system that links:
+
+Hypothesis → Experiment → Evidence → Learning → Business Model Update → Pivot / Persevere Decision
+
+---
+
+# 1. Audit First
+
+Before developing new functionality, audit the existing Proposition & Model module.
+
+Identify:
+
+* Existing routes
+* Existing sidebar entries
+* Existing sub-section components
+* Existing database tables
+* Existing forms
+* Existing state management
+* Existing mock/demo data
+* Existing scoring logic
+* Existing links to Venture Intake
+* Existing links to Discovery & Market
+* Existing links to WTP Assessment
+* Existing links to R&D Hub
+* Existing links to Command Centre
+* Existing links to Market Risk Log
+* Broken UI states
+* Missing CRUD functionality
+* Duplicated venture or hypothesis records
+
+Do not create duplicate venture, hypothesis, experiment, evidence, or Lean Canvas tables if they already exist.
+
+Reuse existing shared tables where possible.
+
+After the audit, provide a short audit summary before making changes.
+
+---
+
+# 2. Strategic Role of Proposition & Model
+
+The Proposition & Model module should receive validated or partially validated evidence from:
+
+* Venture Intake
+* Customer Segment Hypothesis
+* Problem Hypothesis
+* Value Proposition Hypothesis
+* Customer Discovery
+* Competitor Mapping
+* Demand Signals
+* WTP Assessment
+* Market Risk Log
+
+It should then structure that evidence into:
+
+* Value proposition
+* Jobs-to-be-done
+* Business model hypothesis
+* Revenue model
+* Pricing model
+* Cost structure
+* Unit economics
+* Route to market logic
+* Lean Canvas
+* Pivot history
+* Commercial readiness score
+
+This module should feed:
+
+* R&D Hub
+* MVP Definition
+* Command Centre
+* Stage-Gate Review
+* Brand & GTM
+* Investment Readiness
+* Market Risk Log
+
+The module should prevent the venture from moving into MVP build unless the value proposition and business model assumptions are sufficiently defined and testable.
+
+---
+
+# 3. Recommended Sub-Sections
+
+Develop the **Proposition & Model** module with the following sub-sections or tabs:
+
+1. **Proposition Overview**
+2. **Value Proposition Canvas**
+3. **Jobs-to-be-Done**
+4. **Business Model Hypothesis**
+5. **Revenue Model Test**
+6. **Pricing Experiment Link**
+7. **Unit Economics**
+8. **Lean Canvas**
+9. **Business Model Risk Log**
+10. **Pivot History**
+11. **Model Readiness Decision**
+
+If the sidebar supports only one Proposition & Model item, implement these as tabs within the module page.
+
+Preferred sidebar structure:
+
+D. Proposition & Model
+
+* Proposition Overview
+* Value Proposition Canvas
+* Business Model
+* Revenue & Pricing
+* Unit Economics
+* Lean Canvas
+* Pivot History
+* Model Decision
+
+---
+
+# 4. Lean Startup Principles to Embed
+
+The module must apply these Lean Startup principles:
+
+## Validated learning
+
+Progress should not be measured by the amount of planning completed. Progress should be measured by whether the venture has learned something empirically about customer value, pricing, growth, delivery, or business model viability.
+
+## Build–Measure–Learn
+
+Every model assumption should be capable of being tested through an experiment.
+
+## Value hypothesis
+
+The system must test whether the proposed solution creates real value for the customer.
+
+## Growth hypothesis
+
+The system must test how the venture might acquire, retain, and grow its customer base.
+
+## MVP discipline
+
+The module should help define the minimum business model test before R&D builds a full solution.
+
+## Innovation accounting
+
+The module should define measurable learning milestones and actionable metrics.
+
+## Pivot or persevere
+
+If evidence contradicts the proposition or business model, the system should recommend pivoting the customer segment, problem, value proposition, revenue model, pricing model, channel, or delivery model.
+
+---
+
+# 5. Required Data Model
+
+Use existing project conventions. If the app uses Supabase/PostgreSQL, create migrations. If the app uses a local data layer, adapt cleanly while preserving this structure.
+
+Reuse existing tables where available:
+
+* ventures
+* venture_hypotheses
+* lean_experiments
+* evidence_records
+* lean_decisions
+* pivot_logs
+* market_risks
+* command_alerts
+* lean_canvas_records
+
+Create or extend the following tables if required.
+
+---
+
+## value_propositions
+
+Fields:
+
+* id
+* venture_id
+* customer_segment_id
+* problem_hypothesis_id
+* value_proposition_title
+* value_proposition_statement
+* customer_job
+* pain_relieved
+* gain_created
+* measurable_customer_outcome
+* differentiation_claim
+* evidence_required
+* linked_evidence_ids
+* status
+* confidence_score
+* created_at
+* updated_at
+
+Status options:
+
+* draft
+* untested
+* testing
+* validated
+* invalidated
+* pivot_required
+* archived
+
+---
+
+## jtbd_records
+
+Fields:
+
+* id
+* venture_id
+* customer_segment_id
+* job_title
+* job_statement
+* functional_job
+* emotional_job
+* social_job
+* current_solution
+* desired_outcome
+* outcome_metric
+* importance_score
+* satisfaction_score
+* opportunity_score
+* evidence_summary
+* status
+* created_at
+* updated_at
+
+Status options:
+
+* untested
+* testing
+* validated
+* invalidated
+* pivot_required
+
+---
+
+## business_model_hypotheses
+
+Fields:
+
+* id
+* venture_id
+* value_proposition_id
+* customer_segment_id
+* revenue_model
+* pricing_assumption
+* delivery_model
+* sales_channel
+* cost_drivers
+* key_partners
+* scalability_assumption
+* unfair_advantage
+* data_moat_assumption
+* sustainability_assumption
+* evidence_required
+* test_method
+* success_metric
+* status
+* confidence_score
+* created_at
+* updated_at
+
+Revenue model options:
+
+* subscription
+* licence
+* paid_pilot
+* consultancy_plus_platform
+* product_sales
+* service_fee
+* success_fee
+* data_partnership
+* co_development
+* venture_studio_equity
+* transaction_fee
+* hybrid
+
+Status options:
+
+* draft
+* untested
+* testing
+* validated
+* invalidated
+* pivot_required
+* archived
+
+---
+
+## revenue_model_tests
+
+Fields:
+
+* id
+* venture_id
+* business_model_hypothesis_id
+* revenue_model_tested
+* test_method
+* target_customer_segment
+* price_point_tested
+* value_metric
+* expected_customer_behaviour
+* sample_size
+* positive_responses
+* negative_responses
+* conversion_rate
+* revenue_signal_score
+* learning_summary
+* recommended_next_test
+* status
+* created_at
+* updated_at
+
+Test method options:
+
+* pricing_interview
+* paid_pilot_offer
+* proposal_test
+* loi_test
+* landing_page_test
+* concierge_offer
+* procurement_conversation
+* partner_channel_test
+* subscription_offer
+* licence_offer
+
+---
+
+## unit_economics_models
+
+Fields:
+
+* id
+* venture_id
+* business_model_hypothesis_id
+* model_name
+* customer_acquisition_cost
+* lifetime_value
+* gross_margin_percentage
+* contribution_margin
+* delivery_cost
+* support_cost
+* setup_cost
+* expected_payback_months
+* average_contract_value
+* expected_churn_rate
+* repeat_purchase_rate
+* assumptions_summary
+* confidence_level
+* created_at
+* updated_at
+
+Confidence level options:
+
+* assumption_only
+* early_estimate
+* partially_validated
+* validated
+* high_confidence
+
+---
+
+## proposition_risks
+
+Fields:
+
+* id
+* venture_id
+* linked_record_type
+* linked_record_id
+* risk_title
+* risk_category
+* risk_description
+* probability_score
+* severity_score
+* evidence_confidence_score
+* risk_score
+* mitigation_plan
+* required_experiment
+* owner
+* review_date
+* status
+* created_at
+* updated_at
+
+Risk category options:
+
+* weak_value_proposition
+* unclear_customer_job
+* weak_differentiation
+* unvalidated_revenue_model
+* pricing_risk
+* weak_unit_economics
+* channel_risk
+* scalability_risk
+* delivery_model_risk
+* data_moat_risk
+* sustainability_claim_risk
+* competitive_positioning_risk
+
+Status options:
+
+* open
+* monitoring
+* mitigated
+* escalated
+* closed
+
+---
+
+# 6. Proposition Overview
+
+Create a Proposition Overview page.
+
+## Purpose
+
+This page should summarise whether the venture has a coherent proposition and business model.
+
+## Required UI
+
+Include:
+
+* Venture selector
+* Current proposition statement
+* Current business model hypothesis
+* Linked customer segment
+* Linked problem hypothesis
+* WTP status
+* Revenue model status
+* Unit economics confidence
+* Business model risks
+* Recommended next action
+
+## Required scorecards
+
+Display:
+
+1. Value Proposition Quality Score
+2. Customer Job Clarity Score
+3. Business Model Readiness Score
+4. Revenue Model Evidence Score
+5. Unit Economics Confidence Score
+6. Proposition Risk Score
+7. Overall Proposition & Model Readiness Score
+
+## Required output
+
+Show a clear recommendation:
+
+* Continue proposition definition
+* Run value proposition experiment
+* Run pricing or revenue model test
+* Update Lean Canvas
+* Pivot proposition
+* Proceed to R&D Hub for MVP definition
+* Pause until commercial evidence improves
+
+---
+
+# 7. Value Proposition Canvas
+
+Create a Value Proposition Canvas page.
+
+## Purpose
+
+This should connect the customer’s jobs, pains, and gains to the venture’s proposed products, pain relievers, and gain creators.
+
+## Required UI
+
+Create editable sections:
+
+Customer Profile:
+
+* Customer jobs
+* Pains
+* Gains
+* Current alternatives
+* Buying triggers
+* Adoption barriers
+
+Value Map:
+
+* Products/services
+* Pain relievers
+* Gain creators
+* Measurable outcomes
+* Differentiation claim
+* Proof required
+
+## Required fields
+
+* Venture
+* Linked customer segment
+* Linked problem hypothesis
+* Value proposition statement
+* Customer job
+* Pain relieved
+* Gain created
+* Measurable customer outcome
+* Differentiation claim
+* Evidence required
+* Status
+
+## Value Proposition Quality Score
+
+Calculate:
+
+Value Proposition Quality Score =
+Customer Job Completeness × 20%
+
+* Pain Relieved Completeness × 20%
+* Gain Created Completeness × 20%
+* Measurable Outcome Completeness × 25%
+* Evidence Required Completeness × 15%
+
+If measurable customer outcome is missing, show warning:
+
+“Value proposition is not measurable.”
+
+If differentiation claim is generic, show warning:
+
+“Differentiation is not specific enough. Avoid vague claims such as AI-powered, sustainable, innovative, or data-driven unless linked to measurable customer value.”
+
+## Required output
+
+For each value proposition, show:
+
+* Quality score
+* Linked evidence
+* Missing evidence
+* Contradicting evidence
+* Recommended experiment
+* Pivot warning if evidence is weak
+
+---
+
+# 8. Jobs-to-be-Done
+
+Create a Jobs-to-be-Done page.
+
+## Purpose
+
+This page should define what the customer is trying to achieve, independent of the proposed solution.
+
+The module must avoid solution bias.
+
+## Required fields
+
+* Venture
+* Customer segment
+* Job title
+* Job statement
+* Functional job
+* Emotional job
+* Social job
+* Current solution
+* Desired outcome
+* Outcome metric
+* Importance score: 1–5
+* Satisfaction score: 1–5
+* Evidence summary
+* Status
+
+## Opportunity Score
+
+Calculate:
+
+Opportunity Score =
+Importance Score + (Importance Score - Satisfaction Score)
+
+Then convert to a 0–100 score.
+
+Interpretation:
+
+* 0–39 = Weak opportunity
+* 40–59 = Needs more evidence
+* 60–79 = Promising opportunity
+* 80–100 = Strong unmet need
+
+## Required output
+
+Display:
+
+* Top customer jobs
+* Most underserved jobs
+* Current alternatives
+* Outcome metrics
+* Recommended customer discovery test
+* Whether the proposed value proposition fits the job
+
+---
+
+# 9. Business Model Hypothesis
+
+Create a Business Model Hypothesis page.
+
+## Purpose
+
+This page should define how the venture might create, deliver, and capture value.
+
+It should connect to WTP Assessment and Lean Canvas.
+
+## Required fields
+
+* Venture
+* Linked value proposition
+* Customer segment
+* Revenue model
+* Pricing assumption
+* Delivery model
+* Sales channel
+* Cost drivers
+* Key partners
+* Scalability assumption
+* Unfair advantage
+* Data moat assumption
+* Sustainability assumption
+* Evidence required
+* Test method
+* Success metric
+* Status
+
+## Business Model Readiness Score
+
+Calculate:
+
+Business Model Readiness Score =
+Revenue Model Completeness × 15%
+
+* Pricing Assumption Completeness × 15%
+* Delivery Model Completeness × 15%
+* Channel Completeness × 15%
+* Cost Drivers Completeness × 10%
+* Scalability Assumption Completeness × 10%
+* Evidence Required Completeness × 20%
+
+If below 60, show warning:
+
+“Business model hypothesis is incomplete.”
+
+If no evidence required or success metric is defined, show warning:
+
+“Business model cannot be tested until evidence criteria are defined.”
+
+## Required output
+
+Show:
+
+* Business model readiness score
+* Revenue model assumption
+* Pricing assumption
+* Delivery model assumption
+* Channel assumption
+* Scalability risk
+* Evidence required
+* Recommended test
+
+---
+
+# 10. Revenue Model Test
+
+Create a Revenue Model Test page.
+
+## Purpose
+
+This page should test whether the selected revenue model is commercially plausible.
+
+It should link directly to WTP Assessment.
+
+## Required fields
+
+* Venture
+* Business model hypothesis
+* Revenue model tested
+* Test method
+* Target customer segment
+* Price point tested
+* Value metric
+* Expected customer behaviour
+* Sample size
+* Positive responses
+* Negative responses
+* Conversion rate
+* Learning summary
+* Recommended next test
+* Status
+
+## Revenue Model Evidence Score
+
+Calculate:
+
+Revenue Model Evidence Score =
+Conversion Rate × 40%
+
+* WTP Evidence Strength × 30%
+* Budget Owner Validation × 15%
+* Procurement Pathway Validation × 15%
+
+If there is no WTP evidence, cap score at 50.
+
+If there is no budget-owner validation, cap score at 70.
+
+If conversion rate is based on fewer than five customer interactions, show warning:
+
+“Sample size is too small for reliable revenue model confidence.”
+
+## Required output
+
+Display:
+
+* Revenue model tested
+* Conversion signal
+* WTP evidence
+* Budget-owner status
+* Procurement pathway status
+* Recommendation: continue, test again, pivot model, or proceed
+
+---
+
+# 11. Pricing Experiment Link
+
+Create a Pricing Experiment Link section.
+
+## Purpose
+
+This section should not duplicate the WTP Assessment module. It should pull pricing evidence from WTP and show whether pricing assumptions are supported.
+
+## Required UI
+
+Show:
+
+* Linked WTP tests
+* Pricing models tested
+* Price points tested
+* Customer responses
+* Objections
+* Evidence ladder level
+* Budget-owner status
+* Procurement pathway status
+
+## Required output
+
+Show:
+
+* Pricing confidence
+* Main pricing objection
+* Recommended next price test
+* Whether pricing assumption should be retained, revised, or rejected
+
+## Integration rule
+
+If the user wants to create a new pricing experiment from this page, create it in the shared WTP/pricing experiment structure, not as a disconnected local form.
+
+---
+
+# 12. Unit Economics
+
+Create a Unit Economics page.
+
+## Purpose
+
+This page should model whether the business model can become economically viable.
+
+It should begin with assumptions and become more evidence-based over time.
+
+## Required fields
+
+* Venture
+* Business model hypothesis
+* Customer acquisition cost
+* Lifetime value
+* Average contract value
+* Gross margin percentage
+* Contribution margin
+* Delivery cost
+* Support cost
+* Setup cost
+* Expected payback months
+* Expected churn rate
+* Repeat purchase rate
+* Assumptions summary
+* Confidence level
+
+## Unit Economics Confidence Score
+
+Calculate:
+
+Unit Economics Confidence Score =
+CAC Completeness × 15%
+
+* LTV Completeness × 15%
+* Margin Completeness × 20%
+* Delivery Cost Completeness × 15%
+* Payback Completeness × 15%
+* Evidence Confidence × 20%
+
+If LTV is lower than CAC, show critical warning:
+
+“Unit economics are currently negative.”
+
+If payback is over 18 months for an early-stage B2B model, show caution warning.
+
+If gross margin is below 40% for software/platform models, show caution warning.
+
+For physical product ventures, allow user to define a target margin threshold.
+
+## Required output
+
+Show:
+
+* Unit economics confidence
+* CAC/LTV ratio
+* Gross margin
+* Payback period
+* Margin risk
+* Recommended experiment to improve economic confidence
+
+---
+
+# 13. Lean Canvas
+
+Create or update the Lean Canvas page.
+
+## Purpose
+
+This page should provide a versioned Lean Canvas that changes as evidence is gathered.
+
+The canvas should not be treated as a static business plan.
+
+## Required Lean Canvas blocks
+
+1. Customer Segments
+2. Problem
+3. Existing Alternatives
+4. Unique Value Proposition
+5. Solution
+6. Channels
+7. Revenue Streams
+8. Cost Structure
+9. Key Metrics
+10. Unfair Advantage
+11. High-Level Concept
+
+## Required features
+
+* Save canvas version
+* Duplicate previous version
+* Compare versions if feasible
+* Link blocks to hypotheses
+* Link blocks to evidence
+* Mark blocks as assumption-led, testing, validated, invalidated, or pivoted
+* Show incomplete blocks
+* Export or copy summary
+
+## Canvas Completeness Score
+
+Calculate the percentage of completed blocks.
+
+If below 70, show warning:
+
+“Lean Canvas is incomplete. Do not progress to MVP definition until core blocks are defined.”
+
+## Evidence status per block
+
+Each block should show:
+
+* No evidence
+* Weak evidence
+* Moderate evidence
+* Strong evidence
+* Contradicted
+
+## Required output
+
+Show:
+
+* Latest canvas version
+* Completeness score
+* Evidence strength by block
+* Blocks requiring validation
+* Recommended next update
+* Pivot impact if business model changes
+
+---
+
+# 14. Business Model Risk Log
+
+Create a Business Model Risk Log section.
+
+## Purpose
+
+This section should capture risks that could invalidate the proposition or business model.
+
+It should also send critical risks to the shared Market Risk Log and Command Centre alerts.
+
+## Risk categories
+
+* Weak value proposition
+* Unclear customer job
+* Weak differentiation
+* Unvalidated revenue model
+* Pricing risk
+* Weak unit economics
+* Channel risk
+* Scalability risk
+* Delivery model risk
+* Data moat risk
+* Sustainability claim risk
+* Competitive positioning risk
+
+## Required fields
+
+* Venture
+* Linked record type
+* Linked record ID
+* Risk title
+* Risk category
+* Risk description
+* Probability score: 1–5
+* Severity score: 1–5
+* Evidence confidence score: 1–5
+* Mitigation plan
+* Required experiment
+* Owner
+* Review date
+* Status
+
+## Risk Score
+
+Calculate:
+
+Risk Score =
+Probability Score × Severity Score × Evidence Confidence Score
+
+Interpretation:
+
+* 1–25 = Low risk
+* 26–50 = Moderate risk
+* 51–75 = High risk
+* 76–125 = Critical risk
+
+## Auto-risk creation
+
+Create risks automatically when:
+
+* Value Proposition Quality Score is below 50
+* Business Model Readiness Score is below 50
+* Revenue Model Evidence Score is below 40
+* Unit Economics Confidence Score is below 40
+* CAC is higher than LTV
+* Pricing assumption is unsupported by WTP evidence
+* Lean Canvas has multiple contradicted blocks
+* Differentiation claim is generic or untested
+
+---
+
+# 15. Pivot History
+
+Create or update Pivot History for proposition and model changes.
+
+## Purpose
+
+Every major change to the value proposition, customer job, revenue model, pricing model, channel, or business architecture should be recorded as a structured pivot.
+
+## Required pivot types
+
+* Customer segment pivot
+* Customer need pivot
+* Value proposition pivot
+* Revenue model pivot
+* Pricing pivot
+* Channel pivot
+* Business architecture pivot
+* Value capture pivot
+* Platform pivot
+* Technology pivot
+
+## Required fields
+
+* Venture
+* Pivot type
+* Previous proposition/model
+* New proposition/model
+* Evidence trigger
+* Reason for pivot
+* Linked decision
+* Date logged
+* Impacted Lean Canvas blocks
+* Next hypothesis to test
+
+## Auto-prompt rules
+
+When a value proposition is marked invalidated, prompt user to create pivot log.
+
+When a revenue model test fails, prompt user to create pivot log.
+
+When pricing is rejected repeatedly, prompt user to create pricing or value capture pivot.
+
+When unit economics are negative, prompt user to consider business architecture or delivery model pivot.
+
+---
+
+# 16. Model Readiness Decision
+
+Create a Model Readiness Decision page.
+
+## Purpose
+
+This page should determine whether the venture is ready to proceed to R&D Hub / MVP definition.
+
+## Readiness Score
+
+Calculate:
+
+Proposition & Model Readiness Score =
+Value Proposition Quality Score × 20%
+
+* Customer Job Clarity Score × 15%
+* Business Model Readiness Score × 20%
+* Revenue Model Evidence Score × 20%
+* Unit Economics Confidence Score × 15%
+* inverse Business Model Risk Score × 10%
+
+Output categories:
+
+* 0–39 = Not ready
+* 40–59 = Needs more model validation
+* 60–79 = Ready for limited MVP definition
+* 80–100 = Strong proposition/model readiness
+
+## Decision logic
+
+If score is below 40:
+
+* Recommend: do not proceed to MVP build
+* Required action: revise proposition or business model
+
+If score is 40–59:
+
+* Recommend: run more proposition, revenue, pricing, or unit economics tests
+
+If score is 60–79:
+
+* Recommend: proceed to limited MVP definition with unresolved assumptions listed
+
+If score is 80–100:
+
+* Recommend: proceed to R&D Hub and define MVP experiment
+
+If WTP Score is below 60:
+
+* Override recommendation: strengthen commercial validation before MVP build
+
+If no customer job is defined:
+
+* Override recommendation: define Jobs-to-be-Done before MVP build
+
+If no measurable customer outcome exists:
+
+* Override recommendation: value proposition is not testable
+
+If business model has critical risks:
+
+* Override recommendation: mitigate model risks before stage progression
+
+## Required actions
+
+Allow the user to:
+
+* Approve model readiness
+* Request more evidence
+* Create revenue model test
+* Create pricing experiment
+* Create Lean experiment
+* Update Lean Canvas
+* Create pivot log
+* Send to R&D Hub
+* Send alert to Command Centre
+
+---
+
+# 17. Integration Requirements
+
+## Pull from Venture Intake
+
+Pull:
+
+* Venture idea
+* Founder assumptions
+* Customer segment hypothesis
+* Problem hypothesis
+* Value proposition hypothesis
+* Business model hypothesis
+* Initial Lean Canvas
+* Riskiest assumption
+
+## Pull from Discovery & Market
+
+Pull:
+
+* Customer Discovery Score
+* Interview insights
+* Current workaround
+* Competitor Mapping
+* Demand Signal Score
+* WTP Score
+* Budget owner status
+* Procurement pathway status
+* Market Risk Log
+
+## Push to R&D Hub
+
+Send:
+
+* Approved value proposition
+* Approved customer job
+* Approved measurable customer outcome
+* Business model hypothesis
+* MVP learning objective
+* Minimum viable test recommendation
+* Key assumptions still unresolved
+
+## Push to Command Centre
+
+Send:
+
+* Proposition readiness score
+* Business model readiness score
+* Revenue model evidence score
+* Unit economics confidence score
+* Critical business model risks
+* Pivot recommendations
+* Model readiness decision
+
+## Push to Market Risk Log
+
+Send:
+
+* Pricing risk
+* Revenue model risk
+* Weak unit economics risk
+* Channel risk
+* Scalability risk
+* Delivery model risk
+* Data moat risk
+* Sustainability claim risk
+
+## Push to Brand & GTM
+
+Send:
+
+* Validated customer segment
+* Value proposition statement
+* Differentiation claim
+* Channel hypothesis
+* Messaging assumptions
+* Key customer outcome
+* Growth hypothesis
+
+---
+
+# 18. UI Design Requirements
+
+Match the current EcoBLEND IO visual style:
+
+* Dark sidebar
+* Premium venture studio / enterprise SaaS aesthetic
+* Clean white or light main workspace
+* Rounded cards
+* Clear hierarchy
+* Status badges
+* Minimal icons
+* Professional decision cockpit feel
+
+Use status colours consistently:
+
+* Green = validated / strong / ready
+* Amber = incomplete / needs evidence / caution
+* Red = invalidated / high risk / blocked
+* Grey = untested / unknown
+* Blue = active / testing / in progress
+
+Each page should include:
+
+* Header
+* Short explanatory description
+* Venture selector
+* Linked hypothesis selector
+* Primary action button
+* Scorecard
+* Main table or canvas
+* Decision output
+* Next best action recommendation
+
+Avoid clutter. This module should help the user make a proposition/model decision, not just fill in forms.
+
+---
+
+# 19. Reusable Components
+
+Create or reuse:
+
+* VentureSelector
+* HypothesisSelector
+* CustomerSegmentSelector
+* ValuePropositionCard
+* JTBDCard
+* BusinessModelCard
+* RevenueModelTestTable
+* UnitEconomicsPanel
+* LeanCanvasGrid
+* CanvasBlockEvidenceBadge
+* ModelReadinessScoreCard
+* BusinessModelRiskTable
+* PivotHistoryTable
+* DecisionBadge
+* RiskBadge
+* NextActionPanel
+* FormDrawer
+* EmptyState
+* ConfirmationModal
+
+Create reusable utilities:
+
+* calculateValuePropositionQualityScore()
+* calculateJTBDOpportunityScore()
+* calculateBusinessModelReadinessScore()
+* calculateRevenueModelEvidenceScore()
+* calculateUnitEconomicsConfidenceScore()
+* calculateLeanCanvasCompletenessScore()
+* calculateBusinessModelRiskScore()
+* calculatePropositionModelReadinessScore()
+* generateModelReadinessDecision()
+* generatePropositionWarnings()
+* createBusinessModelRisks()
+* createCommandAlertsFromModelRisks()
+* createPivotPromptFromModelChange()
+
+---
+
+# 20. Seed Data
+
+Create realistic seed data for at least four ventures:
+
+1. BEBUS
+2. ECOCOMP
+3. REAL
+4. TONE
+
+## BEBUS
+
+Value proposition:
+Reduce avoidable downtime and improve supplier accountability through structured reliability intelligence.
+
+Customer job:
+Fleet engineering teams need to diagnose recurring vehicle reliability problems and hold suppliers accountable.
+
+Business model hypothesis:
+Paid pilot followed by consultancy-plus-platform subscription.
+
+Revenue model:
+Paid pilot + annual subscription.
+
+Unit economics assumption:
+High initial service cost, improving margin through reusable reliability intelligence templates.
+
+Key risk:
+Operators may value the insight but resist sharing operational reliability data.
+
+## ECOCOMP
+
+Value proposition:
+Validated sustainable composite material formulations that reduce development uncertainty and compliance risk.
+
+Customer job:
+Manufacturers need lower-carbon materials that meet performance, quality, and production constraints.
+
+Business model hypothesis:
+Licensing plus formulation development fee.
+
+Revenue model:
+Licence + project fee.
+
+Unit economics assumption:
+High formulation development cost offset by repeatable formulation IP and licensing.
+
+Key risk:
+Manufacturers may require production-scale proof before paying.
+
+## REAL
+
+Value proposition:
+High-performance combat sports protective equipment using credible sustainable materials without compromising durability.
+
+Customer job:
+Athletes and gyms need protective equipment that performs, lasts, and aligns with sustainability values.
+
+Business model hypothesis:
+D2C product sales plus gym partnerships.
+
+Revenue model:
+Product sales + gym partner bundles.
+
+Unit economics assumption:
+Margins depend on material cost, batch size, and D2C acquisition cost.
+
+Key risk:
+Sustainability may not justify premium pricing unless performance is clearly proven.
+
+## TONE
+
+Value proposition:
+Modular sustainable equipment systems that reduce storage burden, lifecycle cost, and waste for creative production teams.
+
+Customer job:
+Production operators need flexible equipment systems that reduce cost, storage, transport, and environmental impact.
+
+Business model hypothesis:
+Product sales plus rental or licensing model.
+
+Revenue model:
+Product sales + rental model.
+
+Unit economics assumption:
+Recurring rental improves LTV but requires asset utilisation and maintenance control.
+
+Key risk:
+Creative operators may not change procurement habits without strong ROI evidence.
+
+---
+
+# 21. Testing Requirements
+
+Test that:
+
+* Proposition & Model routes load correctly
+* Venture selector works across all sub-sections
+* Value propositions can be created, edited, viewed, and deleted
+* JTBD records can be created and scored
+* Business model hypotheses can be created and scored
+* Revenue model tests can be created and linked to WTP evidence
+* Unit economics records can be created and scored
+* Lean Canvas saves versions correctly
+* Lean Canvas blocks show evidence status
+* Business model risks are created automatically
+* Critical risks appear in Market Risk Log
+* Command Centre receives readiness scores and alerts
+* Pivot prompts appear when model assumptions are invalidated
+* Model Readiness Decision blocks MVP progression when required evidence is missing
+* R&D Hub receives approved proposition/model data
+* Empty states do not crash
+* Existing data is not overwritten
+* Duplicate venture or hypothesis records are not created
+
+---
+
+# 22. Acceptance Criteria
+
+The Proposition & Model module is complete when:
+
+* It clearly links customer evidence to value proposition design.
+* It distinguishes assumptions from validated evidence.
+* It includes Value Proposition Canvas functionality.
+* It includes Jobs-to-be-Done functionality.
+* It includes Business Model Hypothesis functionality.
+* It includes Revenue Model Test functionality.
+* It links pricing evidence from WTP Assessment.
+* It includes Unit Economics functionality.
+* It includes a versioned Lean Canvas.
+* It includes Business Model Risk tracking.
+* It records proposition/model pivots.
+* It calculates Proposition & Model Readiness.
+* It prevents premature progression to MVP build when WTP, customer job, measurable outcome, or business model evidence is weak.
+* It feeds Command Centre, R&D Hub, Brand & GTM, and Market Risk Log.
+* Seed data demonstrates BEBUS, ECOCOMP, REAL, and TONE.
+
+---
+
+# 23. Critical Failure Modes to Avoid
+
+Avoid these mistakes:
+
+1. **Static business planning**
+   Do not build this as a business-plan document generator. Build it as an evidence-based proposition and model validation system.
+
+2. **Solution bias**
+   Do not let users define the solution before the customer job, pain, gain, and measurable outcome are clear.
+
+3. **Generic value propositions**
+   Reject or warn against vague claims such as “AI-powered”, “sustainable”, “innovative”, or “data-driven” unless they are linked to measurable customer value.
+
+4. **Disconnected Lean Canvas**
+   The Lean Canvas must link to hypotheses and evidence, not sit as an isolated template.
+
+5. **False commercial confidence**
+   Do not let revenue model confidence exceed WTP evidence.
+
+6. **Ignoring unit economics**
+   Commercial interest is not enough if delivery cost, margin, CAC, LTV, or payback assumptions are structurally weak.
+
+7. **Premature MVP build**
+   The system must block or warn against moving to R&D Hub if the proposition and model are not sufficiently validated.
+
+8. **No pivot memory**
+   Proposition and model changes must be logged with evidence triggers.
+
+9. **No cross-module integration**
+   This module must exchange data with Venture Intake, Discovery & Market, WTP Assessment, Command Centre, Market Risk Log, R&D Hub, and Brand & GTM.
+
+10. **Duplicate data models**
+    Reuse existing venture, hypothesis, evidence, experiment, decision, pivot, and Lean Canvas structures wherever possible.
+
+---
+
+# 24. Final Developer Output Required
+
+After completing the audit and implementation, provide:
+
+1. Summary of the Proposition & Model audit
+2. Existing files and components found
+3. What was changed
+4. Files modified
+5. New database tables or migrations added
+6. Existing tables reused
+7. Assumptions made
+8. Features not completed
+9. Bugs found
+10. Recommended next development step
+
+The strategic objective is to make **D. Proposition & Model** the business model validation layer of EcoBLEND IO, ensuring each venture has a testable value proposition, revenue model, unit economics logic, Lean Canvas, and model-readiness decision before progressing to R&D Hub or MVP build.
