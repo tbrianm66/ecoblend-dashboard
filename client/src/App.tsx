@@ -91,6 +91,7 @@ import AdminProductionReadiness from "./pages/AdminProductionReadiness";
 import ModulePlaceholder from "./pages/ModulePlaceholder";
 import SustainabilityHub from "./pages/sustainability/SustainabilityHub";
 import ImpactMetrics from "./pages/sustainability/ImpactMetrics";
+import LcaCarbon from "./pages/sustainability/LcaCarbon";
 import PortfolioOverviewTabs from "./pages/command/PortfolioOverviewTabs";
 import CommandCentreTabs from "./pages/command/CommandCentreTabs";
 import PipelineTabs from "./pages/command/PipelineTabs";
@@ -266,7 +267,7 @@ function Router() {
       {/* Module 8: Sustainability & Impact */}
       <Route path="/sustainability" component={SustainabilityHub} />
       <Route path="/sustainability/impact" component={ImpactMetrics} />
-      <Route path="/sustainability/lca" component={ModulePlaceholder} />
+      <Route path="/sustainability/lca" component={LcaCarbon} />
       <Route path="/sustainability/circularity" component={ModulePlaceholder} />
       <Route path="/sustainability/bcorp" component={ModulePlaceholder} />
       {/* Module 9: Risk Intelligence (existing pages + new) */}

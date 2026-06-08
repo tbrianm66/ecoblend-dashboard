@@ -7964,3 +7964,21 @@ export const impactMetrics = pgTable("impact_metrics", {
 });
 export type ImpactMetric = typeof impactMetrics.$inferSelect;
 export type InsertImpactMetric = typeof impactMetrics.$inferInsert;
+
+// ── Module 8 Stage 3: LCA / Carbon ───────────────────────────────────────────
+export const lcaCarbon = pgTable("lca_carbon", {
+  id:                  serial("id").primaryKey(),
+  ventureId:           varchar("ventureId", { length: 64 }).notNull().unique().references(() => ventures.id, { onDelete: "cascade" }),
+  totalFootprint:      numeric("totalFootprint",      { precision: 12, scale: 3 }).notNull().default("0"),
+  scope1Direct:        numeric("scope1Direct",        { precision: 12, scale: 3 }).notNull().default("0"),
+  scope2Indirect:      numeric("scope2Indirect",      { precision: 12, scale: 3 }).notNull().default("0"),
+  scope3SupplyChain:   numeric("scope3SupplyChain",   { precision: 12, scale: 3 }).notNull().default("0"),
+  phaseMaterials:      numeric("phaseMaterials",      { precision: 12, scale: 3 }).notNull().default("0"),
+  phaseManufacturing:  numeric("phaseManufacturing",  { precision: 12, scale: 3 }).notNull().default("0"),
+  phaseDistribution:   numeric("phaseDistribution",   { precision: 12, scale: 3 }).notNull().default("0"),
+  phaseUse:            numeric("phaseUse",            { precision: 12, scale: 3 }).notNull().default("0"),
+  createdAt:           timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:           timestamp("updatedAt").defaultNow().notNull(),
+});
+export type LcaCarbon = typeof lcaCarbon.$inferSelect;
+export type InsertLcaCarbon = typeof lcaCarbon.$inferInsert;
