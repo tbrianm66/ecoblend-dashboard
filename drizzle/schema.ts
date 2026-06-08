@@ -7998,3 +7998,22 @@ export const circularityMetrics = pgTable("circularity_metrics", {
 });
 export type CircularityMetric = typeof circularityMetrics.$inferSelect;
 export type InsertCircularityMetric = typeof circularityMetrics.$inferInsert;
+
+// ── Module 8 Stage 5: B Corp & ESG ───────────────────────────────────────────
+export const esgBcorpMetrics = pgTable("esg_bcorp_metrics", {
+  id:                   serial("id").primaryKey(),
+  ventureId:            varchar("ventureId", { length: 64 }).notNull().unique().references(() => ventures.id, { onDelete: "cascade" }),
+  totalBScore:          numeric("totalBScore",          { precision: 6, scale: 2 }).notNull().default("0"),
+  bGovernance:          numeric("bGovernance",          { precision: 6, scale: 2 }).notNull().default("0"),
+  bWorkers:             numeric("bWorkers",             { precision: 6, scale: 2 }).notNull().default("0"),
+  bCommunity:           numeric("bCommunity",           { precision: 6, scale: 2 }).notNull().default("0"),
+  bEnvironment:         numeric("bEnvironment",         { precision: 6, scale: 2 }).notNull().default("0"),
+  bCustomers:           numeric("bCustomers",           { precision: 6, scale: 2 }).notNull().default("0"),
+  esgEnvironmentalPct:  integer("esgEnvironmentalPct").notNull().default(0),
+  esgSocialPct:         integer("esgSocialPct").notNull().default(0),
+  esgGovernancePct:     integer("esgGovernancePct").notNull().default(0),
+  createdAt:            timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:            timestamp("updatedAt").defaultNow().notNull(),
+});
+export type EsgBcorpMetric = typeof esgBcorpMetrics.$inferSelect;
+export type InsertEsgBcorpMetric = typeof esgBcorpMetrics.$inferInsert;

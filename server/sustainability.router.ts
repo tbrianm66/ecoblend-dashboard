@@ -54,4 +54,17 @@ export const sustainabilityRouter = router({
         .where(eq(circularityMetrics.ventureId, input.ventureId));
       return row ?? null;
     }),
+
+  getEsgBcorpData: publicProcedure
+    .input(z.object({ ventureId: z.string() }))
+    .query(async ({ input }) => {
+      const db = (await getDb())!;
+      const { eq } = await import("drizzle-orm");
+      const { esgBcorpMetrics } = await import("../drizzle/schema");
+      const [row] = await db
+        .select()
+        .from(esgBcorpMetrics)
+        .where(eq(esgBcorpMetrics.ventureId, input.ventureId));
+      return row ?? null;
+    }),
 });
