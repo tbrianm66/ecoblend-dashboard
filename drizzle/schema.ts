@@ -7948,3 +7948,19 @@ export const sustainabilityHub = pgTable("sustainability_hub", {
 });
 export type SustainabilityHub = typeof sustainabilityHub.$inferSelect;
 export type InsertSustainabilityHub = typeof sustainabilityHub.$inferInsert;
+
+// ── Module 8 Stage 2: Impact Metrics (IRL) ───────────────────────────────────
+export const impactMetrics = pgTable("impact_metrics", {
+  id:           serial("id").primaryKey(),
+  ventureId:    varchar("ventureId", { length: 64 }).notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  metricName:   varchar("metricName", { length: 255 }).notNull(),
+  category:     varchar("category", { length: 64 }).notNull().default("Environmental"),
+  targetValue:  numeric("targetValue", { precision: 12, scale: 3 }).notNull().default("0"),
+  actualValue:  numeric("actualValue", { precision: 12, scale: 3 }).notNull().default("0"),
+  unit:         varchar("unit", { length: 64 }).notNull().default("units"),
+  irlLevel:     integer("irlLevel").notNull().default(0),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:    timestamp("updatedAt").defaultNow().notNull(),
+});
+export type ImpactMetric = typeof impactMetrics.$inferSelect;
+export type InsertImpactMetric = typeof impactMetrics.$inferInsert;
