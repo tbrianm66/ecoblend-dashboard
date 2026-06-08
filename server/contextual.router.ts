@@ -6,7 +6,7 @@
  */
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { router, protectedProcedure } from "./_core/trpc";
+import { router, protectedProcedure, publicProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import { sql, SQL } from "drizzle-orm";
 import {
@@ -23,7 +23,7 @@ const uuid = () => crypto.randomUUID();
 
 export const contextualRouter = router({
   // 1. getRecommendations — main entry point for the widget panel
-  getRecommendations: protectedProcedure
+  getRecommendations: publicProcedure
     .input(
       z.object({
         ventureId: z.string().nullable(),
@@ -38,13 +38,13 @@ export const contextualRouter = router({
         input.module,
         input.page,
         input.workflowStage,
-        ctx.user.id,
-        ctx.user.role || "user"
+        ctx.user?.id ?? "anonymous",
+        ctx.user?.role ?? "user"
       );
     }),
 
   // 2. getPlaybookDetail — full playbook content for the drawer
-  getPlaybookDetail: protectedProcedure
+  getPlaybookDetail: publicProcedure
     .input(z.object({ playbookId: z.string() }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -57,7 +57,7 @@ export const contextualRouter = router({
     }),
 
   // 3. getCompletionStatus — check if user has completed a playbook for a venture
-  getCompletionStatus: protectedProcedure
+  getCompletionStatus: publicProcedure
     .input(
       z.object({
         playbookId: z.string(),
@@ -65,6 +65,7 @@ export const contextualRouter = router({
       })
     )
     .query(async ({ ctx, input }) => {
+      if (!ctx.user?.id) return null;
       const db = await getDb();
       const [rows] = await db.execute(
         sql`SELECT * FROM playbook_completions WHERE playbook_id = ${input.playbookId} AND venture_id = ${input.ventureId} AND user_id = ${ctx.user.id} ORDER BY updated_at DESC LIMIT 1`
@@ -119,7 +120,7 @@ export const contextualRouter = router({
     }),
 
   // 6. getVentureCompletions — all completions for a venture
-  getVentureCompletions: protectedProcedure
+  getVentureCompletions: publicProcedure
     .input(z.object({ ventureId: z.string() }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -129,8 +130,8 @@ export const contextualRouter = router({
       return rows as any[];
     }),
 
-  // 7. logUsageEvent — track playbook interactions
-  logUsageEvent: protectedProcedure
+  // 7. logUsageEvent — track playbook interactions (public — fires on mount for anonymous users too)
+  logUsageEvent: publicProcedure
     .input(
       z.object({
         playbookId: z.string(),
@@ -144,6 +145,7 @@ export const contextualRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      if (!ctx.user?.id) return { id: null };
       const db = await getDb();
       const id = uuid();
       const now = Date.now();
@@ -154,7 +156,7 @@ export const contextualRouter = router({
     }),
 
   // 8. searchPlaybooks — full-text search across all published playbooks
-  searchPlaybooks: protectedProcedure
+  searchPlaybooks: publicProcedure
     .input(
       z.object({
         query: z.string().min(2),
@@ -180,7 +182,7 @@ export const contextualRouter = router({
     }),
 
   // 9. getModuleWidgetConfigs — widget configs for a specific module
-  getModuleWidgetConfigs: protectedProcedure
+  getModuleWidgetConfigs: publicProcedure
     .input(z.object({ module: z.string() }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -191,7 +193,7 @@ export const contextualRouter = router({
     }),
 
   // 10. getGuidanceEvents — active guidance events for a venture
-  getGuidanceEvents: protectedProcedure
+  getGuidanceEvents: publicProcedure
     .input(
       z.object({
         ventureId: z.string(),
@@ -221,7 +223,7 @@ export const contextualRouter = router({
     }),
 
   // 12. getPlaybookCategories — list all categories with counts
-  getPlaybookCategories: protectedProcedure.query(async () => {
+  getPlaybookCategories: publicProcedure.query(async () => {
     const db = await getDb();
     const [rows] = await db.execute(
       sql.raw(`SELECT category, COUNT(*) as count FROM playbook_library WHERE status = 'Published' GROUP BY category ORDER BY category`)
@@ -232,7 +234,7 @@ export const contextualRouter = router({
   // ─── Specialised Widget Data Endpoints (7) ───
 
   // W1. getMissingEvidence — evidence gaps for current module/venture
-  getMissingEvidence: protectedProcedure
+  getMissingEvidence: publicProcedure
     .input(
       z.object({
         ventureId: z.string(),
@@ -250,7 +252,7 @@ export const contextualRouter = router({
 
       // Fetch recommended playbooks for missing evidence context
       const playbooks = await getContextualPlaybooks(
-        input.ventureId, input.module, "ALL", "ALL", ctx.user.id, ctx.user.role || "user"
+        input.ventureId, input.module, "ALL", "ALL", ctx.user?.id ?? "anonymous", ctx.user?.role ?? "user"
       );
 
       // Determine missing evidence based on module
@@ -283,7 +285,7 @@ export const contextualRouter = router({
     }),
 
   // W2. getScoreImprovement — score blockers and improvement guidance
-  getScoreImprovement: protectedProcedure
+  getScoreImprovement: publicProcedure
     .input(
       z.object({
         ventureId: z.string(),
@@ -320,7 +322,7 @@ export const contextualRouter = router({
       if (!latestScore) blockers.push("No score recorded yet — complete the scoring assessment");
 
       const playbooks = await getContextualPlaybooks(
-        input.ventureId, "Readiness Scoring", "ALL", "ALL", ctx.user.id, ctx.user.role || "user"
+        input.ventureId, "Readiness Scoring", "ALL", "ALL", ctx.user?.id ?? "anonymous", ctx.user?.role ?? "user"
       );
 
       return {
@@ -336,7 +338,7 @@ export const contextualRouter = router({
     }),
 
   // W3. getRDStageGuidance — R&D stage requirements and playbooks
-  getRDStageGuidance: protectedProcedure
+  getRDStageGuidance: publicProcedure
     .input(
       z.object({
         ventureId: z.string(),
@@ -369,7 +371,7 @@ export const contextualRouter = router({
       const missing = required.filter(r => !completedEv.some(c => c?.toLowerCase().includes(r.toLowerCase().split(" ")[0])));
 
       const playbooks = await getContextualPlaybooks(
-        input.ventureId, "Research & Technical Validation", "ALL", "ALL", ctx.user.id, ctx.user.role || "user"
+        input.ventureId, "Research & Technical Validation", "ALL", "ALL", ctx.user?.id ?? "anonymous", ctx.user?.role ?? "user"
       );
 
       return {
@@ -385,7 +387,7 @@ export const contextualRouter = router({
     }),
 
   // W4. getInvestmentPackReadiness — investor pack readiness status
-  getInvestmentPackReadiness: protectedProcedure
+  getInvestmentPackReadiness: publicProcedure
     .input(z.object({ ventureId: z.string() }))
     .query(async ({ ctx, input }) => {
       const db = await getDb();
@@ -425,7 +427,7 @@ export const contextualRouter = router({
       else if (warnings.length > 0) status = "Ready with Warnings";
 
       const playbooks = await getContextualPlaybooks(
-        input.ventureId, "Investment Readiness", "ALL", "ALL", ctx.user.id, ctx.user.role || "user"
+        input.ventureId, "Investment Readiness", "ALL", "ALL", ctx.user?.id ?? "anonymous", ctx.user?.role ?? "user"
       );
 
       return {
@@ -443,7 +445,7 @@ export const contextualRouter = router({
     }),
 
   // W5. getRiskMitigation — high risk items and mitigation guidance
-  getRiskMitigation: protectedProcedure
+  getRiskMitigation: publicProcedure
     .input(
       z.object({
         ventureId: z.string(),
@@ -458,7 +460,7 @@ export const contextualRouter = router({
       const risks = riskRows as any[];
 
       const playbooks = await getContextualPlaybooks(
-        input.ventureId, "Risk Intelligence", "ALL", "ALL", ctx.user.id, ctx.user.role || "user"
+        input.ventureId, "Risk Intelligence", "ALL", "ALL", ctx.user?.id ?? "anonymous", ctx.user?.role ?? "user"
       );
 
       const topCategory = risks[0]?.risk_category || null;
@@ -476,7 +478,7 @@ export const contextualRouter = router({
     }),
 
   // W6. getStageGate — stage-gate blockers and approval readiness
-  getStageGate: protectedProcedure
+  getStageGate: publicProcedure
     .input(
       z.object({
         ventureId: z.string(),
@@ -512,7 +514,7 @@ export const contextualRouter = router({
       });
 
       const playbooks = await getContextualPlaybooks(
-        input.ventureId, "Governance", "ALL", "ALL", ctx.user.id, ctx.user.role || "user"
+        input.ventureId, "Governance", "ALL", "ALL", ctx.user?.id ?? "anonymous", ctx.user?.role ?? "user"
       );
 
       return {
@@ -527,7 +529,7 @@ export const contextualRouter = router({
     }),
 
   // W7. getWidgetContext — combined context for ContextualWidgetPanel
-  getWidgetContext: protectedProcedure
+  getWidgetContext: publicProcedure
     .input(
       z.object({
         ventureId: z.string().nullable(),
@@ -537,13 +539,13 @@ export const contextualRouter = router({
     )
     .query(async ({ ctx, input }) => {
       const playbooks = await getContextualPlaybooks(
-        input.ventureId, input.module, "ALL", "ALL", ctx.user.id, ctx.user.role || "user"
+        input.ventureId, input.module, "ALL", "ALL", ctx.user?.id ?? "anonymous", ctx.user?.role ?? "user"
       );
       return {
         module: input.module,
         ventureId: input.ventureId,
         recommendedPlaybooks: playbooks,
-        userRole: ctx.user.role || "user",
+        userRole: ctx.user?.role ?? "user",
       };
     }),
 

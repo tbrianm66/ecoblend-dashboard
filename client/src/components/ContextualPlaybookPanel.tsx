@@ -134,8 +134,8 @@ export default function ContextualPlaybookPanel({
     <>
       <div className="rounded-xl border" style={{ borderColor: "#e5e7eb", background: "#ffffff" }}>
         {/* Header */}
-        <button
-          className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors rounded-t-xl"
+        <div
+          className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors rounded-t-xl cursor-pointer"
           onClick={() => setExpanded(!expanded)}
         >
           <div className="flex items-center gap-2">
@@ -168,7 +168,7 @@ export default function ContextualPlaybookPanel({
               <ChevronDown size={14} className="text-gray-400" />
             )}
           </div>
-        </button>
+        </div>
 
         {/* Content */}
         {expanded && (

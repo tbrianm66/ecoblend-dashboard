@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { router, protectedProcedure } from "./_core/trpc";
+import { router, protectedProcedure, publicProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import {
   auditLog,
@@ -12,7 +12,7 @@ import { eq, desc, and, like, or } from "drizzle-orm";
 
 // ── Audit Log ─────────────────────────────────────────────────────────────────
 const auditLogRouter = router({
-  list: protectedProcedure
+  list: publicProcedure
     .input(z.object({
       module: z.string().optional(),
       userId: z.string().optional(),
@@ -57,7 +57,7 @@ const auditLogRouter = router({
       return { id: (result as any).insertId };
     }),
 
-  getStats: protectedProcedure.query(async () => {
+  getStats: publicProcedure.query(async () => {
     const db = await getDb();
     const rows = await db!.select().from(auditLog).orderBy(desc(auditLog.createdAt)).limit(500);
     const total = rows.length;
@@ -71,7 +71,7 @@ const auditLogRouter = router({
 
 // ── Venture Permissions ───────────────────────────────────────────────────────
 const permissionsRouter = router({
-  list: protectedProcedure
+  list: publicProcedure
     .input(z.object({ ventureId: z.string().optional() }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -112,7 +112,7 @@ const permissionsRouter = router({
 
 // ── Governance Policies ───────────────────────────────────────────────────────
 const policiesRouter = router({
-  list: protectedProcedure
+  list: publicProcedure
     .input(z.object({ module: z.string().optional() }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -153,7 +153,7 @@ const policiesRouter = router({
 
 // ── Compliance Checks ─────────────────────────────────────────────────────────
 const complianceRouter = router({
-  list: protectedProcedure
+  list: publicProcedure
     .input(z.object({
       ventureId: z.string().optional(),
       framework: z.string().optional(),
@@ -201,7 +201,7 @@ const complianceRouter = router({
       return { success: true };
     }),
 
-  getStats: protectedProcedure.query(async () => {
+  getStats: publicProcedure.query(async () => {
     const db = await getDb();
     const rows = await db!.select().from(complianceChecks);
     const total = rows.length;
@@ -216,7 +216,7 @@ const complianceRouter = router({
 
 // ── Risk Register ─────────────────────────────────────────────────────────────
 const riskRegisterRouter = router({
-  list: protectedProcedure
+  list: publicProcedure
     .input(z.object({
       ventureId: z.string().optional(),
       category: z.string().optional(),
@@ -269,7 +269,7 @@ const riskRegisterRouter = router({
       return { success: true };
     }),
 
-  getStats: protectedProcedure.query(async () => {
+  getStats: publicProcedure.query(async () => {
     const db = await getDb();
     const rows = await db!.select().from(riskRegister);
     const total = rows.length;
@@ -284,7 +284,7 @@ const riskRegisterRouter = router({
 
 // ── Summary ───────────────────────────────────────────────────────────────────
 const governanceSummaryRouter = router({
-  get: protectedProcedure.query(async () => {
+  get: publicProcedure.query(async () => {
     const db = await getDb();
     const [auditRows, permRows, policyRows, compRows, riskRows] = await Promise.all([
       db!.select().from(auditLog).orderBy(desc(auditLog.createdAt)).limit(200),
