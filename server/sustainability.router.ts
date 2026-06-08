@@ -41,4 +41,17 @@ export const sustainabilityRouter = router({
         .where(eq(lcaCarbon.ventureId, input.ventureId));
       return row ?? null;
     }),
+
+  getCircularityData: publicProcedure
+    .input(z.object({ ventureId: z.string() }))
+    .query(async ({ input }) => {
+      const db = (await getDb())!;
+      const { eq } = await import("drizzle-orm");
+      const { circularityMetrics } = await import("../drizzle/schema");
+      const [row] = await db
+        .select()
+        .from(circularityMetrics)
+        .where(eq(circularityMetrics.ventureId, input.ventureId));
+      return row ?? null;
+    }),
 });

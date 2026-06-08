@@ -7982,3 +7982,19 @@ export const lcaCarbon = pgTable("lca_carbon", {
 });
 export type LcaCarbon = typeof lcaCarbon.$inferSelect;
 export type InsertLcaCarbon = typeof lcaCarbon.$inferInsert;
+
+// ── Module 8 Stage 4: Circularity Metrics ────────────────────────────────────
+export const circularityMetrics = pgTable("circularity_metrics", {
+  id:                  serial("id").primaryKey(),
+  ventureId:           varchar("ventureId", { length: 64 }).notNull().unique().references(() => ventures.id, { onDelete: "cascade" }),
+  globalMciScore:      numeric("globalMciScore",      { precision: 8, scale: 3 }).notNull().default("0"),
+  circularInflowPct:   numeric("circularInflowPct",   { precision: 8, scale: 3 }).notNull().default("0"),
+  virginInflowPct:     numeric("virginInflowPct",     { precision: 8, scale: 3 }).notNull().default("0"),
+  landfillDiversionPct:numeric("landfillDiversionPct",{ precision: 8, scale: 3 }).notNull().default("0"),
+  recoveryPotentialPct:numeric("recoveryPotentialPct",{ precision: 8, scale: 3 }).notNull().default("0"),
+  waterRecycledPct:    numeric("waterRecycledPct",    { precision: 8, scale: 3 }).notNull().default("0"),
+  createdAt:           timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:           timestamp("updatedAt").defaultNow().notNull(),
+});
+export type CircularityMetric = typeof circularityMetrics.$inferSelect;
+export type InsertCircularityMetric = typeof circularityMetrics.$inferInsert;
