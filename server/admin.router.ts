@@ -12,8 +12,11 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure, publicProcedure } from "./_core/trpc";
 import { getDb } from "./db";
-import { playbookLibrary, playbookVersions, adminTemplates, users } from "../drizzle/schema";
-import { eq, and, desc, asc } from "drizzle-orm";
+import {
+  playbookLibrary, playbookVersions, adminTemplates, users,
+  usersRoles, systemAuditLogs, ventures,
+} from "../drizzle/schema";
+import { eq, and, desc, asc, ilike, or } from "drizzle-orm";
 
 // ── Helper: admin guard ───────────────────────────────────────────────────────
 function requireAdmin(role: string) {
@@ -368,6 +371,235 @@ export const adminRouter = router({
         return { success: true };
       }),
   },
+
+  // ── Users & Roles (users_roles table) ─────────────────────────────────────
+  getUsersAndRoles: publicProcedure
+    .input(z.object({
+      search:     z.string().optional(),
+      systemRole: z.string().optional(),
+      ventureId:  z.string().optional(),
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const rows = await db
+        .select({
+          id:                usersRoles.id,
+          userName:          usersRoles.userName,
+          email:             usersRoles.email,
+          systemRole:        usersRoles.systemRole,
+          assignedVentureId: usersRoles.assignedVentureId,
+          isActive:          usersRoles.isActive,
+          createdAt:         usersRoles.createdAt,
+          ventureName:       ventures.name,
+        })
+        .from(usersRoles)
+        .leftJoin(ventures, eq(usersRoles.assignedVentureId, ventures.id))
+        .orderBy(asc(usersRoles.systemRole), asc(usersRoles.userName));
+
+      let out = rows;
+      if (input?.systemRole) out = out.filter(r => r.systemRole === input.systemRole);
+      if (input?.ventureId)  out = out.filter(r => r.assignedVentureId === input.ventureId);
+      if (input?.search) {
+        const q = input.search.toLowerCase();
+        out = out.filter(r =>
+          r.userName.toLowerCase().includes(q) ||
+          r.email.toLowerCase().includes(q) ||
+          (r.ventureName ?? "").toLowerCase().includes(q)
+        );
+      }
+      return out;
+    }),
+
+  // ── Permissions Matrix (static definition) ────────────────────────────────
+  getPermissionsLayout: publicProcedure.query(async () => {
+    const ROLES = ["Studio Director", "Platform Admin", "Coach", "Founder"] as const;
+    type Role = typeof ROLES[number];
+    type Perms = { read: boolean; write: boolean; delete: boolean };
+
+    const matrix: Array<{
+      module: string;
+      group: string;
+      permissions: Record<Role, Perms>;
+    }> = [
+      {
+        module: "Ventures — Create & Archive",
+        group: "Core Operations",
+        permissions: {
+          "Studio Director": { read: true,  write: true,  delete: true  },
+          "Platform Admin":  { read: true,  write: true,  delete: true  },
+          "Coach":           { read: true,  write: false, delete: false },
+          "Founder":         { read: true,  write: false, delete: false },
+        },
+      },
+      {
+        module: "Lean Canvas",
+        group: "Core Operations",
+        permissions: {
+          "Studio Director": { read: true,  write: true,  delete: true  },
+          "Platform Admin":  { read: true,  write: true,  delete: false },
+          "Coach":           { read: true,  write: true,  delete: false },
+          "Founder":         { read: true,  write: true,  delete: false },
+        },
+      },
+      {
+        module: "Hypothesis Register",
+        group: "Validation",
+        permissions: {
+          "Studio Director": { read: true,  write: true,  delete: true  },
+          "Platform Admin":  { read: true,  write: true,  delete: true  },
+          "Coach":           { read: true,  write: true,  delete: false },
+          "Founder":         { read: true,  write: true,  delete: false },
+        },
+      },
+      {
+        module: "Customer Interviews",
+        group: "Validation",
+        permissions: {
+          "Studio Director": { read: true,  write: true,  delete: true  },
+          "Platform Admin":  { read: true,  write: true,  delete: true  },
+          "Coach":           { read: true,  write: true,  delete: false },
+          "Founder":         { read: true,  write: true,  delete: false },
+        },
+      },
+      {
+        module: "VRL Scoring",
+        group: "Scoring & Assessment",
+        permissions: {
+          "Studio Director": { read: true,  write: true,  delete: true  },
+          "Platform Admin":  { read: true,  write: true,  delete: false },
+          "Coach":           { read: true,  write: true,  delete: false },
+          "Founder":         { read: true,  write: false, delete: false },
+        },
+      },
+      {
+        module: "TRL Assessment",
+        group: "Scoring & Assessment",
+        permissions: {
+          "Studio Director": { read: true,  write: true,  delete: true  },
+          "Platform Admin":  { read: true,  write: true,  delete: false },
+          "Coach":           { read: true,  write: true,  delete: false },
+          "Founder":         { read: true,  write: true,  delete: false },
+        },
+      },
+      {
+        module: "Stage-Gate Decisions",
+        group: "Governance",
+        permissions: {
+          "Studio Director": { read: true,  write: true,  delete: true  },
+          "Platform Admin":  { read: true,  write: true,  delete: false },
+          "Coach":           { read: true,  write: false, delete: false },
+          "Founder":         { read: true,  write: false, delete: false },
+        },
+      },
+      {
+        module: "Risk Register",
+        group: "Governance",
+        permissions: {
+          "Studio Director": { read: true,  write: true,  delete: true  },
+          "Platform Admin":  { read: true,  write: true,  delete: true  },
+          "Coach":           { read: true,  write: true,  delete: false },
+          "Founder":         { read: true,  write: true,  delete: false },
+        },
+      },
+      {
+        module: "Investment Pack & Data Room",
+        group: "Investment",
+        permissions: {
+          "Studio Director": { read: true,  write: true,  delete: true  },
+          "Platform Admin":  { read: true,  write: true,  delete: false },
+          "Coach":           { read: true,  write: false, delete: false },
+          "Founder":         { read: true,  write: true,  delete: false },
+        },
+      },
+      {
+        module: "R&D Hub / Prototypes",
+        group: "Build",
+        permissions: {
+          "Studio Director": { read: true,  write: true,  delete: true  },
+          "Platform Admin":  { read: true,  write: true,  delete: true  },
+          "Coach":           { read: true,  write: true,  delete: false },
+          "Founder":         { read: true,  write: true,  delete: false },
+        },
+      },
+      {
+        module: "Playbook Library",
+        group: "Admin",
+        permissions: {
+          "Studio Director": { read: true,  write: true,  delete: true  },
+          "Platform Admin":  { read: true,  write: true,  delete: true  },
+          "Coach":           { read: true,  write: false, delete: false },
+          "Founder":         { read: true,  write: false, delete: false },
+        },
+      },
+      {
+        module: "Users & Roles Management",
+        group: "Admin",
+        permissions: {
+          "Studio Director": { read: true,  write: true,  delete: true  },
+          "Platform Admin":  { read: true,  write: true,  delete: false },
+          "Coach":           { read: false, write: false, delete: false },
+          "Founder":         { read: false, write: false, delete: false },
+        },
+      },
+      {
+        module: "System Audit Logs",
+        group: "Admin",
+        permissions: {
+          "Studio Director": { read: true,  write: false, delete: false },
+          "Platform Admin":  { read: true,  write: false, delete: false },
+          "Coach":           { read: false, write: false, delete: false },
+          "Founder":         { read: false, write: false, delete: false },
+        },
+      },
+      {
+        module: "System Configuration",
+        group: "Admin",
+        permissions: {
+          "Studio Director": { read: true,  write: true,  delete: false },
+          "Platform Admin":  { read: true,  write: true,  delete: true  },
+          "Coach":           { read: false, write: false, delete: false },
+          "Founder":         { read: false, write: false, delete: false },
+        },
+      },
+    ];
+    return { roles: ROLES, matrix };
+  }),
+
+  // ── System Audit Logs ─────────────────────────────────────────────────────
+  getSystemAuditLogs: publicProcedure
+    .input(z.object({
+      category:  z.string().optional(),
+      module:    z.string().optional(),
+      ventureId: z.string().optional(),
+      limit:     z.number().min(1).max(200).optional(),
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const rows = await db
+        .select({
+          id:              systemAuditLogs.id,
+          actorName:       systemAuditLogs.actorName,
+          actorRole:       systemAuditLogs.actorRole,
+          actionPerformed: systemAuditLogs.actionPerformed,
+          targetModule:    systemAuditLogs.targetModule,
+          targetVentureId: systemAuditLogs.targetVentureId,
+          actionCategory:  systemAuditLogs.actionCategory,
+          createdAt:       systemAuditLogs.createdAt,
+          ventureName:     ventures.name,
+        })
+        .from(systemAuditLogs)
+        .leftJoin(ventures, eq(systemAuditLogs.targetVentureId, ventures.id))
+        .orderBy(desc(systemAuditLogs.createdAt))
+        .limit(input?.limit ?? 100);
+
+      let out = rows;
+      if (input?.category) out = out.filter(r => r.actionCategory === input.category);
+      if (input?.module)   out = out.filter(r => r.targetModule === input.module);
+      if (input?.ventureId) out = out.filter(r => r.targetVentureId === input.ventureId);
+      return out;
+    }),
 });
 
 export type AdminRouter = typeof adminRouter;

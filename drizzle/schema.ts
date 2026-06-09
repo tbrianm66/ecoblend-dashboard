@@ -8069,3 +8069,33 @@ export const advisoryReviews = pgTable("advisory_reviews", {
 });
 export type AdvisoryReview = typeof advisoryReviews.$inferSelect;
 export type InsertAdvisoryReview = typeof advisoryReviews.$inferInsert;
+
+// ── Admin: Users & Roles ──────────────────────────────────────────────────────
+export const usersRoles = pgTable("users_roles", {
+  id:                 serial("id").primaryKey(),
+  userName:           varchar("userName", { length: 128 }).notNull(),
+  email:              varchar("email", { length: 255 }).notNull().unique(),
+  systemRole:         text("systemRole").notNull().default("Founder"),
+  assignedVentureId:  varchar("assignedVentureId", { length: 64 })
+                        .references(() => ventures.id, { onDelete: "set null" }),
+  isActive:           boolean("isActive").notNull().default(true),
+  createdAt:          timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:          timestamp("updatedAt").defaultNow().notNull(),
+});
+export type UserRole = typeof usersRoles.$inferSelect;
+export type InsertUserRole = typeof usersRoles.$inferInsert;
+
+// ── Admin: System Audit Logs ──────────────────────────────────────────────────
+export const systemAuditLogs = pgTable("system_audit_logs", {
+  id:               serial("id").primaryKey(),
+  actorName:        varchar("actorName", { length: 255 }).notNull(),
+  actorRole:        varchar("actorRole", { length: 128 }),
+  actionPerformed:  text("actionPerformed").notNull(),
+  targetModule:     varchar("targetModule", { length: 128 }).notNull(),
+  targetVentureId:  varchar("targetVentureId", { length: 64 }),
+  targetRecordId:   varchar("targetRecordId", { length: 128 }),
+  actionCategory:   varchar("actionCategory", { length: 64 }).default("update"),
+  createdAt:        timestamp("createdAt").defaultNow().notNull(),
+});
+export type SystemAuditLog = typeof systemAuditLogs.$inferSelect;
+export type InsertSystemAuditLog = typeof systemAuditLogs.$inferInsert;
