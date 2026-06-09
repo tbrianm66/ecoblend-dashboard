@@ -1,0 +1,14 @@
+Let's complete the final phase of the ADMIN module by building Batch D (Widget Analytics, Widget Settings, Production Readiness, Integrations, API Settings).
+
+Please execute the following tasks:
+1. Database Schema:
+   - Create a 'system_widget_analytics' table tracking: id, widget_id (string), page_views (integer), and interaction_rate (numeric). Seed metrics for top dashboard cards.
+   - Create a 'system_integrations' table tracking external tools: id, service_name (e.g., 'Slack Notifications', 'Google Drive Exporter'), is_connected (boolean), and last_sync_time (timestamp).
+   - Create a 'system_api_keys' table tracking developer access tokens: id, key_name (string), masked_token (string, e.g., 'sk_live_...4x8a'), and status (string: 'Active', 'Revoked').
+2. Backend Router: Add publicProcedure tRPC query and mutation endpoints under the 'admin' router: 'getWidgetTelemetry', 'getIntegrationDirectory', 'getApiTokens', 'toggleIntegrationStatus', and 'generateNewApiKey'.
+3. UI Development:
+   - For 'Widget Analytics' & 'Widget Settings' (/admin/widgets): Combine these into a single dashboard layout. Render grid usage stats (charts or simple numerical meters) showing which dashboard sections get clicked most, paired with layout order configurations.
+   - For 'Production Readiness' (/admin/readiness): Build a sleek automated environment diagnostics panel displaying a system checklist (e.g., 'Production Database: Connected (100GB)', 'Vite Client Bundler: Built', 'Environment Secrets: Validated').
+   - For 'Integrations' (/admin/integrations): Design an app-store-style directory grid card layout showing popular platforms (Slack, Microsoft Teams, HubSpot, Google Workspace) with clear 'Connect' or 'Disconnect' operational action buttons.
+   - For 'API Settings' & 'Audit Logs' check (/admin/api): Build a secure credential management panel allowing users to see masked keys, copy them, or click an interactive button to generate a new token string.
+4. Navigation: Ensure all five final views switch effortlessly in the sidebar with zero console errors, path issues, or production route collapses.
