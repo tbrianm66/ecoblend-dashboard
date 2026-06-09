@@ -4559,7 +4559,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
   }),
 
   commandCentre: router({
-    getLiveMetrics: protectedProcedure
+    getLiveMetrics: publicProcedure
       .query(async () => {
         const [portfolio, vrlDist, funnel, pmHealth, financial, esg, learning] = await Promise.all([
           getPortfolioSummary(),
@@ -4572,7 +4572,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         ]);
         return { portfolio, vrlDist, funnel, pmHealth, financial, esg, learning };
       }),
-    getEcosystemNodes: protectedProcedure
+    getEcosystemNodes: publicProcedure
       .query(() => getEcosystemNodes()),
     upsertEcosystemNode: protectedProcedure
       .input(z.object({
@@ -4587,12 +4587,12 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         tooltipText: z.string().optional(),
       }))
       .mutation(({ input }) => upsertEcosystemNode(input)),
-    getRevenueSparklines: protectedProcedure
+    getRevenueSparklines: publicProcedure
       .query(() => getVentureRevenueSparklines()),
-    getOfferingAnalytics: protectedProcedure
+    getOfferingAnalytics: publicProcedure
       .input(z.object({ offeringId: z.string() }))
       .query(({ input }) => getOfferingAnalytics(input.offeringId)),
-    getPortfolioOfferingRollup: protectedProcedure
+    getPortfolioOfferingRollup: publicProcedure
       .input(z.object({ portfolioId: z.string() }))
       .query(({ input }) => getPortfolioOfferingRollup(input.portfolioId)),
   }),

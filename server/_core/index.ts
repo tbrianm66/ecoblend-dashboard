@@ -94,36 +94,39 @@ async function startServer() {
   });
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
-  // SSE endpoint for real-time event streaming (authenticated users only)
+  // SSE endpoint for real-time event streaming (public — unauthenticated gets anonymous context)
   app.get("/api/events", async (req, res, _next) => {
-    let user;
+    let user: Awaited<ReturnType<typeof sdk.authenticateRequest>> | null = null;
     try {
       user = await sdk.authenticateRequest(req);
     } catch {
-      res.status(401).json({ error: "Unauthorized" });
-      return;
+      // No valid session — allow connection as anonymous observer
     }
 
-    const isAdmin = user.role === "admin";
+    let isAdmin = false;
     let authorizedVentureIds: Set<string> | null = null;
 
-    if (!isAdmin) {
-      try {
-        const db = (await getDb())!;
-        const memberships = await db
-          .select({ ventureId: ventureMembers.ventureId })
-          .from(ventureMembers)
-          .where(eq(ventureMembers.userId, user.id));
-        authorizedVentureIds = new Set(memberships.map((m) => m.ventureId));
-      } catch {
-        authorizedVentureIds = new Set(); // deny-safe fallback
+    if (user) {
+      isAdmin = user.role === "admin";
+      if (!isAdmin) {
+        try {
+          const db = (await getDb())!;
+          const memberships = await db
+            .select({ ventureId: ventureMembers.ventureId })
+            .from(ventureMembers)
+            .where(eq(ventureMembers.userId, user.id));
+          authorizedVentureIds = new Set(memberships.map((m) => m.ventureId));
+        } catch {
+          authorizedVentureIds = new Set(); // deny-safe fallback
+        }
       }
     }
 
     const userCtx: SSEUserContext = {
-      userId: String(user.id),
+      userId: user ? String(user.id) : "anonymous",
       isAdmin,
-      authorizedVentureIds,
+      // null = broadcast all events (anonymous observers see portfolio-wide stream)
+      authorizedVentureIds: user ? authorizedVentureIds : null,
     };
     handleSSEConnection(req, res, userCtx);
   });

@@ -70,7 +70,7 @@ const NAV_GROUPS: NavGroup[] = [
     defaultOpen: true,
     items: [
       { id: "cc-overview",  label: "Portfolio Overview",    icon: "LayoutDashboard", href: "/" },
-      { id: "cc-command",   label: "Command Centre",       icon: "Zap",             href: "/command-centre" },
+      { id: "cc-command",   label: "Control Desk",         icon: "Zap",             href: "/command-centre/dashboard" },
       { id: "cc-pipeline",  label: "Opportunity Pipeline", icon: "Lightbulb",       href: "/pipeline" },
       { id: "cc-status",    label: "Venture Status",       icon: "Target",          href: "/venture-status" },
       { id: "cc-alerts",    label: "Alerts & Approvals",   icon: "AlertTriangle",   href: "/alerts" },

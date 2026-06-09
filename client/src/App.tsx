@@ -168,6 +168,7 @@ function Router() {
       <Route path="/people-intelligence" component={PeopleIntelligence} />
       <Route path="/poi" component={ProductOpportunityIntelligence} />
       <Route path="/project-management" component={VentureProjectManagement} />
+      <Route path="/command-centre/dashboard" component={CommandCentreTabs} />
       <Route path="/command-centre" component={CommandCentreTabs} />
       <Route path="/matching" component={FounderMatching} />
       <Route path="/spinoff" component={SpinoffOS} />

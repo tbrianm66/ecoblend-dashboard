@@ -8,7 +8,7 @@
 //   launchToSpinoffOS — creates a SpinoffOS config from the blueprint
 // ============================================================
 import { z } from "zod";
-import { router, protectedProcedure } from "./_core/trpc";
+import { router, protectedProcedure, publicProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import { invokeLLM } from "./_core/llm";
 import {
@@ -542,7 +542,7 @@ Be specific, actionable, and grounded in the H4 Lean Methodology and EcoRace VBS
   // ── Dashboard: Spin-Out Pipeline Summary ─────────────────────────────────
   // Returns top offerings sorted by readiness score (closest to 40% gate first),
   // with domain breakdown and gate status for the Command Centre widget.
-  getPipelineSummary: protectedProcedure
+  getPipelineSummary: publicProcedure
     .input(z.object({
       limit: z.number().min(1).max(20).default(5),
     }))
