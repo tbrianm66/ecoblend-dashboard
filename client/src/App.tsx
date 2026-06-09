@@ -69,6 +69,7 @@ import EcoraceLab from "./pages/EcoraceLab";
 import CoachingFounder from "./pages/CoachingFounder";
 import CoachingCoach from "./pages/CoachingCoach";
 import CoachingStudio from "./pages/CoachingStudio";
+import StudioDashboard from "./pages/coaching/StudioDashboard";
 import InvestorDataRoom from "./pages/InvestorDataRoom";
 import IpIntelligence from "./pages/IpIntelligence";
 import PlaybookPortal from "./pages/PlaybookPortal";
@@ -298,7 +299,7 @@ function Router() {
       <Route path="/execution/hiring" component={ModulePlaceholder} />
       {/* Module 13: Coaching (existing) */}
       <Route path="/coaching/founder" component={CoachingFounder} />
-      <Route path="/coaching/studio" component={CoachingStudio} />
+      <Route path="/coaching/studio" component={StudioDashboard} />
       <Route path="/coaching/coach" component={CoachingCoach} />
       {/* Module 14: Collaboration */}
       <Route path="/collaboration" component={TeamWorkspace} />

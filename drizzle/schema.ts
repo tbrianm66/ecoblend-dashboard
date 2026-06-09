@@ -6132,9 +6132,11 @@ export const coachingSessions = pgTable("coaching_sessions", {
   founderId:   integer("founderId").notNull(),  // FK - founders.id
   ventureId:   varchar("ventureId", { length: 64 }),
   sessionDate: date("sessionDate").notNull(),
-  focusArea:   text("focusArea"),  // e.g. "Market Validation Strategy"
-  notes:       text("notes"),  // session summary / coach notes
-  actions:     json("actions"),  // array of { id, text, done } action items
+  focusArea:     text("focusArea"),
+  coachName:     text("coach_name"),   // denormalised display name
+  durationHours: numeric("duration_hours", { precision: 5, scale: 2 }),
+  notes:         text("notes"),
+  actions:       json("actions"),  // array of { id, text, done }
   sessionType: text("sessionType").default("check_in"),
   durationMins: integer("durationMins").default(60),
   createdAt:   timestamp("createdAt").defaultNow().notNull(),

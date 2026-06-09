@@ -1167,6 +1167,95 @@ const dashboardRouter = router({
         allActionItems,
       };
     }),
+
+  getStudioDashboardData: publicProcedure.query(async () => {
+    const db = await getDb();
+
+    const allVentures = await db.select().from(ventures);
+    const allSessions = await db
+      .select()
+      .from(coachingSessions)
+      .orderBy(desc(coachingSessions.sessionDate));
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Build per-venture aggregates
+    const portfolioRows = allVentures.map((v) => {
+      const ventureSessions = allSessions.filter((s) => s.ventureId === v.id);
+
+      const totalHours = ventureSessions.reduce((sum, s) => {
+        return sum + parseFloat(((s as any).durationHours ?? s.durationMins / 60 ?? 0).toString());
+      }, 0);
+
+      const coaches = [
+        ...new Set(
+          ventureSessions
+            .map((s) => (s as any).coachName as string | null)
+            .filter(Boolean) as string[]
+        ),
+      ];
+
+      const lastSession = ventureSessions[0] ?? null;
+      const lastSessionDate = lastSession
+        ? (lastSession.sessionDate as unknown as string)
+        : null;
+
+      let daysSinceLastSession: number | null = null;
+      if (lastSessionDate) {
+        const last = new Date(lastSessionDate);
+        last.setHours(0, 0, 0, 0);
+        daysSinceLastSession = Math.floor(
+          (today.getTime() - last.getTime()) / (1000 * 60 * 60 * 24)
+        );
+      }
+
+      const isAtRisk =
+        ventureSessions.length === 0 ||
+        (daysSinceLastSession !== null && daysSinceLastSession > 14);
+
+      return {
+        ventureId: v.id,
+        ventureName: v.name,
+        coaches,
+        totalHours: Math.round(totalHours * 100) / 100,
+        sessionCount: ventureSessions.length,
+        lastSessionDate,
+        daysSinceLastSession,
+        isAtRisk,
+        neverCoached: ventureSessions.length === 0,
+      };
+    });
+
+    // Sort: most at-risk first (highest days since last, then never coached)
+    portfolioRows.sort((a, b) => {
+      const aDays = a.daysSinceLastSession ?? 9999;
+      const bDays = b.daysSinceLastSession ?? 9999;
+      return bDays - aDays;
+    });
+
+    const totalHours = Math.round(
+      portfolioRows.reduce((s, r) => s + r.totalHours, 0) * 100
+    ) / 100;
+
+    const activeCoaches = [
+      ...new Set(
+        allSessions
+          .map((s) => (s as any).coachName as string | null)
+          .filter(Boolean) as string[]
+      ),
+    ];
+
+    const atRiskCount = portfolioRows.filter((r) => r.isAtRisk).length;
+
+    return {
+      totalHours,
+      activeCoachCount: activeCoaches.length,
+      activeCoaches,
+      atRiskCount,
+      portfolioRows,
+    };
+  }),
 });
 
 // ── Coach Assignment Router ───────────────────────────────────────────────────
