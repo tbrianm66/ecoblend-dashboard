@@ -400,9 +400,6 @@ export default function Home() {
                 </span>
                 <span style={{ color: "#1e293b", fontWeight: 300 }}>Analytics Dashboard</span>
               </h1>
-              <p className="text-sm max-w-xl" style={{ fontFamily: "'Inter', sans-serif", color: "#64748b" }}>
-                Dual-readiness portfolio intelligence — tracking Venture Readiness Level (VRL) and Technology Readiness Level (TRL) across all active ventures.
-              </p>
             </div>
 
             {/* Action panel */}
