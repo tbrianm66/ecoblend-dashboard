@@ -95,6 +95,7 @@ import LcaCarbon from "./pages/sustainability/LcaCarbon";
 import CircularityMetrics from "./pages/sustainability/CircularityMetrics";
 import EsgBcorp from "./pages/sustainability/EsgBcorp";
 import TeamWorkspace from "./pages/collaboration/TeamWorkspace";
+import AdvisoryFunction from "./pages/collaboration/AdvisoryFunction";
 import PortfolioOverviewTabs from "./pages/command/PortfolioOverviewTabs";
 import CommandCentreTabs from "./pages/command/CommandCentreTabs";
 import PipelineTabs from "./pages/command/PipelineTabs";
@@ -301,7 +302,7 @@ function Router() {
       <Route path="/coaching/coach" component={CoachingCoach} />
       {/* Module 14: Collaboration */}
       <Route path="/collaboration" component={TeamWorkspace} />
-      <Route path="/collaboration/advisors" component={ModulePlaceholder} />
+      <Route path="/collaboration/advisors" component={AdvisoryFunction} />
       <Route path="/collaboration/academics" component={AcademicResearch} />
       <Route path="/collaboration/specialists" component={SpecialistServices} />
       {/* Module 15: Governance */}

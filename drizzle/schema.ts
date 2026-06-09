@@ -8033,3 +8033,17 @@ export const collaborationTasks = pgTable("collaboration_tasks", {
 });
 export type CollaborationTask = typeof collaborationTasks.$inferSelect;
 export type InsertCollaborationTask = typeof collaborationTasks.$inferInsert;
+
+// ── Module 14 Stage 2: Advisory Function ─────────────────────────────────────
+export const advisoryReviews = pgTable("advisory_reviews", {
+  id:               serial("id").primaryKey(),
+  ventureId:        varchar("ventureId", { length: 64 }).notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  advisorName:      varchar("advisorName", { length: 128 }).notNull(),
+  advisorRole:      varchar("advisorRole", { length: 128 }).notNull(),
+  feedbackNotes:    text("feedbackNotes").notNull(),
+  validationRating: integer("validationRating").notNull().default(0),
+  signOffStatus:    varchar("signOffStatus", { length: 32 }).notNull().default("Pending"),
+  createdAt:        timestamp("createdAt").defaultNow().notNull(),
+});
+export type AdvisoryReview = typeof advisoryReviews.$inferSelect;
+export type InsertAdvisoryReview = typeof advisoryReviews.$inferInsert;

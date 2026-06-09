@@ -43,4 +43,43 @@ export const collaborationRouter = router({
         .returning();
       return row;
     }),
+
+  getAdvisoryReviews: publicProcedure
+    .input(z.object({ ventureId: z.string() }))
+    .query(async ({ input }) => {
+      const db = (await getDb())!;
+      const { eq, desc } = await import("drizzle-orm");
+      const { advisoryReviews } = await import("../drizzle/schema");
+      return db
+        .select()
+        .from(advisoryReviews)
+        .where(eq(advisoryReviews.ventureId, input.ventureId))
+        .orderBy(desc(advisoryReviews.createdAt));
+    }),
+
+  submitAdvisoryReview: publicProcedure
+    .input(z.object({
+      ventureId:        z.string(),
+      advisorName:      z.string().min(1),
+      advisorRole:      z.string().min(1),
+      feedbackNotes:    z.string().min(1),
+      validationRating: z.number().int().min(0).max(10),
+      signOffStatus:    z.enum(["Approved", "Needs_Revision", "Pending"]).default("Pending"),
+    }))
+    .mutation(async ({ input }) => {
+      const db = (await getDb())!;
+      const { advisoryReviews } = await import("../drizzle/schema");
+      const [row] = await db
+        .insert(advisoryReviews)
+        .values({
+          ventureId:        input.ventureId,
+          advisorName:      input.advisorName,
+          advisorRole:      input.advisorRole,
+          feedbackNotes:    input.feedbackNotes,
+          validationRating: input.validationRating,
+          signOffStatus:    input.signOffStatus,
+        })
+        .returning();
+      return row;
+    }),
 });
