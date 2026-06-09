@@ -15,6 +15,7 @@ import { getDb } from "./db";
 import {
   playbookLibrary, playbookVersions, adminTemplates, users,
   usersRoles, systemAuditLogs, ventures,
+  systemDataFields, systemModuleStatus, systemConfiguration,
 } from "../drizzle/schema";
 import { eq, and, desc, asc, ilike, or } from "drizzle-orm";
 
@@ -599,6 +600,89 @@ export const adminRouter = router({
       if (input?.module)   out = out.filter(r => r.targetModule === input.module);
       if (input?.ventureId) out = out.filter(r => r.targetVentureId === input.ventureId);
       return out;
+    }),
+
+  // ── Data Field Definitions ────────────────────────────────────────────────
+  getDataFieldsDefinitions: publicProcedure
+    .input(z.object({
+      fieldGroup: z.string().optional(),
+      search:     z.string().optional(),
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const rows = await db
+        .select()
+        .from(systemDataFields)
+        .orderBy(asc(systemDataFields.fieldGroup), asc(systemDataFields.fieldKey));
+      let out = rows;
+      if (input?.fieldGroup) out = out.filter(r => r.fieldGroup === input.fieldGroup);
+      if (input?.search) {
+        const q = input.search.toLowerCase();
+        out = out.filter(r =>
+          r.fieldKey.toLowerCase().includes(q) ||
+          r.fieldLabel.toLowerCase().includes(q) ||
+          (r.description ?? "").toLowerCase().includes(q)
+        );
+      }
+      return out;
+    }),
+
+  // ── Module Statuses ───────────────────────────────────────────────────────
+  getModuleStatuses: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return [];
+    return db
+      .select()
+      .from(systemModuleStatus)
+      .orderBy(asc(systemModuleStatus.moduleNumber));
+  }),
+
+  toggleModuleStatus: publicProcedure
+    .input(z.object({ moduleNumber: z.number(), isEnabled: z.boolean() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      await db
+        .update(systemModuleStatus)
+        .set({ isEnabled: input.isEnabled })
+        .where(eq(systemModuleStatus.moduleNumber, input.moduleNumber));
+      return { success: true, moduleNumber: input.moduleNumber, isEnabled: input.isEnabled };
+    }),
+
+  // ── System Configuration ──────────────────────────────────────────────────
+  getSystemConfigVariables: publicProcedure
+    .input(z.object({ configGroup: z.string().optional() }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const rows = await db
+        .select()
+        .from(systemConfiguration)
+        .orderBy(asc(systemConfiguration.configGroup), asc(systemConfiguration.configKey));
+      return input?.configGroup
+        ? rows.filter(r => r.configGroup === input.configGroup)
+        : rows;
+    }),
+
+  updateSystemConfig: publicProcedure
+    .input(z.object({ configKey: z.string(), configValue: z.string() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      const row = await db
+        .select({ isEditable: systemConfiguration.isEditable })
+        .from(systemConfiguration)
+        .where(eq(systemConfiguration.configKey, input.configKey))
+        .limit(1);
+      if (!row[0]?.isEditable) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "This configuration key is read-only." });
+      }
+      await db
+        .update(systemConfiguration)
+        .set({ configValue: input.configValue, updatedAt: new Date() })
+        .where(eq(systemConfiguration.configKey, input.configKey));
+      return { success: true, configKey: input.configKey };
     }),
 });
 

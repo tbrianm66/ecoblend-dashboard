@@ -90,6 +90,9 @@ import AdminTemplates from "./pages/AdminTemplates";
 import AdminUsers from "./pages/AdminUsers";
 import AdminPermissions from "./pages/AdminPermissions";
 import AdminAuditLogs from "./pages/AdminAuditLogs";
+import AdminDataFields from "./pages/AdminDataFields";
+import AdminModuleSettings from "./pages/AdminModuleSettings";
+import AdminSystemConfig from "./pages/AdminSystemConfig";
 import AdminWidgetAnalytics from "./pages/AdminWidgetAnalytics";
 import AdminWidgetSettings from "./pages/AdminWidgetSettings";
 import AdminProductionReadiness from "./pages/AdminProductionReadiness";
@@ -223,13 +226,15 @@ function Router() {
       <Route path="/admin/users" component={AdminUsers} />
       <Route path="/admin/permissions" component={AdminPermissions} />
       <Route path="/admin/templates" component={AdminTemplates} />
-      <Route path="/admin/data-fields" component={AdminPlaceholder} />
-      <Route path="/admin/modules" component={AdminPlaceholder} />
+      <Route path="/admin/data-fields" component={AdminDataFields} />
+      <Route path="/admin/modules" component={AdminModuleSettings} />
+      <Route path="/admin/module-settings" component={AdminModuleSettings} />
       <Route path="/admin/integrations" component={AdminPlaceholder} />
       <Route path="/admin/api" component={AdminPlaceholder} />
       <Route path="/admin/audit" component={AdminAuditLogs} />
       <Route path="/admin/audit-logs" component={AdminAuditLogs} />
-      <Route path="/admin/config" component={AdminPlaceholder} />
+      <Route path="/admin/config" component={AdminSystemConfig} />
+      <Route path="/admin/system-configuration" component={AdminSystemConfig} />
       {/* ── New Architecture Routes (Modules 2-15) ── */}
       {/* Module 2: Venture Intake */}
       <Route path="/intake" component={VentureIntake} />

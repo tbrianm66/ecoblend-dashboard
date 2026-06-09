@@ -8099,3 +8099,48 @@ export const systemAuditLogs = pgTable("system_audit_logs", {
 });
 export type SystemAuditLog = typeof systemAuditLogs.$inferSelect;
 export type InsertSystemAuditLog = typeof systemAuditLogs.$inferInsert;
+
+// ── Admin: System Data Fields ─────────────────────────────────────────────────
+export const systemDataFields = pgTable("system_data_fields", {
+  id:              serial("id").primaryKey(),
+  fieldKey:        varchar("fieldKey", { length: 64 }).notNull().unique(),
+  fieldLabel:      varchar("fieldLabel", { length: 128 }).notNull(),
+  dataType:        varchar("dataType", { length: 32 }).notNull().default("string"),
+  validationRange: varchar("validationRange", { length: 128 }),
+  fieldGroup:      varchar("fieldGroup", { length: 64 }),
+  description:     text("description"),
+  isCore:          boolean("isCore").notNull().default(true),
+  isEditable:      boolean("isEditable").notNull().default(false),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+});
+export type SystemDataField = typeof systemDataFields.$inferSelect;
+export type InsertSystemDataField = typeof systemDataFields.$inferInsert;
+
+// ── Admin: System Module Status ───────────────────────────────────────────────
+export const systemModuleStatus = pgTable("system_module_status", {
+  id:           serial("id").primaryKey(),
+  moduleNumber: integer("moduleNumber").notNull().unique(),
+  moduleName:   varchar("moduleName", { length: 128 }).notNull(),
+  moduleSlug:   varchar("moduleSlug", { length: 64 }),
+  routePath:    varchar("routePath", { length: 128 }),
+  isEnabled:    boolean("isEnabled").notNull().default(true),
+  isCore:       boolean("isCore").notNull().default(false),
+  moduleGroup:  varchar("moduleGroup", { length: 64 }),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+});
+export type SystemModule = typeof systemModuleStatus.$inferSelect;
+export type InsertSystemModule = typeof systemModuleStatus.$inferInsert;
+
+// ── Admin: System Configuration ───────────────────────────────────────────────
+export const systemConfiguration = pgTable("system_configuration", {
+  id:           serial("id").primaryKey(),
+  configKey:    varchar("configKey", { length: 64 }).notNull().unique(),
+  configValue:  text("configValue").notNull(),
+  configGroup:  varchar("configGroup", { length: 64 }).default("General"),
+  description:  text("description"),
+  isEditable:   boolean("isEditable").notNull().default(true),
+  updatedAt:    timestamp("updatedAt").defaultNow().notNull(),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+});
+export type SystemConfig = typeof systemConfiguration.$inferSelect;
+export type InsertSystemConfig = typeof systemConfiguration.$inferInsert;
