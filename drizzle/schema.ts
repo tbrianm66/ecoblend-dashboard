@@ -6643,6 +6643,25 @@ export const playbookVersions = pgTable("playbook_versions", {
 export type PlaybookVersion = typeof playbookVersions.$inferSelect;
 export type InsertPlaybookVersion = typeof playbookVersions.$inferInsert;
 
+// -- Admin Templates (downloadable resources) ----------------------------------------
+export const adminTemplates = pgTable("admin_templates", {
+  id:                 serial("id").primaryKey(),
+  name:               varchar("name", { length: 255 }).notNull(),
+  description:        text("description"),
+  category:           varchar("category", { length: 128 }),
+  fileType:           varchar("fileType", { length: 32 }),
+  downloadUrl:        text("downloadUrl"),
+  linkedModule:       varchar("linkedModule", { length: 128 }),
+  linkedPlaybookId:   varchar("linkedPlaybookId", { length: 64 }),
+  version:            varchar("version", { length: 16 }).default("1.0"),
+  accessLevel:        text("accessLevel").default("Internal Team"),
+  isActive:           boolean("isActive").default(true),
+  createdAt:          timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:          timestamp("updatedAt").defaultNow().notNull(),
+});
+export type AdminTemplate = typeof adminTemplates.$inferSelect;
+export type InsertAdminTemplate = typeof adminTemplates.$inferInsert;
+
 // ============================================================
 // PHASE 3C — Contextual Playbook Widget System: Production Hardening
 // Tables: playbook_context_rules, playbook_widget_configs,

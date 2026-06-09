@@ -12,7 +12,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure, publicProcedure } from "./_core/trpc";
 import { getDb } from "./db";
-import { playbookLibrary, playbookVersions, users } from "../drizzle/schema";
+import { playbookLibrary, playbookVersions, adminTemplates, users } from "../drizzle/schema";
 import { eq, and, desc, asc } from "drizzle-orm";
 
 // ── Helper: admin guard ───────────────────────────────────────────────────────
@@ -303,6 +303,49 @@ export const adminRouter = router({
           .where(eq(playbookLibrary.id, input.id));
         return { success: true };
       }),
+  },
+
+  // ── Templates ─────────────────────────────────────────────────────────────
+  templates: {
+    list: publicProcedure
+      .input(z.object({
+        category: z.string().optional(),
+        fileType:  z.string().optional(),
+        search:    z.string().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return [];
+        const conditions: ReturnType<typeof eq>[] = [
+          eq(adminTemplates.isActive, true),
+        ];
+        if (input?.category) conditions.push(eq(adminTemplates.category, input.category));
+        if (input?.fileType)  conditions.push(eq(adminTemplates.fileType, input.fileType));
+        const rows = await db
+          .select()
+          .from(adminTemplates)
+          .where(and(...conditions))
+          .orderBy(asc(adminTemplates.category), asc(adminTemplates.name));
+        const search = input?.search?.toLowerCase();
+        return search
+          ? rows.filter(r =>
+              r.name.toLowerCase().includes(search) ||
+              (r.description ?? "").toLowerCase().includes(search) ||
+              (r.category ?? "").toLowerCase().includes(search)
+            )
+          : rows;
+      }),
+
+    categories: publicProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      const rows = await db
+        .selectDistinct({ category: adminTemplates.category })
+        .from(adminTemplates)
+        .where(eq(adminTemplates.isActive, true))
+        .orderBy(asc(adminTemplates.category));
+      return rows.map(r => r.category).filter(Boolean) as string[];
+    }),
   },
 
   // ── Users & Roles ─────────────────────────────────────────────────────────
