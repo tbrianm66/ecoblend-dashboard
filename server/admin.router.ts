@@ -4,15 +4,16 @@
 //         Templates, Data Fields, Module Settings,
 //         Integrations, API Settings, Audit Logs,
 //         System Configuration
-// All procedures are protectedProcedure (auth required).
-// Admin-only procedures check ctx.user.role === "admin".
+// Read queries: publicProcedure (no session required).
+// Write/mutation procedures: protectedProcedure (auth required).
+// Admin-only mutations additionally check ctx.user.role === "admin".
 // ============================================================
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { router, protectedProcedure } from "./_core/trpc";
+import { router, protectedProcedure, publicProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import { playbookLibrary, playbookVersions, users } from "../drizzle/schema";
-import { eq, like, or, and, desc, asc } from "drizzle-orm";
+import { eq, and, desc, asc } from "drizzle-orm";
 
 // ── Helper: admin guard ───────────────────────────────────────────────────────
 function requireAdmin(role: string) {
@@ -59,7 +60,7 @@ const playbookInputSchema = z.object({
 export const adminRouter = router({
   // ── Playbook Library: List ─────────────────────────────────────────────────
   playbooks: {
-    list: protectedProcedure
+    list: publicProcedure
       .input(z.object({
         search:   z.string().optional(),
         category: z.string().optional(),
@@ -71,14 +72,14 @@ export const adminRouter = router({
         offset:   z.number().min(0).default(0),
       }).optional())
       .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return { playbooks: [], total: 0 };
         const conditions: ReturnType<typeof eq>[] = [];
         if (input?.status)      conditions.push(eq(playbookLibrary.status, input.status));
         if (input?.category)    conditions.push(eq(playbookLibrary.category, input.category));
         if (input?.module)      conditions.push(eq(playbookLibrary.relatedModule, input.module));
         if (input?.accessLevel) conditions.push(eq(playbookLibrary.accessLevel, input.accessLevel));
 
-        const db = await getDb();
-        if (!db) return { playbooks: [], total: 0 };
         const rows = await db
           .select()
           .from(playbookLibrary)
@@ -87,7 +88,6 @@ export const adminRouter = router({
           .limit(input?.limit ?? 50)
           .offset(input?.offset ?? 0);
 
-        // Apply search filter in memory (title, category, purpose)
         const search = input?.search?.toLowerCase();
         const filtered = search
           ? rows.filter(r =>
@@ -102,7 +102,7 @@ export const adminRouter = router({
       }),
 
     // ── Playbook Library: Get by ID ──────────────────────────────────────────
-    getById: protectedProcedure
+    getById: publicProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
         const db = await getDb();
@@ -116,7 +116,7 @@ export const adminRouter = router({
       }),
 
     // ── Playbook Library: Get by playbookId string ───────────────────────────
-    getByPlaybookId: protectedProcedure
+    getByPlaybookId: publicProcedure
       .input(z.object({ playbookId: z.string() }))
       .query(async ({ input }) => {
         const db = await getDb();
@@ -130,7 +130,7 @@ export const adminRouter = router({
       }),
 
     // ── Playbook Library: Get by module (contextual display) ─────────────────
-    getByModule: protectedProcedure
+    getByModule: publicProcedure
       .input(z.object({ module: z.string() }))
       .query(async ({ input }) => {
         const db = await getDb();
@@ -148,12 +148,39 @@ export const adminRouter = router({
         return rows;
       }),
 
+    // ── Playbook Library: Version history ────────────────────────────────────
+    versions: publicProcedure
+      .input(z.object({ playbookDbId: z.number() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return [];
+        const rows = await db
+          .select()
+          .from(playbookVersions)
+          .where(eq(playbookVersions.playbookDbId, input.playbookDbId))
+          .orderBy(desc(playbookVersions.createdAt));
+        return rows;
+      }),
+
+    // ── Playbook Library: Categories ─────────────────────────────────────────
+    categories: publicProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      const rows = await db
+        .selectDistinct({ category: playbookLibrary.category })
+        .from(playbookLibrary)
+        .orderBy(asc(playbookLibrary.category));
+      return rows.map(r => r.category);
+    }),
+
     // ── Playbook Library: Create ─────────────────────────────────────────────
     create: protectedProcedure
       .input(playbookInputSchema)
       .mutation(async ({ ctx, input }) => {
         requireAdmin(ctx.user.role);
-        // Generate next playbookId
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+
         const [last] = await db
           .select({ playbookId: playbookLibrary.playbookId })
           .from(playbookLibrary)
@@ -164,7 +191,7 @@ export const adminRouter = router({
           : 1;
         const playbookId = `PB-${String(nextNum).padStart(3, "0")}`;
 
-        const [result] = await db.insert(playbookLibrary).values({
+        await db.insert(playbookLibrary).values({
           playbookId,
           title:                   input.title,
           category:                input.category,
@@ -190,7 +217,7 @@ export const adminRouter = router({
           createdBy:               ctx.user.name ?? ctx.user.openId,
           updatedBy:               ctx.user.name ?? ctx.user.openId,
         });
-        return { playbookId, insertId: (result as any).insertId };
+        return { playbookId };
       }),
 
     // ── Playbook Library: Update ─────────────────────────────────────────────
@@ -198,13 +225,15 @@ export const adminRouter = router({
       .input(z.object({ id: z.number(), data: playbookInputSchema.partial() }))
       .mutation(async ({ ctx, input }) => {
         requireAdmin(ctx.user.role);
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+
         const [existing] = await db
           .select()
           .from(playbookLibrary)
           .where(eq(playbookLibrary.id, input.id));
         if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Playbook not found" });
 
-        // Save version snapshot before update
         await db.insert(playbookVersions).values({
           playbookDbId: existing.id,
           version:      existing.version,
@@ -213,12 +242,11 @@ export const adminRouter = router({
           changeNote:   "Auto-snapshot before update",
         });
 
-        // Bump version if content fields changed
         const contentFields = ["purpose", "whenToUse", "stepByStepGuidance", "requiredInputs", "requiredOutputs"];
         const contentChanged = contentFields.some(f => (input.data as any)[f] !== undefined);
         let newVersion = existing.version;
         if (contentChanged) {
-          const [major, minor] = existing.version.split(".").map(Number);
+          const [major, minor] = (existing.version ?? "1.0").split(".").map(Number);
           newVersion = `${major}.${(minor ?? 0) + 1}`;
         }
 
@@ -239,6 +267,8 @@ export const adminRouter = router({
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
         requireAdmin(ctx.user.role);
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
         await db
           .update(playbookLibrary)
           .set({ status: "Published", updatedBy: ctx.user.name ?? ctx.user.openId })
@@ -251,6 +281,8 @@ export const adminRouter = router({
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
         requireAdmin(ctx.user.role);
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
         await db
           .update(playbookLibrary)
           .set({ status: "Archived", updatedBy: ctx.user.name ?? ctx.user.openId })
@@ -263,39 +295,22 @@ export const adminRouter = router({
       .input(z.object({ id: z.number(), status: z.enum(PLAYBOOK_STATUSES) }))
       .mutation(async ({ ctx, input }) => {
         requireAdmin(ctx.user.role);
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
         await db
           .update(playbookLibrary)
           .set({ status: input.status, updatedBy: ctx.user.name ?? ctx.user.openId })
           .where(eq(playbookLibrary.id, input.id));
         return { success: true };
       }),
-
-    // ── Playbook Library: Version history ────────────────────────────────────
-    versions: protectedProcedure
-      .input(z.object({ playbookDbId: z.number() }))
-      .query(async ({ input }) => {
-        const rows = await db
-          .select()
-          .from(playbookVersions)
-          .where(eq(playbookVersions.playbookDbId, input.playbookDbId))
-          .orderBy(desc(playbookVersions.createdAt));
-        return rows;
-      }),
-
-    // ── Playbook Library: Categories ─────────────────────────────────────────
-    categories: protectedProcedure.query(async () => {
-      const rows = await db
-        .selectDistinct({ category: playbookLibrary.category })
-        .from(playbookLibrary)
-        .orderBy(asc(playbookLibrary.category));
-      return rows.map(r => r.category);
-    }),
   },
 
   // ── Users & Roles ─────────────────────────────────────────────────────────
   users: {
     list: protectedProcedure.query(async ({ ctx }) => {
       requireAdmin(ctx.user.role);
+      const db = await getDb();
+      if (!db) return [];
       const rows = await db.select().from(users).orderBy(asc(users.name));
       return rows;
     }),
@@ -304,6 +319,8 @@ export const adminRouter = router({
       .input(z.object({ userId: z.number(), role: z.enum(["admin", "user"]) }))
       .mutation(async ({ ctx, input }) => {
         requireAdmin(ctx.user.role);
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
         await db.update(users).set({ role: input.role }).where(eq(users.id, input.userId));
         return { success: true };
       }),

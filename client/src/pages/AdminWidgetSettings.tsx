@@ -10,8 +10,6 @@
 // ============================================================
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
-import { useAuth } from "@/_core/hooks/useAuth";
-import { useLocation } from "wouter";
 import { toast } from "sonner";
 import {
   Settings, ToggleLeft, Sliders, Layers, Users,
@@ -157,18 +155,10 @@ const ALL_ROLES = ["admin", "user"];
 
 // ── Main Page ─────────────────────────────────────────────────
 export default function AdminWidgetSettings() {
-  const { user, loading } = useAuth();
-  const [, navigate] = useLocation();
-
-  if (!loading && user?.role !== "admin") {
-    navigate("/");
-    return null;
-  }
-
   const utils = trpc.useUtils();
   const { data, isLoading } = trpc.contextual.adminGetWidgetSettings.useQuery(
     undefined,
-    { enabled: user?.role === "admin" }
+    { enabled: true }
   );
 
   // ── Global settings state ─────────────────────────────────

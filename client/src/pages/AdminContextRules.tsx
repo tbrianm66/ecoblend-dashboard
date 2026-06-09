@@ -133,7 +133,8 @@ export default function AdminContextRules() {
 
   const utils = trpc.useUtils();
   const { data: rules = [], isLoading } = trpc.contextual.adminListRules.useQuery();
-  const { data: playbooks = [] } = trpc.admin.listPlaybooks.useQuery({ status: "all", search: "" });
+  const { data: _playbookRes } = trpc.admin.playbooks.list.useQuery({ limit: 100 });
+  const playbooks = _playbookRes?.playbooks ?? [];
 
   const createRule = trpc.contextual.adminCreateRule.useMutation({
     onSuccess: () => { utils.contextual.adminListRules.invalidate(); toast.success("Rule created"); setDialogOpen(false); },

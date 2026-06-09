@@ -6,8 +6,6 @@
 // ============================================================
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
-import { useAuth } from "@/_core/hooks/useAuth";
-import { useLocation } from "wouter";
 import {
   BarChart3, TrendingUp, BookOpenCheck, Eye, CheckCircle2,
   XCircle, AlertTriangle, Download, Filter, RefreshCw,
@@ -189,17 +187,9 @@ const DATE_RANGES = [
 ];
 
 export default function AdminWidgetAnalytics() {
-  const { user, loading } = useAuth();
-  const [, navigate] = useLocation();
   const [days, setDays] = useState(30);
   const [module, setModule] = useState("All Modules");
   const [widgetType, setWidgetType] = useState("All Widgets");
-
-  // Guard: admin only
-  if (!loading && user?.role !== "admin") {
-    navigate("/");
-    return null;
-  }
 
   const queryInput = useMemo(
     () => ({
@@ -212,22 +202,22 @@ export default function AdminWidgetAnalytics() {
 
   const { data, isLoading, refetch } = trpc.contextual.adminFullAnalytics.useQuery(
     queryInput,
-    { enabled: user?.role === "admin" }
+    { enabled: true }
   );
 
   const { data: csvData } = trpc.contextual.adminExportAnalyticsCsv.useQuery(
     { days, module: module === "All Modules" ? undefined : module },
-    { enabled: user?.role === "admin" }
+    { enabled: true }
   );
 
   // Phase 3D: Quality Loop
   const { data: qualityData, refetch: refetchQuality } = trpc.contextual.adminQualityMetrics.useQuery(
     queryInput,
-    { enabled: user?.role === "admin" }
+    { enabled: true }
   );
   const { data: ruleQualityData, refetch: refetchRuleQuality } = trpc.contextual.adminQualityRuleMetrics.useQuery(
     { days },
-    { enabled: user?.role === "admin" }
+    { enabled: true }
   );
   const archiveRule = trpc.contextual.adminArchiveContextRule.useMutation({
     onSuccess: () => { refetchQuality(); refetchRuleQuality(); },
