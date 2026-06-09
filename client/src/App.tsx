@@ -96,6 +96,8 @@ import AdminSystemConfig from "./pages/AdminSystemConfig";
 import AdminWidgetAnalytics from "./pages/AdminWidgetAnalytics";
 import AdminWidgetSettings from "./pages/AdminWidgetSettings";
 import AdminProductionReadiness from "./pages/AdminProductionReadiness";
+import AdminIntegrations from "./pages/AdminIntegrations";
+import AdminApiSettings from "./pages/AdminApiSettings";
 import ModulePlaceholder from "./pages/ModulePlaceholder";
 import SustainabilityHub from "./pages/sustainability/SustainabilityHub";
 import ImpactMetrics from "./pages/sustainability/ImpactMetrics";
@@ -229,8 +231,10 @@ function Router() {
       <Route path="/admin/data-fields" component={AdminDataFields} />
       <Route path="/admin/modules" component={AdminModuleSettings} />
       <Route path="/admin/module-settings" component={AdminModuleSettings} />
-      <Route path="/admin/integrations" component={AdminPlaceholder} />
-      <Route path="/admin/api" component={AdminPlaceholder} />
+      <Route path="/admin/widgets" component={AdminWidgetAnalytics} />
+      <Route path="/admin/integrations" component={AdminIntegrations} />
+      <Route path="/admin/api" component={AdminApiSettings} />
+      <Route path="/admin/api-settings" component={AdminApiSettings} />
       <Route path="/admin/audit" component={AdminAuditLogs} />
       <Route path="/admin/audit-logs" component={AdminAuditLogs} />
       <Route path="/admin/config" component={AdminSystemConfig} />

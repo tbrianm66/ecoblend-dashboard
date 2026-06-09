@@ -16,6 +16,7 @@ import {
   playbookLibrary, playbookVersions, adminTemplates, users,
   usersRoles, systemAuditLogs, ventures,
   systemDataFields, systemModuleStatus, systemConfiguration,
+  systemWidgetAnalytics, systemIntegrations, systemApiKeys,
 } from "../drizzle/schema";
 import { eq, and, desc, asc, ilike, or } from "drizzle-orm";
 
@@ -683,6 +684,95 @@ export const adminRouter = router({
         .set({ configValue: input.configValue, updatedAt: new Date() })
         .where(eq(systemConfiguration.configKey, input.configKey));
       return { success: true, configKey: input.configKey };
+    }),
+
+  // ── Widget Telemetry ──────────────────────────────────────────────────────
+  getWidgetTelemetry: publicProcedure
+    .input(z.object({ widgetGroup: z.string().optional() }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const rows = await db
+        .select()
+        .from(systemWidgetAnalytics)
+        .orderBy(desc(systemWidgetAnalytics.pageViews));
+      return input?.widgetGroup
+        ? rows.filter(r => r.widgetGroup === input.widgetGroup)
+        : rows;
+    }),
+
+  // ── Integration Directory ─────────────────────────────────────────────────
+  getIntegrationDirectory: publicProcedure
+    .input(z.object({ category: z.string().optional() }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const rows = await db
+        .select()
+        .from(systemIntegrations)
+        .orderBy(desc(systemIntegrations.isConnected), asc(systemIntegrations.serviceName));
+      return input?.category
+        ? rows.filter(r => r.category === input.category)
+        : rows;
+    }),
+
+  toggleIntegrationStatus: publicProcedure
+    .input(z.object({ serviceSlug: z.string(), isConnected: z.boolean() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      await db
+        .update(systemIntegrations)
+        .set({
+          isConnected: input.isConnected,
+          lastSyncTime: input.isConnected ? new Date() : null,
+          syncStatus: input.isConnected ? "synced" : "idle",
+        })
+        .where(eq(systemIntegrations.serviceSlug, input.serviceSlug));
+      return { success: true, serviceSlug: input.serviceSlug, isConnected: input.isConnected };
+    }),
+
+  // ── API Tokens ────────────────────────────────────────────────────────────
+  getApiTokens: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return [];
+    return db
+      .select()
+      .from(systemApiKeys)
+      .orderBy(desc(systemApiKeys.createdAt));
+  }),
+
+  revokeApiKey: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      await db
+        .update(systemApiKeys)
+        .set({ status: "Revoked" })
+        .where(eq(systemApiKeys.id, input.id));
+      return { success: true };
+    }),
+
+  generateNewApiKey: publicProcedure
+    .input(z.object({ keyName: z.string(), scopes: z.string().optional(), createdBy: z.string().optional() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      const suffix = Math.random().toString(36).slice(2, 6);
+      const maskedToken = `sk_live_••••••••••••${suffix}`;
+      const [row] = await db
+        .insert(systemApiKeys)
+        .values({
+          keyName:     input.keyName,
+          maskedToken,
+          tokenPrefix: "sk_live",
+          status:      "Active",
+          scopes:      input.scopes ?? "read:ventures",
+          createdBy:   input.createdBy ?? "Admin",
+        })
+        .returning();
+      return row;
     }),
 });
 

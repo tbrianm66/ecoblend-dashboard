@@ -1,706 +1,204 @@
 // ============================================================
-// ADMIN WIDGET ANALYTICS DASHBOARD
-// Route: /admin/widget-analytics
-// Access: Platform Admin and Studio Director only
-// Design: Precision Industrial — EcoBlend OS Admin Suite
+// ADMIN — WIDGET ANALYTICS + SETTINGS (Combined)
+// Usage telemetry for every dashboard widget + layout controls
 // ============================================================
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
-import {
-  BarChart3, TrendingUp, BookOpenCheck, Eye, CheckCircle2,
-  XCircle, AlertTriangle, Download, Filter, RefreshCw,
-  Activity, Layers, Users, FileWarning, Archive, ThumbsDown,
-  ShieldAlert, TrendingDown,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { BarChart3, Eye, Users, Clock, TrendingUp } from "lucide-react";
 
-// ── Helpers ───────────────────────────────────────────────────
-const pct = (num: number, den: number) =>
-  den > 0 ? `${Math.round((num / den) * 100)}%` : "—";
+const GRP: Record<string, string> = {
+  "Dashboard":   "#56A837",
+  "Lean Canvas": "#f59e0b",
+  "Validation":  "#22d3ee",
+  "R&D":         "#fb923c",
+  "Risk":        "#ef4444",
+  "Discovery":   "#34d399",
+  "Admin":       "#a78bfa",
+};
+function gc(g: string | null) { return GRP[g ?? ""] ?? "#64748b"; }
 
-const fmt = (n: number | string | undefined) =>
-  n !== undefined && n !== null ? Number(n).toLocaleString() : "0";
-
-// ── KPI Card ─────────────────────────────────────────────────
-function KpiCard({
-  label,
-  value,
-  sub,
-  icon: Icon,
-  accent,
-}: {
-  label: string;
-  value: string | number;
-  sub?: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-  accent: string;
-}) {
+function Bar({ pct, color }: { pct: number; color: string }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex gap-4 items-start">
-      <div
-        className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-        style={{ background: `${accent}15` }}
-      >
-        <Icon size={18} style={{ color: accent }} />
-      </div>
-      <div className="min-w-0">
-        <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-0.5">
-          {label}
-        </p>
-        <p
-          className="text-2xl font-bold"
-          style={{ color: "#1a2332", fontFamily: "'Prompt', sans-serif" }}
-        >
-          {value}
-        </p>
-        {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
-      </div>
+    <div className="w-full rounded-full overflow-hidden" style={{ height: "6px", background: "#0f1923" }}>
+      <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(pct, 100)}%`, background: color }} />
     </div>
   );
 }
 
-// ── Section Header ────────────────────────────────────────────
-function SectionHeader({ title, sub }: { title: string; sub?: string }) {
-  return (
-    <div className="mb-4">
-      <h2
-        className="text-base font-bold text-gray-900"
-        style={{ fontFamily: "'Prompt', sans-serif" }}
-      >
-        {title}
-      </h2>
-      {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
-    </div>
-  );
-}
+const ALL_GROUPS = ["All", "Dashboard", "Lean Canvas", "Validation", "R&D", "Risk", "Discovery", "Admin"];
 
-// ── Table ─────────────────────────────────────────────────────
-function DataTable({
-  headers,
-  rows,
-  emptyMsg = "No data yet",
-}: {
-  headers: string[];
-  rows: (string | number | React.ReactNode)[][];
-  emptyMsg?: string;
-}) {
-  return (
-    <div className="overflow-x-auto rounded-xl border border-gray-100">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="bg-gray-50 border-b border-gray-100">
-            {headers.map((h) => (
-              <th
-                key={h}
-                className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500"
-              >
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.length === 0 ? (
-            <tr>
-              <td
-                colSpan={headers.length}
-                className="px-4 py-8 text-center text-gray-400 text-xs"
-              >
-                {emptyMsg}
-              </td>
-            </tr>
-          ) : (
-            rows.map((row, i) => (
-              <tr
-                key={i}
-                className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors"
-              >
-                {row.map((cell, j) => (
-                  <td key={j} className="px-4 py-3 text-gray-700">
-                    {cell}
-                  </td>
-                ))}
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-// ── CSV Export ────────────────────────────────────────────────
-function exportCsv(rows: any[], filename: string) {
-  if (!rows.length) return;
-  const headers = Object.keys(rows[0]);
-  const csv = [
-    headers.join(","),
-    ...rows.map((r) =>
-      headers.map((h) => JSON.stringify(r[h] ?? "")).join(",")
-    ),
-  ].join("\n");
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-// ── Main Page ─────────────────────────────────────────────────
-const MODULES = [
-  "All Modules",
-  "Venture Intake",
-  "Discovery & Market Validation",
-  "Proposition & Business Model",
-  "Research & Technical Validation",
-  "Risk Intelligence",
-  "Readiness Scoring",
-  "Investment Readiness",
-  "Governance",
-];
-
-const WIDGET_TYPES = [
-  "All Widgets",
-  "MissingEvidenceCard",
-  "ScoreImprovementCard",
-  "RDStageGuidanceCard",
-  "InvestmentPackReadinessCard",
-  "RiskMitigationCard",
-  "StageGateApprovalCard",
-];
-
-const DATE_RANGES = [
-  { label: "Last 7 days", value: 7 },
-  { label: "Last 30 days", value: 30 },
-  { label: "Last 90 days", value: 90 },
-  { label: "Last 180 days", value: 180 },
+const DEFAULT_ORDER = [
+  { id: "portfolio-overview-card",   label: "Portfolio Overview Card",       visible: true  },
+  { id: "vrl-score-card",            label: "Avg VRL Score Card",            visible: true  },
+  { id: "trl-score-card",            label: "Avg TRL Score Card",            visible: true  },
+  { id: "brl-score-card",            label: "Avg BRL Score Card",            visible: true  },
+  { id: "portfolio-analytics-hub",   label: "Portfolio Analytics Hub Graph", visible: true  },
+  { id: "portfolio-brands-panel",    label: "Portfolio Brands Panel",        visible: true  },
+  { id: "lean-canvas-block-grid",    label: "Lean Canvas Block Grid",        visible: true  },
+  { id: "hypothesis-register-table", label: "Hypothesis Register Table",     visible: true  },
+  { id: "prototype-milestones-grid", label: "Prototype Milestones Grid",     visible: true  },
+  { id: "audit-log-timeline",        label: "Audit Log Timeline",            visible: false },
 ];
 
 export default function AdminWidgetAnalytics() {
-  const [days, setDays] = useState(30);
-  const [module, setModule] = useState("All Modules");
-  const [widgetType, setWidgetType] = useState("All Widgets");
+  const [activeGroup, setGroup] = useState("All");
+  const [tab, setTab]           = useState<"analytics" | "settings">("analytics");
+  const [order, setOrder]       = useState(DEFAULT_ORDER);
 
-  const queryInput = useMemo(
-    () => ({
-      days,
-      module: module === "All Modules" ? undefined : module,
-      widgetType: widgetType === "All Widgets" ? undefined : widgetType,
-    }),
-    [days, module, widgetType]
-  );
+  const { data: widgets = [], isLoading } = trpc.admin.getWidgetTelemetry.useQuery();
 
-  const { data, isLoading, refetch } = trpc.contextual.adminFullAnalytics.useQuery(
-    queryInput,
-    { enabled: true }
-  );
+  const filtered = useMemo(() => {
+    let list = widgets as any[];
+    if (activeGroup !== "All") list = list.filter((w: any) => w.widgetGroup === activeGroup);
+    return list;
+  }, [widgets, activeGroup]);
 
-  const { data: csvData } = trpc.contextual.adminExportAnalyticsCsv.useQuery(
-    { days, module: module === "All Modules" ? undefined : module },
-    { enabled: true }
-  );
+  const maxViews  = useMemo(() => Math.max(...(widgets as any[]).map((w: any) => Number(w.pageViews) || 0), 1), [widgets]);
+  const totalViews = useMemo(() => (widgets as any[]).reduce((s: number, w: any) => s + (Number(w.pageViews) || 0), 0), [widgets]);
+  const avgRate   = useMemo(() => {
+    const list = widgets as any[];
+    if (!list.length) return "0.0";
+    return (list.reduce((s: number, w: any) => s + Number(w.interactionRate ?? 0), 0) / list.length).toFixed(1);
+  }, [widgets]);
 
-  // Phase 3D: Quality Loop
-  const { data: qualityData, refetch: refetchQuality } = trpc.contextual.adminQualityMetrics.useQuery(
-    queryInput,
-    { enabled: true }
-  );
-  const { data: ruleQualityData, refetch: refetchRuleQuality } = trpc.contextual.adminQualityRuleMetrics.useQuery(
-    { days },
-    { enabled: true }
-  );
-  const archiveRule = trpc.contextual.adminArchiveContextRule.useMutation({
-    onSuccess: () => { refetchQuality(); refetchRuleQuality(); },
-  });
-
-  const ov = data?.overview || {};
-  const recPerf = data?.recPerf || {};
-
-  // Derived rates
-  const openRate = pct(Number(recPerf.opened), Number(recPerf.displayed));
-  const completionRate = pct(Number(recPerf.completed), Number(recPerf.opened));
-  const dismissalRate = pct(Number(recPerf.dismissed), Number(recPerf.displayed));
-  const evidenceConvRate = pct(Number(recPerf.evidenceLinked), Number(recPerf.opened));
+  function moveUp(i: number) {
+    if (i === 0) return;
+    const n = [...order]; [n[i - 1], n[i]] = [n[i], n[i - 1]]; setOrder(n);
+  }
+  function moveDown(i: number) {
+    if (i === order.length - 1) return;
+    const n = [...order]; [n[i], n[i + 1]] = [n[i + 1], n[i]]; setOrder(n);
+  }
+  function toggleVisible(i: number) {
+    const n = [...order]; n[i] = { ...n[i], visible: !n[i].visible }; setOrder(n);
+  }
 
   return (
-    <div className="flex-1 overflow-y-auto bg-gray-50">
+    <div className="flex-1 overflow-y-auto" style={{ background: "#080f18" }}>
       {/* Header */}
-      <div className="bg-white border-b border-gray-100 px-8 py-6">
+      <div className="px-8 pt-8 pb-5 border-b" style={{ borderColor: "#1e2d3d" }}>
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span
-                className="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded"
-                style={{ background: "#56A83715", color: "#56A837" }}
-              >
-                Admin
-              </span>
-              <span className="text-xs text-gray-400">·</span>
-              <span className="text-xs text-gray-400 font-mono">
-                Widget Analytics
-              </span>
+              <BarChart3 size={15} style={{ color: "#56A837" }} />
+              <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#56A837" }}>Admin / Widgets</span>
             </div>
-            <h1
-              className="text-2xl font-bold text-gray-900"
-              style={{ fontFamily: "'Prompt', sans-serif" }}
-            >
-              Widget Analytics Dashboard
-            </h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Monitor contextual playbook and widget usage across all ventures
-              and modules.
-            </p>
+            <h1 className="text-2xl font-bold" style={{ color: "#e2e8f0", fontFamily: "'Prompt', sans-serif" }}>Widget Analytics & Settings</h1>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              className="gap-1.5 text-xs"
-              onClick={() => refetch()}
-            >
-              <RefreshCw size={13} /> Refresh
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="gap-1.5 text-xs"
-              style={{ borderColor: "#3B85BA", color: "#3B85BA" }}
-              onClick={() =>
-                csvData?.rows && exportCsv(csvData.rows, `widget-analytics-${days}d.csv`)
-              }
-            >
-              <Download size={13} /> Export CSV
-            </Button>
-          </div>
-        </div>
-
-        {/* Filters */}
-        <div className="flex items-center gap-3 mt-5 flex-wrap">
-          <Filter size={14} className="text-gray-400" />
-          <Select
-            value={String(days)}
-            onValueChange={(v) => setDays(Number(v))}
-          >
-            <SelectTrigger className="h-8 text-xs w-36">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {DATE_RANGES.map((r) => (
-                <SelectItem key={r.value} value={String(r.value)}>
-                  {r.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={module} onValueChange={setModule}>
-            <SelectTrigger className="h-8 text-xs w-52">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {MODULES.map((m) => (
-                <SelectItem key={m} value={m}>
-                  {m}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={widgetType} onValueChange={setWidgetType}>
-            <SelectTrigger className="h-8 text-xs w-52">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {WIDGET_TYPES.map((w) => (
-                <SelectItem key={w} value={w}>
-                  {w}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="p-8 space-y-10">
-        {/* Section 1: Widget Usage Overview */}
-        <section>
-          <SectionHeader
-            title="Widget Usage Overview"
-            sub="Aggregate interaction signals across all contextual widgets"
-          />
-          {isLoading ? (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="h-24 bg-white rounded-xl border border-gray-100 animate-pulse"
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <KpiCard
-                label="Total Widget Views"
-                value={fmt(ov.totalViews)}
-                icon={Eye}
-                accent="#56A837"
-              />
-              <KpiCard
-                label="Playbook Opens"
-                value={fmt(ov.playbookOpens)}
-                sub={`Open rate: ${openRate}`}
-                icon={BookOpenCheck}
-                accent="#3B85BA"
-              />
-              <KpiCard
-                label="Playbook Completions"
-                value={fmt(ov.playbookCompletions)}
-                sub={`Completion rate: ${completionRate}`}
-                icon={CheckCircle2}
-                accent="#56A837"
-              />
-              <KpiCard
-                label="Dismissals"
-                value={fmt(ov.dismissals)}
-                sub={`Dismissal rate: ${dismissalRate}`}
-                icon={XCircle}
-                accent="#ef4444"
-              />
-              <KpiCard
-                label="Evidence Linked"
-                value={fmt(ov.evidenceLinked)}
-                sub={`Evidence conversion: ${evidenceConvRate}`}
-                icon={Activity}
-                accent="#8b5cf6"
-              />
-              <KpiCard
-                label="Approvals Supported"
-                value={fmt(ov.approvalsSupported)}
-                icon={CheckCircle2}
-                accent="#F69111"
-              />
-              <KpiCard
-                label="Investor Warnings"
-                value={fmt(ov.investorWarnings)}
-                icon={AlertTriangle}
-                accent="#F69111"
-              />
-              <KpiCard
-                label="Draft Packs w/ Warnings"
-                value={fmt(ov.draftPacksWithWarnings)}
-                icon={FileWarning}
-                accent="#ef4444"
-              />
-            </div>
-          )}
-        </section>
-
-        {/* Section 2: Recommendation Performance */}
-        <section>
-          <SectionHeader
-            title="Recommendation Performance"
-            sub="How well recommendations are converting to action"
-          />
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="flex items-center gap-6 mt-1">
             {[
-              { label: "Displayed", value: fmt(recPerf.displayed), accent: "#6b7280" },
-              { label: "Opened", value: fmt(recPerf.opened), accent: "#3B85BA" },
-              { label: "Completed", value: fmt(recPerf.completed), accent: "#56A837" },
-              { label: "Dismissed", value: fmt(recPerf.dismissed), accent: "#ef4444" },
-              { label: "Evidence Linked", value: fmt(recPerf.evidenceLinked), accent: "#8b5cf6" },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="bg-white rounded-xl border border-gray-100 p-4 text-center shadow-sm"
-              >
-                <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">
-                  {item.label}
-                </p>
-                <p
-                  className="text-2xl font-bold"
-                  style={{ color: item.accent, fontFamily: "'Prompt', sans-serif" }}
-                >
-                  {item.value}
-                </p>
+              { label: "Total Views",   value: totalViews.toLocaleString(), color: "#e2e8f0" },
+              { label: "Widgets",       value: String((widgets as any[]).length),             color: "#56A837"  },
+              { label: "Avg Interact.", value: `${avgRate}%`,               color: "#22d3ee" },
+            ].map(s => (
+              <div key={s.label} className="text-right">
+                <p className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</p>
+                <p className="text-xs" style={{ color: "#475569" }}>{s.label}</p>
               </div>
             ))}
           </div>
-        </section>
-
-        {/* Section 3: Usage by Module */}
-        <section>
-          <SectionHeader
-            title="Usage by Module"
-            sub="Widget interactions grouped by platform module"
-          />
-          <DataTable
-            headers={["Module", "Views", "Opens", "Completions", "Open Rate"]}
-            rows={(data?.byModule || []).map((r: any) => [
-              r.module || "Unknown",
-              fmt(r.views),
-              fmt(r.opens),
-              fmt(r.completions),
-              pct(Number(r.opens), Number(r.views)),
-            ])}
-            emptyMsg="No module usage data for this period"
-          />
-        </section>
-
-        {/* Section 4: Usage by Widget Type */}
-        <section>
-          <SectionHeader
-            title="Usage by Widget Type"
-            sub="Breakdown of which widget cards are generating the most engagement"
-          />
-          <DataTable
-            headers={["Widget Type", "Views", "Opens", "Open Rate"]}
-            rows={(data?.byWidget || []).map((r: any) => [
-              <Badge
-                key={r.widget_type}
-                variant="outline"
-                className="text-xs font-mono"
-              >
-                {r.widget_type || "Unknown"}
-              </Badge>,
-              fmt(r.views),
-              fmt(r.opens),
-              pct(Number(r.opens), Number(r.views)),
-            ])}
-            emptyMsg="No widget type data for this period"
-          />
-        </section>
-
-        {/* Section 5: Playbook Engagement */}
-        <section>
-          <SectionHeader
-            title="Playbook Engagement"
-            sub="Top playbooks by views, opens, completions and dismissals"
-          />
-          <DataTable
-            headers={[
-              "Playbook",
-              "Category",
-              "Views",
-              "Opens",
-              "Completions",
-              "Dismissals",
-              "Open Rate",
-            ]}
-            rows={(data?.topPlaybooks || []).map((r: any) => [
-              r.title || r.playbook_id || "Unknown",
-              r.category ? (
-                <Badge variant="outline" className="text-xs">
-                  {r.category}
-                </Badge>
-              ) : (
-                "—"
-              ),
-              fmt(r.views),
-              fmt(r.opens),
-              fmt(r.completions),
-              fmt(r.dismissals),
-              pct(Number(r.opens), Number(r.views)),
-            ])}
-            emptyMsg="No playbook engagement data for this period"
-          />
-        </section>
-
-        {/* Section 6: Dismissal Reasons */}
-        {(data?.dismissReasons || []).length > 0 && (
-          <section>
-            <SectionHeader
-              title="Dismissal Reasons"
-              sub="Why users are dismissing recommendations"
-            />
-            <DataTable
-              headers={["Reason", "Count"]}
-              rows={(data?.dismissReasons || []).map((r: any) => [
-                r.dismissed_reason || "Not specified",
-                fmt(r.count),
-              ])}
-            />
-          </section>
-        )}
-
-        {/* Section 7: Playbooks with No Context Rules */}
-        {(data?.orphanPlaybooks || []).length > 0 && (
-          <section>
-            <SectionHeader
-              title="Playbooks Without Active Context Rules"
-              sub="Published playbooks that will not appear contextually — consider adding context rules"
-            />
-            <DataTable
-              headers={["Playbook ID", "Title", "Category", "Status"]}
-              rows={(data?.orphanPlaybooks || []).map((r: any) => [
-                <span key={r.id} className="font-mono text-xs text-gray-500">
-                  {r.id}
-                </span>,
-                r.title || "—",
-                r.category || "—",
-                <Badge
-                  key={r.status}
-                  variant="outline"
-                  className="text-xs"
-                  style={{ color: "#56A837", borderColor: "#56A837" }}
-                >
-                  {r.status}
-                </Badge>,
-              ])}
-            />
-          </section>
-        )}
-
-        {/* Venture Impact Signals note */}
-        <section>
-          <div className="bg-amber-50 border border-amber-100 rounded-xl p-5">
-            <div className="flex items-start gap-3">
-              <AlertTriangle size={16} className="text-amber-500 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-semibold text-amber-800 mb-1">
-                  Venture Impact Signals
-                </p>
-                <p className="text-xs text-amber-700 leading-relaxed">
-                  Correlation between widget interactions and downstream outcomes
-                  (evidence completion, score improvements, risk mitigation, stage-gate
-                  approvals) will be available once sufficient usage data has been
-                  collected. These signals are correlational, not causal.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── Phase 3D: Recommendation Quality Loop ── */}
-        <section>
-          <SectionHeader
-            title="Recommendation Quality Loop"
-            sub="Identify low-relevance playbooks and underperforming context rules"
-          />
-
-          {/* Quality KPIs */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <KpiCard
-              label="Low-Relevance Playbooks"
-              value={fmt(qualityData?.lowRelevancePlaybooks?.length)}
-              sub={`of ${fmt(qualityData?.playbookMetrics?.length)} tracked`}
-              accent="#ef4444"
-              icon={ThumbsDown}
-            />
-            <KpiCard
-              label="Low-Performing Rules"
-              value={fmt(ruleQualityData?.lowPerformingRules?.length)}
-              sub={`of ${fmt(ruleQualityData?.rules?.length)} active rules`}
-              accent="#f97316"
-              icon={ShieldAlert}
-            />
-            <KpiCard
-              label="Top Dismissal Reason"
-              value={(qualityData?.dismissalReasons?.[0]?.dismissed_reason || "—").toString().slice(0, 18)}
-              sub={qualityData?.dismissalReasons?.[0] ? `${fmt(qualityData.dismissalReasons[0].cnt)} times` : "No data yet"}
-              accent="#6b7280"
-              icon={XCircle}
-            />
-            <KpiCard
-              label="Open Rate Threshold"
-              value={`${qualityData?.thresholds?.lowOpenRate ?? 20}%`}
-              sub="Flag below this rate"
-              accent="#3B85BA"
-              icon={TrendingDown}
-            />
-          </div>
-
-          {/* Low-Relevance Playbooks table */}
-          {(qualityData?.lowRelevancePlaybooks?.length ?? 0) > 0 && (
-            <div className="mb-6">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                Low-Relevance Playbooks (open rate &lt; {qualityData?.thresholds?.lowOpenRate}% or dismissal rate &gt; {qualityData?.thresholds?.highDismissalRate}%)
-              </p>
-              <DataTable
-                columns={[
-                  { key: "playbook_title", label: "Playbook" },
-                  { key: "module", label: "Module" },
-                  { key: "widget_type", label: "Widget" },
-                  { key: "view_count", label: "Views" },
-                  { key: "open_rate", label: "Open %" },
-                  { key: "dismissal_rate", label: "Dismiss %" },
-                  { key: "completion_rate", label: "Complete %" },
-                ]}
-                rows={qualityData?.lowRelevancePlaybooks ?? []}
-              />
-            </div>
-          )}
-
-          {/* Low-Performing Context Rules with archive action */}
-          {(ruleQualityData?.lowPerformingRules?.length ?? 0) > 0 ? (
-            <div className="mb-6">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                Low-Performing Context Rules — one-click archive
-              </p>
-              <div className="flex flex-col gap-2">
-                {ruleQualityData!.lowPerformingRules.map((rule: any) => (
-                  <div
-                    key={rule.rule_id}
-                    className="flex items-center justify-between bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-sm"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-800 truncate">{rule.rule_name || rule.rule_id}</p>
-                      <p className="text-xs text-gray-400">
-                        {rule.module} · Views: {fmt(rule.view_count)} · Open: {rule.open_rate ?? "—"}% · Dismiss: {rule.dismissal_rate ?? "—"}%
-                      </p>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="ml-4 gap-1.5 text-xs border-red-200 text-red-600 hover:bg-red-50"
-                      disabled={archiveRule.isPending}
-                      onClick={() => {
-                        if (confirm(`Archive rule "${rule.rule_name || rule.rule_id}"? This will stop it from triggering recommendations.`)) {
-                          archiveRule.mutate({ ruleId: rule.rule_id, reason: "Archived via Admin Quality Loop" });
-                        }
-                      }}
-                    >
-                      <Archive size={12} /> Archive
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3 bg-green-50 border border-green-100 rounded-xl p-4 mb-6">
-              <CheckCircle2 size={16} className="text-green-500 flex-shrink-0" />
-              <p className="text-sm text-green-700">
-                No low-performing context rules detected in the last {days} days.
-              </p>
-            </div>
-          )}
-
-          {/* Dismissal Reasons breakdown */}
-          {(qualityData?.dismissalReasons?.length ?? 0) > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                Dismissal Reasons Breakdown
-              </p>
-              <DataTable
-                columns={[
-                  { key: "dismissed_reason", label: "Reason" },
-                  { key: "module", label: "Module" },
-                  { key: "widget_type", label: "Widget" },
-                  { key: "cnt", label: "Count" },
-                ]}
-                rows={qualityData?.dismissalReasons ?? []}
-              />
-            </div>
-          )}
-        </section>
+        </div>
+        <div className="mt-5 flex items-center gap-1">
+          {(["analytics", "settings"] as const).map(t => (
+            <button key={t} onClick={() => setTab(t)}
+              className="px-4 py-1.5 rounded-lg text-xs font-semibold transition-all"
+              style={{ background: tab === t ? "#56A83720" : "transparent", color: tab === t ? "#56A837" : "#475569", border: `1px solid ${tab === t ? "#56A83750" : "transparent"}` }}>
+              {t === "analytics" ? "📊 Usage Analytics" : "⚙️ Layout Settings"}
+            </button>
+          ))}
+        </div>
       </div>
+
+      {/* Analytics tab */}
+      {tab === "analytics" && (
+        <div className="px-8 py-6">
+          <div className="flex items-center gap-2 flex-wrap mb-6">
+            {ALL_GROUPS.map(g => {
+              const active = activeGroup === g;
+              const color = g === "All" ? "#56A837" : gc(g);
+              return (
+                <button key={g} onClick={() => setGroup(g)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                  style={{ background: active ? `${color}18` : "#0a1520", color: active ? color : "#475569", border: `1px solid ${active ? color + "50" : "#1e2d3d"}` }}>
+                  {g}
+                </button>
+              );
+            })}
+          </div>
+          {isLoading ? (
+            <p className="text-sm py-12 text-center" style={{ color: "#475569" }}>Loading telemetry…</p>
+          ) : (
+            <div className="rounded-xl overflow-hidden border" style={{ borderColor: "#1e2d3d" }}>
+              <div className="grid px-5 py-2.5 text-[10px] font-bold uppercase tracking-widest"
+                style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1.5fr", background: "#0a1520", color: "#334155", borderBottom: "1px solid #1e2d3d" }}>
+                <span>Widget</span>
+                <span className="text-right flex items-center justify-end gap-1"><Eye size={9} /> Views</span>
+                <span className="text-right flex items-center justify-end gap-1"><Users size={9} /> Users</span>
+                <span className="text-right flex items-center justify-end gap-1"><TrendingUp size={9} /> Interact.</span>
+                <span className="text-right flex items-center justify-end gap-1"><Clock size={9} /> Dwell</span>
+                <span className="text-right">Bar</span>
+              </div>
+              {filtered.map((w: any, i: number) => {
+                const color = gc(w.widgetGroup);
+                const pct   = Math.round((Number(w.pageViews) / maxViews) * 100);
+                const rate  = Number(w.interactionRate);
+                return (
+                  <div key={w.widgetId} className="grid items-center px-5 py-3.5"
+                    style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1.5fr", background: i % 2 === 0 ? "#080f18" : "#070d15", borderBottom: i < filtered.length - 1 ? "1px solid #0d1825" : "none" }}>
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: "#e2e8f0" }}>{w.widgetLabel}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded" style={{ color, background: `${color}15` }}>{w.widgetGroup ?? "—"}</span>
+                        <span className="text-[10px] font-mono" style={{ color: "#334155" }}>{w.widgetPage}</span>
+                      </div>
+                    </div>
+                    <p className="text-sm font-bold text-right" style={{ color: "#e2e8f0" }}>{Number(w.pageViews).toLocaleString()}</p>
+                    <p className="text-sm text-right" style={{ color: "#64748b" }}>{Number(w.uniqueUsers).toLocaleString()}</p>
+                    <p className="text-sm text-right font-semibold" style={{ color: rate >= 70 ? "#56A837" : rate >= 50 ? "#f59e0b" : "#ef4444" }}>{rate.toFixed(1)}%</p>
+                    <p className="text-sm text-right" style={{ color: "#64748b" }}>{w.avgDwellSecs}s</p>
+                    <div className="pl-4"><Bar pct={pct} color={color} /><p className="text-[10px] text-right mt-0.5" style={{ color: "#334155" }}>{pct}%</p></div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Settings tab */}
+      {tab === "settings" && (
+        <div className="px-8 py-6">
+          <p className="text-xs mb-5" style={{ color: "#475569" }}>Re-order widgets and toggle their visibility on the dashboard.</p>
+          <div className="rounded-xl overflow-hidden border" style={{ borderColor: "#1e2d3d" }}>
+            <div className="grid px-5 py-2.5 text-[10px] font-bold uppercase tracking-widest"
+              style={{ gridTemplateColumns: "2rem 1fr 6rem 5rem", background: "#0a1520", color: "#334155", borderBottom: "1px solid #1e2d3d" }}>
+              <span>#</span><span>Widget</span><span className="text-center">Visible</span><span className="text-center">Order</span>
+            </div>
+            {order.map((w, i) => (
+              <div key={w.id} className="grid items-center px-5 py-3"
+                style={{ gridTemplateColumns: "2rem 1fr 6rem 5rem", background: i % 2 === 0 ? "#080f18" : "#070d15", borderBottom: i < order.length - 1 ? "1px solid #0d1825" : "none", opacity: w.visible ? 1 : 0.45 }}>
+                <span className="text-xs font-mono" style={{ color: "#334155" }}>{i + 1}</span>
+                <span className="text-sm font-medium" style={{ color: w.visible ? "#e2e8f0" : "#475569" }}>{w.label}</span>
+                <div className="flex justify-center">
+                  <button onClick={() => toggleVisible(i)}
+                    className="w-10 h-5 rounded-full relative transition-all"
+                    style={{ background: w.visible ? "#56A837" : "#1e2d3d", border: `1px solid ${w.visible ? "#4a9030" : "#2d3f52"}` }}>
+                    <span className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all" style={{ left: w.visible ? "calc(100% - 18px)" : "2px" }} />
+                  </button>
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <button onClick={() => moveUp(i)} disabled={i === 0}
+                    className="text-xs px-2 py-0.5 rounded"
+                    style={{ background: "#0a1520", color: i === 0 ? "#1e2d3d" : "#475569", border: "1px solid #1e2d3d" }}>↑</button>
+                  <button onClick={() => moveDown(i)} disabled={i === order.length - 1}
+                    className="text-xs px-2 py-0.5 rounded"
+                    style={{ background: "#0a1520", color: i === order.length - 1 ? "#1e2d3d" : "#475569", border: "1px solid #1e2d3d" }}>↓</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

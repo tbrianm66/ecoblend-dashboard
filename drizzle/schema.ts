@@ -8144,3 +8144,52 @@ export const systemConfiguration = pgTable("system_configuration", {
 });
 export type SystemConfig = typeof systemConfiguration.$inferSelect;
 export type InsertSystemConfig = typeof systemConfiguration.$inferInsert;
+
+// ── Admin: Widget Analytics ───────────────────────────────────────────────────
+export const systemWidgetAnalytics = pgTable("system_widget_analytics", {
+  id:              serial("id").primaryKey(),
+  widgetId:        varchar("widgetId", { length: 64 }).notNull().unique(),
+  widgetLabel:     varchar("widgetLabel", { length: 128 }).notNull(),
+  widgetPage:      varchar("widgetPage", { length: 128 }),
+  pageViews:       integer("pageViews").notNull().default(0),
+  uniqueUsers:     integer("uniqueUsers").notNull().default(0),
+  interactionRate: numeric("interactionRate", { precision: 5, scale: 2 }).notNull().default("0"),
+  avgDwellSecs:    integer("avgDwellSecs").notNull().default(0),
+  lastActive:      timestamp("lastActive").defaultNow().notNull(),
+  widgetGroup:     varchar("widgetGroup", { length: 64 }),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+});
+export type SystemWidgetAnalytic = typeof systemWidgetAnalytics.$inferSelect;
+export type InsertSystemWidgetAnalytic = typeof systemWidgetAnalytics.$inferInsert;
+
+// ── Admin: Integrations ───────────────────────────────────────────────────────
+export const systemIntegrations = pgTable("system_integrations", {
+  id:           serial("id").primaryKey(),
+  serviceName:  varchar("serviceName", { length: 128 }).notNull(),
+  serviceSlug:  varchar("serviceSlug", { length: 64 }).notNull().unique(),
+  category:     varchar("category", { length: 64 }),
+  logoEmoji:    varchar("logoEmoji", { length: 16 }),
+  isConnected:  boolean("isConnected").notNull().default(false),
+  lastSyncTime: timestamp("lastSyncTime"),
+  syncStatus:   varchar("syncStatus", { length: 32 }).default("idle"),
+  description:  text("description"),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+});
+export type SystemIntegration = typeof systemIntegrations.$inferSelect;
+export type InsertSystemIntegration = typeof systemIntegrations.$inferInsert;
+
+// ── Admin: API Keys ───────────────────────────────────────────────────────────
+export const systemApiKeys = pgTable("system_api_keys", {
+  id:           serial("id").primaryKey(),
+  keyName:      varchar("keyName", { length: 128 }).notNull(),
+  maskedToken:  varchar("maskedToken", { length: 64 }).notNull(),
+  tokenPrefix:  varchar("tokenPrefix", { length: 16 }).notNull().default("sk_live"),
+  status:       varchar("status", { length: 32 }).notNull().default("Active"),
+  scopes:       varchar("scopes", { length: 256 }),
+  createdBy:    varchar("createdBy", { length: 128 }),
+  lastUsed:     timestamp("lastUsed"),
+  expiresAt:    timestamp("expiresAt"),
+  createdAt:    timestamp("createdAt").defaultNow().notNull(),
+});
+export type SystemApiKey = typeof systemApiKeys.$inferSelect;
+export type InsertSystemApiKey = typeof systemApiKeys.$inferInsert;
