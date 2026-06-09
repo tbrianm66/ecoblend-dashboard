@@ -8017,3 +8017,19 @@ export const esgBcorpMetrics = pgTable("esg_bcorp_metrics", {
 });
 export type EsgBcorpMetric = typeof esgBcorpMetrics.$inferSelect;
 export type InsertEsgBcorpMetric = typeof esgBcorpMetrics.$inferInsert;
+
+// ── Module 14 Stage 1: Team Workspace ────────────────────────────────────────
+export const collaborationTasks = pgTable("collaboration_tasks", {
+  id:             serial("id").primaryKey(),
+  ventureId:      varchar("ventureId", { length: 64 }).notNull().references(() => ventures.id, { onDelete: "cascade" }),
+  taskTitle:      varchar("taskTitle", { length: 255 }).notNull(),
+  pillarCategory: varchar("pillarCategory", { length: 128 }).notNull(),
+  assignedRole:   varchar("assignedRole", { length: 128 }).notNull(),
+  priority:       varchar("priority", { length: 32 }).notNull().default("Medium"),
+  status:         varchar("status", { length: 32 }).notNull().default("Todo"),
+  dueDate:        timestamp("dueDate"),
+  createdAt:      timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:      timestamp("updatedAt").defaultNow().notNull(),
+});
+export type CollaborationTask = typeof collaborationTasks.$inferSelect;
+export type InsertCollaborationTask = typeof collaborationTasks.$inferInsert;
