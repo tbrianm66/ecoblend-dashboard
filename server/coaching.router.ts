@@ -696,6 +696,38 @@ const sessionsRouter = router({
         .where(eq(coachingSessions.id, input.id));
       return { success: true };
     }),
+
+  toggleActionItem: publicProcedure
+    .input(z.object({ sessionId: z.string(), itemId: z.string() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      const [session] = await db
+        .select()
+        .from(coachingSessions)
+        .where(eq(coachingSessions.id, input.sessionId))
+        .limit(1);
+      if (!session) throw new Error("Session not found");
+      const actions = ((session.actions as any) || []) as Array<{ id: string; text: string; done: boolean }>;
+      const updated = actions.map((a) =>
+        a.id === input.itemId ? { ...a, done: !a.done } : a
+      );
+      await db
+        .update(coachingSessions)
+        .set({ actions: updated, updatedAt: new Date() })
+        .where(eq(coachingSessions.id, input.sessionId));
+      return { success: true, done: updated.find((a) => a.id === input.itemId)?.done ?? false };
+    }),
+
+  listByVenture: publicProcedure
+    .input(z.object({ ventureId: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      return db
+        .select()
+        .from(coachingSessions)
+        .where(eq(coachingSessions.ventureId, input.ventureId))
+        .orderBy(desc(coachingSessions.sessionDate));
+    }),
 });
 
 const prlRouter = router({
@@ -1065,6 +1097,76 @@ const dashboardRouter = router({
       scoredFounders: scored.length,
     };
   }),
+
+  getFounderDashboardData: publicProcedure
+    .input(z.object({ ventureId: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+
+      const sessions = await db
+        .select()
+        .from(coachingSessions)
+        .where(eq(coachingSessions.ventureId, input.ventureId))
+        .orderBy(desc(coachingSessions.sessionDate));
+
+      const today = new Date().toISOString().split("T")[0];
+
+      const upcoming = sessions
+        .filter((s) => (s.sessionDate as unknown as string) >= today)
+        .sort((a, b) =>
+          String(a.sessionDate).localeCompare(String(b.sessionDate))
+        );
+
+      const nextSession = upcoming[0] || null;
+
+      // Look up coach name for next session
+      let nextCoachName: string | null = null;
+      if (nextSession) {
+        const [coach] = await db
+          .select()
+          .from(coachingCoaches)
+          .where(eq(coachingCoaches.id, nextSession.coachId))
+          .limit(1);
+        nextCoachName = coach?.name ?? null;
+      }
+
+      // Flatten all action items across sessions, preserving session context
+      const allActionItems = sessions.flatMap((s) => {
+        const actions = ((s.actions as any) || []) as Array<{
+          id: string;
+          text: string;
+          done: boolean;
+        }>;
+        return actions.map((a) => ({
+          id: a.id,
+          text: a.text,
+          done: a.done,
+          sessionId: s.id,
+          sessionDate: s.sessionDate as unknown as string,
+          focusArea: (s as any).focusArea as string | null,
+        }));
+      });
+
+      const pendingCount = allActionItems.filter((a) => !a.done).length;
+
+      return {
+        sessions: sessions.map((s) => ({
+          ...s,
+          focusArea: (s as any).focusArea as string | null,
+          sessionDate: s.sessionDate as unknown as string,
+        })),
+        nextSession: nextSession
+          ? {
+              ...nextSession,
+              focusArea: (nextSession as any).focusArea as string | null,
+              sessionDate: nextSession.sessionDate as unknown as string,
+              coachName: nextCoachName,
+            }
+          : null,
+        pendingCount,
+        allActionItems,
+      };
+    }),
 });
 
 // ── Coach Assignment Router ───────────────────────────────────────────────────
