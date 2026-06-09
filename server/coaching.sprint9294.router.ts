@@ -23,7 +23,7 @@
  */
 
 import { z } from "zod";
-import { router, protectedProcedure } from "./_core/trpc";
+import { router, protectedProcedure, publicProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import {
   founderNotifications,
@@ -36,6 +36,7 @@ import {
   coachingSessionRequests,
   founderSelfAssessments,
   ventures,
+  founders,
 } from "../drizzle/schema";
 import { eq, and, desc, asc, sql, isNull } from "drizzle-orm";
 import { randomUUID } from "crypto";
@@ -43,7 +44,7 @@ import { randomUUID } from "crypto";
 // ── Sprint 92: Founder Notification Centre ───────────────────────────────────
 export const notificationsRouter = router({
   /** List notifications for a founder/venture, newest first */
-  list: protectedProcedure
+  list: publicProcedure
     .input(z.object({
       ventureId:  z.string().min(1),
       founderId:  z.string().min(1),
@@ -68,7 +69,7 @@ export const notificationsRouter = router({
     }),
 
   /** Count unread notifications for a founder/venture */
-  unreadCount: protectedProcedure
+  unreadCount: publicProcedure
     .input(z.object({
       ventureId: z.string().min(1),
       founderId: z.string().min(1),
@@ -169,7 +170,7 @@ export const notificationsRouter = router({
 // ── Sprint 93: Coach Workload Dashboard ──────────────────────────────────────
 export const workloadRouter = router({
   /** Aggregate workload metrics per coach across the portfolio */
-  summary: protectedProcedure
+  summary: publicProcedure
     .query(async () => {
       const db = await getDb();
 
@@ -197,14 +198,16 @@ export const workloadRouter = router({
         .groupBy(coachingSessionRequests.coachId);
 
       // Get unreviewed self-assessments per coach (via assignments)
+      // founderSelfAssessments has no ventureId — join through founders
       const pendingAssessments = await db
         .select({
-          ventureId: founderSelfAssessments.ventureId,
+          ventureId: founders.ventureId,
           count:     sql<number>`COUNT(*)`,
         })
         .from(founderSelfAssessments)
+        .innerJoin(founders, eq(founderSelfAssessments.founderId, founders.id))
         .where(eq(founderSelfAssessments.status, "pending"))
-        .groupBy(founderSelfAssessments.ventureId);
+        .groupBy(founders.ventureId);
 
       // Get latest PRL per venture
       const latestFrl = await db
@@ -297,7 +300,7 @@ export const workloadRouter = router({
     }),
 
   /** Detailed breakdown for a single coach */
-  detail: protectedProcedure
+  detail: publicProcedure
     .input(z.object({ coachId: z.string().min(1) }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -380,7 +383,7 @@ export const goalsRouter = router({
     }),
 
   /** Get the active goal for a founder/venture */
-  get: protectedProcedure
+  get: publicProcedure
     .input(z.object({
       ventureId: z.string().min(1),
       founderId: z.string().min(1),
@@ -403,7 +406,7 @@ export const goalsRouter = router({
     }),
 
   /** List all goals — admin/coach view, filterable by status */
-  list: protectedProcedure
+  list: publicProcedure
     .input(z.object({
       status:    z.enum(["active", "achieved", "missed", "cancelled", "all"]).optional().default("all"),
       coachId:   z.string().optional(),

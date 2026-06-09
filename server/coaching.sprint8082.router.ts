@@ -6,7 +6,7 @@
  */
 
 import { z } from "zod";
-import { router, protectedProcedure } from "./_core/trpc";
+import { router, protectedProcedure, publicProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import {
   coachingCoaches,
@@ -154,8 +154,8 @@ export const alertsRouter = router({
       return { success: true };
     }),
 
-  summary: protectedProcedure.query(async () => {
-    const db = getDb();
+  summary: publicProcedure.query(async () => {
+    const db = await getDb();
     const { prlTrendAlerts } = await import("../drizzle/schema");
     const rows = await db
       .select()
@@ -395,10 +395,10 @@ export const leaderboardRouter = router({
       return { computed: snapshots.length, weekOf: weekDate.toISOString().slice(0, 10) };
     }),
 
-  get: protectedProcedure
+  get: publicProcedure
     .input(z.object({ weekOf: z.string().optional(), limit: z.number().default(20) }))
     .query(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       const { coachPerformanceSnapshots } = await import("../drizzle/schema");
       const rows = await db
         .select().from(coachPerformanceSnapshots)

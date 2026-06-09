@@ -58,8 +58,8 @@ export const productMilestonesRouter = router({
       const db = await getDb();
       const { id, ...body } = input;
 
-      // ── Server-side gate: successCriteria required for testable MVPs ──────
-      if (!body.successCriteria?.trim()) {
+      // ── Server-side gate: successCriteria required for mvp_definition type ──
+      if (body.milestoneType === "mvp_definition" && !body.successCriteria?.trim()) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message:

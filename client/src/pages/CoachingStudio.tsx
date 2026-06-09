@@ -394,31 +394,9 @@ export default function CoachingStudio() {
     { refetchInterval: 60_000 }
   );
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
-      </div>
-    );
-  }
+  const utils = trpc.useUtils();
 
-  const avgPrl = studio?.avgPortfolioPrl || 0;
-  const avgColor = getRagColor(avgPrl);
-
-  const heatmapData = (studio?.ventureHealth || []).map((v) => ({
-    name: v.ventureName.length > 16 ? v.ventureName.substring(0, 14) + "…" : v.ventureName,
-    prl: v.avgFounderPrl !== null ? Math.round(v.avgFounderPrl) : 0,
-    vrl: v.adjustedVrl !== null ? Math.round(v.adjustedVrl) : 0,
-    risk: v.riskFlagged,
-    founders: v.founderCount,
-  }));
-
-  const trendData = (studio?.completionTrend || []).map((t) => ({
-    week: format(new Date(t.week), "dd MMM"),
-    rate: t.avgCompletionRate,
-  }));
-
-  // Sprint 80: Alert summary
+  // Sprint 80: Alert summary — must be declared before any early return
   const { data: alertSummary } = trpc.coaching.alerts.summary.useQuery();
   const generateAlerts = trpc.coaching.alerts.generate.useMutation({
     onSuccess: (data) => toast.success(`${data.generated} alert(s) generated for ${data.foundersScanned} founders`),
@@ -479,6 +457,30 @@ export default function CoachingStudio() {
     },
     onError: (err) => toast.error(`Digest failed: ${err.message}`),
   });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
+      </div>
+    );
+  }
+
+  const avgPrl = studio?.avgPortfolioPrl || 0;
+  const avgColor = getRagColor(avgPrl);
+
+  const heatmapData = (studio?.ventureHealth || []).map((v) => ({
+    name: v.ventureName.length > 16 ? v.ventureName.substring(0, 14) + "…" : v.ventureName,
+    prl: v.avgFounderPrl !== null ? Math.round(v.avgFounderPrl) : 0,
+    vrl: v.adjustedVrl !== null ? Math.round(v.adjustedVrl) : 0,
+    risk: v.riskFlagged,
+    founders: v.founderCount,
+  }));
+
+  const trendData = (studio?.completionTrend || []).map((t) => ({
+    week: format(new Date(t.week), "dd MMM"),
+    rate: t.avgCompletionRate,
+  }));
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">

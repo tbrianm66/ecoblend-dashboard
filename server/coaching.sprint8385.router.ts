@@ -6,7 +6,7 @@
  * Sprint 85: Leaderboard Trend Sparklines — 6-week composite score history, sparkline cache
  */
 import { z } from "zod";
-import { router, protectedProcedure } from "./_core/trpc";
+import { router, protectedProcedure, publicProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import {
   alertScheduleLog,
@@ -179,10 +179,10 @@ export const alertSchedulingRouter = router({
     }),
 
   /** Return the last N schedule run logs */
-  getLog: protectedProcedure
+  getLog: publicProcedure
     .input(z.object({ limit: z.number().min(1).max(50).default(10) }))
     .query(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       return db
         .select()
         .from(alertScheduleLog)
@@ -316,13 +316,13 @@ export const reportDeliveryRouter = router({
     }),
 
   /** List all reports with their delivery status */
-  listWithStatus: protectedProcedure
+  listWithStatus: publicProcedure
     .input(z.object({
       founderId: z.number().optional(),
       limit: z.number().min(1).max(50).default(20),
     }))
     .query(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       const query = db
         .select()
         .from(founderProgressReports)
@@ -450,13 +450,13 @@ export const leaderboardTrendRouter = router({
     }),
 
   /** Get sparkline data for all coaches (or a specific coach) */
-  getSparklines: protectedProcedure
+  getSparklines: publicProcedure
     .input(z.object({
       coachId: z.string().optional(),
       limit: z.number().min(1).max(50).default(20),
     }))
     .query(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
 
       if (input.coachId) {
         return db

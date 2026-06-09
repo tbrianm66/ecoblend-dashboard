@@ -10,7 +10,7 @@
  */
 
 import { z } from "zod";
-import { router, protectedProcedure } from "./_core/trpc";
+import { router, protectedProcedure, publicProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import {
   coachingCoaches,
@@ -477,15 +477,15 @@ async function generateCoachingInsights(
 // ── tRPC Router ───────────────────────────────────────────────────────────────
 
 const coachesRouter = router({
-  list: protectedProcedure.query(async () => {
-    const db = getDb();
+  list: publicProcedure.query(async () => {
+    const db = await getDb();
     return db.select().from(coachingCoaches).orderBy(asc(coachingCoaches.name));
   }),
 
   get: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       const [coach] = await db
         .select()
         .from(coachingCoaches)
@@ -507,7 +507,7 @@ const coachesRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       const id = input.id || randomUUID();
       const existing = await db
         .select()
@@ -526,17 +526,17 @@ const coachesRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       await db.delete(coachingCoaches).where(eq(coachingCoaches.id, input.id));
       return { success: true };
     }),
 });
 
 const commitmentsRouter = router({
-  list: protectedProcedure
+  list: publicProcedure
     .input(z.object({ founderId: z.number(), week: z.string().optional() }))
     .query(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       const conditions = [eq(coachingCommitments.founderId, input.founderId)];
       if (input.week) {
         conditions.push(eq(coachingCommitments.week, input.week as unknown as Date));
@@ -559,7 +559,7 @@ const commitmentsRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       const id = randomUUID();
       await db.insert(coachingCommitments).values({
         id,
@@ -586,7 +586,7 @@ const commitmentsRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       await db
         .update(coachingCommitments)
         .set({
@@ -619,7 +619,7 @@ const commitmentsRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       await db.delete(coachingCommitments).where(eq(coachingCommitments.id, input.id));
       return { success: true };
     }),
@@ -629,7 +629,7 @@ const sessionsRouter = router({
   list: protectedProcedure
     .input(z.object({ founderId: z.number().optional(), coachId: z.string().optional() }))
     .query(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       const conditions = [];
       if (input.founderId) conditions.push(eq(coachingSessions.founderId, input.founderId));
       if (input.coachId) conditions.push(eq(coachingSessions.coachId, input.coachId));
@@ -654,7 +654,7 @@ const sessionsRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       const id = randomUUID();
       await db.insert(coachingSessions).values({
         id,
@@ -689,7 +689,7 @@ const sessionsRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       await db
         .update(coachingSessions)
         .set({ actions: input.actions, updatedAt: new Date() })
@@ -699,10 +699,10 @@ const sessionsRouter = router({
 });
 
 const prlRouter = router({
-  getCurrent: protectedProcedure
+  getCurrent: publicProcedure
     .input(z.object({ founderId: z.number() }))
     .query(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       const [latest] = await db
         .select()
         .from(coachingFrl)
@@ -712,10 +712,10 @@ const prlRouter = router({
       return latest || null;
     }),
 
-  getHistory: protectedProcedure
+  getHistory: publicProcedure
     .input(z.object({ founderId: z.number(), weeks: z.number().default(12) }))
     .query(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       return db
         .select()
         .from(coachingFrl)
@@ -727,7 +727,7 @@ const prlRouter = router({
   forceRecalculate: protectedProcedure
     .input(z.object({ founderId: z.number(), ventureId: z.string().optional(), week: z.string() }))
     .mutation(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       const result = await runPrlPipeline(
         db,
         input.founderId,
@@ -737,8 +737,8 @@ const prlRouter = router({
       return result;
     }),
 
-  portfolioSummary: protectedProcedure.query(async () => {
-    const db = getDb();
+  portfolioSummary: publicProcedure.query(async () => {
+    const db = await getDb();
     // Get latest PRL per founder
     const allFounders = await db.select().from(founders);
     const results = await Promise.all(
@@ -772,7 +772,7 @@ const vrlLinkRouter = router({
   get: protectedProcedure
     .input(z.object({ ventureId: z.string() }))
     .query(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       const [link] = await db
         .select()
         .from(coachingVrlLink)
@@ -784,7 +784,7 @@ const vrlLinkRouter = router({
   updateWeight: protectedProcedure
     .input(z.object({ ventureId: z.string(), frlWeight: z.number().min(0).max(1) }))
     .mutation(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       const existing = await db
         .select()
         .from(coachingVrlLink)
@@ -811,8 +811,8 @@ const vrlLinkRouter = router({
       return { success: true };
     }),
 
-  portfolioTable: protectedProcedure.query(async () => {
-    const db = getDb();
+  portfolioTable: publicProcedure.query(async () => {
+    const db = await getDb();
     const allVentures = await db.select().from(ventures);
     const links = await db.select().from(coachingVrlLink);
     const linkMap = new Map(links.map((l) => [l.ventureId, l]));
@@ -834,7 +834,7 @@ const insightsRouter = router({
   getLatest: protectedProcedure
     .input(z.object({ founderId: z.number() }))
     .query(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       const [latest] = await db
         .select()
         .from(coachingInsights)
@@ -847,17 +847,17 @@ const insightsRouter = router({
   generate: protectedProcedure
     .input(z.object({ founderId: z.number(), ventureId: z.string().optional(), week: z.string() }))
     .mutation(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       await generateCoachingInsights(db, input.founderId, input.ventureId || null, new Date(input.week));
       return { success: true };
     }),
 });
 
 const dashboardRouter = router({
-  founderDashboard: protectedProcedure
+  founderDashboard: publicProcedure
     .input(z.object({ founderId: z.number() }))
     .query(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
 
       // Current week Monday
       const now = new Date();
@@ -915,10 +915,10 @@ const dashboardRouter = router({
       };
     }),
 
-  coachDashboard: protectedProcedure
+  coachDashboard: publicProcedure
     .input(z.object({ coachId: z.string() }))
     .query(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
 
       // Get sessions for this coach to find assigned founders
       const sessions = await db
@@ -970,8 +970,8 @@ const dashboardRouter = router({
       };
     }),
 
-  studioDashboard: protectedProcedure.query(async () => {
-    const db = getDb();
+  studioDashboard: publicProcedure.query(async () => {
+    const db = await getDb();
 
     const allVentures = await db.select().from(ventures);
     const allFounders = await db.select().from(founders);
@@ -1069,10 +1069,10 @@ const dashboardRouter = router({
 
 // ── Coach Assignment Router ───────────────────────────────────────────────────
 const assignmentsRouter = router({
-  list: protectedProcedure
+  list: publicProcedure
     .input(z.object({ founderId: z.number().optional(), coachId: z.string().optional() }))
     .query(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       const conditions: ReturnType<typeof eq>[] = [];
       if (input.founderId) conditions.push(eq(coachingAssignments.founderId, input.founderId));
       if (input.coachId) conditions.push(eq(coachingAssignments.coachId, input.coachId));
@@ -1103,7 +1103,7 @@ const assignmentsRouter = router({
       notes: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       const id = randomUUID();
       await db.insert(coachingAssignments).values({
         id,
@@ -1120,7 +1120,7 @@ const assignmentsRouter = router({
   unassign: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       const today = new Date().toISOString().split("T")[0];
       await db
         .update(coachingAssignments)
@@ -1132,7 +1132,7 @@ const assignmentsRouter = router({
   getActive: protectedProcedure
     .input(z.object({ founderId: z.number() }))
     .query(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       const rows = await db
         .select()
         .from(coachingAssignments)
@@ -1155,10 +1155,10 @@ const assignmentsRouter = router({
 
 // ── Commitment Templates Router ───────────────────────────────────────────────
 const templatesRouter = router({
-  list: protectedProcedure
+  list: publicProcedure
     .input(z.object({ vrlStage: z.number().optional() }))
     .query(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       const conditions = [eq(coachingCommitmentTemplates.isActive, true)];
       if (input.vrlStage) conditions.push(eq(coachingCommitmentTemplates.vrlStage, input.vrlStage));
       return db
@@ -1177,7 +1177,7 @@ const templatesRouter = router({
       templateIds: z.array(z.string()).optional(), // if omitted, apply all for stage
     }))
     .mutation(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       // Fetch templates
       const conditions = [
         eq(coachingCommitmentTemplates.isActive, true),
@@ -1213,7 +1213,7 @@ const templatesRouter = router({
   getPrlForVenture: protectedProcedure
     .input(z.object({ ventureId: z.string() }))
     .query(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       // Find founders linked to this venture via commitments or vrlLink
       const vrlLinks = await db
         .select()
@@ -1245,10 +1245,10 @@ const templatesRouter = router({
 
 // ── Sprint 79: Onboarding Router ─────────────────────────────────────────────
 const onboardingRouter = router({
-  getState: protectedProcedure
+  getState: publicProcedure
     .input(z.object({ founderId: z.string() }))
     .query(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       const rows = await db
         .select()
         .from(coachingOnboardingState)
@@ -1264,7 +1264,7 @@ const onboardingRouter = router({
       autoApplyTemplates: z.boolean().default(true),
     }))
     .mutation(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       const now = Date.now();
       const existing = await db
         .select()
@@ -1325,7 +1325,7 @@ const onboardingRouter = router({
 const digestRouter = router({
   sendWeeklyDigest: protectedProcedure
     .mutation(async () => {
-      const db = getDb();
+      const db = await getDb();
       const { notifyOwner } = await import("./_core/notification");
       const allFounders = await db.select().from(founders);
       const rows: string[] = [];
@@ -1364,7 +1364,7 @@ const coachRegistrationRouter = router({
       specialisms: z.array(z.string()).optional(),
     }))
     .mutation(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       const id = randomUUID();
       await db.insert(coachingCoaches).values({
         id,
@@ -1387,7 +1387,7 @@ const coachRegistrationRouter = router({
       specialisms: z.array(z.string()).optional(),
     }))
     .mutation(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       const { id, ...rest } = input;
       const updates: Record<string, unknown> = {};
       if (rest.name) updates.name = rest.name;
@@ -1401,15 +1401,15 @@ const coachRegistrationRouter = router({
   deactivate: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       await db.update(coachingCoaches).set({ isActive: false }).where(eq(coachingCoaches.id, input.id));
       return { success: true };
     }),
 
-  list: protectedProcedure
+  list: publicProcedure
     .input(z.object({ includeInactive: z.boolean().default(false) }))
     .query(async ({ input }) => {
-      const db = getDb();
+      const db = await getDb();
       const rows = await db
         .select()
         .from(coachingCoaches)

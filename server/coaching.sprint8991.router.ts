@@ -23,7 +23,7 @@
  */
 
 import { z } from "zod";
-import { router, protectedProcedure } from "./_core/trpc";
+import { router, protectedProcedure, publicProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import {
   founderLeaderboardSnapshots,
@@ -158,7 +158,7 @@ export const leaderboardRouter = router({
     }),
 
   /** Get the leaderboard for a given VRL stage (only opted-in entries are named) */
-  get: protectedProcedure
+  get: publicProcedure
     .input(z.object({
       vrlStage: z.number().int().min(1).max(9),
       limit:    z.number().int().min(1).max(50).default(20),
@@ -189,9 +189,10 @@ export const leaderboardRouter = router({
     }),
 
   /** Get the current founder's own rank and percentile */
-  myRank: protectedProcedure
+  myRank: publicProcedure
     .input(z.object({ ventureId: z.string().min(1) }))
     .query(async ({ ctx, input }) => {
+      if (!ctx.user) return null;
       const db = await getDb();
       const weekOf = getWeekStart();
 
@@ -253,7 +254,7 @@ export const sessionRequestsRouter = router({
     }),
 
   /** List session requests — founders see their own, coaches see all pending */
-  list: protectedProcedure
+  list: publicProcedure
     .input(z.object({
       role:      z.enum(["founder", "coach"]).default("founder"),
       coachId:   z.string().optional(),
@@ -264,7 +265,7 @@ export const sessionRequestsRouter = router({
       const db = await getDb();
       const conditions = [];
 
-      if (input.role === "founder") {
+      if (input.role === "founder" && ctx.user) {
         conditions.push(eq(coachingSessionRequests.founderId, ctx.user.openId));
       } else if (input.coachId) {
         conditions.push(eq(coachingSessionRequests.coachId, input.coachId));
@@ -455,7 +456,7 @@ export const templateEffectivenessRouter = router({
     }),
 
   /** Get top N templates by effectiveness score */
-  top: protectedProcedure
+  top: publicProcedure
     .input(z.object({ limit: z.number().int().min(1).max(20).default(5) }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -493,7 +494,7 @@ export const templateEffectivenessRouter = router({
     }),
 
   /** Get effectiveness data for a single template */
-  forTemplate: protectedProcedure
+  forTemplate: publicProcedure
     .input(z.object({ templateId: z.string().min(1) }))
     .query(async ({ input }) => {
       const db = await getDb();

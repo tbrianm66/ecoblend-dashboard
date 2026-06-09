@@ -22,7 +22,7 @@
  */
 
 import { z } from "zod";
-import { router, protectedProcedure } from "./_core/trpc";
+import { router, protectedProcedure, publicProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import {
   founderSelfAssessments,
@@ -123,7 +123,7 @@ export const selfAssessmentRouter = router({
       return { id, compositeScore: parseFloat(composite.toFixed(2)), weekOf };
     }),
 
-  list: protectedProcedure
+  list: publicProcedure
     .input(z.object({
       founderId: z.number().int().positive(),
       limit: z.number().int().min(1).max(52).default(10),
@@ -224,7 +224,7 @@ export const selfAssessmentRouter = router({
 // ── Sprint 87: Cohort Benchmarking Router ─────────────────────────────────────
 
 export const cohortBenchmarkRouter = router({
-  get: protectedProcedure
+  get: publicProcedure
     .input(z.object({
       founderId: z.number().int().positive(),
       vrlStage: z.number().int().min(1).max(9),
@@ -237,11 +237,11 @@ export const cohortBenchmarkRouter = router({
       const allPrlRecords = await db
         .select({
           founderId: coachingFrl.founderId,
-          weekOf: coachingFrl.weekOf,
+          weekOf: coachingFrl.week,
           score: coachingFrl.score,
         })
         .from(coachingFrl)
-        .orderBy(desc(coachingFrl.weekOf))
+        .orderBy(desc(coachingFrl.week))
         .limit(500);
 
       // Get the founder's own PRL history
@@ -300,7 +300,7 @@ export const cohortBenchmarkRouter = router({
 // ── Sprint 88: Commitment Template Library Router ─────────────────────────────
 
 export const commitmentTemplatesRouter = router({
-  list: protectedProcedure
+  list: publicProcedure
     .input(z.object({
       vrlStage: z.number().int().min(1).max(9).optional(),
       category: z.string().optional(),
@@ -328,7 +328,7 @@ export const commitmentTemplatesRouter = router({
       return query;
     }),
 
-  search: protectedProcedure
+  search: publicProcedure
     .input(z.object({
       query: z.string().min(1).max(200),
       vrlStage: z.number().int().min(1).max(9).optional(),
