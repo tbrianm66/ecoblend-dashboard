@@ -392,30 +392,15 @@ export default function Home() {
         <div className="absolute inset-0" style={{ background: "linear-gradient(to right, rgba(255,255,255,1) 55%, rgba(255,255,255,0.92))" }} />
 
         <div className="relative px-8 py-6">
-          {/* Breadcrumb / context */}
-          <div className="flex items-center gap-2 mb-2">
-            <span
-              className="vos-badge vos-badge-success"
-              style={{ fontSize: "0.65rem", letterSpacing: "0.07em" }}
-            >
-              EcoBlend VBS
-            </span>
-            <span className="text-gray-300">·</span>
-            <span className="text-xs text-gray-400" style={{ fontFamily: "'Inter', sans-serif" }}>
-              EcoBlend VBS
-            </span>
-          </div>
-
           <div className="flex items-end justify-between gap-4">
             <div>
-              {/* 28px Title per design brief */}
-              <h1
-                className="vos-page-title mb-1"
-                style={{ fontSize: "1.75rem" }}
-              >
-                EcoBlend Analytics Dashboard
+              <h1 className="mb-1 flex items-baseline gap-2" style={{ fontFamily: "'Inter', sans-serif", fontWeight: 400, fontSize: "1.75rem", lineHeight: 1.2 }}>
+                <span>
+                  <span style={{ color: "#279A48" }}>eco</span><span style={{ color: "#4A7BB0" }}>blend</span>
+                </span>
+                <span style={{ color: "#1e293b", fontWeight: 300 }}>Analytics Dashboard</span>
               </h1>
-              <p className="text-sm text-gray-500 max-w-xl" style={{ fontFamily: "'Inter', sans-serif" }}>
+              <p className="text-sm max-w-xl" style={{ fontFamily: "'Inter', sans-serif", color: "#64748b" }}>
                 Dual-readiness portfolio intelligence — tracking Venture Readiness Level (VRL) and Technology Readiness Level (TRL) across all active ventures.
               </p>
             </div>
