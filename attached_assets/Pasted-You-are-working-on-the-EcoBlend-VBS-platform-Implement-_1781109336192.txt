@@ -1,0 +1,64 @@
+You are working on the EcoBlend VBS platform. Implement two fixes against the new 
+canonical spec BEBUS-VRL-WGM-002. Scope is strictly B-02 and B-03 below — do not 
+refactor anything else. All existing tests must still pass except those that 
+explicitly tested the removed legacy functions.
+
+PHASE 1 — WEIGHT EXTRACTION (report only, no changes)
+Read server/vrl.engine.ts. Output the exact constituent dimensions and weights for 
+all five meta-domains (Product, Market, Organisation, Capital, Sustainability) as a 
+markdown table. Verify each meta-domain's weights sum to 1.00; flag any that don't. 
+Output as "WGM-002 §2 WEIGHT TABLE" and STOP for review before Phase 2.
+
+PHASE 2 — B-02: SINGLE CANONICAL MRL→VRL MAPPING (fixes D6)
+Current defect: computeVrlContribution() in server/mrl.engine.ts returns 0–30 
+(level 5 → 15.0) while vrl_feed.vrl_mrl_contribution in server/mrlScoring.ts 
+returns 0–0.30 (level 5 → ~0.15). They disagree by 100× and neither matches the 
+canonical spec.
+
+Implement:
+1. Create one canonical function in a shared location (e.g. server/wgm002.ts):
+   mrlDimensionScore(level: number): number = ((level - 1) / 8) * 100
+   Valid input 1–9; throw on out-of-range. Level 1 → 0, level 5 → 50, level 9 → 100.
+2. Delete computeVrlContribution from mrl.engine.ts and vrl_mrl_contribution from 
+   mrlScoring.ts. Update every call site to use mrlDimensionScore. The MRL value 
+   enters the VRL composite ONLY via its 0.35 weight inside the Product meta-domain 
+   in vrl.engine.ts — remove any standalone 0.30 contribution factor.
+3. Regression tests: assert mrlDimensionScore(1)=0, (5)=50, (9)=100; assert exactly 
+   one MRL→VRL pathway exists (grep-style test or architectural test ensuring the 
+   deleted function names no longer exist in the codebase); assert a venture at 
+   MRL level 5 with all other dimensions at 60 produces one deterministic composite.
+
+PHASE 3 — B-03: EVIDENCE-LINK ENFORCEMENT (fixes D7)
+Current defect: vrl.engine.ts accepts any value for any of the nine dimension 
+scores with no evidence record and no flag.
+
+Implement:
+1. Schema: add to the dimension score storage (Drizzle schema) the fields
+   evidence_ids: jsonb (array of linked evidence record IDs, default [])
+   self_assessed: boolean (default false)
+2. Write path: every dimension score write must satisfy ONE of:
+   (a) evidence_ids contains ≥1 valid evidence record ID, or
+   (b) self_assessed is explicitly set to true by the caller.
+   A write with empty evidence_ids and self_assessed=false (or omitted) is REJECTED 
+   with a typed error naming the dimension. No silent acceptance path.
+3. Gate logic: self-assessed scores are EXCLUDED from veto-gate clearance and stage 
+   advancement. A dimension whose only score is self-assessed is treated as below 
+   floor for gate purposes. baseAverage may include self-assessed values but the 
+   result must carry a containsSelfAssessed: true flag in the engine output.
+4. tRPC: update the relevant procedures to accept evidence_ids / self_assessed and 
+   return the rejection error cleanly to the client.
+5. Tests:
+   - write with no evidence and no flag → rejected with typed error (×9 dimensions)
+   - write with self_assessed=true → accepted, flagged, excluded from gate clearance
+   - write with 1 valid evidence ID → accepted, gate-eligible
+   - venture above all floors but with one gate-critical dimension only 
+     self-assessed → isVetoed remains true, gate_reason names that dimension
+   - composite output carries containsSelfAssessed flag correctly
+
+PHASE 4 — VERIFICATION
+Run pnpm test. Output: (1) the Phase 1 weight table again for the record, 
+(2) pass/fail counts, (3) list of deleted functions and updated call sites, 
+(4) any test that previously passed and now fails, with explanation, 
+(5) confirmation that no formula behaviour outside B-02/B-03 scope changed — 
+demonstrate by running an unchanged fixture through the engine before and after 
+and diffing the composite output.
