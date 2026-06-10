@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "ZGmoarwQjV3lJUR2Js-8E"
+uri = "file://attached_assets/BEBUS-VRL-WGM-001-D3-Audit-Report.md"
+type = "text"
+title = "BEBUS-VRL-WGM-001 D3 Audit Report"
