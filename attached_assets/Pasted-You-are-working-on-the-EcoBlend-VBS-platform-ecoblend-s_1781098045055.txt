@@ -1,0 +1,81 @@
+You are working on the EcoBlend VBS platform (ecoblend.studio database). Build a 
+comprehensive test suite for the VRL Weighted Gating Model (BEBUS-VRL-WGM-001) and 
+its upstream dependencies. Follow the project's established pattern: pure unit tests 
+for business logic with no database dependencies, plus a small set of integration 
+tests against the schema. Run with pnpm test. Do NOT change any formula behaviour — 
+if a test exposes a defect, report it; do not silently fix it.
+
+PHASE 0 — SCALE AUDIT (do this first, report before writing tests)
+Inspect the VRL composite implementation and the tables vrl_wgm_scores, 
+vrl_dimension_scores, vrl_gate_history. Report: (a) is the composite computed on 
+0–10 or 0–100? (b) what scale do the stage thresholds use (Stage 2 ≥40, Stage 3 ≥60, 
+Stage 4 ≥70, Stage 5 ≥85)? (c) any places where UI, spec, and stored values disagree. 
+STOP and output findings as "D3 SCALE AUDIT" before continuing.
+
+PHASE 1 — FORMULA ASSERTIONS
+Formula: VRL_composite = (w1·ENV + w2·MRL + w3·SMF + w4·SOC + w5·ESG + w6·IP + 
+w7·CRL + w8·BRL + w9·FIN) × Veto_Gate
+Weights: ENV .15, MRL .12, SMF .18, SOC .08, ESG .08, IP .12, CRL .10, BRL .07, FIN .10
+Floors: ENV 2.0, MRL 2.0, SMF 3.0, SOC 1.5, ESG 1.5, IP 2.0, CRL 2.5, BRL 1.5, FIN 2.0
+Tests:
+- T1: runtime assertion that dimension weights sum to exactly 1.0; test fails on config drift
+- T4: fixture with all nine dimensions = 10.0 → composite equals exactly the scale 
+  maximum found in Phase 0
+- T2: for EACH of the nine dimensions, three boundary cases: score = floor−0.01 
+  (gate blocks), = floor (gate passes), = floor+0.01 (gate passes). 27 cases.
+- T3: for EACH dimension, fixture with all other dimensions = 9.0 and this one = 
+  floor−0.01 → assert gate state = blocked AND the underlying weighted composite is 
+  still computed and retrievable (flag as DEFECT D4 if the stored composite is 
+  zeroed by the gate multiplier). 9 cases.
+
+PHASE 2 — MRL SUB-FORMULA TESTS
+Formula: MRL_score = Σ(wi × sub_score_i), i = 1..7
+Subs/weights/floors: PD .20/3.0, EA .15/2.5, QM .20/3.0, SCR .15/2.0, WC .10/2.0, 
+CM .10/2.0, PS .10/2.0. Tables: mrl_scores, mrl_evidence, mrl_history.
+- T9: for EACH sub-formula, six subs at 8.0 and one at floor−0.01 → MRL level 
+  advancement blocked. 7 cases.
+- T10: document and test the mapping function from MRL level (1–9) to the VRL MRL 
+  dimension score (0–10). If no explicit mapping function exists in code, flag as 
+  DEFECT D6 and test whatever implicit behaviour is present at levels 1, 5, 9.
+- T11: TRL/MRL Sync Engine (BEBUS-SYNC-SE-001, tables trl_mrl_sync_log, sync_alerts). 
+  Pairs (TRL,MRL): (5,5)→OPTIMAL, (5,3)→MONITOR, (7,4)→WARNING, (7,2)→CRITICAL, 
+  (3,5)→BLOCKED. Assert correct state classification and correct alert record created.
+
+PHASE 3 — DEPENDENCY PROPAGATION (integration tests)
+- T5: for each of the nine dimensions, mutate one evidence record in its source 
+  module → assert exactly ONE dimension score changes, the composite recalculates 
+  exactly once, and vrl_gate_history / audit log records the lineage. 9 cases.
+- T6: submit one manufacturing cost-model evidence item → assert it affects MRL·CM 
+  OR the FIN dimension, never both. If it moves both, flag as DEFECT D5. Repeat for 
+  a supplier-qualification record (MRL·SCR vs Supply Chain module).
+- T7: attempt to write a SOC dimension score with no linked evidence record → assert 
+  the system rejects it or flags it as self-assessed. If it accepts silently, flag 
+  as DEFECT D7.
+- T8: advance TRL from 4 to 7 with MRL held constant → assert VRL composite is 
+  UNCHANGED, Sync state transitions OPTIMAL→CRITICAL, alert fires. Document this as 
+  confirmation that TRL has no direct path into the VRL composite (DEFECT/DESIGN D1).
+
+PHASE 4 — SECTOR INVARIANCE
+Create three synthetic venture fixtures:
+- BEBUS-001 "VeloCargo": mobility hardware, contract manufacture (EA evidence = 
+  third-party CM capacity, not owned tooling)
+- REAL-001 "ImpactShield": sports protection composite (QM evidence dominated by 
+  external certification records)
+- ECOCOMP-002 "BioForm": materials formulation, in-house pilot line (PS evidence = 
+  lab-to-pilot scale-up data)
+- T12: identical normalised evidence-completeness profiles across all three → assert 
+  identical composite scores (formula must be sector-blind).
+- T13: same MRL level reached via the three different evidence types above → assert 
+  the evidence schema accepts all three without formula changes.
+- T14: create a software-only fixture (no manufacturing) → document exactly what 
+  happens to the MRL dimension and the Veto Gate. If the venture is permanently 
+  gate-blocked with no N/A path, flag as DEFECT.
+
+OUTPUT FORMAT
+1. D3 SCALE AUDIT findings (Phase 0)
+2. Test files created, organised by phase
+3. Full pnpm test run results: pass/fail counts per phase
+4. DEFECT REGISTER: every flagged defect (D1, D4, D5, D6, D7, plus any new) with 
+   the failing test ID, observed behaviour, expected behaviour, and the file/line 
+   where the defect lives
+5. Do not modify production code. Tests and fixtures only.
