@@ -284,16 +284,14 @@ describe("Example datasets (from spec)", () => {
 // ── VRL FEED ──────────────────────────────────────────────────────────────────
 
 describe("VRL feed", () => {
-  it("mrl_weight_in_vrl is always 0.30", () => {
+  it("mrl_weight_product is 0.35 (B-02 / D6 fix — dual-pathway)", () => {
     const r = computeMRLScore(uniformInput(5, 2));
-    expect(r.vrl_feed.mrl_weight_in_vrl).toBe(0.30);
+    expect(r.vrl_feed.mrl_weight_product).toBe(0.35);
   });
 
-  it("vrl_mrl_contribution = mrl_score_normalised × 0.30", () => {
+  it("mrl_weight_execution is 0.40 (B-02 / D6 fix — dual-pathway)", () => {
     const r = computeMRLScore(uniformInput(5, 2));
-    expect(r.vrl_feed.vrl_mrl_contribution).toBeCloseTo(
-      r.vrl_feed.mrl_score_normalised * 0.30, 4
-    );
+    expect(r.vrl_feed.mrl_weight_execution).toBe(0.40);
   });
 
   it("mrl_score_normalised = mrl_score / 100", () => {

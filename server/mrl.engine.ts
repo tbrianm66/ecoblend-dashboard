@@ -215,8 +215,14 @@ export const MRL_SUBSYSTEMS = [
 export type SubsystemId = "pde" | "scie" | "csm" | "qce" | "sil";
 
 // ── VRL Weights ───────────────────────────────────────────────────────────────
+// NOTE (B-02 / D6 fix): The live vrl.engine.ts feeds mrlScore via TWO pathways:
+//   Product meta-domain    × 0.35
+//   Execution meta-domain  × 0.40
+// The single `mrl: 0.30` weight below is a legacy constant from an earlier
+// single-pathway design.  It is no longer used in the canonical VRL composite.
+// Prefer passing mrlScore (0–100) directly to computeVrl() in vrl.engine.ts.
 export const VRL_WEIGHTS = {
-  mrl: 0.30,
+  mrl: 0.30,   // legacy — see note above; dual-pathway: 0.35 (Product) + 0.40 (Execution)
   trl: 0.25,
   market: 0.20,
   team: 0.15,
@@ -310,13 +316,23 @@ export function compositeScoreToMrlLevel(compositeScore: number): number {
 }
 
 /**
- * Compute MRL's contribution to the VRL composite score.
- * MRL weight = 0.30 in VRL composite.
+ * B-02 / D6 fix: Canonical MRL → VRL input.
+ *
+ * Returns the normalised MRL score (0–1) that feeds directly into vrl.engine.ts.
+ * MRL enters the VRL composite via TWO pathways (both intentional by design):
+ *   Product meta-domain    mrlScore × 0.35
+ *   Execution meta-domain  mrlScore × 0.40
+ *
+ * This overload converts a level (1–9) to the equivalent normalised 0–1 score.
+ * When a raw mrlScore (0–100) is available from computeMRLScore(), prefer using
+ * it directly: mrlScore / 100.
+ *
+ * Previously returned a value on a 0–30 scale (normalised × 0.30) — that was
+ * wrong; the 0.30 was a stale single-pathway weight.  Now returns 0–1. (D6 fix)
  */
 export function computeVrlContribution(mrlLevel: number): number {
-  // Normalise MRL level to 0–100 scale then apply weight
-  const normalised = ((mrlLevel - 1) / 8) * 100;
-  return parseFloat((normalised * VRL_WEIGHTS.mrl).toFixed(2));
+  const mrlScore = ((mrlLevel - 1) / 8) * 100; // level (1–9) → score (0–100)
+  return Math.round((mrlScore / 100) * 10000) / 10000; // → normalised 0–1 (4 dp)
 }
 
 /**

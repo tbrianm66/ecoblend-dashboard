@@ -70,10 +70,13 @@ export interface ScoringResult {
   gate_locked: boolean;
   gate_reason: string | null;
   categories: Record<CategoryKey, CategoryResult>;
+  // B-02 / D6 fix: vrl_feed now reflects the DUAL-PATHWAY design.
+  // mrlScore feeds vrl.engine.ts at Product×0.35 AND Execution×0.40.
+  // The old single-weight field (0.30) and vrl_mrl_contribution have been removed.
   vrl_feed: {
-    mrl_score_normalised: number;   // mrl_score / 100
-    mrl_weight_in_vrl: 0.30;
-    vrl_mrl_contribution: number;   // normalised × 0.30
+    mrl_score_normalised: number; // mrl_score / 100 — canonical 0–1 input for vrl.engine.ts
+    mrl_weight_product:   0.35;   // weight in Product meta-domain (vrl.engine.ts §3.1)
+    mrl_weight_execution: 0.40;   // weight in Execution meta-domain (vrl.engine.ts §3.1)
   };
 }
 
@@ -260,9 +263,8 @@ export function computeMRLScore(input: ScoringInput): ScoringResult {
   // Formula 6 — Confidence band
   const confidence_band = computeConfidenceBand(allRawScores);
 
-  // VRL feed
+  // VRL feed — B-02/D6 fix: dual-pathway weights; no single contribution field
   const mrl_score_normalised = mrl_score / 100;
-  const vrl_mrl_contribution = Math.round(mrl_score_normalised * 0.30 * 10000) / 10000;
 
   return {
     mrl_score,
@@ -275,8 +277,8 @@ export function computeMRLScore(input: ScoringInput): ScoringResult {
     categories: categories as Record<CategoryKey, CategoryResult>,
     vrl_feed: {
       mrl_score_normalised,
-      mrl_weight_in_vrl: 0.30,
-      vrl_mrl_contribution,
+      mrl_weight_product:   0.35,
+      mrl_weight_execution: 0.40,
     },
   };
 }

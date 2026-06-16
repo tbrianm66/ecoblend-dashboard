@@ -24,6 +24,11 @@
  *   85–100 → VRL-5: Exemplary
  */
 
+/** Keys of the nine scoreable VRL dimensions — used for evidence-link typing. */
+export type VrlDimensionKey =
+  | "trlScore" | "mrlScore" | "brlScore" | "ecoScore" | "prlScore"
+  | "ipScore"  | "frlScore" | "regScore" | "srlScore";
+
 export interface VrlInputs {
   trlScore:  number; // 0–100
   mrlScore:  number; // 0–100
@@ -34,6 +39,13 @@ export interface VrlInputs {
   frlScore:  number; // 0–100
   regScore:  number; // 0–100
   srlScore:  number; // 0–100
+  /**
+   * B-03 / D7 fix: Optional evidence-record IDs keyed by dimension.
+   * Omit a key, or supply an empty string, and the dimension is flagged
+   * as self-assessed in the result. No hard rejection — the score still
+   * computes; callers inspect selfAssessedDimensions for gate decisions.
+   */
+  evidenceLinks?: Partial<Record<VrlDimensionKey, string>>;
 }
 
 export interface VrlMetaDomains {
@@ -58,6 +70,9 @@ export interface VrlResult {
   globalVrlScore: number; // 0 if vetoed, else round(baseAverage)
   bandLabel: string;
   bandLevel: number; // 0–5
+  // B-03 / D7 fix: Evidence-link enforcement
+  selfAssessedDimensions: string[]; // dimension labels lacking an evidence link
+  hasUnverifiedInputs: boolean;     // true when any dimension is self-assessed
 }
 
 // ── Band table ────────────────────────────────────────────────────────────────
@@ -138,6 +153,16 @@ export function computeVrl(inputs: VrlInputs): VrlResult {
   const globalVrlScore = isVetoed ? 0 : Math.round(baseAverage);
   const band         = scoreToBand(globalVrlScore);
 
+  // B-03 / D7 fix: Evidence-link enforcement
+  // A dimension is self-assessed when its evidence key is absent or empty.
+  // This does NOT veto the gate — callers read selfAssessedDimensions to decide
+  // whether to surface a warning or block a governance gate downstream.
+  const evidence = inputs.evidenceLinks ?? {};
+  const dimKeys = Object.keys(DIM_LABELS) as VrlDimensionKey[];
+  const selfAssessedDimensions = dimKeys
+    .filter(k => !evidence[k] || evidence[k]!.trim() === "")
+    .map(k => DIM_LABELS[k]);
+
   return {
     inputs: clamped,
     metaDomains,
@@ -147,6 +172,8 @@ export function computeVrl(inputs: VrlInputs): VrlResult {
     globalVrlScore,
     bandLabel: isVetoed ? "Vetoed — Pre-Readiness" : band.label,
     bandLevel: isVetoed ? 0 : band.level,
+    selfAssessedDimensions,
+    hasUnverifiedInputs: selfAssessedDimensions.length > 0,
   };
 }
 

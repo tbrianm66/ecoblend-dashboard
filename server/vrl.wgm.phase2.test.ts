@@ -35,6 +35,7 @@ import {
   computeVrlContribution,
 } from "./mrl.engine";
 import { computeSync, runDecisionTree } from "./sync.engine";
+import { computeVrl } from "./vrl.engine";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -199,44 +200,49 @@ describe("T9 — Gate lock per category (critical indicator below floor)", () =>
   });
 });
 
-// ── T10: MRL level → VRL MRL dimension score mapping ─────────────────────────
-// DEFECT D6: Two incompatible mapping functions exist in the codebase:
-//   (1) mrl.engine.ts computeVrlContribution(level): normalised=(level-1)/8×100,
-//       returns normalised×0.30 → scale 0–30 (intended % contribution)
-//   (2) mrlScoring.ts vrl_feed.vrl_mrl_contribution: mrl_score/100×0.30
-//       → scale 0–0.30 (fractional weight)
-//   At MRL level 5: (1) returns 15.0 ; (2) returns ~0.15 — 100× difference.
-//   No single canonical mapping from MRL level → VRL dimension score on 0–10.
+// ── T10: B-02 fix — canonical MRL → VRL mapping (D6 resolved) ────────────────
+// computeVrlContribution now returns normalised 0–1 (not the old 0–30 scale).
+// vrl_feed in mrlScoring.ts now exposes dual-pathway weights (0.35 + 0.40)
+// and no longer carries a single stale vrl_mrl_contribution field.
+// The 100× scale mismatch that was D6 is gone.
 
-describe("T10 — MRL level → VRL contribution (document DEFECT D6)", () => {
-  it("mrl.engine.ts computeVrlContribution: level 1 → 0", () => {
-    expect(computeVrlContribution(1)).toBeCloseTo(0, 2);
+describe("T10 — B-02 fix: canonical MRL→VRL mapping (D6 resolved)", () => {
+  it("computeVrlContribution: level 1 → 0.00 (normalised 0–1 scale)", () => {
+    expect(computeVrlContribution(1)).toBeCloseTo(0, 4);
   });
 
-  it("mrl.engine.ts computeVrlContribution: level 5 → 15 (on 0–30 scale)", () => {
-    expect(computeVrlContribution(5)).toBeCloseTo(15, 1);
+  it("computeVrlContribution: level 5 → ~0.50 (mrlScore=(4/8)×100=50 → 0.50)", () => {
+    expect(computeVrlContribution(5)).toBeCloseTo(0.50, 2);
   });
 
-  it("mrl.engine.ts computeVrlContribution: level 9 → 30 (scale maximum)", () => {
-    expect(computeVrlContribution(9)).toBeCloseTo(30, 1);
+  it("computeVrlContribution: level 9 → 1.00 (fully normalised)", () => {
+    expect(computeVrlContribution(9)).toBeCloseTo(1.00, 2);
   });
 
-  it("mrlScoring.ts vrl_feed: mrl_score≈50 → vrl_mrl_contribution≈0.15 (on 0–0.30 scale)", () => {
-    // Build input that produces mrl_score ≈ 50 (no gate lock; uniform scores)
-    const input = buildInput(5.0); // score_S=5, M=1.0 → weighted sum = 5; ×10 = 50
+  it("mrlScoring.ts vrl_feed: mrl_score≈50 → mrl_score_normalised≈0.50", () => {
+    const input = buildInput(5.0); // score_S=5, M=1.0 → mrl_score=50
     const r = computeMRLScore(input);
     expect(r.mrl_score).toBeCloseTo(50, 0);
-    expect(r.vrl_feed.vrl_mrl_contribution).toBeCloseTo(0.15, 2);
+    expect(r.vrl_feed.mrl_score_normalised).toBeCloseTo(0.50, 2);
   });
 
-  it("DEFECT D6: computeVrlContribution(5)=15.0 ≠ vrl_feed at level 5 (~0.15) — 100× scale mismatch", () => {
-    // This test documents the defect by asserting the actual values are different.
-    const engineContribution   = computeVrlContribution(5);  // 15.0
-    const scoringContribution  = 0.15;                        // ~vrl_feed at score≈50
-    // They should be the same canonical contribution — they are not.
-    expect(engineContribution).not.toBeCloseTo(scoringContribution, 0);
-    // The ratio is ~100×
-    expect(engineContribution / scoringContribution).toBeCloseTo(100, -1);
+  it("mrlScoring.ts vrl_feed: dual-pathway weights present (0.35 product, 0.40 execution)", () => {
+    const r = computeMRLScore(buildInput(5.0));
+    expect(r.vrl_feed.mrl_weight_product).toBe(0.35);
+    expect(r.vrl_feed.mrl_weight_execution).toBe(0.40);
+  });
+
+  it("D6 fixed: computeVrlContribution(5) ≈ vrl_feed.mrl_score_normalised — both ~0.50", () => {
+    const engineNorm = computeVrlContribution(5);
+    const feedNorm   = computeMRLScore(buildInput(5.0)).vrl_feed.mrl_score_normalised;
+    expect(engineNorm).toBeCloseTo(feedNorm, 1);
+  });
+
+  it("vrl.engine.ts: mrlScore feeds BOTH Product(×0.35) AND Execution(×0.40) meta-domains", () => {
+    const base    = computeVrl({ trlScore:50, mrlScore:50, brlScore:50, ecoScore:50, prlScore:50, ipScore:50, frlScore:50, regScore:50, srlScore:50 });
+    const bumped  = computeVrl({ trlScore:50, mrlScore:80, brlScore:50, ecoScore:50, prlScore:50, ipScore:50, frlScore:50, regScore:50, srlScore:50 });
+    expect(bumped.metaDomains.productScore).toBeGreaterThan(base.metaDomains.productScore);
+    expect(bumped.metaDomains.executionScore).toBeGreaterThan(base.metaDomains.executionScore);
   });
 });
 
@@ -306,5 +312,105 @@ describe("T11 — TRL/MRL Sync Engine state classification", () => {
     const d    = runDecisionTree({ trl: 7, mrl: 4, sync });
     const critical = d.actions.filter(a => a.priority === "CRITICAL");
     expect(critical.length).toBeGreaterThanOrEqual(1);
+  });
+});
+
+// ── T12: B-03 fix — Evidence-link enforcement, all self-assessed ──────────────
+// D7: vrl.engine.ts previously accepted any dimension score without an evidence
+// record.  B-03 adds optional evidenceLinks to VrlInputs; any dimension without
+// a non-empty link is listed in selfAssessedDimensions and hasUnverifiedInputs
+// is set to true.  The gate still computes — no hard rejection.
+
+describe("T12 — B-03 fix: evidence-link enforcement (D7 resolved) — all self-assessed", () => {
+  const ALL_AT_60 = {
+    trlScore: 60, mrlScore: 60, brlScore: 60, ecoScore: 60, prlScore: 60,
+    ipScore:  60, frlScore: 60, regScore: 60, srlScore: 60,
+  };
+
+  it("No evidenceLinks → all 9 dimensions self-assessed, hasUnverifiedInputs=true", () => {
+    const r = computeVrl(ALL_AT_60);
+    expect(r.hasUnverifiedInputs).toBe(true);
+    expect(r.selfAssessedDimensions).toHaveLength(9);
+  });
+
+  it("All 9 evidenceLinks present → selfAssessedDimensions=[], hasUnverifiedInputs=false", () => {
+    const r = computeVrl({
+      ...ALL_AT_60,
+      evidenceLinks: {
+        trlScore: "ev-001", mrlScore: "ev-002", brlScore: "ev-003",
+        ecoScore: "ev-004", prlScore: "ev-005", ipScore:  "ev-006",
+        frlScore: "ev-007", regScore: "ev-008", srlScore: "ev-009",
+      },
+    });
+    expect(r.hasUnverifiedInputs).toBe(false);
+    expect(r.selfAssessedDimensions).toHaveLength(0);
+  });
+
+  it("Self-assessed dimensions do NOT trigger the veto gate", () => {
+    const r = computeVrl(ALL_AT_60); // no evidenceLinks
+    expect(r.isVetoed).toBe(false);
+    expect(r.globalVrlScore).toBeGreaterThan(0);
+  });
+
+  it("Self-assessed flag does not alter globalVrlScore vs fully-evidenced run", () => {
+    const withEvidence = computeVrl({
+      ...ALL_AT_60,
+      evidenceLinks: {
+        trlScore: "ev-001", mrlScore: "ev-002", brlScore: "ev-003",
+        ecoScore: "ev-004", prlScore: "ev-005", ipScore:  "ev-006",
+        frlScore: "ev-007", regScore: "ev-008", srlScore: "ev-009",
+      },
+    });
+    const withoutEvidence = computeVrl(ALL_AT_60);
+    expect(withEvidence.globalVrlScore).toBe(withoutEvidence.globalVrlScore);
+  });
+});
+
+// ── T13: B-03 fix — Evidence-link enforcement, partial evidence ───────────────
+
+describe("T13 — B-03 fix: evidence-link enforcement — partial evidence", () => {
+  const ALL_AT_60 = {
+    trlScore: 60, mrlScore: 60, brlScore: 60, ecoScore: 60, prlScore: 60,
+    ipScore:  60, frlScore: 60, regScore: 60, srlScore: 60,
+  };
+
+  it("5 of 9 dims have evidence → 4 dims in selfAssessedDimensions", () => {
+    const r = computeVrl({
+      ...ALL_AT_60,
+      evidenceLinks: {
+        trlScore: "ev-001", mrlScore: "ev-002", brlScore: "ev-003",
+        ecoScore: "ev-004", prlScore: "ev-005",
+        // ipScore, frlScore, regScore, srlScore → self-assessed
+      },
+    });
+    expect(r.hasUnverifiedInputs).toBe(true);
+    expect(r.selfAssessedDimensions).toHaveLength(4);
+  });
+
+  it("Empty-string evidence link → treated as self-assessed", () => {
+    const r = computeVrl({
+      ...ALL_AT_60,
+      evidenceLinks: { trlScore: "" }, // empty string = no evidence
+    });
+    const trlLabel = "TRL (Technology Readiness)";
+    expect(r.selfAssessedDimensions).toContain(trlLabel);
+  });
+
+  it("Whitespace-only evidence link → treated as self-assessed", () => {
+    const r = computeVrl({
+      ...ALL_AT_60,
+      evidenceLinks: { mrlScore: "   " },
+    });
+    const mrlLabel = "MRL (Manufacturing Readiness)";
+    expect(r.selfAssessedDimensions).toContain(mrlLabel);
+  });
+
+  it("Single evidence link → only 8 dims are self-assessed", () => {
+    const r = computeVrl({
+      ...ALL_AT_60,
+      evidenceLinks: { trlScore: "ev-001" },
+    });
+    expect(r.selfAssessedDimensions).toHaveLength(8);
+    expect(r.selfAssessedDimensions).not.toContain("TRL (Technology Readiness)");
   });
 });

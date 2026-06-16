@@ -319,13 +319,13 @@ function ScorerTab() {
             {/* VRL feed */}
             <div className="rounded-xl border p-4" style={{ borderColor: "#1E2A3A", background: "#0D1520" }}>
               <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "#64748B" }}>
-                VRL Feed (§6)
+                VRL Feed — Dual Pathway (§6 · B-02)
               </p>
               <div className="grid grid-cols-3 gap-2 text-center">
                 {[
-                  { label: "Normalised", value: result.vrl_feed.mrl_score_normalised?.toFixed(3) },
-                  { label: "VRL Weight", value: "0.30" },
-                  { label: "Contribution", value: result.vrl_feed.vrl_mrl_contribution?.toFixed(4) },
+                  { label: "Normalised (0–1)", value: result.vrl_feed.mrl_score_normalised?.toFixed(3) },
+                  { label: "Product ×0.35",    value: "0.35" },
+                  { label: "Execution ×0.40",  value: "0.40" },
                 ].map(item => (
                   <div key={item.label} className="rounded-lg p-2" style={{ background: "#1E2A3A" }}>
                     <div className="text-xs font-mono" style={{ color: "#4ADE80" }}>{item.value}</div>

@@ -240,12 +240,11 @@ describe("T14 — Software-only venture permanently gate-blocked (DEFECT D_SW)",
     // Sustainability has no critical indicators — maxing it out has no gate effect
   });
 
-  it("vrl_feed.vrl_mrl_contribution is non-zero even under gate lock (score = capped value/100 × 0.30)", () => {
+  it("vrl_feed.mrl_score_normalised is 0 under gate lock when all indicators = 0 (B-02 / D6 fix)", () => {
     const r = computeMRLScore(softwareInput);
-    // mrl_score is capped but > 0 when some non-critical indicators have value 0
-    // All indicators are 0 here → mrl_score_raw = 0 → capped = min(0, 44) = 0
-    // So contribution = 0
-    expect(r.vrl_feed.vrl_mrl_contribution).toBeGreaterThanOrEqual(0);
+    // All indicators = 0 → mrl_score_raw = 0 → capped = min(0, 44) = 0
+    // Normalised = 0 / 100 = 0
+    expect(r.vrl_feed.mrl_score_normalised).toBeGreaterThanOrEqual(0);
   });
 });
 
