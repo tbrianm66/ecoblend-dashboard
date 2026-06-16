@@ -1,0 +1,97 @@
+ROLE & CONTEXT
+You are extending an EXISTING application in this Repl. Do not scaffold a new project or 
+overwrite existing files. Inspect and report before building.
+
+This is a PRIVATE, confidential commercial codebase. Treat all code you generate as 
+work-for-hire assigned to the repository owner. Do not make any repl public, do not 
+publish, fork, or share, and do not add telemetry or external network calls beyond 
+dependencies explicitly approved below.
+
+FEDSILK is a GOVERNANCE mechanism. It must be built as a SUB-MODULE INSIDE the existing 
+governance module — not as a new top-level section. It is the engine that powers the 
+governance gates (contribution attribution, validation, audit, exit). Wire it so the 
+governance module owns and surfaces it.
+
+STEP 0 — INSPECT FIRST, REPORT, THEN WAIT
+Before writing any code:
+1. Detect and print the stack: language(s), framework, package manager, folder structure, 
+   run command.
+2. LOCATE THE GOVERNANCE MODULE specifically. Print its folder path, its files, its 
+   routes/pages, how it is registered in the nav, what sub-sections or tabs it already 
+   has, and the pattern it uses to add a new sub-section. FEDSILK must follow that same 
+   pattern.
+3. Print the FULL dependency tree with the LICENCE of every dependency. STOP and warn me 
+   explicitly if ANY dependency is GPL, AGPL, SSPL or any copyleft licence — incompatible 
+   with this project. Only permissive licences (MIT, Apache-2.0, BSD, ISC) are acceptable.
+4. Summarise findings and propose: (a) exactly where FEDSILK files will live inside the 
+   governance module folder, and (b) how it will appear as a sub-section/tab/route under 
+   governance. WAIT for my confirmation before STEP 1.
+
+WHAT WE ARE BUILDING
+A sub-module "FEDSILK" nested inside the governance module. It demonstrates a 
+privacy-preserving federated contribution-attribution mechanism that backs the 
+governance gates. Build it isolated (own sub-folder under governance, own component(s), 
+its logic behind a clean FedEngine interface) so it does not entangle with other 
+governance logic, and so a real Flower/Hyperledger backend can replace the simulation 
+later without touching the UI.
+
+For this build, SIMULATE the federated learning in-process — no real distributed training, 
+no external ML infra. Model the MECHANISM faithfully; the mechanism is the point.
+
+CORE MECHANISM (implement all five)
+1. CLIENTS WITH LOCAL-ONLY DATA: N simulated participants (default 5), each holding a 
+   private local dataset that NEVER leaves the client object; only model updates are 
+   shared. Make data-locality visible.
+
+2. GRADIENT-VALIDATION ANTI-GAMING GATE: Before any update is aggregated, score its 
+   quality and reject anomalous/poisoned updates (e.g. norm or direction deviating beyond 
+   a threshold from the cohort). Show accepted vs rejected per round. Prominent feature.
+
+3. CONTRIBUTION SCORING: Each round, compute a per-client marginal-value score 
+   (leave-one-out delta is an acceptable Shapley approximation). Accumulate into a running 
+   "earned credit" balance per client.
+
+4. IMMUTABLE AUDIT LOG (on-chain style): Every round, accept/reject, score change and exit 
+   appends to a HASH-LINKED ledger (each entry stores the previous entry's hash; tampering 
+   is detectable). Render as a verifiable ledger. In-memory now; structured so Hyperledger 
+   Fabric can replace it later.
+
+5. VERIFIABLE UNLEARNING EXIT WITH WEIGHT-FORFEIT: Action to let a client "exit and 
+   unlearn": (a) approximate removal of that client's contribution from the global model, 
+   (b) FORFEIT its earned-credit balance (the exit right has a price), (c) write a 
+   verifiable unlearning-exit record to the ledger. Show model and balance before/after.
+
+EXPOSE TO GOVERNANCE
+Surface FEDSILK's outputs as governance signals, using the governance module's existing 
+display patterns: per-client contribution scores and credit balances, the accept/reject 
+gate results, and the audit ledger should read as governance evidence (the data that the 
+VRL/SRL/PRL/MRL gates and compliance scoring would consume). Keep the FedEngine itself 
+generic; do the governance-specific presentation in the governance sub-section.
+
+UI REQUIREMENTS (reuse the governance module's existing styling/components)
+- A "FEDSILK" tab/sub-section within the governance module.
+- Controls: set client count; run a round; run N rounds; inject a poisoned/anomalous 
+  update (to show the gate working); trigger a client exit-and-unlearn.
+- Live views: global accuracy/loss over rounds (chart); contribution scores + credit 
+  balances (table); accepted vs rejected per round; the hash-linked audit ledger; a 
+  before/after panel for unlearning events.
+- Use house palette if theme tokens exist: navy #0B2545, green #1B4D3E, gold accent 
+  #B8862F. Otherwise match existing governance styles exactly.
+
+ENGINEERING CONSTRAINTS
+- FedEngine logic separate from UI and from other governance code. Clean interface.
+- Synthetic/local data only — no external dataset downloads, no external API calls.
+- Permissive-licence dependencies ONLY; prefer libraries already present. If you add one, 
+  tell me what and why.
+- README in the FEDSILK sub-folder: what is simulated vs real, and exactly which functions 
+  to swap (FedEngine, audit-log store) to move to real Flower + Hyperledger Fabric.
+- Header comment on every new file: "FEDSILK governance sub-module — Confidential. 
+  © repository owner. Mechanism implementation; check priority-filing status before any 
+  public disclosure."
+
+DELIVERY
+After STEP 0 confirmation, build in this order, pausing after each so I can run it:
+(a) FedEngine + simulation core (no UI) with a console test proving all 5 mechanisms;
+(b) the FEDSILK sub-section UI inside the governance module, wired to FedEngine;
+(c) README and file headers.
+Do not mark anything public at any stage.
