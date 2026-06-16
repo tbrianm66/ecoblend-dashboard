@@ -18,8 +18,9 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
   Scale, CheckCircle2, Clock, XCircle, AlertTriangle,
-  FileText, Users, History, ChevronRight,
+  FileText, Users, History, ChevronRight, Network,
 } from "lucide-react";
+import FedsilkPanel from "@/pages/governance/fedsilk/FedsilkPanel";
 
 // ── Types ──
 interface StageGate {
@@ -125,7 +126,7 @@ const actionColors: Record<string, string> = {
 };
 
 export default function GovernanceHub() {
-  const [activeTab, setActiveTab] = useState<"gates" | "audit" | "board" | "constitutional" | "succession" | "stakeholders" | "decisions" | "memory" | "compliance" | "advanced-stakeholders">("gates");
+  const [activeTab, setActiveTab] = useState<"gates" | "audit" | "board" | "constitutional" | "succession" | "stakeholders" | "decisions" | "memory" | "compliance" | "advanced-stakeholders" | "fedsilk">("gates");
 
   const pendingCount = STAGE_GATES.filter(g => g.status === "pending").length;
 
@@ -167,6 +168,7 @@ export default function GovernanceHub() {
             { key: "memory", label: "Institutional Memory", icon: History },
             { key: "compliance", label: "Compliance Framework", icon: CheckCircle2 },
             { key: "advanced-stakeholders", label: "Stakeholder Management", icon: Users },
+            { key: "fedsilk", label: "FEDSILK Attribution", icon: Network },
           ].map(tab => (
             <button
               key={tab.key}
@@ -326,6 +328,10 @@ export default function GovernanceHub() {
           <div>
             <AdvancedStakeholderManagement />
           </div>
+        )}
+        {/* FEDSILK Attribution Engine */}
+        {activeTab === "fedsilk" && (
+          <FedsilkPanel />
         )}
       </div>
 

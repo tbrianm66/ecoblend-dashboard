@@ -328,6 +328,7 @@ function Router() {
       <Route path="/governance/audit" component={GovernanceHub} />
       <Route path="/governance/ip" component={IpManagement} />
       <Route path="/governance/legal" component={LegalContracts} />
+      <Route path="/governance/fedsilk" component={GovernanceHub} />
       {/* Decision Gate + Venture Archive */}
       <Route path="/decision-gate" component={DecisionGate} />
       <Route path="/ventures/archive" component={VentureArchive} />

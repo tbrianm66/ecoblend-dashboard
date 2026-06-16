@@ -258,6 +258,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: "gov-audit",      label: "Audit Trail",          icon: "ClipboardList",   href: "/governance/audit" },
       { id: "gov-ip",         label: "IP Register",          icon: "Lock",            href: "/governance/ip" },
       { id: "gov-legal",      label: "Legal Repository",     icon: "FileText",        href: "/governance/legal" },
+      { id: "gov-fedsilk",    label: "FEDSILK Attribution",  icon: "Network",         href: "/governance/fedsilk" },
     ],
   },
   {
