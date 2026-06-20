@@ -8278,3 +8278,85 @@ export const charityPartnerships = pgTable("charity_partnerships", {
 });
 export type CharityPartnership = typeof charityPartnerships.$inferSelect;
 export type InsertCharityPartnership = typeof charityPartnerships.$inferInsert;
+
+// ── FEDSILK Governance Steps ───────────────────────────────────────────────────
+// The 7-step (F-E-D-S-I-L-K) board-level governance workflow.
+// Each step tracks status, owner, evidence requirements, and approval state.
+export const fedsilkSteps = pgTable("fedsilk_steps", {
+  id:                  serial("id").primaryKey(),
+  ventureId:           varchar("venture_id", { length: 64 }),
+  stepKey:             varchar("step_key", { length: 1 }).notNull(),   // F | E | D | S | I | L | K
+  stepName:            varchar("step_name", { length: 255 }).notNull(),
+  purpose:             text("purpose"),
+  governanceQuestion:  text("governance_question"),
+  requiredApproval:    varchar("required_approval", { length: 255 }),
+  linkedContract:      varchar("linked_contract", { length: 255 }),
+  riskIfIncomplete:    text("risk_if_incomplete"),
+  status:              varchar("status", { length: 32 }).default("not_started"),
+  owner:               varchar("owner", { length: 128 }),
+  dueDate:             date("due_date"),
+  notes:               text("notes"),
+  sortOrder:           integer("sort_order").default(0),
+  createdAt:           timestamp("created_at").defaultNow(),
+  updatedAt:           timestamp("updated_at").defaultNow(),
+});
+export type FedsilkStep = typeof fedsilkSteps.$inferSelect;
+export type InsertFedsilkStep = typeof fedsilkSteps.$inferInsert;
+
+// ── FEDSILK Governance Evidence ────────────────────────────────────────────────
+export const fedsilkEvidence = pgTable("fedsilk_evidence", {
+  id:           serial("id").primaryKey(),
+  stepKey:      varchar("step_key", { length: 1 }).notNull(),
+  ventureId:    varchar("venture_id", { length: 64 }),
+  title:        varchar("title", { length: 255 }).notNull(),
+  entityLevel:  varchar("entity_level", { length: 64 }),      // holding_co | studio | spv | charity | venture
+  evidenceType: varchar("evidence_type", { length: 64 }),     // board_minute | contract | policy | register | decision_log | approval | risk_assessment | attribution_note
+  required:     boolean("required").default(true),
+  status:       varchar("status", { length: 32 }).default("not_started"),
+  owner:        varchar("owner", { length: 128 }),
+  dueDate:      date("due_date"),
+  documentUrl:  text("document_url"),
+  notes:        text("notes"),
+  createdAt:    timestamp("created_at").defaultNow(),
+  updatedAt:    timestamp("updated_at").defaultNow(),
+});
+export type FedsilkEvidence = typeof fedsilkEvidence.$inferSelect;
+export type InsertFedsilkEvidence = typeof fedsilkEvidence.$inferInsert;
+
+// ── FEDSILK Contract Triggers ──────────────────────────────────────────────────
+export const fedsilkContractTriggers = pgTable("fedsilk_contract_triggers", {
+  id:              serial("id").primaryKey(),
+  stepKey:         varchar("step_key", { length: 1 }).notNull(),
+  ventureId:       varchar("venture_id", { length: 64 }),
+  contractName:    varchar("contract_name", { length: 255 }).notNull(),
+  entityLevel:     varchar("entity_level", { length: 64 }),
+  status:          varchar("status", { length: 32 }).default("not_started"),
+  priority:        varchar("priority", { length: 32 }).default("medium"),
+  riskLevel:       varchar("risk_level", { length: 16 }).default("medium"),
+  legalRecordId:   integer("legal_record_id"),
+  notes:           text("notes"),
+  createdAt:       timestamp("created_at").defaultNow(),
+  updatedAt:       timestamp("updated_at").defaultNow(),
+});
+export type FedsilkContractTrigger = typeof fedsilkContractTriggers.$inferSelect;
+export type InsertFedsilkContractTrigger = typeof fedsilkContractTriggers.$inferInsert;
+
+// ── FEDSILK Risk Flags ─────────────────────────────────────────────────────────
+export const fedsilkRiskFlags = pgTable("fedsilk_risk_flags", {
+  id:                serial("id").primaryKey(),
+  stepKey:           varchar("step_key", { length: 1 }).notNull(),
+  ventureId:         varchar("venture_id", { length: 64 }),
+  riskName:          varchar("risk_name", { length: 255 }).notNull(),
+  category:          varchar("category", { length: 128 }),
+  severity:          varchar("severity", { length: 16 }).default("medium"),   // low | medium | high | critical
+  status:            varchar("status", { length: 32 }).default("open"),       // open | mitigated | accepted | escalated
+  recommendedAction: text("recommended_action"),
+  linkedDocument:    varchar("linked_document", { length: 255 }),
+  owner:             varchar("owner", { length: 128 }),
+  dueDate:           date("due_date"),
+  notes:             text("notes"),
+  createdAt:         timestamp("created_at").defaultNow(),
+  updatedAt:         timestamp("updated_at").defaultNow(),
+});
+export type FedsilkRiskFlag = typeof fedsilkRiskFlags.$inferSelect;
+export type InsertFedsilkRiskFlag = typeof fedsilkRiskFlags.$inferInsert;

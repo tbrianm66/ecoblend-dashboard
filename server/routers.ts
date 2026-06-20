@@ -252,6 +252,7 @@ import { propositionRouter } from "./proposition.router";
 import { sustainabilityRouter } from "./sustainability.router";
 import { collaborationRouter } from "./collaboration.router";
 import { legalRequirementsRouter } from "./legalRequirements.router";
+import { fedsilkGovernanceRouter } from "./fedsilkGovernance.router";
 
 export const appRouter = router({
   discoveryMarket: discoveryMarketRouter,
@@ -7320,5 +7321,6 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
   sustainability: sustainabilityRouter,
   collaboration: collaborationRouter,
   legalRequirements: legalRequirementsRouter,
+  fedsilkGovernance: fedsilkGovernanceRouter,
 });
 export type AppRouter = typeof appRouter;

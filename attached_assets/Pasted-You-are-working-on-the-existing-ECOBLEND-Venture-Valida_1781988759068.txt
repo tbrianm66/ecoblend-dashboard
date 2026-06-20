@@ -1,0 +1,240 @@
+You are working on the existing ECOBLEND Venture Validation OS / ecoblend-dashboard application.
+
+Objective:
+Refactor and extend the Governance module so the FEDSILK governance workflow is clearly represented as a dedicated, board-level governance architecture, while preserving the current merged Governance / Stage-Gate implementation.
+
+Current context:
+The app already includes a Governance area with submodules such as:
+- Governance Dashboard
+- Stage-Gate Approvals
+- Board Reporting
+- Audit Trail
+- IP Register
+- Legal Repository
+- FEDSILK Attribution
+
+The current implementation appears to merge FEDSILK-related governance steps into a broader Stage-Gate Governance page. This is useful, but the FEDSILK workflow needs its own explicit structure so a new user can understand the purpose, sequence, evidence requirements, contract triggers, approvals, and risk controls.
+
+Do not remove the existing Governance, Legal Repository, IP Register, Audit Trail, Stage-Gate Approvals, or Board Reporting modules. Extend and clarify the structure.
+
+Target navigation structure:
+
+15. Governance
+  ├── Governance Dashboard
+  ├── Stage-Gate Approvals
+  ├── Board Reporting
+  ├── Audit Trail
+  ├── IP Register
+  ├── Legal Repository
+  ├── FEDSILK Attribution
+  │    ├── FEDSILK Overview
+  │    ├── Step Workflow
+  │    ├── Required Evidence
+  │    ├── Contract Triggers
+  │    └── Risk Flags
+
+Implementation requirements:
+
+1. Add or refine a dedicated FEDSILK Attribution module
+Create a clear FEDSILK section under Governance that explains:
+- What FEDSILK is
+- Why it exists
+- Which governance risks it controls
+- How it protects purpose, founder intent, mission lock, IP integrity, board accountability, stakeholder attribution, and long-term venture stewardship
+
+2. Create a FEDSILK Overview page
+The overview page should include:
+- A short explanation of the FEDSILK governance logic
+- A visual step summary
+- Status cards showing completion by step
+- Total evidence items required
+- Evidence completed
+- Missing evidence
+- Open governance risks
+- Contract triggers outstanding
+- Board approvals outstanding
+
+3. Create a FEDSILK Step Workflow page
+Create a step-by-step workflow with stages. Use the current available governance logic if already present, but make the sequence explicit.
+
+Each step should include:
+- Step name
+- Purpose
+- Governance question being answered
+- Required evidence
+- Required approval
+- Linked contract or document
+- Risk if incomplete
+- Status: not started, in progress, under review, approved, blocked
+- Owner
+- Due date
+- Notes
+
+Suggested FEDSILK step model:
+- F — Founder intent and fiduciary alignment
+- E — Equity, ESOP, and economic participation rules
+- D — Decision rights and delegated authority
+- S — Stewardship, succession, and mission protection
+- I — Intellectual property ownership and licensing controls
+- L — Legal contracts and constitutional documents
+- K — Knowledge attribution, audit trail, and venture memory
+
+If existing terminology differs, preserve the existing terms but make the workflow equally clear.
+
+4. Create a Required Evidence page
+This page should list evidence requirements by FEDSILK step.
+
+Each evidence item should include:
+- Evidence title
+- Step association
+- Entity level: holding company, studio company, SPV, charity/foundation, venture
+- Evidence type: board minute, contract, policy, register, decision log, approval, risk assessment, attribution note
+- Required / optional flag
+- Status
+- Owner
+- Due date
+- Upload or external document link placeholder
+- Notes
+
+5. Create a Contract Triggers page
+This page should connect FEDSILK steps to the Legal Repository.
+
+Show which contracts are triggered by each governance step, including:
+- Founder agreement
+- Founder IP assignment
+- ESOP / share option plan
+- IP licence
+- Field-of-use licence
+- SPV shareholder agreement
+- Studio-to-SPV services agreement
+- Investment MoU
+- Investor term sheet
+- Charity MoU
+- Profit donation agreement
+- Constitutional governance document
+- Board reserved matters schedule
+- Succession plan
+- Attribution contract
+
+Each contract trigger should show:
+- Linked FEDSILK step
+- Contract name
+- Entity level
+- Status
+- Priority
+- Risk level
+- Linked Legal Repository record if available
+- Missing-document warning if not available
+
+6. Create a Risk Flags page
+This page should show governance risks created by incomplete FEDSILK controls.
+
+Risk categories:
+- Founder dependency risk
+- IP ownership ambiguity
+- Mission drift risk
+- Unclear decision authority
+- Missing board approval
+- Missing contract
+- Incomplete attribution record
+- Unclear ESOP or equity participation
+- SPV governance gap
+- Charity/profit-donation ambiguity
+- Succession risk
+
+Each risk flag should include:
+- Risk name
+- Linked FEDSILK step
+- Severity: low, medium, high, critical
+- Status: open, mitigated, accepted, escalated
+- Recommended action
+- Linked document or contract
+- Owner
+- Due date
+
+7. Link FEDSILK to existing modules
+Do not create isolated pages. Connect FEDSILK logically to:
+- Legal Repository: contract records and document status
+- IP Register: IP ownership, assignment, licensing, field-of-use controls
+- Audit Trail: governance decisions and evidence logs
+- Board Reporting: items requiring board visibility
+- Stage-Gate Approvals: approval checkpoints
+- Governance Dashboard: summary metrics and readiness status
+
+8. Update Governance Dashboard
+Add a FEDSILK summary section to the Governance Dashboard with:
+- FEDSILK completion score
+- Number of steps approved
+- Evidence completion percentage
+- Open high-risk governance flags
+- Missing legal documents
+- Pending board approvals
+- Contract trigger coverage
+- Latest FEDSILK decision log entry
+
+9. Database / persistence
+Before changing code, inspect the current database and schema.
+
+If a suitable existing table exists, extend it carefully.
+
+If new tables are required, create safe migrations for:
+- fedsilk_steps
+- fedsilk_evidence
+- fedsilk_contract_triggers
+- fedsilk_risk_flags
+
+Use safe migration practices:
+- Do not drop existing tables
+- Do not delete existing data
+- Do not reset production data
+- Use nullable fields where required for backward compatibility
+- Ensure migrations validate in development and production
+
+10. UI requirements
+The UI should match the existing ECOBLEND design language:
+- Dark left navigation
+- Clean card-based layout
+- Status badges
+- Risk colour indicators
+- Compact dashboard summaries
+- Board-level language
+- Avoid clutter
+- Keep pages readable for investors, legal advisors, and governance reviewers
+
+11. Data seeding
+Add sensible seed/demo data only if required.
+
+Demo data should include examples across:
+- Holding company / FHV
+- EcoRACE Studio
+- BEBUS or another SPV
+- Charity / foundation engagement
+
+Do not include real confidential data.
+
+12. Quality checks
+After implementation:
+- Run the app locally in Replit
+- Confirm all new routes load
+- Confirm navigation links work
+- Confirm database migrations pass
+- Confirm production build is not broken
+- Confirm no secrets or private data are exposed
+- Confirm no existing Governance pages are broken
+- Confirm Git detects the changed files
+
+13. Output required
+After completing the work, provide a concise implementation report covering:
+- Files changed
+- Routes added
+- Database tables or schema changes
+- New UI pages added
+- How FEDSILK now connects to Legal Repository, IP Register, Audit Trail, Board Reporting, and Stage-Gate Approvals
+- Any remaining limitations
+- Recommended next development step
+
+Important:
+Do not rewrite the whole application.
+Do not remove current functionality.
+Do not over-engineer production-grade compliance.
+This is still a Phase 2 demonstrator, but it must be coherent, board-level, and credible as a governance operating system module.

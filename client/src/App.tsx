@@ -107,6 +107,7 @@ import EsgBcorp from "./pages/sustainability/EsgBcorp";
 import TeamWorkspace from "./pages/collaboration/TeamWorkspace";
 import AdvisoryFunction from "./pages/collaboration/AdvisoryFunction";
 import LegalRequirements from "./pages/governance/LegalRequirements";
+import FedsilkGovernancePage from "./pages/governance/fedsilk/FedsilkGovernancePage";
 import PortfolioOverviewTabs from "./pages/command/PortfolioOverviewTabs";
 import CommandCentreTabs from "./pages/command/CommandCentreTabs";
 import PipelineTabs from "./pages/command/PipelineTabs";
@@ -329,7 +330,7 @@ function Router() {
       <Route path="/governance/audit" component={GovernanceHub} />
       <Route path="/governance/ip" component={IpManagement} />
       <Route path="/governance/legal" component={LegalContracts} />
-      <Route path="/governance/fedsilk" component={GovernanceHub} />
+      <Route path="/governance/fedsilk" component={FedsilkGovernancePage} />
       <Route path="/governance/contracts" component={LegalRequirements} />
       {/* Decision Gate + Venture Archive */}
       <Route path="/decision-gate" component={DecisionGate} />
