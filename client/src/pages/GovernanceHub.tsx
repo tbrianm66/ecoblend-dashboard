@@ -21,6 +21,7 @@ import {
   FileText, Users, History, ChevronRight, Network,
 } from "lucide-react";
 import FedsilkPanel from "@/pages/governance/fedsilk/FedsilkPanel";
+import LegalRequirements from "@/pages/governance/LegalRequirements";
 
 // ── Types ──
 interface StageGate {
@@ -126,7 +127,7 @@ const actionColors: Record<string, string> = {
 };
 
 export default function GovernanceHub() {
-  const [activeTab, setActiveTab] = useState<"gates" | "audit" | "board" | "constitutional" | "succession" | "stakeholders" | "decisions" | "memory" | "compliance" | "advanced-stakeholders" | "fedsilk">("gates");
+  const [activeTab, setActiveTab] = useState<"gates" | "audit" | "board" | "constitutional" | "succession" | "stakeholders" | "decisions" | "memory" | "compliance" | "advanced-stakeholders" | "fedsilk" | "contracts">("gates");
 
   const pendingCount = STAGE_GATES.filter(g => g.status === "pending").length;
 
@@ -169,6 +170,7 @@ export default function GovernanceHub() {
             { key: "compliance", label: "Compliance Framework", icon: CheckCircle2 },
             { key: "advanced-stakeholders", label: "Stakeholder Management", icon: Users },
             { key: "fedsilk", label: "FEDSILK Attribution", icon: Network },
+            { key: "contracts", label: "Contract Requirements", icon: FileText },
           ].map(tab => (
             <button
               key={tab.key}
@@ -332,6 +334,10 @@ export default function GovernanceHub() {
         {/* FEDSILK Attribution Engine */}
         {activeTab === "fedsilk" && (
           <FedsilkPanel />
+        )}
+        {/* Contract Requirements & Governance Readiness Tracker */}
+        {activeTab === "contracts" && (
+          <LegalRequirements />
         )}
       </div>
 

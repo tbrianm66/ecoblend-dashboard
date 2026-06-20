@@ -1,0 +1,502 @@
+You are acting as a senior full-stack software architect, product auditor and governance systems designer.
+
+Platform URL:
+The live platform is www.ecoblend.io.
+
+Important:
+Audit the Replit codebase that powers www.ecoblend.io, not only the public website. Use the live URL only as a reference for current user experience, navigation, module naming and visible functionality. The actual implementation audit must inspect the repository code, database schema, routes, components, migrations, API calls and existing Governance module structure.
+
+Do not create a separate platform, mock dashboard or disconnected prototype. Update the existing EcoBLEND platform at www.ecoblend.io only where required.
+
+Context:
+www.ecoblend.io is the EcoBLEND / EcoRACE / Future Humanity Ventures operating system. The required update is specifically within the Governance module, to manage legal contract requirements across the business structure:
+
+1. Future Humanity Ventures / FHV
+    * Mission-lock / holding company layer
+    * Protects purpose, IP, trade secrets, EcoBLEND OS, data rights and charitable purpose commitments
+    * Needs legal oversight for articles, reserved matters, golden share / mission veto, IP ownership, governance agreements and beneficiary commitments
+2. EcoRACE Studio Ltd
+    * Venture studio operating company
+    * Executes venture creation, technical validation, commercial validation, external R&D coordination and spin-out formation
+    * Needs contracts for operating company governance, investor access, studio management, IP/data usage, EcoBLEND OS governance and R&D coordination
+3. EcoBLEND OS / EcoBLEND IO
+    * Internal venture intelligence and governance engine
+    * Manages VRL / SRL / PRL / MRL gates, data capture, IP assignment, trade-secret control, investor reporting and cross-venture learning
+    * Needs OS licence agreements, data contribution agreements, IP assignment, trade-secret controls, data governance, AI governance and access-control records
+4. SPV Ventures
+    * BEBUS, REAL, TONE, ECOCOMP and future qualified spin-outs
+    * Each SPV may require its own articles, shareholders’ agreement, investment agreement, SEIS/EIS documentation, OS licence, IP licence, mission covenant and investor reporting
+5. Charity / beneficiary engagement
+    * The group may donate a percentage of annual distributable profits to selected disability and SEND-focused charities such as Challengers
+    * Charity engagement must be managed separately from investor distributions and the SEND Trust
+    * Required documents may include board resolution, charitable giving policy, profit definition schedule, charity partnership MOU, logo/name permission, cause-related marketing terms, donation calculation worksheet and impact reporting template
+
+Task:
+Audit the existing www.ecoblend.io platform and Governance module to determine whether it can manage the legal contract requirements across the full company structure.
+
+Do not rebuild the application unless required.
+
+First inspect the current codebase, database schema, routes, components, data models, migrations, API calls and UI patterns. Then propose and implement the minimum safe update.
+
+This should be a contract requirements and governance readiness tracker, not a legal advice module. Do not present the platform as providing legal advice. Use labels such as “contract requirement”, “legal review required”, “solicitor review status”, “risk flag” and “readiness status”.
+
+Audit objectives:
+
+1. Identify whether the Governance module currently supports contract management by business layer.
+2. Check whether the platform can distinguish contracts by:
+    * FHV / holding company
+    * EcoRACE Studio Ltd
+    * EcoBLEND OS / IO
+    * SPV venture
+    * Charity / beneficiary engagement
+3. Check whether the platform can track:
+    * Contract name
+    * Contract category
+    * Business entity / layer
+    * Linked venture or SPV
+    * Contract owner
+    * External counterparty
+    * Legal adviser
+    * Priority level
+    * Status
+    * Required / optional flag
+    * Review frequency
+    * Renewal date
+    * Expiry date
+    * Execution date
+    * Approval authority
+    * Reserved matter trigger
+    * Mission-lock relevance
+    * IP relevance
+    * Data protection relevance
+    * SEIS/EIS relevance
+    * Charity engagement relevance
+    * Document location / upload link
+    * Notes
+    * Risk rating
+    * Next action
+4. Check whether the system can manage staged implementation:
+    * Stage 1: Minimum viable governance and IP protection
+    * Stage 2: Investment readiness
+    * Stage 3: SPV execution and venture-specific investment
+    * Stage 4: Charity partnership and beneficiary reporting
+    * Stage 5: Mature mission-lock / steward-style governance
+5. Check whether there is a dashboard view that shows missing, overdue, high-risk and upcoming contract actions.
+6. Check whether the Governance module links to other relevant modules, such as:
+    * Venture intake
+    * Investment readiness
+    * IP management
+    * Data governance
+    * Risk intelligence
+    * SPV management
+    * Charity / impact reporting
+    * Board approvals
+    * Mission governance
+7. Check whether the current database structure supports contract dependencies, for example:
+    * SPV shareholders’ agreement depends on SPV articles
+    * SEIS/EIS pack depends on SPV structure
+    * OS licence depends on EcoBLEND OS ownership decision
+    * Charity partnership MOU depends on board charitable giving approval
+    * Public charity claim depends on logo/name permission
+
+Required contract taxonomy:
+Create or update the Governance module to include the following contract categories.
+
+A. FHV / Holding Company Layer
+
+* FHV constitutional documents
+* FHV articles of association
+* FHV shareholders’ agreement
+* Golden share / mission veto instrument
+* Reserved matters schedule
+* Board mission pledge
+* Steward appointment and removal policy
+* Mission breach enforcement policy
+* IP ownership policy
+* Beneficiary funding policy
+
+B. EcoRACE Studio Layer
+
+* EcoRACE Studio articles of association
+* EcoRACE shareholders’ agreement
+* FHV–EcoRACE governance agreement
+* Studio management agreement
+* Studio royalty framework
+* Intercompany services agreement
+* Transfer pricing / cost-sharing policy
+* Board terms of reference
+* Investor reporting policy
+* Financial promotion compliance memo
+
+C. EcoBLEND OS / IO Layer
+
+* EcoBLEND OS licence agreement
+* Data contribution agreement
+* IP assignment agreement
+* Trade secret protection policy
+* Data governance policy
+* Data processing agreement
+* AI model governance policy
+* Cybersecurity and access-control policy
+* Data room terms of use
+* Open-source software policy
+
+D. SPV Venture Layer
+
+* SPV articles of association
+* SPV shareholders’ agreement
+* SPV investment agreement
+* SEIS/EIS advance assurance pack
+* SPV OS licence agreement
+* SPV IP licence / assignment agreement
+* Mission covenant deed
+* Founder vesting agreement
+* Investor side letter template
+* Subscription agreement
+* Nominee agreement, if applicable
+* Exit waterfall model
+
+E. R&D, University, Supplier and Partner Layer
+
+* Mutual NDA
+* Technical evaluation agreement
+* R&D collaboration agreement
+* University research agreement
+* Manufacturing development agreement
+* Supplier onboarding agreement
+* Quality agreement
+* Design services agreement
+* Field trial agreement
+* Materials testing agreement
+
+F. Employment, Consultant and Advisor Layer
+
+* Founder service agreement
+* Employee contract
+* Consultant agreement
+* Advisor agreement
+* EMI option scheme documents
+* Contractor IP assignment deed
+* Confidentiality and invention assignment agreement
+* Contributor access policy
+
+G. Charity / Beneficiary Engagement Layer
+
+* Board resolution approving charitable giving policy
+* Charitable giving policy
+* Profit definition schedule
+* Charity partnership MOU
+* Logo/name permission letter
+* Cause-related marketing terms
+* Annual donation calculation worksheet
+* Impact reporting template
+* Grant-making policy, if applicable
+* Safeguarding policy, if applicable
+* Foundation pathway memo
+
+Required priority stages:
+Create or update a staged implementation view using the following priority roadmap.
+
+Stage 1: Minimum viable governance and IP protection
+Required immediately:
+
+* FHV incorporation / company record
+* EcoRACE Studio incorporation / company record
+* Basic bespoke articles
+* Reserved matters schedule
+* Founder IP assignment
+* NDA
+* FHV–EcoRACE governance agreement
+* Trade-secret register
+* Initial IP ownership map
+
+Stage 2: Investment readiness
+Required before investor engagement:
+
+* Updated articles
+* Shareholders’ agreement
+* Investor disclaimer
+* Financial promotion compliance memo
+* Investor eligibility questionnaire
+* Subscription agreement
+* SEIS/EIS advance assurance pack
+* Data room terms of use
+* Investor reporting policy
+* EcoBLEND OS licence template
+
+Stage 3: SPV execution and venture investment
+Required before each SPV raise:
+
+* SPV articles
+* SPV shareholders’ agreement
+* SPV investment agreement
+* SPV OS licence
+* SPV IP licence / assignment agreement
+* Mission covenant deed
+* Founder vesting agreement
+* SEIS/EIS documentation
+* Exit waterfall model
+
+Stage 4: Charity partnership and beneficiary reporting
+Required before public charity claims:
+
+* Board resolution approving charitable giving policy
+* Charitable giving policy
+* Profit definition schedule
+* Charity partnership MOU
+* Logo/name permission letter
+* Cause-related marketing terms
+* Donation calculation worksheet
+* Impact reporting template
+
+Stage 5: Mature mission-lock / steward-style governance
+Required once meaningful assets, revenue and investors exist:
+
+* Golden share / mission veto instrument
+* Steward appointment policy
+* Mission-lock deed
+* Foundation / CIC / trust feasibility memo
+* Board mission pledge
+* Mission breach enforcement policy
+* Long-term beneficiary funding agreement
+* Governance manual
+
+Functional requirements:
+If the current Governance module lacks these features, implement the smallest coherent update.
+
+1. Add a Contract Requirements section within the Governance module.
+2. Add a contract register with filtering by:
+    * Business layer
+    * Contract category
+    * Priority stage
+    * Status
+    * Risk rating
+    * Entity
+    * SPV
+    * Charity engagement relevance
+3. Add contract detail pages or expandable rows.
+4. Add status values:
+    * Not started
+    * Draft required
+    * With solicitor
+    * Under review
+    * Approved
+    * Signed
+    * Active
+    * Renewal due
+    * Expired
+    * Superseded
+5. Add risk ratings:
+    * Low
+    * Medium
+    * High
+    * Critical
+6. Add priority values:
+    * Immediate
+    * Pre-investment
+    * Pre-SPV raise
+    * Pre-public charity claim
+    * Later / mature governance
+7. Add dependency tracking between contracts.
+8. Add alert logic for:
+    * Missing required contracts
+    * Overdue review date
+    * Expiry within 90 days
+    * Critical contracts not started
+    * Public charity claim without charity approval
+    * Public charity claim without logo/name permission
+    * SPV investment documents missing before fundraise
+    * IP/data contracts missing before external R&D or partner engagement
+9. Add a dashboard summary with:
+    * Total required contracts
+    * Completed contracts
+    * Missing critical contracts
+    * Overdue reviews
+    * Upcoming renewals
+    * Contracts by business layer
+    * Contracts by priority stage
+10. Add a Charity Engagement subsection to track:
+
+* Charity name
+* Charity registration number, if available
+* Partnership contact
+* Donation formula
+* Profit definition
+* Board approval status
+* Logo/name permission status
+* Public claims approved
+* Impact report received
+* Next donation review date
+
+Data model guidance:
+If using PostgreSQL / Supabase or another relational database, consider a structure similar to the following.
+
+Table: legal_contract_requirements
+
+* id
+* name
+* description
+* business_layer
+* category
+* priority_stage
+* required_boolean
+* default_risk_rating
+* mission_lock_relevance_boolean
+* ip_relevance_boolean
+* data_relevance_boolean
+* seis_eis_relevance_boolean
+* charity_relevance_boolean
+* default_review_frequency
+* created_at
+* updated_at
+
+Table: legal_contract_records
+
+* id
+* requirement_id
+* entity_id
+* venture_id
+* charity_partner_id
+* owner_user_id
+* counterparty_name
+* legal_adviser
+* status
+* risk_rating
+* execution_date
+* renewal_date
+* expiry_date
+* review_date
+* document_url
+* notes
+* next_action
+* approval_authority
+* reserved_matter_trigger_boolean
+* created_at
+* updated_at
+
+Table: legal_contract_dependencies
+
+* id
+* contract_requirement_id
+* depends_on_requirement_id
+* dependency_type
+* notes
+
+Table: charity_partnerships
+
+* id
+* charity_name
+* charity_registration_number
+* contact_name
+* contact_email
+* partnership_status
+* donation_formula
+* profit_definition
+* board_approval_status
+* logo_permission_status
+* public_claim_approval_status
+* impact_reporting_status
+* next_review_date
+* notes
+* created_at
+* updated_at
+
+If the existing app has a different schema pattern, follow the existing conventions rather than forcing a new architecture.
+
+UI requirements:
+Use the existing www.ecoblend.io design system and visual language. Do not introduce inconsistent styling.
+
+Required screens or components:
+
+1. Governance Module > Contract Requirements Dashboard
+2. Contract Register Table
+3. Contract Requirement Detail View
+4. Priority Roadmap View
+5. Business Layer View
+6. Charity Engagement View
+7. Alerts / Missing Requirements Panel
+
+Suggested dashboard sections:
+
+* Critical Missing Contracts
+* Pre-Investment Readiness
+* SPV Readiness
+* Charity Engagement Readiness
+* IP and Data Protection
+* Mission-Lock Governance
+* Upcoming Reviews and Renewals
+
+Seed data:
+If there is no existing seed mechanism, create one using the current project convention. Seed the contract taxonomy and priority stages listed above.
+
+Implementation rules:
+
+1. Audit first. Do not implement before understanding the current codebase.
+2. Preserve existing navigation, authentication, database conventions and UI patterns.
+3. Integrate into the existing www.ecoblend.io platform navigation and Governance module.
+4. Do not create a new standalone app, mock dashboard or disconnected prototype.
+5. Any new contract-management functionality must use the existing authentication, database, styling and routing conventions already used by www.ecoblend.io.
+6. Avoid breaking existing modules.
+7. Add tests or basic validation where the project already supports testing.
+8. If a database migration is required, create a reversible migration.
+9. If uncertain, implement a minimal version with clear TODO comments rather than a speculative rebuild.
+10. Use British English labels.
+11. Do not include legal advice text as if the platform is a solicitor.
+12. Make all legal document names editable because the final solicitor may change terminology.
+13. Add placeholder records but do not mark anything as legally complete unless a signed document exists.
+14. Preserve existing environment variables and deployment settings.
+15. Ensure the app builds and runs successfully in Replit after changes.
+
+Acceptance criteria:
+The update is complete only if:
+
+1. The Governance module can display all contract requirements by business layer.
+2. The user can see which documents are required for:
+    * FHV / holding company
+    * EcoRACE Studio
+    * EcoBLEND OS / IO
+    * SPVs
+    * Charity engagement
+3. The user can track stage readiness:
+    * Minimum viable governance
+    * Investment readiness
+    * SPV readiness
+    * Charity partnership readiness
+    * Mature governance readiness
+4. The Charity Engagement section can track:
+    * Donation formula
+    * Profit definition
+    * Board approval
+    * Charity permission
+    * Logo/name permission
+    * Public claim approval
+    * Impact reporting
+5. The platform warns if a public charity claim is attempted before charity approval/logo permission is recorded.
+6. The platform warns if an SPV is marked investment-ready without:
+    * SPV articles
+    * Shareholders’ agreement
+    * Investment agreement
+    * OS licence
+    * SEIS/EIS review status
+7. The platform warns if external R&D is active without:
+    * NDA
+    * IP agreement
+    * Data governance status
+8. The implementation uses existing UI and database conventions.
+9. The app builds and runs successfully in Replit.
+10. The update integrates into the existing www.ecoblend.io platform navigation and Governance module.
+11. The update does not create a new standalone app, mock dashboard or disconnected prototype.
+12. Any new contract-management functionality uses the existing authentication, database, styling and routing conventions already used by www.ecoblend.io.
+
+Final output required:
+After completing the audit/update, provide:
+
+1. A concise audit report.
+2. What was audited.
+3. What was missing.
+4. What was added.
+5. A list of files changed.
+6. A list of database changes or migrations added.
+7. Any test results.
+8. Any limitations or follow-up tasks.
+9. Clear instructions for how to verify the new Governance contract-management functionality in the Replit app.

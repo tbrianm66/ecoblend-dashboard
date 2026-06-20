@@ -8193,3 +8193,88 @@ export const systemApiKeys = pgTable("system_api_keys", {
 });
 export type SystemApiKey = typeof systemApiKeys.$inferSelect;
 export type InsertSystemApiKey = typeof systemApiKeys.$inferInsert;
+
+// ── Legal Contract Requirements (governance taxonomy) ─────────────────────────
+// Canonical library of ~80 contract types across 7 business layers.
+export const legalContractRequirements = pgTable("legal_contract_requirements", {
+  id:                     serial("id").primaryKey(),
+  name:                   varchar("name", { length: 255 }).notNull(),
+  description:            text("description"),
+  businessLayer:          varchar("business_layer", { length: 64 }).notNull(),
+  category:               varchar("category", { length: 4 }).notNull(),
+  categoryLabel:          varchar("category_label", { length: 128 }),
+  priorityStage:          varchar("priority_stage", { length: 16 }).notNull(),
+  required:               boolean("required").default(true),
+  defaultRiskRating:      varchar("default_risk_rating", { length: 16 }).default("medium"),
+  missionLockRelevance:   boolean("mission_lock_relevance").default(false),
+  ipRelevance:            boolean("ip_relevance").default(false),
+  dataRelevance:          boolean("data_relevance").default(false),
+  seisEisRelevance:       boolean("seis_eis_relevance").default(false),
+  charityRelevance:       boolean("charity_relevance").default(false),
+  defaultReviewFrequency: varchar("default_review_frequency", { length: 32 }).default("annual"),
+  sortOrder:              integer("sort_order").default(0),
+  createdAt:              timestamp("created_at").defaultNow(),
+  updatedAt:              timestamp("updated_at").defaultNow(),
+});
+export type LegalContractRequirement = typeof legalContractRequirements.$inferSelect;
+export type InsertLegalContractRequirement = typeof legalContractRequirements.$inferInsert;
+
+// ── Legal Contract Records (per-entity tracking instances) ────────────────────
+export const legalContractRecords = pgTable("legal_contract_records", {
+  id:                    serial("id").primaryKey(),
+  requirementId:         integer("requirement_id").references(() => legalContractRequirements.id),
+  ventureId:             varchar("venture_id", { length: 64 }),
+  entityName:            varchar("entity_name", { length: 128 }),
+  counterpartyName:      varchar("counterparty_name", { length: 255 }),
+  legalAdviser:          varchar("legal_adviser", { length: 255 }),
+  owner:                 varchar("owner", { length: 128 }),
+  approvalAuthority:     varchar("approval_authority", { length: 128 }),
+  status:                varchar("status", { length: 32 }).default("not_started"),
+  riskRating:            varchar("risk_rating", { length: 16 }).default("medium"),
+  priority:              varchar("priority", { length: 32 }).default("immediate"),
+  executionDate:         date("execution_date"),
+  renewalDate:           date("renewal_date"),
+  expiryDate:            date("expiry_date"),
+  reviewDate:            date("review_date"),
+  documentUrl:           text("document_url"),
+  notes:                 text("notes"),
+  nextAction:            text("next_action"),
+  reservedMatterTrigger: boolean("reserved_matter_trigger").default(false),
+  solicitorReviewStatus: varchar("solicitor_review_status", { length: 64 }),
+  createdAt:             timestamp("created_at").defaultNow(),
+  updatedAt:             timestamp("updated_at").defaultNow(),
+});
+export type LegalContractRecord = typeof legalContractRecords.$inferSelect;
+export type InsertLegalContractRecord = typeof legalContractRecords.$inferInsert;
+
+// ── Legal Contract Dependencies ───────────────────────────────────────────────
+export const legalContractDependencies = pgTable("legal_contract_dependencies", {
+  id:                     serial("id").primaryKey(),
+  requirementId:          integer("requirement_id").notNull(),
+  dependsOnId:            integer("depends_on_id").notNull(),
+  dependencyType:         varchar("dependency_type", { length: 32 }).default("requires"),
+  notes:                  text("notes"),
+});
+
+// ── Charity Partnerships ──────────────────────────────────────────────────────
+export const charityPartnerships = pgTable("charity_partnerships", {
+  id:                        serial("id").primaryKey(),
+  ventureId:                 varchar("venture_id", { length: 64 }),
+  charityName:               varchar("charity_name", { length: 255 }).notNull(),
+  charityRegistrationNumber: varchar("charity_registration_number", { length: 64 }),
+  contactName:               varchar("contact_name", { length: 128 }),
+  contactEmail:              varchar("contact_email", { length: 255 }),
+  partnershipStatus:         varchar("partnership_status", { length: 32 }).default("prospective"),
+  donationFormula:           text("donation_formula"),
+  profitDefinition:          text("profit_definition"),
+  boardApprovalStatus:       varchar("board_approval_status", { length: 32 }).default("not_started"),
+  logoPermissionStatus:      varchar("logo_permission_status", { length: 32 }).default("not_granted"),
+  publicClaimApprovalStatus: varchar("public_claim_approval_status", { length: 32 }).default("not_approved"),
+  impactReportingStatus:     varchar("impact_reporting_status", { length: 32 }).default("not_started"),
+  nextReviewDate:            date("next_review_date"),
+  notes:                     text("notes"),
+  createdAt:                 timestamp("created_at").defaultNow(),
+  updatedAt:                 timestamp("updated_at").defaultNow(),
+});
+export type CharityPartnership = typeof charityPartnerships.$inferSelect;
+export type InsertCharityPartnership = typeof charityPartnerships.$inferInsert;
