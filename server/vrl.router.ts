@@ -22,7 +22,7 @@ const scoreInt = z.number().int().min(0).max(100);
 const assessmentInputSchema = z.object({
   ventureId: z.string().min(1),
   trlScore:  scoreInt,
-  mrlScore:  scoreInt,
+  mrlScore:  scoreInt.describe("MRL score 0–100 from Engine A/B. Scores 0–19 trigger the veto gate (VRL capped regardless of other inputs)."),
   brlScore:  scoreInt,
   ecoScore:  scoreInt,
   prlScore:  scoreInt,

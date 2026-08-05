@@ -36,11 +36,11 @@ import {
 // ── Input Schemas ─────────────────────────────────────────────────────────────
 
 const SubsystemScoresSchema = z.object({
-  pde: z.number().min(0).max(100),
-  scie: z.number().min(0).max(100),
-  csm: z.number().min(0).max(100),
-  qce: z.number().min(0).max(100),
-  sil: z.number().min(0).max(100),
+  pde:  z.number().min(0).max(100).refine(v => v >= 0 && v <= 100, { message: "PDE score must be in [0, 100]" }),
+  scie: z.number().min(0).max(100).refine(v => v >= 0 && v <= 100, { message: "SCIE score must be in [0, 100]" }),
+  csm:  z.number().min(0).max(100).refine(v => v >= 0 && v <= 100, { message: "CSM score must be in [0, 100]" }),
+  qce:  z.number().min(0).max(100).refine(v => v >= 0 && v <= 100, { message: "QCE score must be in [0, 100]" }),
+  sil:  z.number().min(0).max(100).refine(v => v >= 0 && v <= 100, { message: "SIL score must be in [0, 100]" }),
 });
 
 const CreateAssessmentSchema = z.object({

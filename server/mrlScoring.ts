@@ -1,6 +1,11 @@
 /**
- * ECOBLEND OS — MRL Scoring Engine
+ * ECOBLEND OS — MRL Scoring Engine (Engine B — BEBUS-MRL-SCORE-001)
  * Reference: BEBUS-MRL-SCORE-001 / mrl_scoring_system.jsx
+ *
+ * D6 Remediation: MRL level derivation delegates to Engine A
+ * (`compositeScoreToMrlLevel` in mrl.engine.ts) as the single canonical
+ * authority.  getMRLLevel and MRL_THRESHOLDS are retained as @deprecated
+ * exports so existing test imports continue to resolve without error.
  *
  * MASTER FORMULA:
  *   MRL_score = [ Σ(w_i × S_i × M_i) / Σ w_i ] × 10
@@ -11,6 +16,9 @@
  *   - Round final MRL_score to 1 decimal place only
  *   - Round category contributions to 3 decimal places
  */
+
+// ── Engine A — Level derivation (canonical) ───────────────────────────────────
+import { compositeScoreToMrlLevel, getMrlLevelDef } from "./mrl.engine";
 
 // ── TYPES ─────────────────────────────────────────────────────────────────────
 
@@ -100,7 +108,11 @@ export const MATURITY_MULTIPLIERS: Record<MaturityLevel, { label: string; M: num
   4: { label: "Certified", M: 1.20 },
 };
 
-/** Formula 7 — MRL level thresholds. */
+/**
+ * @deprecated D6 Remediation — level derivation now delegates to Engine A
+ * (`compositeScoreToMrlLevel` in mrl.engine.ts). This table is retained only
+ * for backward-compatibility with existing tests that import it directly.
+ */
 export const MRL_THRESHOLDS: Array<{ level: number; min: number; max: number; label: string; trl_alignment: string }> = [
   { level: 1, min:  0.0, max: 11.0, label: "Concept",      trl_alignment: "TRL 1–2" },
   { level: 2, min: 11.0, max: 22.0, label: "Feasibility",  trl_alignment: "TRL 2–3" },
@@ -186,6 +198,10 @@ export function computeConfidenceBand(allScores: number[]): number {
 // ── FORMULA 7 — MRL Level Lookup ──────────────────────────────────────────────
 
 /**
+ * @deprecated D6 Remediation — use `compositeScoreToMrlLevel` from
+ * `mrl.engine.ts` (Engine A canonical) for all new code.  This function is
+ * retained only for backward-compatibility with existing tests that import it.
+ *
  * Looks up MRL level from score_effective (after gate lock).
  * Never look up from raw score if gate_locked=true.
  */
@@ -257,14 +273,19 @@ export function computeMRLScore(input: ScoringInput): ScoringResult {
     : mrl_score_raw_exact;
   const mrl_score = Math.round(mrl_score_effective_exact * 10) / 10; // 1dp
 
-  // Formula 7 — Level lookup from score_effective
-  const { level: mrl_level, label: mrl_label } = getMRLLevel(mrl_score_effective_exact);
+  // Formula 7 — Level lookup via Engine A (canonical)
+  // Cap to [0, 100] before delegating: Engine B maturity multipliers (up to 1.20) can
+  // push mrl_score_effective_exact above 100; any score ≥ ~100 maps correctly to MRL-9.
+  const mrl_score_capped = Math.min(100, Math.max(0, mrl_score_effective_exact));
+  const mrl_level = compositeScoreToMrlLevel(mrl_score_capped);
+  const mrl_label = getMrlLevelDef(mrl_level)?.label ?? `MRL-${mrl_level}`;
 
   // Formula 6 — Confidence band
   const confidence_band = computeConfidenceBand(allRawScores);
 
   // VRL feed — B-02/D6 fix: dual-pathway weights; no single contribution field
-  const mrl_score_normalised = mrl_score / 100;
+  // Cap normalised value to [0, 1] — mrl_score may exceed 100 on high-maturity runs
+  const mrl_score_normalised = Math.min(1, mrl_score / 100);
 
   return {
     mrl_score,

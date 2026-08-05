@@ -17,8 +17,15 @@ export const DOMAIN_AMPLIFIERS = { supply: 0.35, cost: 0.25, compliance: 0.20 } 
 /** Ψ_max — maximum possible misalignment score */
 export const PSI_MAX = 8;
 
-/** W_mrl in VRL penalty formula */
-export const VRL_WEIGHT_MRL = 0.30;
+/**
+ * W_mrl — effective MRL weight used in the TRL/MRL sync-penalty model.
+ *
+ * This is the arithmetic mean of the dual-pathway MRL weights defined in
+ * vrl.engine.ts (Product × 0.35 + Execution × 0.40 → mean = 0.375).
+ * It is used ONLY as a penalty scalar for sync misalignment in Formula 5
+ * below — it is NOT a direct VRL composite weight.
+ */
+export const VRL_WEIGHT_MRL = 0.375;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -94,7 +101,8 @@ export interface DecisionResult {
 // η = max(0, min(1, 1 − (Ψ / Ψ_max)))
 
 // ── Formula 5: VRL Sync Penalty (δ_VRL) ──────────────────────────────────────
-// δ_VRL = (1 − η) × W_mrl_in_VRL   where W_mrl_in_VRL = 0.30
+// δ_VRL = (1 − η) × W_mrl_in_VRL   where W_mrl_in_VRL = 0.375
+//   (arithmetic mean of dual-pathway weights: Product 0.35 + Execution 0.40 → 0.375)
 // Adjusted_VRL = Base_VRL × (1 − δ_VRL)
 
 /**

@@ -5738,8 +5738,8 @@ export const mrlAssessments = pgTable("mrl_assessments", {
   qceScore:        integer("qceScore"),                     // Quality & Compliance Engine
   silScore:        integer("silScore"),                     // Sustainability Integration Layer
   compositeScore:  integer("compositeScore"),               // weighted composite (0-100)
-  // VRL contribution (MRL weight = 0.30 in VRL composite)
-  vrlContribution: doublePrecision("vrlContribution"),            // MRL - 0.30 contribution to VRL
+  // Engine A normalised MRL contribution (0–1); dual-pathway: 0.35 Product + 0.40 Execution in vrl.engine.ts
+  vrlContribution: doublePrecision("vrlContribution"),            // Engine A normalised (mrlLevel−1)/8 → 0–1
   // Risk summary
   riskScoreOverall: integer("riskScoreOverall"),            // 0-100 RAG aggregate
   riskRag:         text("mrlRiskRag").default("AMBER"),

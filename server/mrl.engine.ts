@@ -2,7 +2,8 @@
 // ECOBLEND OS — MRL ENGINE
 // Manufacturing Readiness Level Intelligence System v1.0
 // Five-engine architecture: PDE · SCIE · CSM · QCE · SIL
-// VRL weight: MRL contributes 0.30 to VRL composite
+// VRL weights: MRL → Product meta-domain × 0.35, Execution meta-domain × 0.40
+//              (dual-pathway; authoritative source: vrl.engine.ts)
 // Risk formula: RAG × Probability × Impact = Risk Score (0–100)
 // ============================================================
 
@@ -215,14 +216,17 @@ export const MRL_SUBSYSTEMS = [
 export type SubsystemId = "pde" | "scie" | "csm" | "qce" | "sil";
 
 // ── VRL Weights ───────────────────────────────────────────────────────────────
-// NOTE (B-02 / D6 fix): The live vrl.engine.ts feeds mrlScore via TWO pathways:
-//   Product meta-domain    × 0.35
-//   Execution meta-domain  × 0.40
-// The single `mrl: 0.30` weight below is a legacy constant from an earlier
-// single-pathway design.  It is no longer used in the canonical VRL composite.
-// Prefer passing mrlScore (0–100) directly to computeVrl() in vrl.engine.ts.
+// MRL feeds VRL via TWO independent meta-domain pathways (see vrl.engine.ts):
+//   Product meta-domain    mrlScore × 0.35
+//   Execution meta-domain  mrlScore × 0.40
+// Pass mrlScore (0–100) directly to computeVrl() in vrl.engine.ts.
+/** MRL → Product meta-domain weight in the VRL dual-pathway composite. */
+export const MRL_VRL_WEIGHT_PRODUCT = 0.35 as const;
+/** MRL → Execution meta-domain weight in the VRL dual-pathway composite. */
+export const MRL_VRL_WEIGHT_EXECUTION = 0.40 as const;
+
+/** Other engine weights retained for reference (non-MRL). */
 export const VRL_WEIGHTS = {
-  mrl: 0.30,   // legacy — see note above; dual-pathway: 0.35 (Product) + 0.40 (Execution)
   trl: 0.25,
   market: 0.20,
   team: 0.15,
@@ -310,8 +314,18 @@ export function computeCompositeMrlScore(scores: {
 /**
  * Derive MRL level (1–9) from composite score (0–100).
  * Each level represents ~11 points of the 0–100 scale.
+ *
+ * Throws a RangeError if `compositeScore` falls outside [0, 100] — this
+ * should never occur in normal operation (subsystem scores are validated
+ * 0–100 at the router layer), but acts as a sentinel against upstream
+ * computation errors.
  */
 export function compositeScoreToMrlLevel(compositeScore: number): number {
+  if (compositeScore < 0 || compositeScore > 100) {
+    throw new RangeError(
+      `compositeScoreToMrlLevel: compositeScore ${compositeScore} is outside valid domain [0, 100].`
+    );
+  }
   return Math.min(9, Math.max(1, Math.ceil(compositeScore / 11.11)));
 }
 

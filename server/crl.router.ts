@@ -35,6 +35,7 @@ import {
 } from "../drizzle/schema";
 import { eq, desc, and } from "drizzle-orm";
 import { invokeLLM } from "./_core/llm";
+import { computeVrlContribution } from "./mrl.engine";
 
 // ── CRL Question Bank ─────────────────────────────────────────────────────────
 export const CRL_QUESTIONS = {
@@ -242,8 +243,9 @@ function computeVrlWithCrl(params: {
   const trlNorm = params.trl / 9;
   // PRL (Product Readiness Level) = (0.5 × TRL_norm) + (0.5 × MRL_norm)
   // Falls back to pure TRL when no MRL assessment exists
+  // D6 fix: use Engine A canonical normalisation (mrlLevel−1)/8 → 0–1
   const mrlNorm = params.mrlLevel != null
-    ? Math.min(9, Math.max(0, params.mrlLevel)) / 9
+    ? computeVrlContribution(Math.min(9, Math.max(1, params.mrlLevel)))
     : trlNorm;
   const prlNorm = params.mrlLevel != null
     ? (0.5 * trlNorm) + (0.5 * mrlNorm)
