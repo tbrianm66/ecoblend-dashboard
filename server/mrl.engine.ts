@@ -315,18 +315,15 @@ export function computeCompositeMrlScore(scores: {
  * Derive MRL level (1–9) from composite score (0–100).
  * Each level represents ~11 points of the 0–100 scale.
  *
- * Throws a RangeError if `compositeScore` falls outside [0, 100] — this
- * should never occur in normal operation (subsystem scores are validated
- * 0–100 at the router layer), but acts as a sentinel against upstream
- * computation errors.
+ * Clamps gracefully: scores below 0 return level 1; scores above 100 return
+ * level 9. No exception is thrown — subsystem score validation at the router
+ * layer is the canonical bound enforcement mechanism. Engine B maturity
+ * multipliers can push raw scores above 100; the call-site cap in mrlScoring.ts
+ * handles that case before delegating here.
  */
 export function compositeScoreToMrlLevel(compositeScore: number): number {
-  if (compositeScore < 0 || compositeScore > 100) {
-    throw new RangeError(
-      `compositeScoreToMrlLevel: compositeScore ${compositeScore} is outside valid domain [0, 100].`
-    );
-  }
-  return Math.min(9, Math.max(1, Math.ceil(compositeScore / 11.11)));
+  const clamped = Math.max(0, Math.min(100, compositeScore));
+  return Math.min(9, Math.max(1, Math.ceil(clamped / 11.11)));
 }
 
 /**

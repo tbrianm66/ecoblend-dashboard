@@ -248,6 +248,7 @@ export const mrlRouter = router({
         mrlRegion: region,
         notes: input.notes,
         assessedBy: input.assessedBy ?? "User",
+        engineVersion: "engine-a",   // D6 provenance marker
       });
 
       // Auto-seed default risks for this assessment

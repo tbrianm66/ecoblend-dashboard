@@ -5747,6 +5747,8 @@ export const mrlAssessments = pgTable("mrl_assessments", {
   mrlRegion: text("mrlRegion").default("HYBRID"),
   notes:           text("notes"),
   assessedBy:      varchar("assessedBy", { length: 128 }),
+  // D6 provenance column — identifies the scoring engine that produced this row
+  engineVersion:   varchar("engineVersion", { length: 32 }).notNull().default("engine-a"),
   assessedAt:      timestamp("assessedAt").defaultNow().notNull(),
   createdAt:       timestamp("createdAt").defaultNow().notNull(),
   updatedAt:       timestamp("updatedAt").defaultNow().notNull(),
@@ -6014,6 +6016,9 @@ export const scoringSessions = pgTable("scoring_sessions", {
   scoredBy:        varchar("scoredBy", { length: 36 }),
   assessmentType:  varchar("assessmentType", { length: 20 }).notNull().default("manual"),
   snapshotHash:    varchar("snapshotHash", { length: 64 }).notNull(),
+  // D6 provenance columns — added via migration d6-engine-provenance
+  engineVersion:   varchar("engineVersion", { length: 32 }).notNull().default("unknown"),
+  supersededAt:    timestamp("supersededAt"),
   createdAt:       timestamp("createdAt").defaultNow().notNull(),
 });
 export type ScoringSession = typeof scoringSessions.$inferSelect;
