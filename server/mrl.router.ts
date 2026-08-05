@@ -179,6 +179,29 @@ export const mrlRouter = router({
       return { ...assessment, levelDef, trlAlignment: alignment, isTrlAligned: isAligned };
     }),
 
+  /**
+   * Get the latest Engine A MRL data for a single venture.
+   * Lightweight alternative to getAssessment — returns only the fields
+   * needed for PDF export and Home dashboard wiring.
+   */
+  getLatestByVenture: publicProcedure
+    .input(z.object({ ventureId: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      const [row] = await db
+        .select({
+          mrlLevel:      mrlAssessments.mrlLevel,
+          mrlLabel:      mrlAssessments.mrlLabel,
+          compositeScore: mrlAssessments.compositeScore,
+          assessedAt:    mrlAssessments.assessedAt,
+        })
+        .from(mrlAssessments)
+        .where(eq(mrlAssessments.ventureId, input.ventureId))
+        .orderBy(desc(mrlAssessments.assessedAt))
+        .limit(1);
+      return row ?? null;
+    }),
+
   /** Get all MRL assessments for a venture (history) */
   getAssessmentHistory: publicProcedure
     .input(z.object({ ventureId: z.string() }))

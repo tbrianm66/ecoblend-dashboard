@@ -19,7 +19,21 @@ function statusColor(status: string) {
   return "#6b7280";
 }
 
-export function exportPortfolioPdf(ventures: Venture[]) {
+type MrlExportEntry = { mrlLevel: number; mrlLabel: string; assessedAt?: string };
+
+/** MRL level → hex accent colour (mirrors MRL_LEVEL_COLORS in MrlPortfolio.tsx) */
+function mrlColor(level: number): string {
+  const map: Record<number, string> = {
+    1: "#dc2626", 2: "#ea580c", 3: "#d97706", 4: "#ca8a04",
+    5: "#65a30d", 6: "#16a34a", 7: "#0d9488", 8: "#0284c7", 9: "#7c3aed",
+  };
+  return map[level] ?? "#6b7280";
+}
+
+export function exportPortfolioPdf(
+  ventures: Venture[],
+  mrlData?: Record<string, MrlExportEntry>,
+) {
   const date = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
   const avgVrl = ventures.length ? (ventures.reduce((a, v) => a + v.vrl, 0) / ventures.length).toFixed(1) : "—";
   const avgTrl = ventures.length ? (ventures.reduce((a, v) => a + v.trl, 0) / ventures.length).toFixed(1) : "—";
@@ -30,6 +44,8 @@ export function exportPortfolioPdf(ventures: Venture[]) {
   const ventureRows = ventures.map(v => {
     const vrlStage = VRL_STAGES[v.vrl - 1];
     const trlLevel = TRL_LEVELS[v.trl - 1];
+    const mrl = mrlData?.[v.id];
+    const mrlAccent = mrl ? mrlColor(mrl.mrlLevel) : "#6b7280";
     const milestonePct = v.milestones.length
       ? Math.round((v.milestones.filter(m => m.completed).length / v.milestones.length) * 100)
       : 0;
@@ -65,7 +81,7 @@ export function exportPortfolioPdf(ventures: Venture[]) {
           <p style="font-size:11px;color:#6b7280;margin:0 0 12px;">${v.tagline}</p>
 
           <!-- Readiness scores -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px;">
             <div style="background:#f0fdf4;border-radius:6px;padding:10px 14px;">
               <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#22c55e;margin-bottom:4px;">VRL — Venture Readiness</div>
               <div style="font-size:18px;font-weight:700;color:#1c1c1e;font-family:monospace;">Stage ${v.vrl}/4</div>
@@ -75,6 +91,15 @@ export function exportPortfolioPdf(ventures: Venture[]) {
               <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#1d4ed8;margin-bottom:4px;">TRL — Technology Readiness</div>
               <div style="font-size:18px;font-weight:700;color:#1c1c1e;font-family:monospace;">Level ${v.trl}/9</div>
               <div style="font-size:10px;color:#6b7280;">${trlLevel?.label} · ${v.trlPercent}% through level</div>
+            </div>
+            <div style="background:${mrl ? `${mrlAccent}10` : "#f9fafb"};border-radius:6px;padding:10px 14px;border:1px solid ${mrl ? `${mrlAccent}30` : "#e5e7eb"};">
+              <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:${mrlAccent};margin-bottom:4px;">MRL — Manufacturing Readiness</div>
+              ${mrl
+                ? `<div style="font-size:18px;font-weight:700;color:#1c1c1e;font-family:monospace;">Level ${mrl.mrlLevel}/9</div>
+                   <div style="font-size:10px;color:#6b7280;">${mrl.mrlLabel}${mrl.assessedAt ? ` · ${mrl.assessedAt}` : ""}</div>`
+                : `<div style="font-size:13px;font-weight:600;color:#9ca3af;margin-top:4px;">Not assessed</div>
+                   <div style="font-size:10px;color:#9ca3af;">No Engine A MRL assessment found</div>`
+              }
             </div>
           </div>
 
@@ -253,7 +278,10 @@ const CONTRACT_STATUS_COLOURS: Record<string, string> = {
   Terminated:     "#dc2626",
 };
 
-export function exportInvestorPack(ventures: Venture[]) {
+export function exportInvestorPack(
+  ventures: Venture[],
+  mrlData?: Record<string, MrlExportEntry>,
+) {
   const date = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
   const contracts = loadContractsForExport();
 
@@ -261,9 +289,12 @@ export function exportInvestorPack(ventures: Venture[]) {
   const investmentRows = ventures.map(v => {
     const vrlStage = VRL_STAGES[v.vrl - 1];
     const trlLevel = TRL_LEVELS[v.trl - 1];
+    const mrl = mrlData?.[v.id];
+    const mrlAccent = mrl ? mrlColor(mrl.mrlLevel) : "#6b7280";
     const ready = v.investmentReady;
     const vrlPct = Math.round(((v.vrl - 1) / 4 + v.vrlPercent / 400) * 100);
     const trlPct = Math.round(((v.trl - 1) / 9 + v.trlPercent / 900) * 100);
+    const mrlPct = mrl ? Math.round(((mrl.mrlLevel - 1) / 8) * 100) : 0;
 
     return `
       <tr style="border-bottom:1px solid #f3f4f6;">
@@ -282,6 +313,16 @@ export function exportInvestorPack(ventures: Venture[]) {
           <div style="margin-top:4px;height:4px;background:#e5e7eb;border-radius:2px;overflow:hidden;">
             <div style="height:100%;width:${trlPct}%;background:#3B85BA;border-radius:2px;"></div>
           </div>
+        </td>
+        <td style="padding:10px 12px;font-size:11px;">
+          ${mrl
+            ? `<div style="font-weight:600;color:${mrlAccent};">Level ${mrl.mrlLevel}/9</div>
+               <div style="font-size:10px;color:#9ca3af;">${mrl.mrlLabel}</div>
+               <div style="margin-top:4px;height:4px;background:#e5e7eb;border-radius:2px;overflow:hidden;">
+                 <div style="height:100%;width:${mrlPct}%;background:${mrlAccent};border-radius:2px;"></div>
+               </div>`
+            : `<div style="font-size:10px;color:#9ca3af;font-style:italic;">Not assessed</div>`
+          }
         </td>
         <td style="padding:10px 12px;text-align:center;">
           <span style="display:inline-block;padding:3px 10px;border-radius:9999px;font-size:10px;font-weight:700;background:${ready ? "#f0fdf4" : "#f9fafb"};color:${ready ? "#56A837" : "#9ca3af"};border:1px solid ${ready ? "#bbf7d0" : "#e5e7eb"};">
@@ -401,6 +442,7 @@ export function exportInvestorPack(ventures: Venture[]) {
               <th>Channel</th>
               <th>VRL Stage</th>
               <th>TRL Level</th>
+              <th>MRL Level</th>
               <th style="text-align:center;">Inv. Ready</th>
               <th>Nominated Charity</th>
             </tr>

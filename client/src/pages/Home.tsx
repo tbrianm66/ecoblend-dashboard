@@ -327,6 +327,21 @@ export default function Home() {
   const [editingVenture, setEditingVenture] = useState<Venture | null>(null);
   const [milestonesVenture, setMilestonesVenture] = useState<Venture | null>(null);
 
+  // Live Engine A MRL levels per venture (for PDF export)
+  const { data: mrlPortfolioSummary } = trpc.mrl.getPortfolioSummary.useQuery();
+  /** ventureId → { mrlLevel, mrlLabel, assessedAt } — absent key means "Not assessed" */
+  const mrlExportData = useMemo(() => {
+    const map: Record<string, { mrlLevel: number; mrlLabel: string; assessedAt: string }> = {};
+    for (const v of mrlPortfolioSummary?.ventures ?? []) {
+      map[v.ventureId] = {
+        mrlLevel: v.mrlLevel,
+        mrlLabel: v.mrlLabel ?? `MRL-${v.mrlLevel}`,
+        assessedAt: v.assessedAt ? new Date(v.assessedAt).toLocaleDateString("en-GB") : "",
+      };
+    }
+    return map;
+  }, [mrlPortfolioSummary]);
+
   // BRL portfolio summary
   const { data: brlSummary = [] } = trpc.brl.portfolioSummary.useQuery();
   const avgBrlScore = brlSummary.length > 0
@@ -408,7 +423,7 @@ export default function Home() {
                 size="sm"
                 variant="outline"
                 className="gap-1.5 text-xs h-8"
-                onClick={() => exportPortfolioPdf(ventures)}
+                onClick={() => exportPortfolioPdf(ventures, mrlExportData)}
                 style={{ borderColor: "#3B85BA", color: "#3B85BA", borderRadius: "8px" }}
               >
                 <FileDown size={12} /> Export PDF
@@ -416,7 +431,7 @@ export default function Home() {
               <Button
                 size="sm"
                 className="gap-1.5 text-xs h-8"
-                onClick={() => exportInvestorPack(ventures)}
+                onClick={() => exportInvestorPack(ventures, mrlExportData)}
                 style={{ background: "#8b5cf6", color: "white", borderRadius: "8px" }}
               >
                 <Briefcase size={12} /> Investor Pack
