@@ -6088,9 +6088,36 @@ export const vrlAssessments = pgTable("vrl_assessments", {
   bandLabel:            varchar("band_label", { length: 64 }),
   // -- Metadata ---------------------------------------------------------------
   submittedBy:          varchar("submitted_by", { length: 128 }),
+  // -- D7 Evidence enforcement columns ----------------------------------------
+  // evidenceStatus: updated only by confirmEvidence (human reviewer gate).
+  // submitAssessment always produces 'unverified'; fully_verified requires admin confirmation.
+  evidenceStatus:            varchar("evidence_status", { length: 32 }),          // 'unverified'|'partially_verified'|'fully_verified'
+  selfAssessedDimensions:    text("self_assessed_dimensions").array(),             // dimension keys lacking confirmed evidence
+  hasUnverifiedInputs:       boolean("has_unverified_inputs").default(true),       // true when any dimension lacks a confirmed evidence record
+  evidenceConfirmedAt:       timestamp("evidence_confirmed_at"),                   // set when all 9 dims are confirmed
+  evidenceConfirmedBy:       varchar("evidence_confirmed_by", { length: 128 }),
+  updatedAt:                 timestamp("updated_at").defaultNow().notNull(),
+  // submittedById: user ID of the score submitter — used to prevent self-confirmation
+  submittedById:             varchar("submitted_by_id", { length: 128 }),
+  // submittedEvidenceLinks: JSON map of dimension key → URL provided at submission time
+  // Stored so reviewers can inspect and confirm the exact URLs originally submitted.
+  submittedEvidenceLinks:    json("submitted_evidence_links").$type<Partial<Record<string, string>>>(),
 });
 export type VrlAssessment = typeof vrlAssessments.$inferSelect;
 export type InsertVrlAssessment = typeof vrlAssessments.$inferInsert;
+
+// vrl_evidence_confirmations — one row per human-confirmed dimension per assessment
+// Written atomically by vrl.confirmEvidence (D7)
+export const vrlEvidenceConfirmations = pgTable("vrl_evidence_confirmations", {
+  id:            varchar("id", { length: 64 }).primaryKey(),
+  assessmentId:  varchar("assessment_id", { length: 64 }).notNull(),  // → vrl_assessments.id
+  dimensionKey:  varchar("dimension_key", { length: 32 }).notNull(),  // e.g. "trlScore"
+  evidenceUrl:   text("evidence_url").notNull(),
+  confirmedBy:   varchar("confirmed_by", { length: 128 }),
+  confirmedAt:   timestamp("confirmed_at").defaultNow().notNull(),
+});
+export type VrlEvidenceConfirmation = typeof vrlEvidenceConfirmations.$inferSelect;
+export type InsertVrlEvidenceConfirmation = typeof vrlEvidenceConfirmations.$inferInsert;
 
 // -------------------------------------------------------------------------------
 // COACHING MODULE V2 - Execution Discipline Engine (BEBUS-COACH-V2-001)

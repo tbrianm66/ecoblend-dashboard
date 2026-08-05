@@ -8,7 +8,7 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { AlertTriangle, CheckCircle2, ChevronRight, Info } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronRight, Info, Link, ChevronDown, ChevronUp } from "lucide-react";
 
 // ── Dimension definitions ─────────────────────────────────────────────────────
 const DIMENSIONS = [
@@ -127,6 +127,9 @@ export default function VrlAssessmentForm() {
     ecoScore: 50, prlScore: 50, ipScore: 50,
     frlScore: 50, regScore: 50, srlScore: 50,
   });
+  // D7: evidence links per dimension
+  const [evidenceLinks, setEvidenceLinks] = useState<Record<string, string>>({});
+  const [showEvidence, setShowEvidence] = useState(false);
 
   const submitMutation = trpc.vrl.submitAssessment.useMutation({
     onSuccess: (data) => {
@@ -155,8 +158,18 @@ export default function VrlAssessmentForm() {
   };
 
   const handleSubmit = () => {
-    submitMutation.mutate({ ventureId, ...scores });
+    // Filter out blank evidence URLs before sending
+    const cleanEvidence = Object.fromEntries(
+      Object.entries(evidenceLinks).filter(([, v]) => v.trim() !== "")
+    );
+    submitMutation.mutate({
+      ventureId,
+      ...scores,
+      evidenceLinks: Object.keys(cleanEvidence).length > 0 ? cleanEvidence : undefined,
+    });
   };
+
+  const evidenceFilled = Object.values(evidenceLinks).filter(v => v.trim()).length;
 
   return (
     <div className="flex-1 overflow-y-auto bg-[#0D1117]">
@@ -255,6 +268,54 @@ export default function VrlAssessmentForm() {
               </div>
             );
           })}
+
+          {/* D7: Evidence Links (collapsible) */}
+          <div className="bg-[#161b22] rounded-xl border border-gray-800 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setShowEvidence(v => !v)}
+              className="w-full flex items-center justify-between px-5 py-3 text-left hover:bg-gray-800/30 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <Link size={14} className="text-gray-400" />
+                <span className="text-sm font-semibold text-gray-300">Evidence Links</span>
+                <span className="text-xs text-gray-500">(optional — D7)</span>
+                {evidenceFilled > 0 && (
+                  <Badge variant="outline" className="text-xs border-green-800 text-green-400">
+                    {evidenceFilled}/9 provided
+                  </Badge>
+                )}
+              </div>
+              {showEvidence ? <ChevronUp size={14} className="text-gray-500" /> : <ChevronDown size={14} className="text-gray-500" />}
+            </button>
+
+            {showEvidence && (
+              <div className="px-5 pb-5 space-y-2 border-t border-gray-800 pt-4">
+                <p className="text-xs text-gray-500 mb-3">
+                  Provide a URL for each dimension to mark it as evidence-backed. Dimensions without a URL will be flagged as self-assessed after submission.
+                </p>
+                {DIMENSIONS.map(dim => (
+                  <div key={dim.key} className="flex items-center gap-2">
+                    <span
+                      className="text-xs font-mono font-bold w-9 shrink-0"
+                      style={{ color: dim.metaColor }}
+                    >
+                      {dim.code}
+                    </span>
+                    <input
+                      type="url"
+                      placeholder={`Evidence URL for ${dim.label}`}
+                      value={evidenceLinks[dim.key] ?? ""}
+                      onChange={e =>
+                        setEvidenceLinks(prev => ({ ...prev, [dim.key]: e.target.value }))
+                      }
+                      className="flex-1 bg-[#0D1117] border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:border-gray-500"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Submit */}
           <Button

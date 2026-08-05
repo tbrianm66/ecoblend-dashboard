@@ -94,7 +94,9 @@ export const VRL_BANDS: VrlBand[] = [
 ];
 
 // ── Dimension labels (for veto messages) ─────────────────────────────────────
-const DIM_LABELS: Record<keyof VrlInputs, string> = {
+// Keyed by VrlDimensionKey (not keyof VrlInputs) so the optional `evidenceLinks`
+// field on VrlInputs doesn't create a spurious required entry here.
+const DIM_LABELS: Record<VrlDimensionKey, string> = {
   trlScore:  "TRL (Technology Readiness)",
   mrlScore:  "MRL (Manufacturing Readiness)",
   brlScore:  "BRL (Business Readiness)",
@@ -131,7 +133,12 @@ export function computeBaseAverage(meta: VrlMetaDomains): number {
 
 /** Identify which dimensions trigger the veto gate (score < 20) */
 export function findVetoedDimensions(inputs: VrlInputs): string[] {
-  return (Object.keys(inputs) as (keyof VrlInputs)[])
+  // Iterate only the 9 scored dimension keys — never evidenceLinks (which is optional/non-numeric).
+  const SCORE_KEYS: VrlDimensionKey[] = [
+    "trlScore","mrlScore","brlScore","ecoScore",
+    "prlScore","ipScore","frlScore","regScore","srlScore",
+  ];
+  return SCORE_KEYS
     .filter(k => inputs[k] < VETO_THRESHOLD)
     .map(k => DIM_LABELS[k]);
 }
@@ -195,5 +202,7 @@ function clampInputs(inputs: VrlInputs): VrlInputs {
     frlScore:  clamp(inputs.frlScore),
     regScore:  clamp(inputs.regScore),
     srlScore:  clamp(inputs.srlScore),
+    // B-03 / D7 fix: preserve evidenceLinks so computeVrl can detect self-assessed dims
+    evidenceLinks: inputs.evidenceLinks,
   };
 }
