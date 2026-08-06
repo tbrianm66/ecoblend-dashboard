@@ -7,3 +7,4 @@
 - [VRL MRL dual-pathway](vrl-mrl-dual-pathway.md) — MRL feeds VRL at Product×0.35 AND Execution×0.40; computeVrlContribution returns 0–1 normalised (not 0–30); vrl_feed uses mrl_weight_product/execution.
 - [Gate 2 — MVL + Profile SV-01](gate2-mvl-sv01.md) — 10th VRL dimension (MVL); new market formula BRL×0.25+PRL×0.25+MVL×0.50; weighted baseAverage; SV-01 governed N/A for MRL; TOTAL_DIMS in two files must stay in sync.
 - [Gate 3 — Score Disputes & Integrity Reviewer](gate3-score-disputes.md) — integrityReviewerProcedure; SCORING_INTEGRITY_REVIEWER role; dispute state machine; PRL decoupled from coach leaderboard; updateScores gated.
+- [Gate 4 — Nav Consolidation & Backlog Archiving](gate4-nav-consolidation.md) — 5 core modules pinned; 15 groups in Extended Backlog; 4 deferred speculative; reactivationHypothesis hook in gate4Config.ts.
