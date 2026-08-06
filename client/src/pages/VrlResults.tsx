@@ -1,6 +1,6 @@
 /**
  * VRL Results Dashboard — BEBUS-VRL-UPDATE-001
- * Change 6: 9-axis radar, veto banner, meta-domain bars, transparency panel, history
+ * 10-axis radar, veto banner, meta-domain bars, transparency panel, history, disputes (Gate 3)
  */
 import { useState } from "react";
 import { useSearch } from "wouter";
@@ -44,7 +44,171 @@ function getBandColor(score: number): string {
   return "#7c3aed";
 }
 
-// ── 9-axis SVG Radar ──────────────────────────────────────────────────────────
+// ── Gate 3: Dispute components ────────────────────────────────────────────────
+
+const DISPUTE_STATUS_COLORS: Record<string, string> = {
+  UNDER_DISPUTE:        "#f59e0b",
+  RESOLVED_UPHELD:      "#22c55e",
+  RESOLVED_OVERTURNED:  "#ef4444",
+};
+
+function DisputeStatusBadge({ status }: { status: string }) {
+  const color = DISPUTE_STATUS_COLORS[status] ?? "#6b7280";
+  return (
+    <span className="px-2 py-0.5 rounded text-xs font-semibold" style={{ background: `${color}20`, color }}>
+      {status.replace(/_/g, " ")}
+    </span>
+  );
+}
+
+function DisputeLog({ ventureId, assessmentId }: { ventureId: string; assessmentId: string }) {
+  const { data, isLoading, refetch } = trpc.scoreDispute.listDisputes.useQuery(
+    { ventureId, status: "ALL", limit: 100 },
+    { enabled: !!ventureId },
+  );
+  if (isLoading) return <div className="text-xs text-gray-500 py-4">Loading dispute log…</div>;
+  if (!data || data.length === 0) {
+    return (
+      <div className="text-center py-8 text-gray-500 text-xs">
+        No score disputes recorded for this venture.
+      </div>
+    );
+  }
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="border-b border-gray-800">
+            <th className="px-4 py-2 text-left text-gray-400">Date</th>
+            <th className="px-4 py-2 text-left text-gray-400">Dimension</th>
+            <th className="px-4 py-2 text-left text-gray-400">Status</th>
+            <th className="px-4 py-2 text-left text-gray-400">Raised By</th>
+            <th className="px-4 py-2 text-left text-gray-400">Explanation</th>
+            <th className="px-4 py-2 text-left text-gray-400">Resolved By</th>
+            <th className="px-4 py-2 text-left text-gray-400">Resolution Note</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map(d => (
+            <tr key={d.id} className="border-b border-gray-800 hover:bg-gray-900/50">
+              <td className="px-4 py-2 text-gray-500 font-mono whitespace-nowrap">
+                {d.createdAt ? new Date(d.createdAt).toLocaleDateString() : "—"}
+              </td>
+              <td className="px-4 py-2 font-mono text-white font-bold">{d.dimensionKey}</td>
+              <td className="px-4 py-2"><DisputeStatusBadge status={d.status} /></td>
+              <td className="px-4 py-2 text-gray-400">{d.raisedBy}</td>
+              <td className="px-4 py-2 text-gray-300 max-w-xs truncate" title={d.explanation}>{d.explanation}</td>
+              <td className="px-4 py-2 text-gray-400">{d.resolvedBy ?? "—"}</td>
+              <td className="px-4 py-2 text-gray-400 max-w-xs truncate" title={d.resolvedNote ?? ""}>{d.resolvedNote ?? "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+const DIMENSION_OPTIONS = [
+  { value: "trlScore", label: "TRL — Technology" },
+  { value: "mrlScore", label: "MRL — Manufacturing" },
+  { value: "brlScore", label: "BRL — Business" },
+  { value: "ecoScore", label: "ECO — Environmental" },
+  { value: "prlScore", label: "PRL — People" },
+  { value: "ipScore",  label: "IP — Intellectual Property" },
+  { value: "frlScore", label: "FRL — Financial" },
+  { value: "regScore", label: "REG — Regulatory" },
+  { value: "srlScore", label: "SRL — Sustainability" },
+  { value: "mvlScore", label: "MVL — Market Validation" },
+] as const;
+
+function DisputeForm({ assessmentId, ventureId }: { assessmentId: string; ventureId: string }) {
+  const [dimensionKey, setDimensionKey] = useState<string>("");
+  const [explanation, setExplanation] = useState("");
+  const [evidenceUrl, setEvidenceUrl] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const mutation = trpc.scoreDispute.raiseDispute.useMutation({
+    onSuccess: () => {
+      setSubmitted(true);
+      setDimensionKey("");
+      setExplanation("");
+      setEvidenceUrl("");
+    },
+    onError: (e) => setError(e.message),
+  });
+
+  if (submitted) {
+    return (
+      <div className="rounded-lg border border-amber-800 bg-amber-900/20 p-4 text-xs text-amber-300">
+        ✓ Dispute raised. The dimension is now in <strong>UNDER_DISPUTE</strong> status. An independent integrity reviewer will be notified.
+        <button className="ml-3 underline" onClick={() => setSubmitted(false)}>Raise another</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {error && (
+        <div className="rounded-lg border border-red-800 bg-red-900/20 p-3 text-xs text-red-300">{error}</div>
+      )}
+      <div>
+        <label className="block text-xs text-gray-400 mb-1">Dimension *</label>
+        <select
+          value={dimensionKey}
+          onChange={e => setDimensionKey(e.target.value)}
+          className="w-full bg-[#0D1117] border border-gray-700 rounded-lg px-3 py-2 text-sm text-white"
+        >
+          <option value="">Select a dimension…</option>
+          {DIMENSION_OPTIONS.map(o => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className="block text-xs text-gray-400 mb-1">Explanation * (min 10 chars)</label>
+        <textarea
+          value={explanation}
+          onChange={e => setExplanation(e.target.value)}
+          placeholder="Describe why you believe this dimension score is inaccurate…"
+          rows={3}
+          className="w-full bg-[#0D1117] border border-gray-700 rounded-lg px-3 py-2 text-sm text-white resize-none"
+        />
+      </div>
+      <div>
+        <label className="block text-xs text-gray-400 mb-1">Supporting Evidence URL (optional)</label>
+        <input
+          type="url"
+          value={evidenceUrl}
+          onChange={e => setEvidenceUrl(e.target.value)}
+          placeholder="https://…"
+          className="w-full bg-[#0D1117] border border-gray-700 rounded-lg px-3 py-2 text-sm text-white"
+        />
+      </div>
+      <button
+        onClick={() => {
+          setError(null);
+          if (!dimensionKey) { setError("Please select a dimension."); return; }
+          if (explanation.trim().length < 10) { setError("Explanation must be at least 10 characters."); return; }
+          mutation.mutate({
+            assessmentId,
+            ventureId,
+            dimensionKey: dimensionKey as typeof DIMENSION_OPTIONS[number]["value"],
+            explanation: explanation.trim(),
+            evidenceUrl: evidenceUrl.trim() || undefined,
+          });
+        }}
+        disabled={mutation.isPending}
+        className="px-4 py-2 rounded-lg text-xs font-semibold text-white disabled:opacity-50"
+        style={{ background: "#f59e0b" }}
+      >
+        {mutation.isPending ? "Raising dispute…" : "Raise Dispute"}
+      </button>
+    </div>
+  );
+}
+
+// ── 10-axis SVG Radar ─────────────────────────────────────────────────────────
 function RadarChart({ inputs, isVetoed }: { inputs: Record<string, number>; isVetoed: boolean }) {
   const cx = 200, cy = 200, r = 150;
   const n = DIMS.length;
@@ -171,7 +335,7 @@ export default function VrlResults() {
   const params = new URLSearchParams(search);
   const ventureId = params.get("ventureId") ?? "ecoblend";
   const [, navigate] = useLocation();
-  const [activeTab, setActiveTab] = useState<"overview" | "history" | "transparency">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "history" | "transparency" | "disputes">("overview");
 
   const { data: latest, isLoading } = trpc.vrl.getLatestAssessment.useQuery({ ventureId });
   const { data: history } = trpc.vrl.getHistory.useQuery({ ventureId, limit: 20 });
@@ -245,7 +409,7 @@ export default function VrlResults() {
 
         {/* Tabs */}
         <div className="flex gap-1 mt-4">
-          {(["overview", "history", "transparency"] as const).map(tab => (
+          {(["overview", "history", "transparency", "disputes"] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -268,7 +432,7 @@ export default function VrlResults() {
           {/* Radar + score */}
           <div className="xl:col-span-1 space-y-4">
             <div className="bg-[#161b22] rounded-xl border border-gray-800 p-5">
-              <div className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">9-Axis Readiness Radar</div>
+              <div className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">10-Axis Readiness Radar</div>
               <RadarChart inputs={latest.inputs as Record<string, number>} isVetoed={latest.isVetoed} />
             </div>
 
@@ -335,7 +499,7 @@ export default function VrlResults() {
               </div>
             </div>
 
-            {/* Raw 9-dimension scores */}
+            {/* Raw 10-dimension scores — Gate 2 adds MVL */}
             <div className="bg-[#161b22] rounded-xl border border-gray-800 p-5">
               <div className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">Raw Dimension Scores</div>
               <div className="grid grid-cols-3 gap-3">
@@ -440,6 +604,33 @@ export default function VrlResults() {
         </div>
       )}
 
+      {/* ── Disputes tab — Gate 3: Score Dispute & Escalation Log ──────────── */}
+      {activeTab === "disputes" && (
+        <div className="p-8">
+          <div className="space-y-4">
+            <div className="bg-[#161b22] rounded-xl border border-gray-800 p-5">
+              <div className="flex items-center gap-2 mb-1">
+                <AlertTriangle size={14} className="text-amber-400" />
+                <span className="text-sm font-semibold text-white">Dispute History & Escalation Log</span>
+                <span className="text-xs text-gray-500 ml-1">Gate 3 — FHV-EB-AUD-001 §2</span>
+              </div>
+              <p className="text-xs text-gray-400 mt-1 mb-4">
+                Score disputes are raised when a reviewer disagrees with an assessment dimension. Each dispute requires a mandatory explanation and is resolved only by a <span className="text-indigo-300 font-semibold">SCORING_INTEGRITY_REVIEWER</span> or admin — never by the assessment submitter. Resolution does not overwrite scores; a <span className="text-amber-300 font-semibold">RESOLVED_OVERTURNED</span> outcome signals that a corrected assessment should be submitted.
+              </p>
+              <DisputeLog ventureId={ventureId} assessmentId={latest.id} />
+            </div>
+
+            <div className="bg-[#161b22] rounded-xl border border-gray-800 p-5">
+              <div className="text-sm font-semibold text-white mb-3">Raise a Score Dispute</div>
+              <p className="text-xs text-gray-400 mb-4">
+                If you believe a dimension score is inaccurate, flag it below. You must provide a minimum 10-character explanation. The score will enter <span className="text-amber-300 font-semibold">UNDER_DISPUTE</span> status and will be reviewed by an independent integrity reviewer.
+              </p>
+              <DisputeForm assessmentId={latest.id} ventureId={ventureId} />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Transparency tab ─────────────────────────────────────────────────── */}
       {activeTab === "transparency" && (
         <div className="p-8 max-w-3xl">
@@ -472,9 +663,9 @@ export default function VrlResults() {
                   );
                 })}
 
-                <div className="text-gray-400 border-b border-gray-800 pb-2 pt-2">Step 3: Base Average</div>
+                <div className="text-gray-400 border-b border-gray-800 pb-2 pt-2">Step 3: Weighted Base Average (Gate 2)</div>
                 <div className="bg-[#0D1117] rounded px-2 py-1 flex justify-between">
-                  <span className="text-gray-500">mean(Product, Market, Execution, Structural, Sustainability)</span>
+                  <span className="text-gray-500">Product×0.175 + Market×0.30 + Exec×0.175 + Struct×0.175 + Sustain×0.175</span>
                   <span className="text-white">{latest.baseAverage.toFixed(2)}</span>
                 </div>
 

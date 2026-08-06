@@ -78,3 +78,29 @@ const requireHumanReviewForAllScores = t.middleware(async ({ ctx, next, rawInput
 });
 
 export const reviewedScoreProcedure = t.procedure.use(requireHumanReviewForAllScores);
+
+// ── Gate 3: SCORING_INTEGRITY_REVIEWER procedure ─────────────────────────────
+// Only users with role 'admin' OR 'scoring_integrity_reviewer' may resolve
+// score disputes and confer EVIDENCED status.  Coaches and founders may never
+// hold this gate.  The role is stored in users.role (unconstrained text).
+//
+// Builder–Verifier Separation principle (FHV-EB-AUD-001 §3):
+//   The person who submitted or worked on a venture assessment cannot act as
+//   the SCORING_INTEGRITY_REVIEWER for that same assessment.
+//   Enforce this per-request with buildDisputeResolutionGuard in the router.
+export const integrityReviewerProcedure = t.procedure.use(
+  t.middleware(async opts => {
+    const { ctx, next } = opts;
+    const role = ctx.user?.role;
+    if (!ctx.user || (role !== "admin" && role !== "scoring_integrity_reviewer")) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message:
+          "Scoring Integrity gate: only SCORING_INTEGRITY_REVIEWER or admin may " +
+          "resolve disputes and confer EVIDENCED status. " +
+          "Coaches and founders are excluded from this gate.",
+      });
+    }
+    return next({ ctx: { ...ctx, user: ctx.user } });
+  }),
+);

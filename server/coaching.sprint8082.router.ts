@@ -370,9 +370,22 @@ export const leaderboardRouter = router({
         const avgPrlImprovement = deltaCount > 0 ? totalDelta / deltaCount : 0;
         const commitmentCompletionRate = totalCommitmentsCount > 0
           ? (totalCompleted / totalCommitmentsCount) * 100 : 0;
-        const prlComponent = Math.min(100, Math.max(0, 50 + avgPrlImprovement * 5));
-        const sessionComponent = Math.min(100, sessionCount * 25);
-        const compositeScore = (prlComponent * 0.40) + (commitmentCompletionRate * 0.35) + (sessionComponent * 0.25);
+
+        // ── Gate 3: Decoupled composite — objective engagement metrics only ──
+        // REMOVED from composite: avgPrlImprovement (rater-is-rated loop) and
+        // commitmentCompletionRate (coach-verified metric, self-influencing).
+        // Both values are still stored in the snapshot for historical audit.
+        //
+        // New formula (FHV-EB-AUD-001 §1):
+        //   sessions conducted     50% — direct platform engagement
+        //   founders assigned      30% — coaching capacity / reach
+        //   commitments SET        20% — coaching activity volume (creation, not completion)
+        const sessionComponent  = Math.min(100, sessionCount * 12);
+        const capacityComponent = Math.min(100, foundersAssigned * 10);
+        const volumeComponent   = Math.min(100, totalCommitmentsCount * 4);
+        const compositeScore    = sessionComponent * 0.50
+                                + capacityComponent * 0.30
+                                + volumeComponent   * 0.20;
 
         snapshots.push({
           id: randomUUID(), coachId: coach.id, weekOf: weekDate as unknown as Date,

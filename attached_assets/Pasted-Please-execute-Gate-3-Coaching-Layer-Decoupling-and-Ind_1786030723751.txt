@@ -1,0 +1,27 @@
+Please execute Gate 3 — Coaching Layer Decoupling and Independent Verifier Governance based on the Audit Document (FHV-EB-AUD-001 v1.0):
+
+1. Decouple PRL from Coach Performance Leaderboard (Eliminate Rater-is-Rated Loop):
+   - Refactor the Coaching Module and leaderboard logic so that commitment-completion rates and PRL (Process Readiness Level) scores do NOT influence coach rankings, ratings, or leaderboards.
+   - Re-anchor coach metrics strictly to objective platform engagement and venture progress metrics without creating a feedback loop where coaches are evaluated on scores they themselves influence.
+
+2. Replace Coach Overwrites with Score Dispute & Escalation Workflow:
+   - Remove all capabilities permitting coaches or assessors to directly overwrite founder self-assessments or dimension scores.
+   - Implement a formal "Score Escalation Workflow":
+     * When a coach/reviewer disagrees with an assessment or submitted evidence, they must flag the dimension state as `DISPUTED`.
+     * Adding a `DISPUTED` flag requires a mandatory text explanation and supporting evidence requirement.
+     * Disputed scores do not automatically overwrite the baseline; instead, they lock the dimension score into an `UNDER_DISPUTE` status for independent resolution.
+
+3. Enforce Builder–Verifier Separation & Independent Reviewer Role:
+   - Update the Role-Based Access Control (RBAC) system to introduce an explicit `SCORING_INTEGRITY_REVIEWER` role, distinct from `FOUNDER` and `COACH`.
+   - Ensure that score dispute resolutions and official `EVIDENCED` status conferrals can only be performed by users assigned the `SCORING_INTEGRITY_REVIEWER` or `ADMIN` role.
+   - Ensure that the founder or coach who submitted or worked on a venture cannot act as the `SCORING_INTEGRITY_REVIEWER` for that same venture.
+
+4. UI, Dashboard & Audit Log Updates:
+   - Update the Coaching Dashboard to display open disputes and commitment tracking independently from score verification.
+   - Add a "Dispute History & Escalation Log" view within the Venture Command Centre showing all score flags, reviewer notes, and resolution decisions with timestamps.
+   - Update dynamic PDF exports to reflect open `DISPUTED` states if an export is generated before resolution.
+
+5. Testing & Verification:
+   - Add unit tests verifying that a coach cannot overwrite a founder assessment score directly.
+   - Add unit tests verifying that dispute creation changes state to `UNDER_DISPUTE` and requires `SCORING_INTEGRITY_REVIEWER` authorization to resolve.
+   - Assert zero regressions across all canonical MRL, evidence enforcement (B-03), and Gate 2 taxonomy tests.

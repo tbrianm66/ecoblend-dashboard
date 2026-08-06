@@ -1,4 +1,5 @@
 import { vrlRouter } from "./vrl.router";
+import { scoreDisputeRouter } from "./scoreDispute.router";
 import { mrlScoringRouter } from "./mrlScoring.router";
 import { syncRouter } from "./sync.router";
 import { mrlRouter } from "./mrl.router";
@@ -43,7 +44,7 @@ import { wtpAssessmentRouter } from "./wtpAssessment.router";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, protectedProcedure, adminProcedure, reviewedScoreProcedure, router } from "./_core/trpc";
+import { publicProcedure, protectedProcedure, adminProcedure, reviewedScoreProcedure, integrityReviewerProcedure, router } from "./_core/trpc";
 import { workflowStateRouter } from "./workflowState.router";
 import { z } from "zod";
 import { storagePut } from "./storage";
@@ -346,7 +347,13 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    updateScores: reviewedScoreProcedure
+    // ── Gate 3: score overwrites restricted to SCORING_INTEGRITY_REVIEWER / admin ─
+    // Coaches and founders may NOT directly overwrite venture scores.
+    // The Score Dispute & Escalation Workflow (scoreDisputeRouter) is the canonical
+    // path for challenging an assessment — see server/scoreDispute.router.ts.
+    // updateScores is retained for legitimate reviewer corrections only and is now
+    // gated behind integrityReviewerProcedure (admin + scoring_integrity_reviewer).
+    updateScores: integrityReviewerProcedure
       .input(z.object({
         id: z.string(),
         vrl: z.number().min(1).max(4),
@@ -358,19 +365,21 @@ export const appRouter = router({
         aiGenerated:     z.boolean().optional(),
         humanReviewedBy: z.string().optional(),
         humanReviewedAt: z.string().datetime().optional(),
+        // Gate 3: reviewer must cite the dispute that authorised this correction
+        disputeId: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         const db = (await getDb())!;
         await assertVentureAccess(db, ctx.user, input.id);
-        const { id, notes, aiGenerated, humanReviewedBy, humanReviewedAt, ...scores } = input;
+        const { id, notes, aiGenerated, humanReviewedBy, humanReviewedAt, disputeId, ...scores } = input;
         await updateVenture(id, scores);
         await insertVentureScore({
           ventureId: id,
           ...scores,
-          notes: notes ?? null,
+          notes: [notes, disputeId ? `Dispute: ${disputeId}` : null].filter(Boolean).join(" | ") || null,
           aiGenerated: aiGenerated ?? false,
-          humanReviewedBy: humanReviewedBy ?? null,
-          humanReviewedAt: humanReviewedAt ? new Date(humanReviewedAt) : null,
+          humanReviewedBy: humanReviewedBy ?? ctx.user.name ?? null,
+          humanReviewedAt: humanReviewedAt ? new Date(humanReviewedAt) : new Date(),
         } as any);
         return { success: true };
       }),
@@ -7322,5 +7331,7 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
   collaboration: collaborationRouter,
   legalRequirements: legalRequirementsRouter,
   fedsilkGovernance: fedsilkGovernanceRouter,
+  // Gate 3 — Score Dispute & Escalation Workflow (FHV-EB-AUD-001 §2–3)
+  scoreDispute: scoreDisputeRouter,
 });
 export type AppRouter = typeof appRouter;

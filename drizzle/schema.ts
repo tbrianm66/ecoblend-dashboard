@@ -8410,3 +8410,42 @@ export const fedsilkRiskFlags = pgTable("fedsilk_risk_flags", {
 });
 export type FedsilkRiskFlag = typeof fedsilkRiskFlags.$inferSelect;
 export type InsertFedsilkRiskFlag = typeof fedsilkRiskFlags.$inferInsert;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Gate 3 — Score Dispute & Escalation Workflow (FHV-EB-AUD-001 §2–3)
+// ─────────────────────────────────────────────────────────────────────────────
+// score_disputes — one row per dimension dispute raised against a VRL assessment.
+// Status machine:
+//   UNDER_DISPUTE  → (SCORING_INTEGRITY_REVIEWER or admin resolves) →
+//   RESOLVED_UPHELD       (original score stands; dispute rejected)
+//   RESOLVED_OVERTURNED   (score reconsidered; new assessment required)
+//
+// Invariants enforced at application layer (not DB constraints):
+//   1. explanation is mandatory and must be non-empty (Gate 3 §2 bullet 2).
+//   2. Dispute resolution requires SCORING_INTEGRITY_REVIEWER or admin role.
+//   3. The assessment submitter cannot resolve their own dispute (builder–verifier sep).
+// ─────────────────────────────────────────────────────────────────────────────
+export const scoreDisputes = pgTable("score_disputes", {
+  id:            varchar("id", { length: 64 }).primaryKey(),
+  // Which VRL assessment and dimension is under dispute
+  assessmentId:  varchar("assessment_id", { length: 64 }).notNull(),
+  ventureId:     varchar("venture_id", { length: 64 }).notNull(),
+  dimensionKey:  varchar("dimension_key", { length: 32 }).notNull(), // e.g. "trlScore", "mvlScore"
+  // Who raised the dispute (derived from session, not caller-supplied identity)
+  raisedBy:      varchar("raised_by", { length: 256 }).notNull(),
+  raisedById:    varchar("raised_by_id", { length: 64 }).notNull(),
+  // Mandatory explanation and optional supporting evidence (§2 bullet 2)
+  explanation:   text("explanation").notNull(),
+  evidenceUrl:   text("evidence_url"),
+  // Status (see state machine above)
+  status:        varchar("status", { length: 32 }).notNull().default("UNDER_DISPUTE"),
+  // Resolution fields — null until resolved by SCORING_INTEGRITY_REVIEWER or admin
+  resolvedBy:    varchar("resolved_by", { length: 256 }),
+  resolvedById:  varchar("resolved_by_id", { length: 64 }),
+  resolvedAt:    timestamp("resolved_at"),
+  resolvedNote:  text("resolved_note"),
+  createdAt:     timestamp("created_at").defaultNow().notNull(),
+  updatedAt:     timestamp("updated_at").defaultNow().notNull(),
+});
+export type ScoreDispute = typeof scoreDisputes.$inferSelect;
+export type InsertScoreDispute = typeof scoreDisputes.$inferInsert;
