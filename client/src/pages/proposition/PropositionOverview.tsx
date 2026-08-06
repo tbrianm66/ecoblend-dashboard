@@ -20,7 +20,7 @@ const SECTIONS = [
   { href: "/proposition/business-model",   label: "Business Model",            icon: Layers,      description: "Structure revenue model, channel, delivery, and key drivers." },
   { href: "/proposition/revenue-model",    label: "Revenue Model Test",        icon: BarChart2,   description: "Test whether the revenue model is commercially plausible." },
   { href: "/proposition/unit-economics",   label: "Unit Economics",            icon: PieChart,    description: "Model CAC, LTV, margin, and payback period." },
-  { href: "/lean/canvas",                  label: "Lean Canvas",               icon: LayoutTemplate, description: "Versioned 11-block Lean Canvas linked to evidence." },
+  { href: "/proposition/venture-model-canvas", label: "Venture Model Canvas",   icon: LayoutTemplate, description: "Versioned 11-block business model canvas linked to evidence and pivot history." },
   { href: "/proposition/risks",            label: "Business Model Risk Log",   icon: ShieldAlert, description: "Capture and score risks that could invalidate the model." },
   { href: "/proposition/pivot-history",    label: "Pivot History",             icon: RotateCcw,   description: "Record every major model or proposition change." },
   { href: "/proposition/decision",         label: "Model Readiness Decision",  icon: CheckSquare, description: "Decide whether to proceed to R&D Hub / MVP definition." },
@@ -117,7 +117,7 @@ export default function PropositionOverview() {
                 );
               })}
               <div className="rounded-lg p-3" style={{ background: "#f9fafb" }}>
-                <div className="text-xs text-gray-500 mb-1">Lean Canvas</div>
+                <div className="text-xs text-gray-500 mb-1">Venture Model Canvas</div>
                 <div className="text-sm font-bold" style={{ color: (breakdown as any).canvasVersion > 0 ? "#16a34a" : "#6b7280" }}>
                   {(breakdown as any).canvasVersion > 0 ? `v${(breakdown as any).canvasVersion}` : "Not started"}
                 </div>

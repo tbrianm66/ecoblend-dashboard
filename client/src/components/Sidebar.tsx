@@ -88,7 +88,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: "intake-assumptions", label: "Assumptions",          icon: "ShieldAlert",     href: "/intake/assumptions" },
       { id: "intake-hypotheses",  label: "Hypotheses",           icon: "FlaskConical",    href: "/intake/hypotheses" },
       { id: "intake-riskiest",    label: "Riskiest Assumption",  icon: "AlertTriangle",   href: "/intake/riskiest" },
-      { id: "intake-canvas",      label: "Lean Canvas",          icon: "LayoutTemplate",  href: "/lean/canvas" },
+      { id: "intake-canvas",      label: "Initial Venture Canvas", icon: "LayoutTemplate",  href: "/lean/canvas" },
       { id: "intake-decision",    label: "Intake Decision",      icon: "CheckSquare",     href: "/intake/decision" },
     ],
   },
@@ -116,18 +116,10 @@ const NAV_GROUPS: NavGroup[] = [
       { id: "prop-bm",        label: "Business Model",         icon: "Layers",        href: "/proposition/business-model" },
       { id: "prop-revenue",   label: "Revenue Model Test",     icon: "BarChart2",     href: "/proposition/revenue-model" },
       { id: "prop-economics", label: "Unit Economics",         icon: "PieChart",      href: "/proposition/unit-economics" },
-      { id: "prop-canvas",    label: "Lean Canvas",            icon: "LayoutTemplate",href: "/lean/canvas" },
+      { id: "prop-canvas",    label: "Venture Model Canvas",   icon: "LayoutTemplate",href: "/proposition/venture-model-canvas" },
       { id: "prop-risks",     label: "Risk Log",               icon: "ShieldAlert",   href: "/proposition/risks" },
       { id: "prop-pivots",    label: "Pivot History",          icon: "RotateCcw",     href: "/proposition/pivot-history" },
       { id: "prop-decision",  label: "Model Decision",         icon: "CheckSquare",   href: "/proposition/decision" },
-    ],
-  },
-  {
-    id: "lean",
-    label: "4b. Lean Canvas",
-    defaultOpen: false,
-    items: [
-      { id: "lean-canvas", label: "Lean Canvas", icon: "LayoutTemplate", href: "/lean/canvas" },
     ],
   },
   {

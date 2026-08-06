@@ -471,7 +471,7 @@ export function generateCanvasSummaryMarkdown(params: {
     return !val || (val as string).trim().length === 0;
   });
 
-  return `# Lean Canvas Summary — ${venture.name}
+  return `# Venture Model Canvas Summary — ${venture.name}
 **Version:** v${canvas.version ?? 1}${canvas.versionLabel ? ` · ${canvas.versionLabel}` : ""}
 **Date:** ${now}
 **Overall Status:** ${canvas.overallStatus ?? "draft"}

@@ -266,7 +266,8 @@ function Router() {
       <Route path="/proposition/risks" component={BusinessModelRiskLog} />
       <Route path="/proposition/pivot-history" component={PivotHistory} />
       <Route path="/proposition/decision" component={ModelReadinessDecision} />
-      {/* Lean Canvas — append-only versioned canvas */}
+      {/* Venture Model Canvas — canonical route; /lean/canvas kept as backward-compat alias */}
+      <Route path="/proposition/venture-model-canvas" component={LeanCanvas} />
       <Route path="/lean/canvas" component={LeanCanvas} />
       {/* Module 5: R&D Hub */}
       <Route path="/rnd" component={RDHub} />

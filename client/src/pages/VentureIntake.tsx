@@ -20,7 +20,7 @@ const SECTIONS = [
   { href: "/intake/assumptions",   label: "Founder Assumptions",  icon: ShieldAlert,    description: "Capture every belief the team holds before evidence exists." },
   { href: "/intake/hypotheses",    label: "Hypotheses",           icon: FlaskConical,   description: "Define testable customer, problem, and value proposition hypotheses." },
   { href: "/intake/riskiest",      label: "Riskiest Assumption",  icon: AlertTriangle,  description: "Identify the assumption most likely to invalidate the venture.", accentColor: "#dc2626" },
-  { href: "/lean/canvas",          label: "Lean Canvas",          icon: LayoutTemplate, description: "Define the first-pass Lean Canvas with version history." },
+  { href: "/lean/canvas",          label: "Initial Venture Canvas", icon: LayoutTemplate, description: "Capture the first-pass baseline canvas as an intake snapshot with version history." },
   { href: "/intake/decision",      label: "Intake Decision",      icon: CheckSquare,    description: "Review the readiness scorecard and make a structured go/no-go decision." },
 ];
 
@@ -154,7 +154,7 @@ export default function VentureIntake() {
         <div className="rounded-xl p-4 border text-xs text-gray-500" style={{ background: "#f9fafb", borderColor: "#e5e7eb" }}>
           <span className="font-semibold text-gray-700">Integration outputs:</span>{" "}
           Customer segment + problem + value proposition hypotheses feed <span className="text-blue-600">Discovery &amp; Market</span> ·
-          Business model + lean canvas feed <span className="text-purple-600">Proposition &amp; Model</span> ·
+          Business model + venture model canvas feed <span className="text-purple-600">Proposition &amp; Model</span> ·
           Solution + technical assumptions feed <span className="text-green-600">R&amp;D Hub</span> ·
           Intake decision + alerts surface in <span className="text-orange-600">Command Centre</span>
         </div>

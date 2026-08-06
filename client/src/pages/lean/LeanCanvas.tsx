@@ -786,7 +786,7 @@ export default function LeanCanvas() {
     return (
       <div className="flex-1 overflow-y-auto p-8">
         <ModuleHeader
-          title="Lean Canvas"
+          title="Venture Model Canvas"
           purpose="A live, versioned business model canvas linked to hypotheses, experiments, evidence, and pivot decisions."
           icon={<LayoutTemplate size={22} />}
           action={<VentureSelector />}
@@ -802,7 +802,7 @@ export default function LeanCanvas() {
       <div className="px-6 pt-6 pb-4 flex-shrink-0">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <ModuleHeader
-            title="Lean Canvas"
+            title="Venture Model Canvas"
             purpose="A live, versioned business model canvas linked to hypotheses, experiments, evidence, and pivot decisions."
             icon={<LayoutTemplate size={22} />}
           />
@@ -896,7 +896,7 @@ export default function LeanCanvas() {
             <div className="flex flex-col items-center justify-center h-64 text-center">
               <LayoutTemplate size={36} className="text-gray-200 mb-4" />
               <p className="text-sm font-semibold text-gray-500 mb-1">No canvas yet</p>
-              <p className="text-xs text-gray-400 mb-4">Click any block below to start filling in your Lean Canvas.</p>
+              <p className="text-xs text-gray-400 mb-4">Click any block below to start filling in your Venture Model Canvas.</p>
             </div>
           ) : null}
 
@@ -906,7 +906,7 @@ export default function LeanCanvas() {
               <Zap size={11} className="text-green-500" />
               <span>Discovery Evidence</span>
               <ChevronRight size={10} />
-              <span className="text-gray-700">Lean Canvas</span>
+              <span className="text-gray-700">Venture Model Canvas</span>
               <ChevronRight size={10} />
               <span>Proposition & Model</span>
               <ChevronRight size={10} />
