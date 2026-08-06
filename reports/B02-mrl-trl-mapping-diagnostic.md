@@ -26,7 +26,7 @@ for every future assessment.
 ### 1.1 Engine A — `server/mrl.engine.ts`
 
 **Origin:** Five-engine subsystem architecture (PDE · SCIE · CSM · QCE · SIL).
-**Introduced:** Phase 4A/4C era (commit `00338c4`, Manus agent, 2026-05-22).
+**Introduced:** Phase 4A/4C era (commit `00338c4`, EcoBlend OS Core Architecture, 2026-05-22).
 **MRL level formula:** `compositeScoreToMrlLevel`
 
 ```typescript
@@ -237,8 +237,8 @@ layer that reconciles their outputs.
 
 | Date | Commit | Author | Change |
 |---|---|---|---|
-| 2026-05-22 | `00338c4` | Manus agent | Phase 4A–4C: 12 DB tables, failure risk engine. **mrl.engine.ts** introduced with `computeCompositeMrlScore`, `compositeScoreToMrlLevel`, and VRL weight comment `0.30`. |
-| 2026-05-22 | `00338c4` | Manus agent | `mrlScoring.ts` (Engine B) also introduced in same checkpoint. Both engines created simultaneously — no migration story documented. |
+| 2026-05-22 | `00338c4` | EcoBlend OS Core Architecture | Phase 4A–4C: 12 DB tables, failure risk engine. **mrl.engine.ts** introduced with `computeCompositeMrlScore`, `compositeScoreToMrlLevel`, and VRL weight comment `0.30`. |
+| 2026-05-22 | `00338c4` | EcoBlend OS Core Architecture | `mrlScoring.ts` (Engine B) also introduced in same checkpoint. Both engines created simultaneously — no migration story documented. |
 | 2026-06-16 | `345cbb3` | Replit Agent | "Update VRL scoring to use dual-pathway MRL weighting." Updated `vrl.engine.ts` to dual-pathway (0.35 Product + 0.40 Execution). Updated `computeVrlContribution` in `mrl.engine.ts` to return 0–1 (not 0–30). Added D6 fix comment. **Did not remove stale `0.30` from file header or INTEGRATION_MODEL export.** |
 | 2026-06-16 | `345cbb3` | Replit Agent | `mrlScoring.ts` updated to add `vrl_feed` block with dual-pathway weights. `mrlScoring.test.ts` updated. |
 | 2026-06-16 | `7bea8d3` | Replit Agent | Paired commit (duplicate checkpoint entry for same change). |

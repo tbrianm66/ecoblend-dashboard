@@ -29,7 +29,7 @@ Ecoblend Dashboard is a full-stack TypeScript venture-management platform with a
 - Realtime/public endpoint: `server/sse.ts` mounted at `/api/events`
 - Raw-SQL hotspot: `server/contextual.router.ts`, `server/context-engine.ts`
 - Known scoped access-control seam: `server/discoveryMarket.router.ts` (`assertVentureAccess` + `ventureProcedure`)
-- Usually dev-only: `server/*.test.ts`, `scripts/`, root seed scripts, `attached_assets/`, `.manus-logs/`
+- Usually dev-only: `server/*.test.ts`, `scripts/`, root seed scripts, `attached_assets/`
 
 ## Threat Categories
 

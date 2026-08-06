@@ -11,7 +11,7 @@ const mockCtx = {
   user: {
     openId: "test-user-001",
     name: "Test User",
-    email: "test@ecoblend.studio",
+    email: "test@ecoblend.io",
     role: "admin" as const,
   },
 };

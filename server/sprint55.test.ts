@@ -62,7 +62,7 @@ describe("Sprint 55 — Governance: Audit Log", () => {
       {
         id: 1,
         userId: "user-1",
-        userEmail: "admin@ecoblend.com",
+        userEmail: "admin@ecoblend.io",
         action: "venture.upsert",
         entityType: "venture",
         entityId: "ecoblend-rd",
@@ -93,7 +93,7 @@ describe("Sprint 55 — Governance: Audit Log", () => {
     const db = await (await import("./db")).getDb();
     const result = await db!.insert({} as any).values({
       userId: "user-1",
-      userEmail: "admin@ecoblend.com",
+      userEmail: "admin@ecoblend.io",
       action: "venture.upsert",
       entityType: "venture",
       entityId: "ecoblend-rd",
@@ -186,7 +186,7 @@ describe("Sprint 55 — Governance: Policies", () => {
         title: "GDPR Data Privacy Policy",
         description: "Governs personal data handling",
         isActive: 1,
-        policyDocumentUrl: "https://cdn.ecoblend.com/policies/gdpr.pdf",
+        policyDocumentUrl: "https://cdn.ecoblend.io/policies/gdpr.pdf",
         complianceScore: 85,
         createdAt: new Date(),
       },

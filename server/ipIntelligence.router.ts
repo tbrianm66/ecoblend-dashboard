@@ -30,7 +30,7 @@ import {
 // ─── IP_OBJECT JSON Schema (canonical) ───────────────────────────────────────
 export const IP_OBJECT_SCHEMA = {
   $schema: "https://json-schema.org/draft/2020-12/schema",
-  $id: "https://ecoblend.studio/schemas/ip_object/v1.0",
+  $id: "https://ecoblend.io/schemas/ip_object/v1.0",
   title: "IP_OBJECT",
   description: "EcoBlend OS — IP Intelligence Analysis Object (Lightbringer-compatible)",
   type: "object",
