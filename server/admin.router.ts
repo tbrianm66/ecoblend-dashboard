@@ -10,7 +10,7 @@
 // ============================================================
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { router, protectedProcedure, publicProcedure } from "./_core/trpc";
+import { router, protectedProcedure, publicProcedure, adminProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import {
   playbookLibrary, playbookVersions, adminTemplates, users,
@@ -26,6 +26,19 @@ function requireAdmin(role: string) {
     throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
   }
 }
+
+// ── Role mapping: display name → canonical auth role stored in users.role ─────
+// Exported for unit testing.  The auth middleware (integrityReviewerProcedure,
+// requireAdmin) reads users.role — these values must match exactly.
+export const AUTH_ROLE_MAP: Record<string, string> = {
+  "Studio Director":            "admin",
+  "Platform Admin":             "admin",
+  "Coach":                      "coach",
+  "Founder":                    "founder",
+  "Advisor":                    "advisor",
+  "Investor":                   "investor",
+  "Scoring Integrity Reviewer": "scoring_integrity_reviewer",
+};
 
 // ── Playbook status and access level enums ────────────────────────────────────
 const PLAYBOOK_STATUSES = ["Draft", "Under Review", "Approved", "Published", "Archived", "Superseded"] as const;
@@ -374,8 +387,69 @@ export const adminRouter = router({
       }),
   },
 
+  // ── Update a user's system role ────────────────────────────────────────────
+  // Updates BOTH the display table (users_roles.systemRole) AND the canonical
+  // auth table (users.role) inside a single transaction, so that
+  // integrityReviewerProcedure and requireAdmin see the new role on the user's
+  // next authenticated request and the two tables can never diverge.
+  updateUserRole: protectedProcedure
+    .input(z.object({
+      id:         z.number(),
+      systemRole: z.enum([
+        "Studio Director",
+        "Platform Admin",
+        "Coach",
+        "Founder",
+        "Advisor",
+        "Investor",
+        "Scoring Integrity Reviewer",
+      ]),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      requireAdmin(ctx.user.role);
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+
+      const authRole = AUTH_ROLE_MAP[input.systemRole];
+
+      await db.transaction(async tx => {
+        // 1. Update the display/directory table and get the email for step 2.
+        const [directoryRow] = await tx
+          .update(usersRoles)
+          .set({ systemRole: input.systemRole, updatedAt: new Date() })
+          .where(eq(usersRoles.id, input.id))
+          .returning({ email: usersRoles.email });
+
+        if (!directoryRow) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "User record not found in directory" });
+        }
+
+        // 2. Update the canonical auth table.  This MUST match at least one row
+        //    because an unmatched update means the user has never signed in and
+        //    the role assignment would have no effect on integrityReviewerProcedure.
+        const authRows = await tx
+          .update(users)
+          .set({ role: authRole, updatedAt: new Date() })
+          .where(eq(users.email, directoryRow.email))
+          .returning({ id: users.id });
+
+        if (authRows.length === 0) {
+          // Roll back the directory update by throwing — the transaction aborts.
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message:
+              `No authenticated account found for ${directoryRow.email}. ` +
+              "The user must sign in at least once before a role can be assigned.",
+          });
+        }
+      });
+
+      return { success: true };
+    }),
+
   // ── Users & Roles (users_roles table) ─────────────────────────────────────
-  getUsersAndRoles: publicProcedure
+  // Admin-only: exposes PII (name, email) and role/venture data for all users.
+  getUsersAndRoles: adminProcedure
     .input(z.object({
       search:     z.string().optional(),
       systemRole: z.string().optional(),
