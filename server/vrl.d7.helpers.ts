@@ -7,11 +7,11 @@
  * These are imported by vrl.router.ts as well as the test file.
  */
 
-const TOTAL_DIMS = 9;
+const TOTAL_DIMS = 10; // Gate 2 adds mvlScore
 
 const ALL_DIM_KEYS = [
   "trlScore","mrlScore","brlScore","ecoScore",
-  "prlScore","ipScore","frlScore","regScore","srlScore",
+  "prlScore","ipScore","frlScore","regScore","srlScore","mvlScore",
 ] as const;
 
 type DimKey = typeof ALL_DIM_KEYS[number];

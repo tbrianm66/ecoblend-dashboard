@@ -30,6 +30,8 @@ const DIM_META: Record<string, { code: string; label: string; color: string }> =
   frlScore: { code: "FRL", label: "Financial Readiness",      color: "#8b5cf6" },
   regScore: { code: "REG", label: "Regulatory Readiness",     color: "#ec4899" },
   srlScore: { code: "SRL", label: "Sustainability Readiness", color: "#14b8a6" },
+  // Gate 2: MVL — Market Validation Level (customer demand / discovery)
+  mvlScore: { code: "MVL", label: "Market Validation",        color: "#a78bfa" },
 };
 
 const ALL_DIM_KEYS = Object.keys(DIM_META);

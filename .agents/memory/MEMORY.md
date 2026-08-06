@@ -5,3 +5,4 @@
 - [DB driver and auth setup](db-auth-setup.md) — db.ts uses pg/node-postgres (not mysql2); SESSION_SECRET powers JWT; dev-mode bypass auto-auths when OAUTH_SERVER_URL is unset.
 - [Coaching schema mismatches](coaching-schema-mismatches.md) — coachingFrl uses `.week` not `.weekOf`; founderSelfAssessments has no ventureId (join through founders).
 - [VRL MRL dual-pathway](vrl-mrl-dual-pathway.md) — MRL feeds VRL at Product×0.35 AND Execution×0.40; computeVrlContribution returns 0–1 normalised (not 0–30); vrl_feed uses mrl_weight_product/execution.
+- [Gate 2 — MVL + Profile SV-01](gate2-mvl-sv01.md) — 10th VRL dimension (MVL); new market formula BRL×0.25+PRL×0.25+MVL×0.50; weighted baseAverage; SV-01 governed N/A for MRL; TOTAL_DIMS in two files must stay in sync.

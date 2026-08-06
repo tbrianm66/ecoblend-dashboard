@@ -35,7 +35,8 @@ function makeVrlInputs(base: number, overrides: Partial<VrlInputs> = {}): VrlInp
   return {
     trlScore: base, mrlScore: base, brlScore: base, ecoScore: base,
     prlScore: base, ipScore:  base, frlScore: base, regScore: base,
-    srlScore: base, ...overrides,
+    srlScore: base, mvlScore: base,  // Gate 2
+    ...overrides,
   };
 }
 

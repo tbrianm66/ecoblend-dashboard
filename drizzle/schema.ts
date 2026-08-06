@@ -78,6 +78,9 @@ export const ventures = pgTable("ventures", {
   workflowStage: text("workflowStage"),       // LEAN_STAGE enum: venture_intake → decision_gate
   pivotRequired: boolean("pivotRequired").default(false),
   pivotReason: text("pivotReason"),
+  // Gate 2: Profile SV-01 — venture-level default scoring profile
+  // "STANDARD" | "SV-01_SOCIAL_SOFTWARE" (governed N/A path for MRL)
+  scoringProfile: varchar("scoring_profile", { length: 32 }).default("STANDARD"),
   // -- Lean Canvas versioning — tracks latest persisted version number ----------
   canvasVersion: integer("canvasVersion").default(0),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -6065,7 +6068,7 @@ export const vrlAssessments = pgTable("vrl_assessments", {
   id:                   varchar("id", { length: 64 }).primaryKey(),
   ventureId:            varchar("ventureId", { length: 64 }).notNull(),
   createdAt:            timestamp("createdAt").defaultNow().notNull(),
-  // -- 9 raw input scores (0-100) ----------------------------------------------
+  // -- 10 raw input scores (0-100) — Gate 2 adds mvlScore ----------------------
   trlScore:             integer("trl_score").notNull(),
   mrlScore:             integer("mrl_score").notNull(),
   brlScore:             integer("brl_score").notNull(),
@@ -6075,6 +6078,11 @@ export const vrlAssessments = pgTable("vrl_assessments", {
   frlScore:             integer("frl_score").notNull(),
   regScore:             integer("reg_score").notNull(),
   srlScore:             integer("srl_score").notNull(),
+  // Gate 2: MVL — Market Validation Level (customer demand / discovery) --------
+  mvlScore:             integer("mvl_score").default(50),
+  // Gate 2: Profile SV-01 — governed N/A path for MRL (software/social ventures)
+  scoringProfile:       varchar("scoring_profile", { length: 32 }).default("STANDARD"),
+  mrlIsUnscored:        boolean("mrl_is_unscored").default(false),
   // -- 5 computed meta-domain scores ------------------------------------------
   productScore:         numeric("product_score",      { precision: 5, scale: 2 }),
   marketScore:          numeric("market_score",       { precision: 5, scale: 2 }),

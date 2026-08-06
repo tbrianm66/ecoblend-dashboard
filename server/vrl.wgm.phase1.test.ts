@@ -63,13 +63,14 @@ function makeInputs(base: number, overrides: Partial<VrlInputs> = {}): VrlInputs
     frlScore:  base,
     regScore:  base,
     srlScore:  base,
+    mvlScore:  base,  // Gate 2
     ...overrides,
   };
 }
 
 const DIM_KEYS = [
   "trlScore", "mrlScore", "brlScore", "ecoScore",
-  "prlScore", "ipScore",  "frlScore", "regScore", "srlScore",
+  "prlScore", "ipScore",  "frlScore", "regScore", "srlScore", "mvlScore",
 ] as const;
 
 // Uniform veto threshold used by the live engine
@@ -98,15 +99,20 @@ describe("T1 — Meta-domain constituent weights each sum to 1.0", () => {
     expect(0.40 + 0.35 + 0.25).toBeCloseTo(1.0, 10);
   });
 
-  it("Market meta-domain: BRL(0.50) + PRL(0.50) = 1.0", () => {
+  it("Market meta-domain — Gate 2: BRL(0.25) + PRL(0.25) + MVL(0.50) = 1.0", () => {
     const base = makeInputs(0);
     const brlOnly = computeMetaDomains({ ...base, brlScore: 100 });
     const prlOnly = computeMetaDomains({ ...base, prlScore: 100 });
-    const both    = computeMetaDomains({ ...base, brlScore: 100, prlScore: 100 });
-    expect(both.marketScore).toBeCloseTo(100, 5);
-    expect(brlOnly.marketScore).toBeCloseTo(50, 5);
-    expect(prlOnly.marketScore).toBeCloseTo(50, 5);
-    expect(0.50 + 0.50).toBeCloseTo(1.0, 10);
+    const mvlOnly = computeMetaDomains({ ...base, mvlScore: 100 });
+    const allThree = computeMetaDomains({ ...base, brlScore: 100, prlScore: 100, mvlScore: 100 });
+    // All three at 100 → marketScore = 100
+    expect(allThree.marketScore).toBeCloseTo(100, 5);
+    // Individual contributions
+    expect(brlOnly.marketScore).toBeCloseTo(25, 5);  // BRL×0.25
+    expect(prlOnly.marketScore).toBeCloseTo(25, 5);  // PRL×0.25
+    expect(mvlOnly.marketScore).toBeCloseTo(50, 5);  // MVL×0.50 — canonical 15% composite
+    // Weight sum
+    expect(0.25 + 0.25 + 0.50).toBeCloseTo(1.0, 10);
   });
 
   it("Execution meta-domain: FRL(0.60) + MRL(0.40) = 1.0", () => {

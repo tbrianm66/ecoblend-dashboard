@@ -26,13 +26,13 @@ import {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-/** All 9 VRL dimension keys — used for self-assessed computation and backfill. */
+/** All 10 VRL dimension keys — used for self-assessed computation and backfill. */
 const ALL_DIM_KEYS: VrlDimensionKey[] = [
   "trlScore","mrlScore","brlScore","ecoScore",
-  "prlScore","ipScore","frlScore","regScore","srlScore",
+  "prlScore","ipScore","frlScore","regScore","srlScore","mvlScore",
 ];
 
-const TOTAL_DIMS = ALL_DIM_KEYS.length; // 9
+const TOTAL_DIMS = ALL_DIM_KEYS.length; // 10
 
 // ── Shared input schema ───────────────────────────────────────────────────────
 
@@ -41,7 +41,7 @@ const scoreInt = z.number().int().min(0).max(100);
 const assessmentInputSchema = z.object({
   ventureId:  z.string().min(1),
   trlScore:   scoreInt,
-  mrlScore:   scoreInt.describe("MRL score 0–100 from Engine A/B. Scores 0–19 trigger the veto gate."),
+  mrlScore:   scoreInt.describe("MRL score 0–100 from Engine A/B. Scores 0–19 trigger the veto gate (unless Profile SV-01 with mrlIsUnscored=true)."),
   brlScore:   scoreInt,
   ecoScore:   scoreInt,
   prlScore:   scoreInt,
@@ -49,11 +49,20 @@ const assessmentInputSchema = z.object({
   frlScore:   scoreInt,
   regScore:   scoreInt,
   srlScore:   scoreInt,
+  /** Gate 2: MVL — Market Validation Level (customer demand / discovery). Canonical 15% composite weight. */
+  mvlScore:   scoreInt.default(50),
   submittedBy: z.string().optional(),
+  /**
+   * Gate 2 / Profile SV-01: Governed N/A path for MRL.
+   * When profile="SV-01_SOCIAL_SOFTWARE" and mrlIsUnscored=true, MRL is excluded
+   * from the veto gate and meta-domain formula. Adheres to B-03 three-state model.
+   */
+  profile:       z.enum(["STANDARD", "SV-01_SOCIAL_SOFTWARE"]).default("STANDARD"),
+  mrlIsUnscored: z.boolean().default(false),
   /**
    * D7: Optional evidence links keyed by dimension.
    * Any dimension key absent or empty → flagged self-assessed.
-   * Providing all 9 with non-empty URLs → evidenceStatus = 'fully_verified'.
+   * Providing all 10 with non-empty URLs → evidenceStatus = 'fully_verified'.
    */
   evidenceLinks: z.record(z.string(), z.string()).optional(),
 });
@@ -66,7 +75,7 @@ function formatAssessment(row: typeof vrlAssessments.$inferSelect) {
     ventureId:    row.ventureId,
     createdAt:    row.createdAt,
     updatedAt:    row.updatedAt,
-    // 9 raw input scores
+    // 10 raw input scores (Gate 2 adds mvlScore)
     inputs: {
       trlScore: row.trlScore,
       mrlScore: row.mrlScore,
@@ -77,7 +86,11 @@ function formatAssessment(row: typeof vrlAssessments.$inferSelect) {
       frlScore: row.frlScore,
       regScore: row.regScore,
       srlScore: row.srlScore,
+      mvlScore: row.mvlScore ?? 50,       // Gate 2 — default 50 for pre-Gate-2 rows
     },
+    // Gate 2 / Profile SV-01
+    profile:      (row.scoringProfile ?? "STANDARD") as "STANDARD" | "SV-01_SOCIAL_SOFTWARE",
+    mrlIsGoverned: row.mrlIsUnscored ?? false,
     // 5 meta-domain scores
     metaDomains: {
       productScore:        Number(row.productScore        ?? 0),
@@ -133,6 +146,9 @@ export const vrlRouter = router({
         frlScore:  input.frlScore,
         regScore:  input.regScore,
         srlScore:  input.srlScore,
+        mvlScore:  input.mvlScore,         // Gate 2
+        profile:   input.profile,          // Gate 2 / SV-01
+        mrlIsUnscored: input.mrlIsUnscored, // Gate 2 / SV-01
         evidenceLinks: rawEvidence,
       });
 
@@ -164,6 +180,9 @@ export const vrlRouter = router({
         frlScore:            engineResult.inputs.frlScore,
         regScore:            engineResult.inputs.regScore,
         srlScore:            engineResult.inputs.srlScore,
+        mvlScore:            engineResult.inputs.mvlScore,  // Gate 2
+        scoringProfile:      engineResult.profile,          // Gate 2
+        mrlIsUnscored:       engineResult.mrlIsGoverned,    // Gate 2 / SV-01
         productScore:        engineResult.metaDomains.productScore.toFixed(2),
         marketScore:         engineResult.metaDomains.marketScore.toFixed(2),
         executionScore:      engineResult.metaDomains.executionScore.toFixed(2),
@@ -231,7 +250,7 @@ export const vrlRouter = router({
       dimensionConfirmations: z.array(z.object({
         dimensionKey: z.enum([
           "trlScore","mrlScore","brlScore","ecoScore",
-          "prlScore","ipScore","frlScore","regScore","srlScore",
+          "prlScore","ipScore","frlScore","regScore","srlScore","mvlScore",
         ]),
         evidenceUrl: z.string().min(1),
       })).min(1),

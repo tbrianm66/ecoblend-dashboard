@@ -1,6 +1,7 @@
 /**
- * VRL Engine Tests — BEBUS-VRL-UPDATE-001
+ * VRL Engine Tests — BEBUS-VRL-UPDATE-001 / Gate 2 (FHV-EB-AUD-001 v1.0)
  * Verifies all 5 spec scenarios from EcoBlendVRLUpdateManusPrompt.pdf
+ * Gate 2 adds mvlScore (10th dimension) and updates the market formula.
  */
 import { describe, it, expect } from "vitest";
 import {
@@ -14,10 +15,12 @@ import {
 
 // ── Scenario 1: All-green venture (no veto, high scores) ─────────────────────
 describe("Scenario 1 — All-green venture", () => {
+  // Gate 2: mvlScore: 50 added (neutral; preserves band expectation)
   const inputs = {
     trlScore: 80, mrlScore: 75, brlScore: 70,
     ecoScore: 85, prlScore: 72, ipScore: 78,
     frlScore: 68, regScore: 82, srlScore: 76,
+    mvlScore: 50,
   };
   const result = computeVrl(inputs);
 
@@ -31,9 +34,9 @@ describe("Scenario 1 — All-green venture", () => {
     expect(result.metaDomains.productScore).toBeCloseTo(75.75, 1);
   });
 
-  it("should compute market score correctly", () => {
-    // BRL(0.50) + PRL(0.50) = 70*0.5 + 72*0.5 = 35 + 36 = 71
-    expect(result.metaDomains.marketScore).toBeCloseTo(71, 1);
+  it("should compute market score correctly — Gate 2 formula (BRL×0.25 + PRL×0.25 + MVL×0.50)", () => {
+    // Gate 2: BRL(0.25) + PRL(0.25) + MVL(0.50) = 70*0.25 + 72*0.25 + 50*0.50 = 17.5 + 18 + 25 = 60.5
+    expect(result.metaDomains.marketScore).toBeCloseTo(60.5, 1);
   });
 
   it("should compute execution score correctly", () => {
@@ -51,6 +54,13 @@ describe("Scenario 1 — All-green venture", () => {
     expect(result.metaDomains.sustainabilityScore).toBeCloseTo(81.4, 1);
   });
 
+  it("should compute weighted base average correctly — Gate 2 formula", () => {
+    // product×0.175 + market×0.30 + execution×0.175 + structural×0.175 + sustainability×0.175
+    // 75.75*0.175 + 60.5*0.30 + 70.8*0.175 + 80*0.175 + 81.4*0.175
+    // = 13.256 + 18.15 + 12.39 + 14 + 14.245 = 72.041
+    expect(result.baseAverage).toBeCloseTo(72.04, 1);
+  });
+
   it("should produce a globalVrlScore in the Advanced band (70–84)", () => {
     expect(result.globalVrlScore).toBeGreaterThanOrEqual(70);
     expect(result.globalVrlScore).toBeLessThanOrEqual(84);
@@ -66,6 +76,7 @@ describe("Scenario 2 — Single veto (FRL = 10)", () => {
     ecoScore: 80, prlScore: 68, ipScore: 72,
     frlScore: 10, // BELOW VETO THRESHOLD
     regScore: 78, srlScore: 71,
+    mvlScore: 50,
   };
   const result = computeVrl(inputs);
 
@@ -93,6 +104,7 @@ describe("Scenario 3 — Multiple veto dimensions", () => {
     trlScore: 15, mrlScore: 12, brlScore: 60,
     ecoScore: 70, prlScore: 65, ipScore: 55,
     frlScore: 50, regScore: 60, srlScore: 58,
+    mvlScore: 50,
   };
   const result = computeVrl(inputs);
 
@@ -117,6 +129,7 @@ describe("Scenario 4 — Boundary score = 20 (no veto)", () => {
     trlScore: 20, mrlScore: 20, brlScore: 20,
     ecoScore: 20, prlScore: 20, ipScore: 20,
     frlScore: 20, regScore: 20, srlScore: 20,
+    mvlScore: 20,
   };
   const result = computeVrl(inputs);
 
@@ -125,8 +138,8 @@ describe("Scenario 4 — Boundary score = 20 (no veto)", () => {
     expect(result.vetoedDimensions).toHaveLength(0);
   });
 
-  it("should produce globalVrlScore = 20 (all scores equal)", () => {
-    // All meta-domains = 20, base average = 20, rounded = 20
+  it("should produce globalVrlScore = 20 (all scores equal, weighted average = 20)", () => {
+    // All meta-domains = 20; weighted base average = 20×(0.175+0.30+0.175+0.175+0.175) = 20×1.0 = 20
     expect(result.globalVrlScore).toBe(20);
     expect(result.bandLabel).toBe("Emerging");
     expect(result.bandLevel).toBe(1);
@@ -139,6 +152,7 @@ describe("Scenario 5 — Exemplary venture", () => {
     trlScore: 90, mrlScore: 88, brlScore: 92,
     ecoScore: 95, prlScore: 87, ipScore: 91,
     frlScore: 86, regScore: 93, srlScore: 89,
+    mvlScore: 85,
   };
   const result = computeVrl(inputs);
 
@@ -175,13 +189,13 @@ describe("Band table", () => {
 });
 
 // ── Meta-domain weight validation ─────────────────────────────────────────────
-describe("Meta-domain weight validation", () => {
+describe("Meta-domain weight validation — Gate 2 formulae", () => {
   it("product weights sum to 1.0", () => {
     expect(0.40 + 0.35 + 0.25).toBeCloseTo(1.0, 10);
   });
 
-  it("market weights sum to 1.0", () => {
-    expect(0.50 + 0.50).toBeCloseTo(1.0, 10);
+  it("market weights sum to 1.0 — Gate 2: BRL×0.25 + PRL×0.25 + MVL×0.50", () => {
+    expect(0.25 + 0.25 + 0.50).toBeCloseTo(1.0, 10);
   });
 
   it("execution weights sum to 1.0", () => {
@@ -194,5 +208,17 @@ describe("Meta-domain weight validation", () => {
 
   it("sustainability weights sum to 1.0", () => {
     expect(0.60 + 0.40).toBeCloseTo(1.0, 10);
+  });
+
+  it("base-average meta-domain weights sum to 1.0 — Gate 2: product×0.175 + market×0.30 + exec×0.175 + struct×0.175 + sustain×0.175", () => {
+    expect(0.175 + 0.30 + 0.175 + 0.175 + 0.175).toBeCloseTo(1.0, 10);
+  });
+
+  it("MVL canonical composite weight = exactly 15%", () => {
+    // market weight in baseAverage (0.30) × MVL weight within market (0.50) = 0.15
+    const marketWeight    = 0.30;
+    const mvlInMarket     = 0.50;
+    const mvlComposite    = marketWeight * mvlInMarket;
+    expect(mvlComposite).toBeCloseTo(0.15, 10);
   });
 });

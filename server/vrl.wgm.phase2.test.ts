@@ -239,8 +239,8 @@ describe("T10 — B-02 fix: canonical MRL→VRL mapping (D6 resolved)", () => {
   });
 
   it("vrl.engine.ts: mrlScore feeds BOTH Product(×0.35) AND Execution(×0.40) meta-domains", () => {
-    const base    = computeVrl({ trlScore:50, mrlScore:50, brlScore:50, ecoScore:50, prlScore:50, ipScore:50, frlScore:50, regScore:50, srlScore:50 });
-    const bumped  = computeVrl({ trlScore:50, mrlScore:80, brlScore:50, ecoScore:50, prlScore:50, ipScore:50, frlScore:50, regScore:50, srlScore:50 });
+    const base    = computeVrl({ trlScore:50, mrlScore:50, brlScore:50, ecoScore:50, prlScore:50, ipScore:50, frlScore:50, regScore:50, srlScore:50, mvlScore:50 });
+    const bumped  = computeVrl({ trlScore:50, mrlScore:80, brlScore:50, ecoScore:50, prlScore:50, ipScore:50, frlScore:50, regScore:50, srlScore:50, mvlScore:50 });
     expect(bumped.metaDomains.productScore).toBeGreaterThan(base.metaDomains.productScore);
     expect(bumped.metaDomains.executionScore).toBeGreaterThan(base.metaDomains.executionScore);
   });
@@ -322,24 +322,26 @@ describe("T11 — TRL/MRL Sync Engine state classification", () => {
 // is set to true.  The gate still computes — no hard rejection.
 
 describe("T12 — B-03 fix: evidence-link enforcement (D7 resolved) — all self-assessed", () => {
+  // Gate 2: mvlScore added as 10th dimension
   const ALL_AT_60 = {
     trlScore: 60, mrlScore: 60, brlScore: 60, ecoScore: 60, prlScore: 60,
-    ipScore:  60, frlScore: 60, regScore: 60, srlScore: 60,
+    ipScore:  60, frlScore: 60, regScore: 60, srlScore: 60, mvlScore: 60,
   };
 
-  it("No evidenceLinks → all 9 dimensions self-assessed, hasUnverifiedInputs=true", () => {
+  it("No evidenceLinks → all 10 dimensions self-assessed, hasUnverifiedInputs=true", () => {
     const r = computeVrl(ALL_AT_60);
     expect(r.hasUnverifiedInputs).toBe(true);
-    expect(r.selfAssessedDimensions).toHaveLength(9);
+    expect(r.selfAssessedDimensions).toHaveLength(10);
   });
 
-  it("All 9 evidenceLinks present → selfAssessedDimensions=[], hasUnverifiedInputs=false", () => {
+  it("All 10 evidenceLinks present → selfAssessedDimensions=[], hasUnverifiedInputs=false", () => {
     const r = computeVrl({
       ...ALL_AT_60,
       evidenceLinks: {
         trlScore: "ev-001", mrlScore: "ev-002", brlScore: "ev-003",
         ecoScore: "ev-004", prlScore: "ev-005", ipScore:  "ev-006",
         frlScore: "ev-007", regScore: "ev-008", srlScore: "ev-009",
+        mvlScore: "ev-010",  // Gate 2
       },
     });
     expect(r.hasUnverifiedInputs).toBe(false);
@@ -369,22 +371,23 @@ describe("T12 — B-03 fix: evidence-link enforcement (D7 resolved) — all self
 // ── T13: B-03 fix — Evidence-link enforcement, partial evidence ───────────────
 
 describe("T13 — B-03 fix: evidence-link enforcement — partial evidence", () => {
+  // Gate 2: mvlScore added as 10th dimension
   const ALL_AT_60 = {
     trlScore: 60, mrlScore: 60, brlScore: 60, ecoScore: 60, prlScore: 60,
-    ipScore:  60, frlScore: 60, regScore: 60, srlScore: 60,
+    ipScore:  60, frlScore: 60, regScore: 60, srlScore: 60, mvlScore: 60,
   };
 
-  it("5 of 9 dims have evidence → 4 dims in selfAssessedDimensions", () => {
+  it("5 of 10 dims have evidence → 5 dims in selfAssessedDimensions", () => {
     const r = computeVrl({
       ...ALL_AT_60,
       evidenceLinks: {
         trlScore: "ev-001", mrlScore: "ev-002", brlScore: "ev-003",
         ecoScore: "ev-004", prlScore: "ev-005",
-        // ipScore, frlScore, regScore, srlScore → self-assessed
+        // ipScore, frlScore, regScore, srlScore, mvlScore → self-assessed
       },
     });
     expect(r.hasUnverifiedInputs).toBe(true);
-    expect(r.selfAssessedDimensions).toHaveLength(4);
+    expect(r.selfAssessedDimensions).toHaveLength(5);
   });
 
   it("Empty-string evidence link → treated as self-assessed", () => {
@@ -405,12 +408,12 @@ describe("T13 — B-03 fix: evidence-link enforcement — partial evidence", () 
     expect(r.selfAssessedDimensions).toContain(mrlLabel);
   });
 
-  it("Single evidence link → only 8 dims are self-assessed", () => {
+  it("Single evidence link → only 9 dims are self-assessed", () => {
     const r = computeVrl({
       ...ALL_AT_60,
       evidenceLinks: { trlScore: "ev-001" },
     });
-    expect(r.selfAssessedDimensions).toHaveLength(8);
+    expect(r.selfAssessedDimensions).toHaveLength(9);
     expect(r.selfAssessedDimensions).not.toContain("TRL (Technology Readiness)");
   });
 });

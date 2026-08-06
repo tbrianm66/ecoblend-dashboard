@@ -71,6 +71,13 @@
       "when": 1786021200000,
       "tag": "0009_hybrid_venture_model_canvas",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1754467200000,
+      "tag": "0010_gate2_mvl_profile_sv01",
+      "breakpoints": true
     }
   ]
 }

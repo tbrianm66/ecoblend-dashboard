@@ -93,6 +93,15 @@ const DIMENSIONS = [
     description: "Governance, ESG reporting, CSRD alignment, and sustainability strategy",
     weight: "40% of Sustainability",
   },
+  {
+    key: "mvlScore" as const,
+    code: "MVL",
+    label: "Market Validation",
+    meta: "Market",
+    metaColor: "#22c55e",
+    description: "Customer demand evidence, discovery interviews, pilot traction, and TAM/SAM/SOM validation. Environmental/ecological substance is assessed under SRL and ESG — not here.",
+    weight: "50% of Market · 15% composite",
+  },
 ] as const;
 
 type ScoreKey = typeof DIMENSIONS[number]["key"];
@@ -122,10 +131,14 @@ export default function VrlAssessmentForm() {
   const [, navigate] = useLocation();
 
   const [ventureId, setVentureId] = useState("ecoblend");
+  // Gate 2 / Profile SV-01: software, social, and service ventures mark MRL as N/A (Governed)
+  const [sv01Active, setSv01Active] = useState(false);
+
   const [scores, setScores] = useState<Record<ScoreKey, number>>({
     trlScore: 50, mrlScore: 50, brlScore: 50,
     ecoScore: 50, prlScore: 50, ipScore: 50,
     frlScore: 50, regScore: 50, srlScore: 50,
+    mvlScore: 50,
   });
   // D7: evidence links per dimension
   const [evidenceLinks, setEvidenceLinks] = useState<Record<string, string>>({});
@@ -139,19 +152,27 @@ export default function VrlAssessmentForm() {
     onError: (err) => toast.error(`Submission failed: ${err.message}`),
   });
 
-  // Live preview calculations
+  // Live preview calculations — Gate 2 formula (10 dimensions)
   const preview = useMemo(() => {
-    const { trlScore, mrlScore, brlScore, ecoScore, prlScore, ipScore, frlScore, regScore, srlScore } = scores;
-    const product        = trlScore * 0.40 + mrlScore * 0.35 + brlScore * 0.25;
-    const market         = brlScore * 0.50 + prlScore * 0.50;
-    const execution      = frlScore * 0.60 + mrlScore * 0.40;
+    const { trlScore, mrlScore, brlScore, ecoScore, prlScore, ipScore, frlScore, regScore, srlScore, mvlScore } = scores;
+    // Profile SV-01: MRL excluded from Product and Execution
+    const product        = sv01Active
+      ? trlScore * (0.40 / 0.65) + brlScore * (0.25 / 0.65)
+      : trlScore * 0.40 + mrlScore * 0.35 + brlScore * 0.25;
+    // Market: BRL×0.25 + PRL×0.25 + MVL×0.50 → MVL canonical 15% composite
+    const market         = brlScore * 0.25 + prlScore * 0.25 + mvlScore * 0.50;
+    const execution      = sv01Active ? frlScore * 1.00 : frlScore * 0.60 + mrlScore * 0.40;
     const structural     = ipScore  * 0.50 + regScore * 0.50;
     const sustainability = ecoScore * 0.60 + srlScore * 0.40;
-    const base = (product + market + execution + structural + sustainability) / 5;
-    const vetoed = DIMENSIONS.filter(d => scores[d.key] < VETO_THRESHOLD).map(d => d.code);
+    // Weighted base average: product×0.175 + market×0.30 + execution×0.175 + structural×0.175 + sustainability×0.175
+    const base = product * 0.175 + market * 0.30 + execution * 0.175 + structural * 0.175 + sustainability * 0.175;
+    // Veto gate: SV-01 skips mrlScore check
+    const vetoed = DIMENSIONS
+      .filter(d => !(sv01Active && d.key === "mrlScore") && scores[d.key] < VETO_THRESHOLD)
+      .map(d => d.code);
     const globalScore = vetoed.length > 0 ? 0 : Math.round(base);
     return { product, market, execution, structural, sustainability, base, vetoed, globalScore };
-  }, [scores]);
+  }, [scores, sv01Active]);
 
   const handleSlider = (key: ScoreKey, val: number) => {
     setScores(prev => ({ ...prev, [key]: val }));
@@ -165,6 +186,8 @@ export default function VrlAssessmentForm() {
     submitMutation.mutate({
       ventureId,
       ...scores,
+      profile: sv01Active ? "SV-01_SOCIAL_SOFTWARE" : "STANDARD",
+      mrlIsUnscored: sv01Active,
       evidenceLinks: Object.keys(cleanEvidence).length > 0 ? cleanEvidence : undefined,
     });
   };
@@ -185,7 +208,7 @@ export default function VrlAssessmentForm() {
           New VRL Assessment
         </h1>
         <p className="text-sm text-gray-400">
-          Score all 9 readiness dimensions (0–100). Any dimension below 20 triggers a veto gate and sets the Global VRL Score to 0.
+          Score all 10 readiness dimensions (0–100). Any scored dimension below 20 triggers a veto gate and sets the Global VRL Score to 0.
         </p>
       </div>
 
@@ -209,16 +232,38 @@ export default function VrlAssessmentForm() {
             </select>
           </div>
 
+          {/* Profile SV-01 toggle */}
+          <div className="bg-[#161b22] rounded-xl border border-gray-800 p-4">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={sv01Active}
+                onChange={e => setSv01Active(e.target.checked)}
+                className="mt-0.5 shrink-0 accent-[#56A837]"
+              />
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-white">Profile SV-01 — Social / Software / Service</span>
+                  <span className="text-xs px-1.5 py-0.5 rounded bg-indigo-900/40 text-indigo-300 border border-indigo-800">Governed N/A</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  This venture does not manufacture a physical product. MRL will be marked as <strong className="text-gray-400">N/A (Governed)</strong> and excluded from the veto gate and composite formula. Applies to software, social enterprise, and pure-service ventures per FHV-EB-AUD-001 §2.2.
+                </p>
+              </div>
+            </label>
+          </div>
+
           {/* Score sliders */}
           {DIMENSIONS.map(dim => {
+            const isMrlGoverned = sv01Active && dim.key === "mrlScore";
             const val = scores[dim.key];
-            const isVetoed = val < VETO_THRESHOLD;
-            const trackColor = isVetoed ? "#ef4444" : getBandColor(val);
+            const isVetoed = !isMrlGoverned && val < VETO_THRESHOLD;
+            const trackColor = isMrlGoverned ? "#6b7280" : isVetoed ? "#ef4444" : getBandColor(val);
             return (
               <div
                 key={dim.key}
                 className="bg-[#161b22] rounded-xl border p-5 transition-all"
-                style={{ borderColor: isVetoed ? "#ef4444" : "#30363d" }}
+                style={{ borderColor: isMrlGoverned ? "#374151" : isVetoed ? "#ef4444" : "#30363d" }}
               >
                 <div className="flex items-start justify-between mb-3">
                   <div>
@@ -230,33 +275,43 @@ export default function VrlAssessmentForm() {
                       <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: `${dim.metaColor}15`, color: dim.metaColor }}>
                         {dim.meta}
                       </span>
+                      {isMrlGoverned && (
+                        <span className="text-xs px-1.5 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700">N/A · Governed (SV-01)</span>
+                      )}
                     </div>
                     <p className="text-xs text-gray-500">{dim.description}</p>
                   </div>
                   <div className="text-right ml-4 shrink-0">
-                    <span className="text-2xl font-bold font-mono" style={{ color: trackColor }}>{val}</span>
-                    <div className="text-xs text-gray-500 mt-0.5">{getBandLabel(val)}</div>
+                    {isMrlGoverned
+                      ? <span className="text-sm font-bold font-mono text-gray-500">N/A</span>
+                      : <span className="text-2xl font-bold font-mono" style={{ color: trackColor }}>{val}</span>
+                    }
+                    <div className="text-xs text-gray-500 mt-0.5">{isMrlGoverned ? "Excluded" : getBandLabel(val)}</div>
                   </div>
                 </div>
 
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  step={1}
-                  value={val}
-                  onChange={e => handleSlider(dim.key, Number(e.target.value))}
-                  className="w-full h-2 rounded-full appearance-none cursor-pointer"
-                  style={{
-                    background: `linear-gradient(to right, ${trackColor} ${val}%, #30363d ${val}%)`,
-                    accentColor: trackColor,
-                  }}
-                />
+                {isMrlGoverned ? (
+                  <div className="w-full h-2 rounded-full bg-gray-800" />
+                ) : (
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={val}
+                    onChange={e => handleSlider(dim.key, Number(e.target.value))}
+                    className="w-full h-2 rounded-full appearance-none cursor-pointer"
+                    style={{
+                      background: `linear-gradient(to right, ${trackColor} ${val}%, #30363d ${val}%)`,
+                      accentColor: trackColor,
+                    }}
+                  />
+                )}
 
                 <div className="flex justify-between text-xs text-gray-600 mt-1">
-                  <span>0 — Pre-Readiness</span>
+                  <span>{isMrlGoverned ? "Governed N/A — excluded from veto and formula" : "0 — Pre-Readiness"}</span>
                   <span className="text-gray-500">{dim.weight}</span>
-                  <span>100 — Exemplary</span>
+                  {!isMrlGoverned && <span>100 — Exemplary</span>}
                 </div>
 
                 {isVetoed && (
@@ -282,7 +337,7 @@ export default function VrlAssessmentForm() {
                 <span className="text-xs text-gray-500">(optional — D7)</span>
                 {evidenceFilled > 0 && (
                   <Badge variant="outline" className="text-xs border-green-800 text-green-400">
-                    {evidenceFilled}/9 provided
+                    {evidenceFilled}/10 provided
                   </Badge>
                 )}
               </div>
@@ -372,8 +427,8 @@ export default function VrlAssessmentForm() {
             <div className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">Meta-Domain Scores</div>
             {[
               { label: "Product",        score: preview.product,        color: "#3b82f6", formula: "TRL×0.4 + MRL×0.35 + BRL×0.25" },
-              { label: "Market",         score: preview.market,         color: "#22c55e", formula: "BRL×0.5 + PRL×0.5" },
-              { label: "Execution",      score: preview.execution,      color: "#8b5cf6", formula: "FRL×0.6 + MRL×0.4" },
+              { label: "Market",         score: preview.market,         color: "#22c55e", formula: sv01Active ? "BRL×0.25+PRL×0.25+MVL×0.50" : "BRL×0.25+PRL×0.25+MVL×0.50" },
+              { label: "Execution",      score: preview.execution,      color: "#8b5cf6", formula: sv01Active ? "FRL×1.00 (SV-01)" : "FRL×0.6+MRL×0.4" },
               { label: "Structural",     score: preview.structural,     color: "#f59e0b", formula: "IP×0.5 + REG×0.5" },
               { label: "Sustainability", score: preview.sustainability,  color: "#10b981", formula: "ECO×0.6 + SRL×0.4" },
             ].map(({ label, score, color, formula }) => (

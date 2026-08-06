@@ -13,23 +13,26 @@ import VrlEvidencePanel, { EvidenceStatusBadge } from "@/components/VrlEvidenceP
 
 // ── Dimension definitions (same order as form) ────────────────────────────────
 const DIMS = [
-  { key: "trlScore", code: "TRL", label: "Technology",    color: "#3b82f6" },
-  { key: "mrlScore", code: "MRL", label: "Manufacturing", color: "#6366f1" },
-  { key: "brlScore", code: "BRL", label: "Business",      color: "#22c55e" },
-  { key: "ecoScore", code: "ECO", label: "Environmental", color: "#10b981" },
-  { key: "prlScore", code: "PRL", label: "People",        color: "#f59e0b" },
-  { key: "ipScore",  code: "IP",  label: "IP",            color: "#f97316" },
-  { key: "frlScore", code: "FRL", label: "Financial",     color: "#8b5cf6" },
-  { key: "regScore", code: "REG", label: "Regulatory",    color: "#ec4899" },
-  { key: "srlScore", code: "SRL", label: "Sustainability",color: "#14b8a6" },
+  { key: "trlScore", code: "TRL", label: "Technology",          color: "#3b82f6" },
+  { key: "mrlScore", code: "MRL", label: "Manufacturing",       color: "#6366f1" },
+  { key: "brlScore", code: "BRL", label: "Business",            color: "#22c55e" },
+  { key: "ecoScore", code: "ECO", label: "Environmental",       color: "#10b981" },
+  { key: "prlScore", code: "PRL", label: "People",              color: "#f59e0b" },
+  { key: "ipScore",  code: "IP",  label: "IP",                  color: "#f97316" },
+  { key: "frlScore", code: "FRL", label: "Financial",           color: "#8b5cf6" },
+  { key: "regScore", code: "REG", label: "Regulatory",          color: "#ec4899" },
+  { key: "srlScore", code: "SRL", label: "Sustainability",      color: "#14b8a6" },
+  { key: "mvlScore", code: "MVL", label: "Market Validation",   color: "#a78bfa" },
 ] as const;
 
+// Gate 2: MVL canonical 15% composite = market weight(0.30) × MVL in market(0.50)
+// baseAverage = product×0.175 + market×0.30 + execution×0.175 + structural×0.175 + sustainability×0.175
 const META_DOMAINS = [
-  { key: "productScore",        label: "Product",        color: "#3b82f6", formula: "TRL×0.4 + MRL×0.35 + BRL×0.25" },
-  { key: "marketScore",         label: "Market",         color: "#22c55e", formula: "BRL×0.5 + PRL×0.5" },
-  { key: "executionScore",      label: "Execution",      color: "#8b5cf6", formula: "FRL×0.6 + MRL×0.4" },
-  { key: "structuralScore",     label: "Structural",     color: "#f59e0b", formula: "IP×0.5 + REG×0.5" },
-  { key: "sustainabilityScore", label: "Sustainability", color: "#10b981", formula: "ECO×0.6 + SRL×0.4" },
+  { key: "productScore",        label: "Product",        color: "#3b82f6", formula: "TRL×0.4 + MRL×0.35 + BRL×0.25",    weight: "17.5%" },
+  { key: "marketScore",         label: "Market",         color: "#22c55e", formula: "BRL×0.25 + PRL×0.25 + MVL×0.50",   weight: "30%" },
+  { key: "executionScore",      label: "Execution",      color: "#8b5cf6", formula: "FRL×0.6 + MRL×0.4",                weight: "17.5%" },
+  { key: "structuralScore",     label: "Structural",     color: "#f59e0b", formula: "IP×0.5 + REG×0.5",                 weight: "17.5%" },
+  { key: "sustainabilityScore", label: "Sustainability", color: "#10b981", formula: "ECO×0.6 + SRL×0.4",                weight: "17.5%" },
 ] as const;
 
 function getBandColor(score: number): string {
@@ -210,7 +213,12 @@ export default function VrlResults() {
               VRL Assessment Dashboard
             </h1>
             <p className="text-sm text-gray-400">
-              Weighted Gating Model · 9 readiness dimensions · 5 meta-domains
+              Weighted Gating Model · 10 readiness dimensions · 5 meta-domains
+              {latest.mrlIsGoverned && (
+                <span className="ml-2 px-1.5 py-0.5 text-xs rounded bg-indigo-900/50 text-indigo-300 border border-indigo-800">
+                  Profile SV-01 — MRL: N/A (Governed)
+                </span>
+              )}
             </p>
           </div>
           <Button

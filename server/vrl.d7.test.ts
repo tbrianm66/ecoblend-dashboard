@@ -17,7 +17,8 @@ import { deriveEvidenceStatus } from "./vrl.d7.helpers";
 // Unit tests that don't need DB — pure logic extracted into helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-const ALL_9 = 9;
+// Gate 2: 10 dimensions total
+const ALL_10 = 10;
 
 describe("deriveEvidenceStatus — unit", () => {
   describe("confirmation context (can reach fully_verified)", () => {
@@ -25,20 +26,20 @@ describe("deriveEvidenceStatus — unit", () => {
       expect(deriveEvidenceStatus(0, "confirmation")).toBe("fully_verified");
     });
 
-    it("returns partially_verified when 1–8 dimensions are unverified", () => {
-      for (let i = 1; i <= 8; i++) {
+    it("returns partially_verified when 1–9 dimensions are unverified", () => {
+      for (let i = 1; i <= 9; i++) {
         expect(deriveEvidenceStatus(i, "confirmation")).toBe("partially_verified");
       }
     });
 
-    it("returns unverified when all 9 dimensions are unverified", () => {
-      expect(deriveEvidenceStatus(9, "confirmation")).toBe("unverified");
+    it("returns unverified when all 10 dimensions are unverified (Gate 2)", () => {
+      expect(deriveEvidenceStatus(ALL_10, "confirmation")).toBe("unverified");
     });
   });
 
   describe("submission context (capped at partially_verified)", () => {
-    it("returns unverified when all 9 dimensions lack evidence URLs", () => {
-      expect(deriveEvidenceStatus(9, "submission")).toBe("unverified");
+    it("returns unverified when all 10 dimensions lack evidence URLs (Gate 2)", () => {
+      expect(deriveEvidenceStatus(ALL_10, "submission")).toBe("unverified");
     });
 
     it("returns partially_verified when some URLs provided — NOT fully_verified", () => {
@@ -47,7 +48,7 @@ describe("deriveEvidenceStatus — unit", () => {
     });
 
     it("never returns fully_verified from submission context", () => {
-      for (let i = 0; i <= 9; i++) {
+      for (let i = 0; i <= ALL_10; i++) {
         expect(deriveEvidenceStatus(i, "submission")).not.toBe("fully_verified");
       }
     });
@@ -60,15 +61,16 @@ describe("deriveEvidenceStatus — unit", () => {
 
 import { selfAssessedKeys } from "./vrl.d7.helpers";
 
+// Gate 2: 10 dimensions (mvlScore added)
 const DIM_KEYS = [
   "trlScore","mrlScore","brlScore","ecoScore",
-  "prlScore","ipScore","frlScore","regScore","srlScore",
+  "prlScore","ipScore","frlScore","regScore","srlScore","mvlScore",
 ] as const;
 
 describe("selfAssessedKeys — unit", () => {
-  it("returns all 9 keys when no evidence provided", () => {
-    expect(selfAssessedKeys(undefined)).toHaveLength(9);
-    expect(selfAssessedKeys({})).toHaveLength(9);
+  it("returns all 10 keys when no evidence provided", () => {
+    expect(selfAssessedKeys(undefined)).toHaveLength(10);
+    expect(selfAssessedKeys({})).toHaveLength(10);
   });
 
   it("returns only keys with blank/absent URLs", () => {
@@ -77,10 +79,10 @@ describe("selfAssessedKeys — unit", () => {
     expect(result).not.toContain("trlScore"); // provided
     expect(result).toContain("mrlScore");      // empty string
     expect(result).toContain("brlScore");      // absent
-    expect(result).toHaveLength(8);
+    expect(result).toHaveLength(9);  // 10 total minus 1 provided = 9
   });
 
-  it("returns empty when all 9 dimensions have non-empty URLs", () => {
+  it("returns empty when all 10 dimensions have non-empty URLs", () => {
     const evidence = Object.fromEntries(DIM_KEYS.map(k => [k, "https://example.com/" + k]));
     expect(selfAssessedKeys(evidence)).toHaveLength(0);
   });
@@ -156,27 +158,27 @@ describe("confirmEvidence authorization guard", () => {
 import { simulateEvidenceProgression } from "./vrl.d7.helpers";
 
 describe("evidence status progression", () => {
-  it("starts at unverified with 9 self-assessed dimensions", () => {
+  it("starts at unverified with 10 self-assessed dimensions (Gate 2)", () => {
     const state = simulateEvidenceProgression([]);
     expect(state.evidenceStatus).toBe("unverified");
-    expect(state.selfAssessedDimensions).toHaveLength(9);
+    expect(state.selfAssessedDimensions).toHaveLength(10);
     expect(state.hasUnverifiedInputs).toBe(true);
   });
 
-  it("advances to partially_verified after confirming 1–8 dimensions", () => {
+  it("advances to partially_verified after confirming 1–9 dimensions", () => {
     const partial = simulateEvidenceProgression([
       { dimensionKey: "trlScore", evidenceUrl: "https://example.com/trl" },
       { dimensionKey: "mrlScore", evidenceUrl: "https://example.com/mrl" },
     ]);
     expect(partial.evidenceStatus).toBe("partially_verified");
-    expect(partial.selfAssessedDimensions).toHaveLength(7);
+    expect(partial.selfAssessedDimensions).toHaveLength(8);  // 10 − 2 confirmed = 8
     expect(partial.hasUnverifiedInputs).toBe(true);
   });
 
-  it("reaches fully_verified after confirming all 9 dimensions", () => {
+  it("reaches fully_verified after confirming all 10 dimensions (Gate 2)", () => {
     const confirmations = [
       "trlScore","mrlScore","brlScore","ecoScore",
-      "prlScore","ipScore","frlScore","regScore","srlScore",
+      "prlScore","ipScore","frlScore","regScore","srlScore","mvlScore",
     ].map(dimensionKey => ({ dimensionKey, evidenceUrl: "https://example.com/" + dimensionKey }));
 
     const full = simulateEvidenceProgression(confirmations);
@@ -191,6 +193,6 @@ describe("evidence status progression", () => {
       { dimensionKey: "trlScore", evidenceUrl: "https://example.com/trl-v2" }, // overwrite
     ]);
     expect(duped.evidenceStatus).toBe("partially_verified");
-    expect(duped.selfAssessedDimensions).toHaveLength(8); // only trlScore is confirmed
+    expect(duped.selfAssessedDimensions).toHaveLength(9); // 10 − 1 confirmed = 9
   });
 });
