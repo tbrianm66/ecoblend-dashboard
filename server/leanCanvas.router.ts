@@ -1,8 +1,9 @@
 /**
- * Lean Canvas Router — v2
+ * Lean Canvas Router — v3 (Hybrid Venture Model Canvas)
  * Append-only versioning: every save inserts a new row (version = max+1).
- * Per-block metadata stored in lean_canvas_blocks (upserted on save).
- * Evidence links stored in lean_canvas_block_evidence_links.
+ * Supports both the legacy 11-block Lean Canvas fields and the new 10-block
+ * Hybrid VMC fields. Both field sets are accepted and persisted; clients can
+ * migrate incrementally without breaking existing canvas records.
  */
 import { z } from "zod";
 import { eq, desc, max, sql } from "drizzle-orm";
@@ -28,14 +29,20 @@ const blockMetaSchema = z.object({
   blockNotes:           z.string().nullable().optional(),
 });
 
+// Pivot tracking — new hybrid fields + legacy fields for backward compat
 const PIVOT_FIELDS: { key: string; pivotType: string }[] = [
-  { key: "customerSegments", pivotType: "customer_segment" },
-  { key: "problem",          pivotType: "problem" },
-  { key: "solution",         pivotType: "solution" },
-  { key: "uniqueValueProp",  pivotType: "value_proposition" },
-  { key: "revenueStreams",   pivotType: "revenue_streams" },
-  { key: "channels",         pivotType: "channels" },
-  { key: "unfairAdvantage",  pivotType: "business_architecture" },
+  { key: "customerSegments",    pivotType: "customer_segment" },
+  { key: "commercialValueProp", pivotType: "value_proposition" },
+  { key: "missionValueProp",    pivotType: "mission_value_proposition" },
+  { key: "revenueStreams",      pivotType: "revenue_streams" },
+  { key: "channels",            pivotType: "channels" },
+  { key: "keyResources",        pivotType: "key_resources" },
+  { key: "missionGovernance",   pivotType: "mission_governance" },
+  // Legacy field tracking (preserved for old canvas records)
+  { key: "problem",             pivotType: "problem" },
+  { key: "solution",            pivotType: "solution" },
+  { key: "uniqueValueProp",     pivotType: "value_proposition_legacy" },
+  { key: "unfairAdvantage",     pivotType: "business_architecture" },
 ];
 
 export const leanCanvasRouter = router({
@@ -83,15 +90,29 @@ export const leanCanvasRouter = router({
   /** Append-only save — always creates a new version row */
   save: publicProcedure
     .input(z.object({
-      ventureId:            z.string(),
+      ventureId: z.string(),
+
+      // ── Hybrid VMC fields (10-block schema) ────────────────────────────────
+      keyPartners:          z.string().optional(),
+      keyActivities:        z.string().optional(),
+      keyResources:         z.string().optional(),
+      commercialValueProp:  z.string().optional(),
+      missionValueProp:     z.string().optional(),
+      beneficiarySegments:  z.string().optional(),
+      missionGovernance:    z.string().optional(),
+      impactMetrics:        z.string().optional(),
+
+      // ── Shared fields (present in both legacy and hybrid) ──────────────────
       customerSegments:     z.string().optional(),
-      problem:              z.string().optional(),
-      existingAlternatives: z.string().optional(),
-      uniqueValueProp:      z.string().optional(),
-      solution:             z.string().optional(),
       channels:             z.string().optional(),
       revenueStreams:       z.string().optional(),
       costStructure:        z.string().optional(),
+
+      // ── Legacy Lean Canvas fields (backward compat — preserved on save) ────
+      problem:              z.string().optional(),
+      solution:             z.string().optional(),
+      uniqueValueProp:      z.string().optional(),
+      existingAlternatives: z.string().optional(),
       keyMetrics:           z.string().optional(),
       unfairAdvantage:      z.string().optional(),
       highLevelConcept:     z.string().optional(),
@@ -99,6 +120,8 @@ export const leanCanvasRouter = router({
       hypothesisTested:     z.string().optional(),
       successCriteria:      z.string().optional(),
       notes:                z.string().optional(),
+
+      // ── Canvas-level metadata ───────────────────────────────────────────────
       canvasTitle:          z.string().optional(),
       overallStatus:        z.string().optional(),
       versionLabel:         z.string().optional(),
@@ -136,31 +159,47 @@ export const leanCanvasRouter = router({
       const inserted = await db
         .insert(leanCanvases)
         .values({
-          ventureId:            input.ventureId,
-          version:              nextVersion,
+          ventureId: input.ventureId,
+          version:   nextVersion,
+
+          // Hybrid VMC fields
+          keyPartners:         input.keyPartners,
+          keyActivities:       input.keyActivities,
+          keyResources:        input.keyResources,
+          commercialValueProp: input.commercialValueProp,
+          missionValueProp:    input.missionValueProp,
+          beneficiarySegments: input.beneficiarySegments,
+          missionGovernance:   input.missionGovernance,
+          impactMetrics:       input.impactMetrics,
+
+          // Shared fields
+          customerSegments: input.customerSegments,
+          channels:         input.channels,
+          revenueStreams:   input.revenueStreams,
+          costStructure:    input.costStructure,
+
+          // Legacy fields (preserved)
           problem:              input.problem,
           solution:             input.solution,
           uniqueValueProp:      input.uniqueValueProp,
-          customerSegments:     input.customerSegments,
           existingAlternatives: input.existingAlternatives,
-          highLevelConcept:     input.highLevelConcept,
-          channels:             input.channels,
-          revenueStreams:       input.revenueStreams,
-          costStructure:        input.costStructure,
           keyMetrics:           input.keyMetrics,
           unfairAdvantage:      input.unfairAdvantage,
+          highLevelConcept:     input.highLevelConcept,
           mvpFormat:            input.mvpFormat,
           hypothesisTested:     input.hypothesisTested,
           successCriteria:      input.successCriteria,
           notes:                input.notes,
-          canvasTitle:          input.canvasTitle,
-          overallStatus:        input.overallStatus ?? "draft",
-          versionLabel:         input.versionLabel,
-          changeSummary:        input.changeSummary,
-          reasonForChange:      input.reasonForChange,
-          evidenceTrigger:      input.evidenceTrigger,
-          createdBy:            input.createdBy,
-          status:               "active",
+
+          // Metadata
+          canvasTitle:    input.canvasTitle,
+          overallStatus:  input.overallStatus ?? "draft",
+          versionLabel:   input.versionLabel,
+          changeSummary:  input.changeSummary,
+          reasonForChange: input.reasonForChange,
+          evidenceTrigger: input.evidenceTrigger,
+          createdBy:      input.createdBy,
+          status:         "active",
         })
         .returning();
 

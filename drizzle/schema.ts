@@ -7289,9 +7289,19 @@ export const leanCanvases = pgTable("lean_canvases", {
   costStructure:    text("costStructure"),
   keyMetrics:       text("keyMetrics"),
   unfairAdvantage:  text("unfairAdvantage"),
-  // Two additional blocks (11-block spec)
+  // Two additional blocks (11-block legacy spec — preserved for backward compat)
   existingAlternatives: text("existingAlternatives"),
   highLevelConcept:     text("highLevelConcept"),
+  // ── Hybrid Venture Model Canvas — 10-block mission-locked schema ──────────
+  // Added in 0009 migration. Legacy fields above are preserved for existing records.
+  keyPartners:           text("keyPartners"),
+  keyActivities:         text("keyActivities"),
+  keyResources:          text("keyResources"),
+  commercialValueProp:   text("commercialValueProp"),  // mapped from: uniqueValueProp (legacy)
+  missionValueProp:      text("missionValueProp"),
+  beneficiarySegments:   text("beneficiarySegments"),
+  missionGovernance:     text("missionGovernance"),
+  impactMetrics:         text("impactMetrics"),         // mapped from: keyMetrics (legacy)
   // R&D linkage
   mvpFormat:        text("mvpFormat"),          // concierge|wizard_of_oz|smoke_test|landing_page|prototype
   hypothesisTested: text("hypothesisTested"),
