@@ -1,0 +1,25 @@
+Please execute Gate 2 — Taxonomy Alignment and Profile SV-01 Deployment based on the Audit Document (FHV-EB-AUD-001 v1.0):
+
+1. Dimension Taxonomy Refactor (ENV → MVL):
+   - Rename the dimension currently coded as ENV (labelled "Environmental Validation") to MVL ("Market Validation Level").
+   - Update all backend schemas, tRPC routers, database models, TypeScript interfaces, and UI components where ENV was used to measure market demand/customer discovery.
+   - Retain its canonical 15% composite weighting under the new MVL identifier.
+   - Update UI headers, radar charts, tooltips, and PDF exports to explicitly display "Market Validation (MVL)".
+   - Add clear microcopy/tooltips under MVL clarifying that environmental/ecological substance is assessed under SRL (Sustainability Readiness Level) and ESG, not MVL.
+
+2. Profile SV-01 Implementation (Governed N/A Path for MRL):
+   - Add Profile configuration support to the scoring engine (e.g., profile: "STANDARD" | "SV-01_SOCIAL_SOFTWARE").
+   - Implement the Profile SV-01 scoring rules:
+     * Allow MRL (Manufacturing Readiness Level) to be marked as UNSCORED / N/A for software, social, and service ventures.
+     * Ensure the veto-gate logic under Profile SV-01 bypasses the MRL floor threshold when MRL is set to N/A, preventing false-negative gate-locks for non-hardware ventures.
+     * Ensure UNSCORED treatment adheres to the B-03 three-state evidence model (EVIDENCED, SELF-ASSESSED, UNSCORED) and does not treat N/A as a numerical zero.
+   - Add a Profile selection setting in the Venture Intake / Settings UI allowing admins/reviewers to assign Profile SV-01 to eligible ventures.
+
+3. PDF & Export Updates:
+   - Ensure all dynamic PDF report generators (exportPdf.ts) render MVL correctly as Market Validation.
+   - Ensure exported scorecards clearly display active Profile designation (e.g., "Profile: SV-01 (Social/Software)") and indicate MRL as "N/A (Governed)" when active.
+
+4. Testing & Regression Suite:
+   - Add unit tests verifying that MVL composite scoring calculations remain exact.
+   - Add unit tests for Profile SV-01 asserting that a software/social venture with MRL = UNSCORED passes veto-gate checks if all other dimension floors are met.
+   - Assert zero regressions across the 101 canonical MRL tests and 119 B-03 evidence enforcement tests.
