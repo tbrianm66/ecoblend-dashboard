@@ -46,6 +46,10 @@ export interface Venture {
   isInternalLab?: boolean; // true for EcoRace — not a portfolio brand
   logo?: string; // CDN URL for brand logo
   logoBg?: string; // CSS background colour for logo container (for dark-bg logos)
+  /** Live Engine A MRL level (1–9). Absent when no mrl_assessments row exists for this venture. */
+  mrlLevel?: number;
+  /** Human-readable MRL label from Engine A (e.g. "Process Dev"). */
+  mrlLabel?: string;
 }
 
 export const VRL_STAGES = [

@@ -111,6 +111,7 @@ export const mrlScoringRouter = router({
         schemaVersion:  "1.0.0",
         assessmentType: "manual",
         snapshotHash,
+        engineVersion:  "engine-b",  // D6 provenance marker
       });
 
       // Insert one row per category (5 rows)

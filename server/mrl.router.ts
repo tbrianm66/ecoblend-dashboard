@@ -36,11 +36,11 @@ import {
 // ── Input Schemas ─────────────────────────────────────────────────────────────
 
 const SubsystemScoresSchema = z.object({
-  pde: z.number().min(0).max(100),
-  scie: z.number().min(0).max(100),
-  csm: z.number().min(0).max(100),
-  qce: z.number().min(0).max(100),
-  sil: z.number().min(0).max(100),
+  pde:  z.number().min(0).max(100).refine(v => v >= 0 && v <= 100, { message: "PDE score must be in [0, 100]" }),
+  scie: z.number().min(0).max(100).refine(v => v >= 0 && v <= 100, { message: "SCIE score must be in [0, 100]" }),
+  csm:  z.number().min(0).max(100).refine(v => v >= 0 && v <= 100, { message: "CSM score must be in [0, 100]" }),
+  qce:  z.number().min(0).max(100).refine(v => v >= 0 && v <= 100, { message: "QCE score must be in [0, 100]" }),
+  sil:  z.number().min(0).max(100).refine(v => v >= 0 && v <= 100, { message: "SIL score must be in [0, 100]" }),
 });
 
 const CreateAssessmentSchema = z.object({
@@ -179,6 +179,29 @@ export const mrlRouter = router({
       return { ...assessment, levelDef, trlAlignment: alignment, isTrlAligned: isAligned };
     }),
 
+  /**
+   * Get the latest Engine A MRL data for a single venture.
+   * Lightweight alternative to getAssessment — returns only the fields
+   * needed for PDF export and Home dashboard wiring.
+   */
+  getLatestByVenture: publicProcedure
+    .input(z.object({ ventureId: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      const [row] = await db
+        .select({
+          mrlLevel:      mrlAssessments.mrlLevel,
+          mrlLabel:      mrlAssessments.mrlLabel,
+          compositeScore: mrlAssessments.compositeScore,
+          assessedAt:    mrlAssessments.assessedAt,
+        })
+        .from(mrlAssessments)
+        .where(eq(mrlAssessments.ventureId, input.ventureId))
+        .orderBy(desc(mrlAssessments.assessedAt))
+        .limit(1);
+      return row ?? null;
+    }),
+
   /** Get all MRL assessments for a venture (history) */
   getAssessmentHistory: publicProcedure
     .input(z.object({ ventureId: z.string() }))
@@ -225,6 +248,7 @@ export const mrlRouter = router({
         mrlRegion: region,
         notes: input.notes,
         assessedBy: input.assessedBy ?? "User",
+        engineVersion: "engine-a",   // D6 provenance marker
       });
 
       // Auto-seed default risks for this assessment

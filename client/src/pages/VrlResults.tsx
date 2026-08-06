@@ -7,8 +7,9 @@ import { useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, CheckCircle2, TrendingUp, Clock, ChevronRight } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, ChevronRight } from "lucide-react";
 import { useLocation } from "wouter";
+import VrlEvidencePanel, { EvidenceStatusBadge } from "@/components/VrlEvidencePanel";
 
 // ── Dimension definitions (same order as form) ────────────────────────────────
 const DIMS = [
@@ -276,7 +277,25 @@ export default function VrlResults() {
               <div className="text-xs text-gray-600 mt-1 font-mono">
                 {new Date(latest.createdAt).toLocaleDateString()} · {latest.submittedBy ?? "system"}
               </div>
+              {/* D7 evidence status badge */}
+              <div className="mt-3 flex justify-center">
+                <EvidenceStatusBadge status={(latest as any).evidenceStatus ?? "unverified"} />
+              </div>
             </div>
+
+            {/* D7: Evidence Panel — show when any dimension is self-assessed */}
+            {((latest as any).hasUnverifiedInputs || (latest as any).evidenceStatus !== "fully_verified") && (
+              <VrlEvidencePanel
+                assessmentId={latest.id}
+                selfAssessedDimensions={(latest as any).selfAssessedDimensions ?? []}
+                evidenceStatus={(latest as any).evidenceStatus ?? "unverified"}
+                updatedAt={(latest as any).updatedAt}
+                confirmedBy={(latest as any).evidenceConfirmedBy}
+                confirmedAt={(latest as any).evidenceConfirmedAt}
+                submittedEvidenceLinks={(latest as any).submittedEvidenceLinks ?? null}
+                onConfirmed={() => { /* confirmations.refetch() via panel's own query */ }}
+              />
+            )}
           </div>
 
           {/* Meta-domain bars + raw scores */}

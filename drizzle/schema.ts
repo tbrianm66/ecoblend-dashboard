@@ -5738,8 +5738,8 @@ export const mrlAssessments = pgTable("mrl_assessments", {
   qceScore:        integer("qceScore"),                     // Quality & Compliance Engine
   silScore:        integer("silScore"),                     // Sustainability Integration Layer
   compositeScore:  integer("compositeScore"),               // weighted composite (0-100)
-  // VRL contribution (MRL weight = 0.30 in VRL composite)
-  vrlContribution: doublePrecision("vrlContribution"),            // MRL - 0.30 contribution to VRL
+  // Engine A normalised MRL contribution (0–1); dual-pathway: 0.35 Product + 0.40 Execution in vrl.engine.ts
+  vrlContribution: doublePrecision("vrlContribution"),            // Engine A normalised (mrlLevel−1)/8 → 0–1
   // Risk summary
   riskScoreOverall: integer("riskScoreOverall"),            // 0-100 RAG aggregate
   riskRag:         text("mrlRiskRag").default("AMBER"),
@@ -5747,6 +5747,8 @@ export const mrlAssessments = pgTable("mrl_assessments", {
   mrlRegion: text("mrlRegion").default("HYBRID"),
   notes:           text("notes"),
   assessedBy:      varchar("assessedBy", { length: 128 }),
+  // D6 provenance column — identifies the scoring engine that produced this row
+  engineVersion:   varchar("engineVersion", { length: 32 }).notNull().default("engine-a"),
   assessedAt:      timestamp("assessedAt").defaultNow().notNull(),
   createdAt:       timestamp("createdAt").defaultNow().notNull(),
   updatedAt:       timestamp("updatedAt").defaultNow().notNull(),
@@ -6014,6 +6016,9 @@ export const scoringSessions = pgTable("scoring_sessions", {
   scoredBy:        varchar("scoredBy", { length: 36 }),
   assessmentType:  varchar("assessmentType", { length: 20 }).notNull().default("manual"),
   snapshotHash:    varchar("snapshotHash", { length: 64 }).notNull(),
+  // D6 provenance columns — added via migration d6-engine-provenance
+  engineVersion:   varchar("engineVersion", { length: 32 }).notNull().default("unknown"),
+  supersededAt:    timestamp("supersededAt"),
   createdAt:       timestamp("createdAt").defaultNow().notNull(),
 });
 export type ScoringSession = typeof scoringSessions.$inferSelect;
@@ -6083,9 +6088,36 @@ export const vrlAssessments = pgTable("vrl_assessments", {
   bandLabel:            varchar("band_label", { length: 64 }),
   // -- Metadata ---------------------------------------------------------------
   submittedBy:          varchar("submitted_by", { length: 128 }),
+  // -- D7 Evidence enforcement columns ----------------------------------------
+  // evidenceStatus: updated only by confirmEvidence (human reviewer gate).
+  // submitAssessment always produces 'unverified'; fully_verified requires admin confirmation.
+  evidenceStatus:            varchar("evidence_status", { length: 32 }),          // 'unverified'|'partially_verified'|'fully_verified'
+  selfAssessedDimensions:    text("self_assessed_dimensions").array(),             // dimension keys lacking confirmed evidence
+  hasUnverifiedInputs:       boolean("has_unverified_inputs").default(true),       // true when any dimension lacks a confirmed evidence record
+  evidenceConfirmedAt:       timestamp("evidence_confirmed_at"),                   // set when all 9 dims are confirmed
+  evidenceConfirmedBy:       varchar("evidence_confirmed_by", { length: 128 }),
+  updatedAt:                 timestamp("updated_at").defaultNow().notNull(),
+  // submittedById: user ID of the score submitter — used to prevent self-confirmation
+  submittedById:             varchar("submitted_by_id", { length: 128 }),
+  // submittedEvidenceLinks: JSON map of dimension key → URL provided at submission time
+  // Stored so reviewers can inspect and confirm the exact URLs originally submitted.
+  submittedEvidenceLinks:    json("submitted_evidence_links").$type<Partial<Record<string, string>>>(),
 });
 export type VrlAssessment = typeof vrlAssessments.$inferSelect;
 export type InsertVrlAssessment = typeof vrlAssessments.$inferInsert;
+
+// vrl_evidence_confirmations — one row per human-confirmed dimension per assessment
+// Written atomically by vrl.confirmEvidence (D7)
+export const vrlEvidenceConfirmations = pgTable("vrl_evidence_confirmations", {
+  id:            varchar("id", { length: 64 }).primaryKey(),
+  assessmentId:  varchar("assessment_id", { length: 64 }).notNull(),  // → vrl_assessments.id
+  dimensionKey:  varchar("dimension_key", { length: 32 }).notNull(),  // e.g. "trlScore"
+  evidenceUrl:   text("evidence_url").notNull(),
+  confirmedBy:   varchar("confirmed_by", { length: 128 }),
+  confirmedAt:   timestamp("confirmed_at").defaultNow().notNull(),
+});
+export type VrlEvidenceConfirmation = typeof vrlEvidenceConfirmations.$inferSelect;
+export type InsertVrlEvidenceConfirmation = typeof vrlEvidenceConfirmations.$inferInsert;
 
 // -------------------------------------------------------------------------------
 // COACHING MODULE V2 - Execution Discipline Engine (BEBUS-COACH-V2-001)

@@ -12,7 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { CheckCircle, XCircle, Clock, AlertTriangle, Plus, TrendingUp, Target, Zap } from "lucide-react";
+import { CheckCircle, XCircle, Clock, AlertTriangle, Plus } from "lucide-react";
+import { EvidenceStatusBadge } from "@/components/VrlEvidencePanel";
 
 const STAGE_COLORS: Record<string, string> = {
   discover: "#3B85BA", define: "#8B5CF6", build: "#F69111", launch: "#56A837", spinout: "#EC4899",
@@ -36,11 +37,13 @@ export default function VrlDashboardV4() {
   const [newAction, setNewAction] = useState({ action: "", owner: "", linkedModule: "" });
   const [showActionForm, setShowActionForm] = useState(false);
 
-  const summary   = trpc.vrlDashboardV4.getDashboardSummary.useQuery({ ventureId }, { enabled: !!ventureId });
-  const gates     = trpc.vrlDashboardV4.getStageGates.useQuery({ ventureId }, { enabled: !!ventureId });
-  const checklist = trpc.vrlDashboardV4.getSpinoutChecklist.useQuery({ ventureId }, { enabled: !!ventureId });
-  const actions   = trpc.vrlDashboardV4.getActionsLog.useQuery({ ventureId, limit: 20 }, { enabled: !!ventureId });
-  const gateDefs  = trpc.vrlDashboardV4.getSpinoutGateDefinitions.useQuery();
+  const summary    = trpc.vrlDashboardV4.getDashboardSummary.useQuery({ ventureId }, { enabled: !!ventureId });
+  const gates      = trpc.vrlDashboardV4.getStageGates.useQuery({ ventureId }, { enabled: !!ventureId });
+  const checklist  = trpc.vrlDashboardV4.getSpinoutChecklist.useQuery({ ventureId }, { enabled: !!ventureId });
+  const actions    = trpc.vrlDashboardV4.getActionsLog.useQuery({ ventureId, limit: 20 }, { enabled: !!ventureId });
+  const gateDefs   = trpc.vrlDashboardV4.getSpinoutGateDefinitions.useQuery();
+  // D7: fetch VRL evidence status separately — vrlDashboardV4 summary has no evidence fields
+  const vrlLatest  = trpc.vrl.getLatestAssessment.useQuery({ ventureId }, { enabled: !!ventureId });
 
   const upsertGate = trpc.vrlDashboardV4.upsertStageGate.useMutation({
     onSuccess: () => { toast.success("Stage gate updated"); gates.refetch(); summary.refetch(); setEditGate(null); },
@@ -87,6 +90,10 @@ export default function VrlDashboardV4() {
           <div className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
             <div className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">VRL Score</div>
             <div className="text-3xl font-bold" style={{ color: "#3B85BA", fontFamily: "'Prompt', sans-serif" }}>{s?.overallVrlScore ?? 0}%</div>
+            {/* D7: evidence status — sourced from VRL assessment (not dashboardV4 summary) */}
+            <div className="mt-2">
+              <EvidenceStatusBadge status={vrlLatest.data?.evidenceStatus ?? "unverified"} />
+            </div>
           </div>
           <div className="bg-white rounded-xl border p-4 shadow-sm" style={{ borderColor: "#e5e7eb" }}>
             <div className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Spin-Out Score</div>
