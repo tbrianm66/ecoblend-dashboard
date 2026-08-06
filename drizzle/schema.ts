@@ -8425,6 +8425,30 @@ export type InsertFedsilkRiskFlag = typeof fedsilkRiskFlags.$inferInsert;
 //   2. Dispute resolution requires SCORING_INTEGRITY_REVIEWER or admin role.
 //   3. The assessment submitter cannot resolve their own dispute (builder–verifier sep).
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Gate 4 — Scorecard Kill-Criteria Alert Log (FHV-EB-AUD-001 §4)
+// ─────────────────────────────────────────────────────────────────────────────
+// One row per kill-criterion breach detected by the Scorecard Telemetry Engine.
+// Each of the 8 audit hypotheses (H1–H8) can produce alerts here.
+// Alerts persist until manually resolved by an admin with a resolution note.
+// ─────────────────────────────────────────────────────────────────────────────
+export const scorecardKillAlerts = pgTable("scorecard_kill_alerts", {
+  id:                  varchar("id", { length: 64 }).primaryKey(),
+  hypothesisId:        varchar("hypothesis_id", { length: 4 }).notNull(),   // H1–H8
+  hypothesisName:      varchar("hypothesis_name", { length: 128 }).notNull(),
+  breachDetail:        text("breach_detail").notNull(),
+  metricAtBreach:      varchar("metric_at_breach", { length: 64 }),         // numeric value as string
+  killCriterion:       text("kill_criterion").notNull(),
+  sampleSizeAtBreach:  integer("sample_size_at_breach").default(0),
+  resolved:            boolean("resolved").notNull().default(false),
+  resolvedBy:          varchar("resolved_by", { length: 256 }),
+  resolvedAt:          timestamp("resolved_at"),
+  resolvedNote:        text("resolved_note"),
+  createdAt:           timestamp("created_at").defaultNow().notNull(),
+});
+export type ScorecardKillAlert = typeof scorecardKillAlerts.$inferSelect;
+export type InsertScorecardKillAlert = typeof scorecardKillAlerts.$inferInsert;
+
 export const scoreDisputes = pgTable("score_disputes", {
   id:            varchar("id", { length: 64 }).primaryKey(),
   // Which VRL assessment and dimension is under dispute

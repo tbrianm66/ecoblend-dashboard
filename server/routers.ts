@@ -1,5 +1,6 @@
 import { vrlRouter } from "./vrl.router";
 import { scoreDisputeRouter } from "./scoreDispute.router";
+import { scorecardTelemetryRouter } from "./scorecardTelemetry.router";
 import { mrlScoringRouter } from "./mrlScoring.router";
 import { syncRouter } from "./sync.router";
 import { mrlRouter } from "./mrl.router";
@@ -7333,5 +7334,6 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
   fedsilkGovernance: fedsilkGovernanceRouter,
   // Gate 3 — Score Dispute & Escalation Workflow (FHV-EB-AUD-001 §2–3)
   scoreDispute: scoreDisputeRouter,
+  scorecardTelemetry: scorecardTelemetryRouter,
 });
 export type AppRouter = typeof appRouter;

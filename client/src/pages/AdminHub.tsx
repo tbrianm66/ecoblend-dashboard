@@ -7,7 +7,7 @@ import {
   BookOpenCheck, Users, ShieldCheck, LayoutTemplate,
   Database, Settings2, Plug, Code2, ClipboardList,
   SlidersHorizontal, ChevronRight, BarChart3, Sliders, CheckSquare,
-  GitBranch,
+  GitBranch, ShieldAlert,
 } from "lucide-react";
 
 const ADMIN_SECTIONS = [
@@ -135,6 +135,15 @@ const ADMIN_SECTIONS = [
     label: "Production Readiness",
     description: "Pre-launch verification checklist covering all Phase 3C hardening areas: DB schema, permissions, thresholds, QA tests, and more.",
     color: "#F69111",
+    count: "Live",
+  },
+  {
+    id: "scorecard-telemetry",
+    href: "/admin/scorecard-telemetry",
+    icon: ShieldAlert,
+    label: "System Integrity & Scorecard",
+    description: "Real-time kill-criteria monitor for audit hypotheses H1–H8 (FHV-EB-AUD-001 §4). Tracks reproducibility, evidence-bound scores, parity, commercial viability, predictive signal, coaching integrity, module usability, and environmental integrity.",
+    color: "#ef4444",
     count: "Live",
   },
 ];

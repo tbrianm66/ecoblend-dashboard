@@ -96,6 +96,7 @@ import AdminSystemConfig from "./pages/AdminSystemConfig";
 import AdminWidgetAnalytics from "./pages/AdminWidgetAnalytics";
 import AdminWidgetSettings from "./pages/AdminWidgetSettings";
 import AdminProductionReadiness from "./pages/AdminProductionReadiness";
+import AdminScorecardTelemetry from "./pages/AdminScorecardTelemetry";
 import AdminIntegrations from "./pages/AdminIntegrations";
 import AdminApiSettings from "./pages/AdminApiSettings";
 import ModulePlaceholder from "./pages/ModulePlaceholder";
@@ -227,6 +228,7 @@ function Router() {
       <Route path="/admin/widget-analytics" component={AdminWidgetAnalytics} />
       <Route path="/admin/widget-settings" component={AdminWidgetSettings} />
       <Route path="/admin/production-readiness" component={AdminProductionReadiness} />
+      <Route path="/admin/scorecard-telemetry" component={AdminScorecardTelemetry} />
       <Route path="/admin/users" component={AdminUsers} />
       <Route path="/admin/permissions" component={AdminPermissions} />
       <Route path="/admin/templates" component={AdminTemplates} />
