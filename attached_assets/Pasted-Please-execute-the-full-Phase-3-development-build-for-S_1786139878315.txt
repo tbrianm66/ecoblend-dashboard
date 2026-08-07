@@ -1,0 +1,26 @@
+Please execute the full Phase 3 development build for Section 5 (R&D Hub & IP Tracker) to replace all placeholder cards with functional interactive UI components and backend database schemas:
+
+1. Database Schema & API Routes:
+   - Create tables/schemas for Phase 3:
+     * `ip_assets`: id, venture_id, title, ip_type ('patent', 'trade_secret', 'trademark', 'copyright'), status ('draft', 'prior_art', 'provisional', 'pct_filed', 'granted'), filing_number, jurisdiction, filing_date, grant_date, assignee.
+     * `rnd_projects`: id, venture_id, project_name, current_stage ('concept', 'simulation', 'prototype', 'integration'), target_trl (1-9), completion_percentage.
+     * `technical_kpis`: id, venture_id, metric_name, target_value, actual_value, unit, status ('on_track', 'at_risk', 'failed').
+     * `prototype_tests`: id, venture_id, prototype_version, test_name, pass_fail_status, test_date, test_results_notes, evidence_id.
+   - Implement tRPC endpoints (CRUD) for all four R&D entities.
+
+2. IP Tracker View (`/rnd/ip`):
+   - Replace the Phase 3 placeholder card with a full IP Management Dashboard:
+     * Summary cards: Total IP Assets, Pending Patents, Granted Patents, Active Trade Secrets.
+     * Interactive table listing all IP assets with status badges, filing dates, and direct links to upload/view filing receipts.
+     * "Add IP Asset" modal form supporting document attachments that auto-sync to the Evidence Ledger (b03 evidence model).
+
+3. R&D Hub & Lifecycle View (`/rnd/hub` or `/rnd/overview`):
+   - Interactive 4-stage kanban board (Concept -> Simulation -> Prototype -> Integration) showing active R&D projects.
+   - Stage progression gate checklist requiring evidence before advancing a project.
+
+4. Technical KPIs & Prototype Testing Views (`/rnd/kpis`, `/rnd/experiments`, `/rnd/prototypes`):
+   - Create a clean KPI tracker table showing Target vs. Actual performance with status indicators.
+   - Create a Prototype Testing log view where engineers can record test runs, record pass/fail results, and attach technical evidence logs.
+
+5. Scoring Engine Integration:
+   - Connect saved IP assets and verified technical KPIs directly to the IP and TRL dimensions in the VRL Scoring Engine and Evidence Ledger.

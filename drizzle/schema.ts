@@ -4,6 +4,7 @@ import {
   doublePrecision,
   integer,
   json,
+  jsonb,
   numeric,
   pgTable,
   serial,
@@ -8473,3 +8474,67 @@ export const scoreDisputes = pgTable("score_disputes", {
 });
 export type ScoreDispute = typeof scoreDisputes.$inferSelect;
 export type InsertScoreDispute = typeof scoreDisputes.$inferInsert;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Phase 3 — R&D Hub & IP Tracker (Section 5)
+// Migration 0013
+// Note: ip_assets table already exists (IpManagement module); reused here.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// R&D Projects — 4-stage lifecycle kanban (concept → simulation → prototype → integration)
+export const rndProjects = pgTable("rnd_projects", {
+  id:                   serial("id").primaryKey(),
+  ventureId:            varchar("venture_id", { length: 64 }).notNull(),
+  projectName:          varchar("project_name", { length: 256 }).notNull(),
+  description:          text("description"),
+  classification:       varchar("classification", { length: 32 }).notNull().default("iterative"),
+  currentStage:         varchar("current_stage", { length: 32 }).notNull().default("concept"),
+  stageStatus:          varchar("stage_status", { length: 32 }).notNull().default("in_progress"),
+  targetTrl:            integer("target_trl").notNull().default(4),
+  completionPercentage: integer("completion_percentage").notNull().default(0),
+  technicalLead:        varchar("technical_lead", { length: 256 }),
+  domain:               varchar("domain", { length: 256 }),
+  budgetAllocated:      integer("budget_allocated").default(0),
+  budgetSpent:          integer("budget_spent").default(0),
+  ipStatus:             varchar("ip_status", { length: 128 }),
+  gateChecklist:        jsonb("gate_checklist").default({}),
+  createdAt:            timestamp("created_at").defaultNow().notNull(),
+  updatedAt:            timestamp("updated_at").defaultNow().notNull(),
+});
+export type RndProject = typeof rndProjects.$inferSelect;
+export type InsertRndProject = typeof rndProjects.$inferInsert;
+
+// Technical KPIs — target vs. actual performance metrics per venture/project
+export const technicalKpis = pgTable("technical_kpis", {
+  id:           serial("id").primaryKey(),
+  ventureId:    varchar("venture_id", { length: 64 }).notNull(),
+  projectId:    integer("project_id"),
+  metricName:   varchar("metric_name", { length: 256 }).notNull(),
+  targetValue:  varchar("target_value", { length: 256 }).notNull(),
+  actualValue:  varchar("actual_value", { length: 256 }),
+  unit:         varchar("unit", { length: 64 }),
+  status:       varchar("status", { length: 32 }).notNull().default("on_track"),
+  notes:        text("notes"),
+  createdAt:    timestamp("created_at").defaultNow().notNull(),
+  updatedAt:    timestamp("updated_at").defaultNow().notNull(),
+});
+export type TechnicalKpi = typeof technicalKpis.$inferSelect;
+export type InsertTechnicalKpi = typeof technicalKpis.$inferInsert;
+
+// Prototype Tests — test run log with pass/fail results and evidence links
+export const prototypeTests = pgTable("prototype_tests", {
+  id:                serial("id").primaryKey(),
+  ventureId:         varchar("venture_id", { length: 64 }).notNull(),
+  projectId:         integer("project_id"),
+  prototypeVersion:  varchar("prototype_version", { length: 64 }).notNull(),
+  testName:          varchar("test_name", { length: 256 }).notNull(),
+  passFailStatus:    varchar("pass_fail_status", { length: 16 }).notNull().default("pending"),
+  testDate:          timestamp("test_date"),
+  testResultsNotes:  text("test_results_notes"),
+  evidenceId:        varchar("evidence_id", { length: 128 }),
+  evidenceUrl:       text("evidence_url"),
+  createdAt:         timestamp("created_at").defaultNow().notNull(),
+  updatedAt:         timestamp("updated_at").defaultNow().notNull(),
+});
+export type PrototypeTest = typeof prototypeTests.$inferSelect;
+export type InsertPrototypeTest = typeof prototypeTests.$inferInsert;

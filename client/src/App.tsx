@@ -139,6 +139,9 @@ import ReadinessScoring from "./pages/ReadinessScoring";
 import RDHub from "./pages/RDHub";
 import LeanCanvas from "./pages/lean/LeanCanvas";
 import Prototypes from "./pages/rnd/Prototypes";
+import RndIpTracker from "./pages/rnd/RndIpTracker";
+import RndKpis from "./pages/rnd/RndKpis";
+import RndExperiments from "./pages/rnd/RndExperiments";
 import RiskIntelligence from "./pages/RiskIntelligence";
 import InvestmentPack from "./pages/InvestmentPack";
 import GovernanceHub from "./pages/GovernanceHub";
@@ -273,10 +276,10 @@ function Router() {
       <Route path="/lean/canvas" component={LeanCanvas} />
       {/* Module 5: R&D Hub */}
       <Route path="/rnd" component={RDHub} />
-      <Route path="/rnd/experiments" component={ModulePlaceholder} />
-      <Route path="/rnd/kpis" component={ModulePlaceholder} />
+      <Route path="/rnd/experiments" component={RndExperiments} />
+      <Route path="/rnd/kpis" component={RndKpis} />
       <Route path="/rnd/prototypes" component={Prototypes} />
-      <Route path="/rnd/ip" component={ModulePlaceholder} />
+      <Route path="/rnd/ip" component={RndIpTracker} />
       {/* Module 6: Operations & Manufacturing */}
       <Route path="/operations" component={ModulePlaceholder} />
       <Route path="/operations/suppliers" component={ModulePlaceholder} />

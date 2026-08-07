@@ -92,6 +92,13 @@
       "when": 1754640000000,
       "tag": "0012_gate4_scorecard_telemetry",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1754726400000,
+      "tag": "0013_phase3_rnd_hub",
+      "breakpoints": true
     }
   ]
 }

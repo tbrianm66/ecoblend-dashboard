@@ -255,8 +255,10 @@ import { sustainabilityRouter } from "./sustainability.router";
 import { collaborationRouter } from "./collaboration.router";
 import { legalRequirementsRouter } from "./legalRequirements.router";
 import { fedsilkGovernanceRouter } from "./fedsilkGovernance.router";
+import { rndRouter } from "./rnd.router";
 
 export const appRouter = router({
+  rnd: rndRouter,
   discoveryMarket: discoveryMarketRouter,
   commandCentreLean: commandCentreLeanRouter,
   wtp: wtpRouter,
