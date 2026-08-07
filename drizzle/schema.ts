@@ -8538,3 +8538,94 @@ export const prototypeTests = pgTable("prototype_tests", {
 });
 export type PrototypeTest = typeof prototypeTests.$inferSelect;
 export type InsertPrototypeTest = typeof prototypeTests.$inferInsert;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Migration 0014
+// Phase 3: Operations & Manufacturing Module
+// Tables: operating_models, suppliers, manufacturing_plans,
+//         quality_compliance, mrl_evaluations
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Operating Models — manufacturing footprint definitions (in-house / CMO / hybrid / outsourced)
+export const operatingModels = pgTable("operating_models", {
+  id:                    serial("id").primaryKey(),
+  ventureId:             varchar("venture_id", { length: 64 }).notNull(),
+  modelType:             varchar("model_type", { length: 50 }).notNull().default("in_house"),
+  capacityUnitsPerMonth: integer("capacity_units_per_month"),
+  unitOpCost:            numeric("unit_op_cost", { precision: 14, scale: 4 }),
+  facilityLocation:      text("facility_location"),
+  status:                varchar("status", { length: 50 }).notNull().default("draft"),
+  notes:                 text("notes"),
+  createdAt:             timestamp("created_at").defaultNow().notNull(),
+  updatedAt:             timestamp("updated_at").defaultNow().notNull(),
+});
+export type OperatingModel = typeof operatingModels.$inferSelect;
+export type InsertOperatingModel = typeof operatingModels.$inferInsert;
+
+// Suppliers — supply chain directory with risk ratings and audit status
+export const suppliers = pgTable("suppliers", {
+  id:                serial("id").primaryKey(),
+  ventureId:         varchar("venture_id", { length: 64 }).notNull(),
+  supplierName:      varchar("supplier_name", { length: 255 }).notNull(),
+  componentSupplied: text("component_supplied"),
+  leadTimeDays:      integer("lead_time_days"),
+  moq:               integer("moq"),
+  unitCost:          numeric("unit_cost", { precision: 14, scale: 4 }),
+  riskLevel:         varchar("risk_level", { length: 20 }).notNull().default("medium"),
+  singleSource:      boolean("single_source").notNull().default(false),
+  auditStatus:       varchar("audit_status", { length: 50 }).notNull().default("not_audited"),
+  notes:             text("notes"),
+  createdAt:         timestamp("created_at").defaultNow().notNull(),
+  updatedAt:         timestamp("updated_at").defaultNow().notNull(),
+});
+export type Supplier = typeof suppliers.$inferSelect;
+export type InsertSupplier = typeof suppliers.$inferInsert;
+
+// Manufacturing Plans — production runs across pilot / scale-up / commercial phases
+export const manufacturingPlans = pgTable("manufacturing_plans", {
+  id:                    serial("id").primaryKey(),
+  ventureId:             varchar("venture_id", { length: 64 }).notNull(),
+  phaseName:             varchar("phase_name", { length: 50 }).notNull().default("pilot"),
+  targetYieldPercentage: numeric("target_yield_percentage", { precision: 5, scale: 2 }),
+  actualYieldPercentage: numeric("actual_yield_percentage", { precision: 5, scale: 2 }),
+  scrapRate:             numeric("scrap_rate", { precision: 5, scale: 2 }),
+  plannedStartDate:      date("planned_start_date"),
+  completionDate:        date("completion_date"),
+  notes:                 text("notes"),
+  createdAt:             timestamp("created_at").defaultNow().notNull(),
+  updatedAt:             timestamp("updated_at").defaultNow().notNull(),
+});
+export type ManufacturingPlan = typeof manufacturingPlans.$inferSelect;
+export type InsertManufacturingPlan = typeof manufacturingPlans.$inferInsert;
+
+// Quality Compliance — ISO/certification checklist with expiration tracking
+export const qualityCompliance = pgTable("quality_compliance", {
+  id:                 serial("id").primaryKey(),
+  ventureId:          varchar("venture_id", { length: 64 }).notNull(),
+  certificationName:  varchar("certification_name", { length: 255 }).notNull(),
+  standardCode:       varchar("standard_code", { length: 100 }),
+  status:             varchar("status", { length: 50 }).notNull().default("not_started"),
+  expiryDate:         date("expiry_date"),
+  documentEvidenceId: varchar("document_evidence_id", { length: 255 }),
+  notes:              text("notes"),
+  createdAt:          timestamp("created_at").defaultNow().notNull(),
+  updatedAt:          timestamp("updated_at").defaultNow().notNull(),
+});
+export type QualityCompliance = typeof qualityCompliance.$inferSelect;
+export type InsertQualityCompliance = typeof qualityCompliance.$inferInsert;
+
+// MRL Evaluations — operations module MRL evidence entries linked to B-03 Evidence Ledger
+// Integrates with canonical MRL Engine (BEBUS-VRL-WGM-002); supports SV-01 N/A state
+export const mrlEvaluations = pgTable("mrl_evaluations", {
+  id:              serial("id").primaryKey(),
+  ventureId:       varchar("venture_id", { length: 64 }).notNull(),
+  mrlLevel:        integer("mrl_level").notNull(),
+  evaluationNotes: text("evaluation_notes"),
+  evidenceId:      varchar("evidence_id", { length: 255 }),
+  status:          varchar("status", { length: 50 }).notNull().default("draft"),
+  createdAt:       timestamp("created_at").defaultNow().notNull(),
+  updatedAt:       timestamp("updated_at").defaultNow().notNull(),
+});
+export type MrlEvaluation = typeof mrlEvaluations.$inferSelect;
+export type InsertMrlEvaluation = typeof mrlEvaluations.$inferInsert;
+export type InsertPrototypeTest = typeof prototypeTests.$inferInsert;

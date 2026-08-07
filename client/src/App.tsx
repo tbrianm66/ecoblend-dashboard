@@ -100,6 +100,11 @@ import AdminScorecardTelemetry from "./pages/AdminScorecardTelemetry";
 import AdminIntegrations from "./pages/AdminIntegrations";
 import AdminApiSettings from "./pages/AdminApiSettings";
 import ModulePlaceholder from "./pages/ModulePlaceholder";
+import OperationsHub from "./pages/OperationsHub";
+import OpsSuppliers from "./pages/operations/OpsSuppliers";
+import OpsManufacturing from "./pages/operations/OpsManufacturing";
+import OpsCompliance from "./pages/operations/OpsCompliance";
+import OpsMrlEvidence from "./pages/operations/OpsMrlEvidence";
 import SustainabilityHub from "./pages/sustainability/SustainabilityHub";
 import ImpactMetrics from "./pages/sustainability/ImpactMetrics";
 import LcaCarbon from "./pages/sustainability/LcaCarbon";
@@ -281,11 +286,11 @@ function Router() {
       <Route path="/rnd/prototypes" component={Prototypes} />
       <Route path="/rnd/ip" component={RndIpTracker} />
       {/* Module 6: Operations & Manufacturing */}
-      <Route path="/operations" component={ModulePlaceholder} />
-      <Route path="/operations/suppliers" component={ModulePlaceholder} />
-      <Route path="/operations/manufacturing" component={ModulePlaceholder} />
-      <Route path="/operations/compliance" component={ModulePlaceholder} />
-      <Route path="/operations/mrl" component={ModulePlaceholder} />
+      <Route path="/operations" component={OperationsHub} />
+      <Route path="/operations/suppliers" component={OpsSuppliers} />
+      <Route path="/operations/manufacturing" component={OpsManufacturing} />
+      <Route path="/operations/compliance" component={OpsCompliance} />
+      <Route path="/operations/mrl" component={OpsMrlEvidence} />
       {/* Module 7: Brand & GTM */}
       <Route path="/gtm" component={ModulePlaceholder} />
       <Route path="/gtm/messaging" component={ModulePlaceholder} />

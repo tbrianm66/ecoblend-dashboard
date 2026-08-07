@@ -256,9 +256,11 @@ import { collaborationRouter } from "./collaboration.router";
 import { legalRequirementsRouter } from "./legalRequirements.router";
 import { fedsilkGovernanceRouter } from "./fedsilkGovernance.router";
 import { rndRouter } from "./rnd.router";
+import { operationsRouter } from "./operations.router";
 
 export const appRouter = router({
   rnd: rndRouter,
+  operations: operationsRouter,
   discoveryMarket: discoveryMarketRouter,
   commandCentreLean: commandCentreLeanRouter,
   wtp: wtpRouter,
