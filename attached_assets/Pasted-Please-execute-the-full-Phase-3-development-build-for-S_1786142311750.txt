@@ -1,0 +1,28 @@
+Please execute the full Phase 3 development build for Section 6 (Operations & Manufacturing) to replace all placeholder cards across its 5 sub-routes with functional interactive UI components, schemas, and tRPC endpoints:
+
+1. Database Schema & API Routes:
+   - Create tables/schemas for Operations & Manufacturing:
+     * `operating_models`: id, venture_id, model_type ('in_house', 'contract_cmo', 'hybrid', 'outsourced'), capacity_units_per_month, unit_op_cost, facility_location, status.
+     * `suppliers`: id, venture_id, supplier_name, component_supplied, lead_time_days, moq, unit_cost, risk_level ('low', 'medium', 'high'), single_source (boolean), audit_status.
+     * `manufacturing_plans`: id, venture_id, phase_name ('pilot', 'scale_up', 'commercial'), target_yield_percentage, actual_yield_percentage, scrap_rate, planned_start_date, completion_date.
+     * `quality_compliance`: id, venture_id, certification_name, standard_code, status ('not_started', 'in_audit', 'certified'), expiry_date, document_evidence_id.
+     * `mrl_evaluations`: id, venture_id, mrl_level (1-9), evaluation_notes, evidence_id, status ('draft', 'submitted', 'confirmed').
+   - Implement tRPC CRUD endpoints for all five tables.
+
+2. Manufacturing Plan View (`/operations/manufacturing`):
+   - Replace the Phase 3 placeholder card with an interactive Manufacturing Planning Dashboard:
+     * Summary Cards: Target vs. Actual Yield Rate, Average Lead Time, Total Active Suppliers, MRL Readiness Score.
+     * Interactive table displaying production runs, batch yield targets, and scrap/rejection rates.
+     * "Add Production Plan" modal form.
+
+3. Supplier Assessment View (`/operations/suppliers`):
+   - Supplier directory card grid and table with search/filter by component and risk level.
+   - Single-source risk warnings highlighting components vulnerable to supply chain disruption.
+
+4. Operating Model, Quality & MRL Evidence Views (`/operations/model`, `/operations/quality`, `/operations/mrl-evidence`):
+   - `/operations/model`: Operational workflow card builder with cost and capacity fields.
+   - `/operations/quality`: ISO/Certification compliance checklist with expiration trackers and document upload buttons.
+   - `/operations/mrl-evidence`: Direct integration with the canonical MRL Engine (BEBUS-VRL-WGM-002) and B-03 Evidence Ledger. Respects Profile SV-01 by permitting N/A state for software/social ventures.
+
+5. Scoring Engine Integration:
+   - Ensure uploaded quality certificates, supplier audits, and batch reports automatically sync to the Evidence Ledger and update the MRL dimension score.
