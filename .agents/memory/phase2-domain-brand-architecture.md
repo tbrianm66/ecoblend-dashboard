@@ -51,6 +51,14 @@ description: Core data architecture for Domain Brand → Venture → Product hie
 - §55: DB UNIQUE constraint rejects duplicate part number ✓
 - §56: Rev A → Rev B preserved in part_number_revisions ✓
 
+## Phase 4 UI — Product Portfolio, Product Master, Part Number Register
+- `/portfolio/products` → `ProductPortfolioPage.tsx` — Brand tabs → Programme accordions → Family accordions → Product rows; inline dialogs for New Family, New Product, PN Config
+- `/portfolio/products/:productRef` → `ProductMasterPage.tsx` — Provenance chain breadcrumb; tabs: Overview, Variants, Part Numbers (issue/revise inline), Traceability
+- `/portfolio/part-numbers` → `PartNumberRegister.tsx` — Global register; expandable revision history; Raise Revision dialog; Traceability dialog
+- Server: added `partNumbers.listAll` (joins partNumbers → products, supports brandId/status filter)
+- Sidebar icons: must import `Tag` explicitly (not in default set); `Package2` was already present
+- All reads use `publicProcedure` (OAUTH_SERVER_URL is set; protectedProcedure requires session cookie)
+
 ## Phase 3 UI — Routes and nav added
 - `/portfolio/brands` → `DomainBrandsPage.tsx`
 - `/portfolio/brands/:brandCode` → `DomainBrandDetail.tsx` (5 tabs: Overview, Venture Pipeline, Productisation Gate, Product Portfolio, Brand Fit)

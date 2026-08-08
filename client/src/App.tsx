@@ -8,6 +8,9 @@ import InsightAutomation from "@/pages/InsightAutomation";
 import DomainBrandsPage from "@/pages/portfolio/DomainBrandsPage";
 import DomainBrandDetail from "@/pages/portfolio/DomainBrandDetail";
 import VenturePipelinePage from "@/pages/portfolio/VenturePipelinePage";
+import ProductPortfolioPage from "@/pages/portfolio/ProductPortfolioPage";
+import ProductMasterPage from "@/pages/portfolio/ProductMasterPage";
+import PartNumberRegister from "@/pages/portfolio/PartNumberRegister";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -222,10 +225,13 @@ function Router() {
       <Route path="/vrl-results" component={VrlResults} />
       <Route path="/spinoff-sequence" component={SpinoffSequenceOS} />
       <Route path="/brand-pipeline" component={BrandPipeline} />
-      {/* ── Phase 2/3: Domain Brand → Venture → Product Architecture ── */}
+      {/* ── Phase 2/3/4: Domain Brand → Venture → Product Architecture ── */}
       <Route path="/portfolio/brands/:brandCode" component={DomainBrandDetail} />
       <Route path="/portfolio/brands" component={DomainBrandsPage} />
       <Route path="/portfolio/pipeline" component={VenturePipelinePage} />
+      <Route path="/portfolio/products/:productRef" component={ProductMasterPage} />
+      <Route path="/portfolio/products" component={ProductPortfolioPage} />
+      <Route path="/portfolio/part-numbers" component={PartNumberRegister} />
       <Route path="/insight-automation" component={InsightAutomation} />
       <Route path="/srl-portfolio" component={SrlPortfolio} />
       <Route path="/srl-venture/:ventureId" component={SrlVentureDetail} />

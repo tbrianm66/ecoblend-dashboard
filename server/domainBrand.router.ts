@@ -909,6 +909,49 @@ const partNumberRouterInternal = router({
       return rev;
     }),
 
+  /** List all part numbers across the portfolio (optionally filtered) */
+  listAll: publicProcedure
+    .input(z.object({
+      brandId:  z.number().optional(),
+      status:   z.string().optional(),
+      limit:    z.number().int().min(1).max(500).default(200),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      // Join part_numbers → products to get brand / product info
+      const rows = await db
+        .select({
+          id:              partNumbers.id,
+          partNumber:      partNumbers.partNumber,
+          status:          partNumbers.status,
+          currentRevision: partNumbers.currentRevision,
+          issuedBy:        partNumbers.issuedBy,
+          issuedAt:        partNumbers.issuedAt,
+          notes:           partNumbers.notes,
+          productId:       partNumbers.productId,
+          productVariantId: partNumbers.productVariantId,
+          configId:        partNumbers.configId,
+          productRef:      products.productRef,
+          productName:     products.productName,
+          productType:     products.productType,
+          domainBrandId:   products.domainBrandId,
+          productFamilyId: products.productFamilyId,
+        })
+        .from(partNumbers)
+        .leftJoin(products, eq(partNumbers.productId, products.id))
+        .orderBy(asc(partNumbers.partNumber))
+        .limit(input.limit);
+
+      const filtered = input.brandId
+        ? rows.filter(r => r.domainBrandId === input.brandId)
+        : rows;
+      const statusFiltered = input.status
+        ? filtered.filter(r => r.status === input.status)
+        : filtered;
+      return statusFiltered;
+    }),
+
   /** Traceability: from part number → variant → product → programme → venture */
   traceability: publicProcedure
     .input(z.object({ partNumber: z.string() }))

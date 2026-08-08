@@ -30,7 +30,7 @@ import {
   UserCheck, Brain, GitBranch, Sliders, CheckSquare,
   ShieldCheck, Archive, Network, Star,
   Settings, Package2, RotateCcw, Crosshair, Eye, EyeOff,
-  Landmark, FolderKanban,
+  Landmark, FolderKanban, Tag,
 } from "lucide-react";
 import { useVentures } from "@/contexts/VentureContext";
 import GlobalVentureSelector from "@/components/GlobalVentureSelector";
@@ -60,7 +60,7 @@ const iconMap: Record<string, React.ComponentType<{ size?: number; className?: s
   UserCheck, Brain, GitBranch, Sliders, CheckSquare,
   ShieldCheck, Archive, Network, Star,
   Settings, Package2, RotateCcw, Crosshair,
-  Landmark, FolderKanban,
+  Landmark, FolderKanban, Tag,
 };
 
 interface NavItem {
@@ -84,8 +84,10 @@ const PORTFOLIO_ARCHITECTURE_GROUP: NavGroup = {
   label: "Portfolio Architecture",
   defaultOpen: true,
   items: [
-    { id: "pa-brands",   label: "Domain Brands",    icon: "Landmark",      href: "/portfolio/brands" },
-    { id: "pa-pipeline", label: "Venture Pipeline",  icon: "FolderKanban",  href: "/portfolio/pipeline" },
+    { id: "pa-brands",       label: "Domain Brands",      icon: "Landmark",      href: "/portfolio/brands" },
+    { id: "pa-pipeline",     label: "Venture Pipeline",   icon: "FolderKanban",  href: "/portfolio/pipeline" },
+    { id: "pa-products",     label: "Product Portfolio",  icon: "Package2",      href: "/portfolio/products" },
+    { id: "pa-part-numbers", label: "Part Number Register", icon: "Tag",         href: "/portfolio/part-numbers" },
   ],
 };
 
