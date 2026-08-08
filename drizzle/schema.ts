@@ -84,6 +84,18 @@ export const ventures = pgTable("ventures", {
   scoringProfile: varchar("scoring_profile", { length: 32 }).default("STANDARD"),
   // -- Lean Canvas versioning — tracks latest persisted version number ----------
   canvasVersion: integer("canvasVersion").default(0),
+  // -- Phase 2: Domain Brand → Venture → Product Architecture -----------------
+  // These columns are additive (all nullable / have defaults) — added via 0015 migration.
+  domainBrandId:          integer("domainBrandId"),           // FK → domain_brands.id (nullable: unassigned ventures)
+  entityType:             text("entityType").default("venture_candidate"),
+  // venture_candidate | domain_brand_proxy | unknown
+  candidateStatus:        text("candidateStatus").default("Active"),
+  // Active | Hold | Killed | Rejected | Merged | Transferred | Licensed | Partnered
+  // Research_Programme | Productisation_Approved | Spin-Out_Candidate | Archived
+  ventureRef:             varchar("ventureRef", { length: 32 }),  // e.g. VEN-TONE-0027 (generated, stable, unique)
+  brandAssignmentStatus:  text("brandAssignmentStatus").default("Unassigned"),
+  // Unassigned | Candidate_Brand | Confirmed_Brand | Reassignment_Under_Review | Potential_New_Domain_Brand
+  migrationReviewRequired: boolean("migrationReviewRequired").default(false),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
@@ -8629,3 +8641,309 @@ export const mrlEvaluations = pgTable("mrl_evaluations", {
 export type MrlEvaluation = typeof mrlEvaluations.$inferSelect;
 export type InsertMrlEvaluation = typeof mrlEvaluations.$inferInsert;
 export type InsertPrototypeTest = typeof prototypeTests.$inferInsert;
+
+// ============================================================================
+// PHASE 2 — DOMAIN BRAND → VENTURE → PRODUCT ARCHITECTURE
+// Spec: ECOBLEND OS Domain Brand/Venture/Product Architecture v1.0
+// ============================================================================
+
+// ── Domain Brands ─────────────────────────────────────────────────────────────
+// Persistent sector-facing commercial and strategic umbrellas (TONE, REAL, …).
+// NOT ventures. NOT products. Independent lifecycle.
+export const domainBrands = pgTable("domain_brands", {
+  id:                 serial("id").primaryKey(),
+  brandCode:          varchar("brandCode",          { length: 16  }).notNull().unique(), // e.g. "TONE"
+  brandName:          varchar("brandName",          { length: 128 }).notNull(),
+  description:        text("description"),
+  sector:             varchar("sector",             { length: 128 }),
+  subSector:          varchar("subSector",          { length: 128 }),
+  brandThesis:        text("brandThesis"),
+  mission:            text("mission"),
+  targetMarkets:      text("targetMarkets"),
+  targetCustomers:    text("targetCustomers"),
+  targetUsers:        text("targetUsers"),
+  coreCapabilities:   text("coreCapabilities"),
+  technologyDomains:  text("technologyDomains"),
+  ipDomains:          text("ipDomains"),
+  commercialChannels: text("commercialChannels"),
+  legalOwner:         varchar("legalOwner",         { length: 255 }),
+  brandStatus:        text("brandStatus").notNull().default("Active"),
+  // Lifecycle: Concept | Reserved | Active | Dormant | Retired
+  websiteUrl:         varchar("websiteUrl",         { length: 512 }),
+  logoUrl:            varchar("logoUrl",            { length: 512 }),
+  createdBy:          varchar("createdBy",          { length: 128 }),
+  createdAt:          timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:          timestamp("updatedAt").defaultNow().notNull(),
+});
+export type DomainBrand       = typeof domainBrands.$inferSelect;
+export type InsertDomainBrand = typeof domainBrands.$inferInsert;
+
+// ── ventures table — Phase 2 additive columns ─────────────────────────────────
+// Added via 0015 migration; declared here for type safety.
+// The ventures table IS the venture_candidates table by convention.
+// We do NOT rename it — preserves all FK relationships across all existing modules.
+// domainBrandId, entityType, candidateStatus, ventureRef, brandAssignmentStatus,
+// migrationReviewRequired are all nullable / have defaults — zero data change.
+
+// ── Brand Assignment History ──────────────────────────────────────────────────
+// Immutable audit trail — brand reassignments never overwrite; new row per change.
+export const brandAssignmentHistory = pgTable("brand_assignment_history", {
+  id:                    serial("id").primaryKey(),
+  ventureId:             varchar("ventureId",             { length: 64 }).notNull().references(() => ventures.id),
+  previousBrandId:       integer("previousBrandId"),
+  newBrandId:            integer("newBrandId"),
+  brandAssignmentStatus: text("brandAssignmentStatus").notNull(),
+  // Unassigned | Candidate_Brand | Confirmed_Brand | Reassignment_Under_Review | Potential_New_Domain_Brand
+  reason:                text("reason"),
+  supportingEvidence:    text("supportingEvidence"),
+  decisionMaker:         varchar("decisionMaker", { length: 128 }),
+  decisionDate:          timestamp("decisionDate"),
+  createdAt:             timestamp("createdAt").defaultNow().notNull(),
+});
+export type BrandAssignmentHistory       = typeof brandAssignmentHistory.$inferSelect;
+export type InsertBrandAssignmentHistory = typeof brandAssignmentHistory.$inferInsert;
+
+// ── Brand Fit Assessments ─────────────────────────────────────────────────────
+// Scores how well a Venture Candidate fits within a Domain Brand.
+// AI may assist; humans must confirm any brand change.
+export const brandFitAssessments = pgTable("brand_fit_assessments", {
+  id:                        serial("id").primaryKey(),
+  ventureId:                 varchar("ventureId",   { length: 64 }).notNull().references(() => ventures.id),
+  assessedBrandId:           integer("assessedBrandId"),
+  // Positive fit dimensions 0–10
+  strategicFit:              integer("strategicFit").default(0),
+  sectorFit:                 integer("sectorFit").default(0),
+  customerFit:               integer("customerFit").default(0),
+  userFit:                   integer("userFit").default(0),
+  technologyFit:             integer("technologyFit").default(0),
+  ipFit:                     integer("ipFit").default(0),
+  commercialChannelFit:      integer("commercialChannelFit").default(0),
+  missionAlignment:          integer("missionAlignment").default(0),
+  capabilityFit:             integer("capabilityFit").default(0),
+  supplyChainFit:            integer("supplyChainFit").default(0),
+  portfolioSynergy:          integer("portfolioSynergy").default(0),
+  // Risk dimensions 0–10 (higher = more risk, penalises fit score)
+  cannibalisationRisk:       integer("cannibalisationRisk").default(0),
+  brandDilutionRisk:         integer("brandDilutionRisk").default(0),
+  // Opportunity dimension
+  crossBrandPotential:       integer("crossBrandPotential").default(0),
+  // Computed outputs
+  fitScore:                  doublePrecision("fitScore").default(0),        // 0–100
+  confidence:                text("confidence").default("Low"),              // Low | Medium | High
+  recommendedBrandId:        integer("recommendedBrandId"),
+  alternativeBrandId:        integer("alternativeBrandId"),
+  potentialNewBrandRequired: boolean("potentialNewBrandRequired").default(false),
+  governanceReviewRequired:  boolean("governanceReviewRequired").default(false),
+  rationale:                 text("rationale"),
+  aiAssisted:                boolean("aiAssisted").default(false),
+  assessedBy:                varchar("assessedBy", { length: 128 }),
+  assessedAt:                timestamp("assessedAt").defaultNow().notNull(),
+  createdAt:                 timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:                 timestamp("updatedAt").defaultNow().notNull(),
+});
+export type BrandFitAssessment       = typeof brandFitAssessments.$inferSelect;
+export type InsertBrandFitAssessment = typeof brandFitAssessments.$inferInsert;
+
+// ── Productisation Decisions ──────────────────────────────────────────────────
+// Explicit governed gate: Venture Candidate → Product Programme.
+// Creates an immutable decision record; does NOT mutate the venture directly.
+export const productisationDecisions = pgTable("productisation_decisions", {
+  id:                serial("id").primaryKey(),
+  ventureId:         varchar("ventureId",        { length: 64 }).notNull().references(() => ventures.id),
+  decision:          text("decision").notNull(),
+  // Approve | Hold | Reject | Return_for_Evidence | Alternative_Commercialisation_Route
+  decisionDate:      timestamp("decisionDate").notNull(),
+  decisionMaker:     varchar("decisionMaker",    { length: 128 }),
+  evidenceSnapshot:  jsonb("evidenceSnapshot"),   // readiness scores at decision point
+  readinessSnapshot: jsonb("readinessSnapshot"),
+  rationale:         text("rationale"),
+  conditions:        text("conditions"),
+  approvalReference: varchar("approvalReference", { length: 128 }),
+  createdAt:         timestamp("createdAt").defaultNow().notNull(),
+});
+export type ProductisationDecision       = typeof productisationDecisions.$inferSelect;
+export type InsertProductisationDecision = typeof productisationDecisions.$inferInsert;
+
+// ── Product Programmes ────────────────────────────────────────────────────────
+// Created when a Venture is approved for productisation.
+// 1 Venture → N Product Programmes (many-to-many via ventureId FK is intentional).
+export const productProgrammes = pgTable("product_programmes", {
+  id:                       serial("id").primaryKey(),
+  programmeRef:             varchar("programmeRef",  { length: 32  }).notNull().unique(), // e.g. PRG-TONE-0008
+  ventureId:                varchar("ventureId",     { length: 64  }).notNull().references(() => ventures.id),
+  domainBrandId:            integer("domainBrandId").references(() => domainBrands.id),
+  productisationDecisionId: integer("productisationDecisionId").references(() => productisationDecisions.id),
+  programmeName:            varchar("programmeName", { length: 255 }).notNull(),
+  description:              text("description"),
+  programmeOwner:           varchar("programmeOwner",    { length: 128 }),
+  approvalDate:             timestamp("approvalDate"),
+  technicalStrategy:        text("technicalStrategy"),
+  commercialStrategy:       text("commercialStrategy"),
+  currentOwnerEntity:       varchar("currentOwnerEntity", { length: 255 }),
+  originatingEntity:        varchar("originatingEntity",  { length: 255 }),
+  programmeStatus:          text("programmeStatus").notNull().default("Approved"),
+  // Approved | Concept_Development | Prototype_Development | Engineering_Development
+  // Pre-Production | Launch_Preparation | Active | Paused | Cancelled | Transferred | Retired
+  createdAt:                timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:                timestamp("updatedAt").defaultNow().notNull(),
+});
+export type ProductProgramme       = typeof productProgrammes.$inferSelect;
+export type InsertProductProgramme = typeof productProgrammes.$inferInsert;
+
+// ── Product Families ──────────────────────────────────────────────────────────
+// Groups related products from a common programme / technology platform.
+export const productFamilies = pgTable("product_families", {
+  id:                 serial("id").primaryKey(),
+  familyCode:         varchar("familyCode",  { length: 16  }).notNull(), // e.g. BAP
+  familyName:         varchar("familyName",  { length: 255 }).notNull(),
+  productProgrammeId: integer("productProgrammeId").notNull().references(() => productProgrammes.id),
+  domainBrandId:      integer("domainBrandId").references(() => domainBrands.id),
+  description:        text("description"),
+  productCategory:    varchar("productCategory",  { length: 128 }),
+  customerSegment:    varchar("customerSegment",  { length: 255 }),
+  technicalPlatform:  text("technicalPlatform"),
+  status:             text("status").notNull().default("Active"),
+  createdAt:          timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:          timestamp("updatedAt").defaultNow().notNull(),
+}, (t) => ({
+  familyCodeProgrammeUnique: unique("product_families_code_programme_unique").on(t.familyCode, t.productProgrammeId),
+}));
+export type ProductFamily       = typeof productFamilies.$inferSelect;
+export type InsertProductFamily = typeof productFamilies.$inferInsert;
+
+// ── Products ──────────────────────────────────────────────────────────────────
+// Stable product entity. productRef (PROD-TONE-0012) is permanent; commercial
+// name may change. product_type supports hardware, software, services, etc.
+export const products = pgTable("products", {
+  id:                   serial("id").primaryKey(),
+  productRef:           varchar("productRef",       { length: 32  }).notNull().unique(), // e.g. PROD-TONE-0012
+  productCode:          varchar("productCode",       { length: 64  }),
+  productName:          varchar("productName",       { length: 255 }).notNull(),
+  commercialName:       varchar("commercialName",    { length: 255 }),
+  productFamilyId:      integer("productFamilyId").notNull().references(() => productFamilies.id),
+  productProgrammeId:   integer("productProgrammeId").references(() => productProgrammes.id),
+  domainBrandId:        integer("domainBrandId").references(() => domainBrands.id),
+  description:          text("description"),
+  productType:          text("productType").notNull().default("physical"),
+  // physical | digital | software | service | platform_service | licensing | data_product | ai_agent | hybrid
+  technicalDescription: text("technicalDescription"),
+  lifecycleStatus:      text("lifecycleStatus").notNull().default("Concept"),
+  // Concept | Prototype | Engineering | Validation | Pre-Production | Released | Active | End-of-Life | Archived
+  releaseStatus:        text("releaseStatus").default("Unreleased"),
+  productOwner:         varchar("productOwner",       { length: 128 }),
+  currentOwnerEntity:   varchar("currentOwnerEntity", { length: 255 }),
+  originatingEntity:    varchar("originatingEntity",  { length: 255 }),
+  createdAt:            timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:            timestamp("updatedAt").defaultNow().notNull(),
+});
+export type Product       = typeof products.$inferSelect;
+export type InsertProduct = typeof products.$inferInsert;
+
+// ── Product Variants ──────────────────────────────────────────────────────────
+// technicalAttributes is JSONB for flexibility — avoids hardware-only assumptions.
+export const productVariants = pgTable("product_variants", {
+  id:                    serial("id").primaryKey(),
+  variantCode:           varchar("variantCode",           { length: 32  }),
+  productId:             integer("productId").notNull().references(() => products.id),
+  variantName:           varchar("variantName",           { length: 255 }).notNull(),
+  description:           text("description"),
+  material:              varchar("material",              { length: 255 }),
+  dimensions:            varchar("dimensions",            { length: 255 }),
+  weight:                varchar("weight",                { length: 64  }),
+  finish:                varchar("finish",                { length: 128 }),
+  performanceClass:      varchar("performanceClass",      { length: 128 }),
+  manufacturingLocation: varchar("manufacturingLocation", { length: 255 }),
+  supplier:              varchar("supplier",              { length: 255 }),
+  releaseRevision:       varchar("releaseRevision",       { length: 8   }).default("A"),
+  technicalAttributes:   jsonb("technicalAttributes"),
+  status:                text("status").notNull().default("Active"),
+  createdAt:             timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:             timestamp("updatedAt").defaultNow().notNull(),
+});
+export type ProductVariant       = typeof productVariants.$inferSelect;
+export type InsertProductVariant = typeof productVariants.$inferInsert;
+
+// ── Part Number Configs ───────────────────────────────────────────────────────
+// One config per product family; stores the numbering rule and sequence counter.
+// formatTemplate supports: {BRAND}-{FAMILY}-{SEQ} (default) or custom patterns.
+export const partNumberConfigs = pgTable("part_number_configs", {
+  id:               serial("id").primaryKey(),
+  productFamilyId:  integer("productFamilyId").notNull().unique().references(() => productFamilies.id),
+  formatTemplate:   varchar("formatTemplate",  { length: 128 }).notNull().default("{BRAND}-{FAMILY}-{SEQ}"),
+  brandCode:        varchar("brandCode",       { length: 16  }).notNull(),
+  familyCode:       varchar("familyCode",      { length: 16  }).notNull(),
+  sequenceLength:   integer("sequenceLength").notNull().default(4), // zero-padded to this many digits
+  currentSequence:  integer("currentSequence").notNull().default(0),
+  prefix:           varchar("prefix",          { length: 32  }),
+  notes:            text("notes"),
+  createdAt:        timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:        timestamp("updatedAt").defaultNow().notNull(),
+});
+export type PartNumberConfig       = typeof partNumberConfigs.$inferSelect;
+export type InsertPartNumberConfig = typeof partNumberConfigs.$inferInsert;
+
+// ── Part Numbers ──────────────────────────────────────────────────────────────
+// UNIQUE on partNumber column prevents collisions at DB level (§55 collision test).
+// Part numbers are never deleted — they are retired or superseded.
+export const partNumbers = pgTable("part_numbers", {
+  id:               serial("id").primaryKey(),
+  partNumber:       varchar("partNumber",  { length: 64 }).notNull().unique(), // e.g. TONE-BAP-0001
+  productId:        integer("productId").references(() => products.id),
+  productVariantId: integer("productVariantId").references(() => productVariants.id),
+  configId:         integer("configId").references(() => partNumberConfigs.id),
+  status:           text("status").notNull().default("active"),
+  // active | superseded | obsolete | retired
+  currentRevision:  varchar("currentRevision", { length: 8 }).notNull().default("A"),
+  issuedBy:         varchar("issuedBy",    { length: 128 }),
+  issuedAt:         timestamp("issuedAt").defaultNow().notNull(),
+  retiredAt:        timestamp("retiredAt"),
+  retiredBy:        varchar("retiredBy",   { length: 128 }),
+  retiredReason:    text("retiredReason"),
+  notes:            text("notes"),
+  createdAt:        timestamp("createdAt").defaultNow().notNull(),
+});
+export type PartNumber       = typeof partNumbers.$inferSelect;
+export type InsertPartNumber = typeof partNumbers.$inferInsert;
+
+// ── Part Number Revisions ─────────────────────────────────────────────────────
+// Immutable revision history — new row per revision letter (A, B, C …).
+// UNIQUE on (partNumberId, revision) prevents duplicate revision letters.
+export const partNumberRevisions = pgTable("part_number_revisions", {
+  id:                    serial("id").primaryKey(),
+  partNumberId:          integer("partNumberId").notNull().references(() => partNumbers.id),
+  revision:              varchar("revision",              { length: 8  }).notNull(),
+  changeDescription:     text("changeDescription"),
+  changedBy:             varchar("changedBy",             { length: 128 }),
+  changedAt:             timestamp("changedAt").defaultNow().notNull(),
+  snapshotJson:          jsonb("snapshotJson"),
+  supersededByRevision:  varchar("supersededByRevision",  { length: 8  }),
+  createdAt:             timestamp("createdAt").defaultNow().notNull(),
+}, (t) => ({
+  partRevisionUnique: unique("part_number_revisions_unique").on(t.partNumberId, t.revision),
+}));
+export type PartNumberRevision       = typeof partNumberRevisions.$inferSelect;
+export type InsertPartNumberRevision = typeof partNumberRevisions.$inferInsert;
+
+// ── Reference Sequences ───────────────────────────────────────────────────────
+// Atomic counters for stable generated references (VEN-XXXX-NNNN etc.)
+// Row-level increment used in the router; UNIQUE on prefixKey prevents duplicates.
+export const ventureRefSequences = pgTable("venture_ref_sequences", {
+  id:              serial("id").primaryKey(),
+  prefixKey:       varchar("prefixKey",  { length: 32 }).notNull().unique(), // e.g. "TONE" | "UNASSIGNED"
+  currentSequence: integer("currentSequence").notNull().default(0),
+  updatedAt:       timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export const programmeRefSequences = pgTable("programme_ref_sequences", {
+  id:              serial("id").primaryKey(),
+  prefixKey:       varchar("prefixKey",  { length: 32 }).notNull().unique(),
+  currentSequence: integer("currentSequence").notNull().default(0),
+  updatedAt:       timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export const productRefSequences = pgTable("product_ref_sequences", {
+  id:              serial("id").primaryKey(),
+  prefixKey:       varchar("prefixKey",  { length: 32 }).notNull().unique(),
+  currentSequence: integer("currentSequence").notNull().default(0),
+  updatedAt:       timestamp("updatedAt").defaultNow().notNull(),
+});

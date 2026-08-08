@@ -257,6 +257,18 @@ import { legalRequirementsRouter } from "./legalRequirements.router";
 import { fedsilkGovernanceRouter } from "./fedsilkGovernance.router";
 import { rndRouter } from "./rnd.router";
 import { operationsRouter } from "./operations.router";
+import {
+  domainBrandRouter,
+  ventureCandidateOpsRouter,
+  brandFitAssessmentRouter,
+  productisationGateRouter,
+  productProgrammeRouter,
+  productFamilyRouter,
+  productsRouter,
+  productVariantRouter,
+  partNumberRouter,
+  portfolioPipelineRouter,
+} from "./domainBrand.router";
 
 export const appRouter = router({
   rnd: rndRouter,
@@ -7339,5 +7351,16 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
   // Gate 3 — Score Dispute & Escalation Workflow (FHV-EB-AUD-001 §2–3)
   scoreDispute: scoreDisputeRouter,
   scorecardTelemetry: scorecardTelemetryRouter,
+  // Phase 2 — Domain Brand → Venture → Product Architecture
+  domainBrands: domainBrandRouter,
+  ventureCandidateOps: ventureCandidateOpsRouter,
+  brandFitAssessment: brandFitAssessmentRouter,
+  productisationGate: productisationGateRouter,
+  productProgrammes: productProgrammeRouter,
+  productFamilies: productFamilyRouter,
+  products: productsRouter,
+  productVariants: productVariantRouter,
+  partNumbers: partNumberRouter,
+  portfolioPipeline: portfolioPipelineRouter,
 });
 export type AppRouter = typeof appRouter;

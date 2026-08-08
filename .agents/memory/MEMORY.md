@@ -9,3 +9,4 @@
 - [Gate 3 — Score Disputes & Integrity Reviewer](gate3-score-disputes.md) — integrityReviewerProcedure; SCORING_INTEGRITY_REVIEWER role; dispute state machine; PRL decoupled from coach leaderboard; updateScores gated.
 - [Gate 4 — Nav Consolidation & Backlog Archiving](gate4-nav-consolidation.md) — 5 core modules pinned; 15 groups in Extended Backlog; 4 deferred speculative; reactivationHypothesis hook in gate4Config.ts.
 - [Scorecard Telemetry Engine](scorecard-telemetry.md) — H1–H8 kill-criteria monitor; publicProcedure for reads (not adminProcedure — 403 in dev); auto-logs breaches to scorecard_kill_alerts table.
+- [Phase 2 — Domain Brand Architecture](phase2-domain-brand-architecture.md) — 14 new tables, migration 0015, router domainBrand.router.ts, all §48-56 spec tests passed; dead MySQL-dialect schema files deleted.
