@@ -51,6 +51,16 @@ description: Core data architecture for Domain Brand → Venture → Product hie
 - §55: DB UNIQUE constraint rejects duplicate part number ✓
 - §56: Rev A → Rev B preserved in part_number_revisions ✓
 
+## Phase 5 — Legacy Venture Migration (complete)
+- Migration: `drizzle/0016_phase5_legacy_migration.sql`
+- 4 domain_brand_proxy rows (`tone`,`real`,`bebus`,`ecocomp`) linked to domain_brands FK (domainBrandId 1–4), `migrationReviewRequired=false`
+- `ECOCOMP-002` reclassified `venture_candidate` under ECOCOMP; assigned `VEN-ECOCOMP-0001`
+- `ECOSHIELD-001`: already `venture_candidate`, kept Unassigned (pending board brand decision)
+- §53: second programme `PRG-TONE-0002` created from `VEN-TONE-0002` (proves 1-venture → N-programmes)
+- §54: test venture assigned BEBUS → reassigned REAL; 2 history rows; `ventureRef` updated to `VEN-REAL-0001`
+- All reads use `publicProcedure` (OAUTH_SERVER_URL set); `brand_assignment_history` uses `previousBrandId`/`newBrandId` not `domainBrandId`
+- Spec verification: 38/38 checks passed, 0 failures
+
 ## Phase 4 UI — Product Portfolio, Product Master, Part Number Register
 - `/portfolio/products` → `ProductPortfolioPage.tsx` — Brand tabs → Programme accordions → Family accordions → Product rows; inline dialogs for New Family, New Product, PN Config
 - `/portfolio/products/:productRef` → `ProductMasterPage.tsx` — Provenance chain breadcrumb; tabs: Overview, Variants, Part Numbers (issue/revise inline), Traceability
