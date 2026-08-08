@@ -1,0 +1,2395 @@
+# ECOBLEND OS — DOMAIN BRAND → VENTURE → PRODUCT ARCHITECTURE
+
+## Master Target-State Architecture Specification
+
+### Version 1.0
+
+---
+
+# 1. PURPOSE
+
+This specification defines a major architectural refinement to ECOBLEND OS.
+
+The platform must distinguish between:
+
+1. **Domain Brands**
+2. **Venture Candidates**
+3. **Product Programmes**
+4. **Product Families**
+5. **Products**
+6. **Product Variants / SKUs**
+7. **Controlled Part Numbers**
+
+These are different business objects with different purposes, lifecycles, governance requirements and data relationships.
+
+The current application must be audited against this target architecture before implementation.
+
+Do not assume the existing database structure, terminology or UI accurately represents these distinctions.
+
+---
+
+# 2. CORE ARCHITECTURAL PRINCIPLE
+
+ECOBLEND OS must enforce the following principle:
+
+> A Domain Brand is a persistent sector-facing commercial and strategic umbrella. A Venture Candidate is an opportunity being tested. A Venture generates evidence. A validated Venture may generate one or more Product Programmes. Product Programmes generate Product Families, Products, Variants and controlled Part Numbers.
+
+These entities must NOT be collapsed into one generic "venture" object.
+
+The target hierarchy is:
+
+```text
+ECORACE STUDIO
+      │
+      ▼
+DOMAIN BRAND
+      │
+      ▼
+VENTURE CANDIDATE
+      │
+      ▼
+VALIDATION + EVIDENCE
+      │
+      ▼
+GOVERNANCE / PRODUCTISATION GATE
+      │
+      ▼
+PRODUCT PROGRAMME
+      │
+      ▼
+PRODUCT FAMILY
+      │
+      ▼
+PRODUCT
+      │
+      ▼
+PRODUCT VARIANT / SKU
+      │
+      ▼
+CONTROLLED PART NUMBER
+```
+
+---
+
+# 3. BUSINESS CONTEXT
+
+ECORACE Studio operates a portfolio containing persistent sector-facing Domain Brands.
+
+Examples currently include:
+
+* TONE
+* REAL
+* BEBUS
+* ECOCOMP
+
+These brands should NOT themselves be treated as early-stage ventures.
+
+A Domain Brand may contain many separate Venture Candidates over time.
+
+For example:
+
+```text
+TONE
+Creative Industries Domain Brand
+│
+├── Venture Candidate:
+│   Sustainable Stage Equipment
+│
+├── Venture Candidate:
+│   Bio-Composite Studio Acoustic Materials
+│
+├── Venture Candidate:
+│   Sustainable Instrument Equipment
+│
+└── Future Venture Candidates
+```
+
+Each venture is independently evaluated.
+
+Some will fail.
+
+Some will be paused.
+
+Some may be licensed.
+
+Some may become partnerships.
+
+Some may become Product Programmes.
+
+Some may potentially justify the creation of a new Domain Brand.
+
+The failure of a venture must not affect the existence or status of its Domain Brand.
+
+---
+
+# 4. DOMAIN BRAND ENTITY
+
+Create or refactor the architecture to support a first-class:
+
+```text
+DomainBrand
+```
+
+entity.
+
+A Domain Brand represents a persistent:
+
+* market domain
+* sector identity
+* commercial umbrella
+* product portfolio
+* technology portfolio
+* strategic positioning
+* brand architecture
+
+It does NOT represent an individual product opportunity.
+
+Examples:
+
+```text
+TONE
+REAL
+BEBUS
+ECOCOMP
+```
+
+## Required Domain Brand attributes
+
+The implementation should support at minimum:
+
+```text
+id
+brand_code
+brand_name
+description
+sector
+sub_sector
+brand_thesis
+mission
+target_markets
+target_customers
+target_users
+core_capabilities
+technology_domains
+ip_domains
+commercial_channels
+legal_owner
+brand_status
+website_url
+logo_url
+created_at
+updated_at
+created_by
+```
+
+Recommended lifecycle:
+
+```text
+Concept
+Reserved
+Active
+Dormant
+Retired
+```
+
+`brand_code` should be short, unique and stable.
+
+Example:
+
+```text
+TONE
+```
+
+Do not use readiness scores such as TRL or VRL to measure the Domain Brand itself unless a future separate brand-level portfolio metric is explicitly created.
+
+---
+
+# 5. DOMAIN BRAND MANAGEMENT
+
+Create a dedicated Domain Brand management capability.
+
+Users should be able to:
+
+* view all Domain Brands
+* create a Domain Brand
+* edit permitted brand metadata
+* view ventures associated with the brand
+* view product programmes associated with the brand
+* view product families
+* view commercial products
+* view relevant IP
+* view portfolio performance
+* view brand-level risks
+* view brand governance
+* view brand history
+
+The Domain Brand page should become a portfolio-level view rather than a venture-detail page.
+
+---
+
+# 6. VENTURE CANDIDATE ENTITY
+
+Create or refactor:
+
+```text
+VentureCandidate
+```
+
+A Venture Candidate represents an opportunity or hypothesis entering the ECOBLEND venture validation system.
+
+It should have a persistent unique identifier.
+
+Examples:
+
+```text
+VEN-TONE-0027
+VEN-REAL-0014
+VEN-UNASSIGNED-0041
+```
+
+The identifier must remain stable throughout the venture lifecycle.
+
+## Venture Candidate attributes
+
+Support at minimum:
+
+```text
+id
+venture_id
+working_title
+description
+problem_hypothesis
+solution_hypothesis
+target_customer
+target_user
+sector
+sub_sector
+opportunity_source
+venture_owner
+domain_brand_id
+brand_assignment_status
+venture_status
+current_stage
+created_at
+updated_at
+created_by
+```
+
+Do not place commercial SKU or engineering part-number information on this entity.
+
+---
+
+# 7. BRAND ASSIGNMENT MUST BE OPTIONAL
+
+A new venture must NOT be forced into an existing Domain Brand.
+
+This is strategically important.
+
+The Venture Intake workflow must support:
+
+```text
+Unassigned
+Candidate Brand
+Confirmed Brand
+Reassignment Under Review
+Potential New Domain Brand
+```
+
+`domain_brand_id` must therefore be nullable where appropriate.
+
+A venture may enter the platform before its correct brand architecture is known.
+
+This prevents the existing portfolio structure from artificially constraining future innovation.
+
+---
+
+# 8. NEW VENTURE INTAKE
+
+Modify the relevant Venture Intake process so the user can create a new Venture Candidate and optionally associate it with a Domain Brand.
+
+Example interface:
+
+```text
+CREATE NEW VENTURE
+
+Working Title:
+[____________________________]
+
+Domain Brand:
+
+○ Unassigned
+○ TONE
+○ REAL
+○ BEBUS
+○ ECOCOMP
+○ Potential New Domain Brand
+
+Problem / Opportunity:
+[____________________________]
+
+Target User:
+[____________________________]
+
+Target Customer:
+[____________________________]
+
+Sector:
+[____________________________]
+
+Owner:
+[____________________________]
+```
+
+Domain Brand selection must establish a relationship.
+
+It must not cause the Domain Brand itself to enter the venture workflow.
+
+---
+
+# 9. BRAND FIT ASSESSMENT
+
+Create a Brand Fit Assessment capability associated with Venture Candidates.
+
+It should help determine whether a venture belongs within an existing Domain Brand.
+
+Assess factors such as:
+
+```text
+Strategic fit
+Sector fit
+Customer fit
+User fit
+Technology fit
+IP fit
+Commercial channel fit
+Mission alignment
+Capability fit
+Supply-chain fit
+Portfolio synergy
+Cannibalisation risk
+Brand dilution risk
+Cross-brand potential
+```
+
+Potential output:
+
+```text
+Recommended Domain Brand
+Alternative Domain Brand
+Fit Score
+Confidence
+Rationale
+Potential New Brand Required
+Governance Review Required
+```
+
+AI may assist with this assessment.
+
+AI must NOT autonomously reassign ownership or brand association without a governed user decision.
+
+---
+
+# 10. BRAND ASSIGNMENT HISTORY
+
+Brand changes must be historically auditable.
+
+Do not simply overwrite a previous brand relationship without history.
+
+Support a record containing:
+
+```text
+venture_candidate_id
+previous_brand_id
+new_brand_id
+reason
+supporting_evidence
+decision_maker
+decision_date
+created_at
+```
+
+Historical reporting must be capable of reconstructing previous assignments.
+
+---
+
+# 11. VENTURE VALIDATION WORKFLOW
+
+Venture Candidates should progress through the existing ECOBLEND validation architecture.
+
+Reuse existing modules and data where appropriate.
+
+Do not duplicate working functionality.
+
+The architecture should support the existing and developing ECOBLEND validation framework, potentially including:
+
+```text
+Opportunity Intake
+↓
+Discovery
+↓
+Problem Validation
+↓
+Customer Validation
+↓
+Market Assessment
+↓
+Willingness to Pay
+↓
+Proposition
+↓
+Business Model
+↓
+Lean Canvas
+↓
+Technical Feasibility
+↓
+IP Assessment
+↓
+Sustainability Assessment
+↓
+Supply Chain Assessment
+↓
+TRL
+↓
+BRL
+↓
+MRL
+↓
+SRL
+↓
+VRL
+↓
+Investment Readiness
+↓
+Governance Decision
+```
+
+Do not unnecessarily hard-code this sequence if the current architecture supports configurable workflows.
+
+Preserve flexibility for future readiness frameworks.
+
+---
+
+# 12. EVIDENCE MUST BELONG TO THE VENTURE
+
+Validation evidence should remain associated with the Venture Candidate.
+
+Examples:
+
+* customer interviews
+* market evidence
+* technical evidence
+* WTP results
+* financial assumptions
+* Lean Canvas versions
+* readiness assessments
+* IP assessments
+* sustainability assessments
+* supply-chain evidence
+* governance decisions
+* risk assessments
+
+The original evidence must remain accessible after productisation.
+
+Do not move or destroy the evidence when a Product Programme is created.
+
+---
+
+# 13. VENTURE LIFECYCLE OUTCOMES
+
+Do not assume every venture becomes a product.
+
+Support outcomes such as:
+
+```text
+Active
+Hold
+Killed
+Rejected
+Merged
+Transferred
+Licensed
+Partnered
+Research Programme
+Productisation Approved
+Spin-Out Candidate
+Archived
+```
+
+The architecture should be extensible.
+
+---
+
+# 14. PRODUCTISATION GATE
+
+Create an explicit governed transition between Venture Candidate and Product Programme.
+
+Use an action conceptually equivalent to:
+
+```text
+Promote Venture to Product Programme
+```
+
+This must NOT simply change:
+
+```text
+venture.status = product
+```
+
+Instead it must create a new Product Programme entity linked to the originating Venture Candidate.
+
+---
+
+# 15. PRODUCTISATION DECISION
+
+The Productisation Gate should be capable of considering:
+
+```text
+VRL
+TRL
+BRL
+MRL
+SRL
+market evidence
+customer evidence
+WTP evidence
+technical feasibility
+IP position
+financial viability
+commercial rationale
+sustainability
+supply-chain readiness
+brand confirmation
+funding position
+risk
+governance approval
+```
+
+Thresholds should be configurable where practical.
+
+Do not hard-code arbitrary readiness thresholds without checking existing ECOBLEND logic.
+
+---
+
+# 16. PRODUCTISATION DECISION RECORD
+
+Create or support an auditable decision record containing:
+
+```text
+id
+venture_candidate_id
+decision
+decision_date
+decision_maker
+evidence_snapshot
+readiness_snapshot
+rationale
+conditions
+approval_reference
+created_at
+```
+
+Possible decisions:
+
+```text
+Approve
+Hold
+Reject
+Return for Evidence
+Alternative Commercialisation Route
+```
+
+---
+
+# 17. PRODUCT PROGRAMME ENTITY
+
+When productisation is approved, create:
+
+```text
+ProductProgramme
+```
+
+Example:
+
+```text
+PRG-TONE-0008
+```
+
+Suggested attributes:
+
+```text
+id
+programme_id
+venture_candidate_id
+domain_brand_id
+programme_name
+description
+programme_owner
+approval_date
+productisation_decision_id
+technical_strategy
+commercial_strategy
+current_owner_entity
+originating_entity
+programme_status
+created_at
+updated_at
+```
+
+Suggested lifecycle:
+
+```text
+Approved
+Concept Development
+Prototype Development
+Engineering Development
+Pre-Production
+Launch Preparation
+Active
+Paused
+Cancelled
+Transferred
+Retired
+```
+
+---
+
+# 18. ONE VENTURE MAY GENERATE MULTIPLE PRODUCT PROGRAMMES
+
+Do NOT assume:
+
+```text
+1 Venture = 1 Product
+```
+
+The architecture must support:
+
+```text
+1 Venture Candidate
+       │
+       ├── Product Programme A
+       │
+       ├── Product Programme B
+       │
+       └── Product Programme C
+```
+
+This is essential because a validated opportunity may lead to multiple commercial implementations.
+
+---
+
+# 19. PRODUCT FAMILY ENTITY
+
+Create:
+
+```text
+ProductFamily
+```
+
+A Product Family groups related products derived from a common programme/platform.
+
+Example:
+
+```text
+TONE BioAcoustic
+```
+
+Suggested fields:
+
+```text
+id
+family_code
+family_name
+product_programme_id
+domain_brand_id
+description
+product_category
+customer_segment
+technical_platform
+status
+created_at
+updated_at
+```
+
+---
+
+# 20. PRODUCT ENTITY
+
+Create:
+
+```text
+Product
+```
+
+A Product represents a defined product/service offering.
+
+Example:
+
+```text
+TONE BioAcoustic Studio Panel
+```
+
+Suggested fields:
+
+```text
+id
+product_code
+product_name
+commercial_name
+product_family_id
+product_programme_id
+domain_brand_id
+description
+product_type
+technical_description
+lifecycle_status
+release_status
+product_owner
+current_owner_entity
+originating_entity
+created_at
+updated_at
+```
+
+Suggested lifecycle:
+
+```text
+Concept
+Prototype
+Engineering
+Validation
+Pre-Production
+Released
+Active
+End-of-Life
+Archived
+```
+
+---
+
+# 21. PRODUCT VARIANT ENTITY
+
+Products must support variants.
+
+Create:
+
+```text
+ProductVariant
+```
+
+Examples for an acoustic panel:
+
+```text
+60 mm
+100 mm
+Natural Finish
+Black Finish
+Studio Version
+Stage Version
+```
+
+Suggested fields:
+
+```text
+id
+variant_code
+product_id
+variant_name
+description
+material
+dimensions
+weight
+finish
+performance_class
+manufacturing_location
+supplier
+release_revision
+status
+created_at
+updated_at
+```
+
+Do not assume every product category uses the same technical attributes.
+
+Use a sufficiently flexible attribute architecture.
+
+---
+
+# 22. SERVICES AND DIGITAL PRODUCTS
+
+Do not design the Product architecture exclusively around manufactured hardware.
+
+ECOBLEND may eventually manage:
+
+* physical products
+* digital products
+* software
+* services
+* platform services
+* licensing products
+* data products
+* AI/agent services
+* hybrid hardware/software products
+
+Therefore introduce an appropriate:
+
+```text
+product_type
+```
+
+classification.
+
+Do not require every Product to have a physical manufacturing part number.
+
+---
+
+# 23. PRODUCT IDENTIFIERS
+
+Each Product should receive a stable Product ID independent of its commercial name.
+
+Example:
+
+```text
+PROD-TONE-0012
+```
+
+Commercial names may change.
+
+The underlying Product ID should remain stable.
+
+---
+
+# 24. CONTROLLED PART NUMBER ARCHITECTURE
+
+Physical products, assemblies, components or controlled engineering items may require Part Numbers.
+
+Create:
+
+```text
+PartNumber
+```
+
+Examples:
+
+```text
+TONE-BAP-0001
+TONE-BAP-0002
+```
+
+Part numbers should be:
+
+* unique
+* stable
+* auditable
+* non-reusable
+* generated according to controlled rules
+
+Do not create overly descriptive identifiers.
+
+Avoid designs such as:
+
+```text
+TONE-BAP-1200-600-60-HEMP-BLK-A
+```
+
+because changing technical attributes can invalidate the semantic meaning of the identifier.
+
+---
+
+# 25. PART NUMBER FORMAT
+
+A potential default structure is:
+
+```text
+[BRAND]-[FAMILY]-[SEQUENCE]
+```
+
+Example:
+
+```text
+TONE-BAP-0001
+```
+
+However:
+
+DO NOT hard-code this structure irreversibly.
+
+Create configurable numbering rules so ECOBLEND can support future product domains.
+
+---
+
+# 26. PART NUMBER CONTROL
+
+Part-number generation must prevent:
+
+* duplicates
+* accidental reuse
+* silent deletion
+* uncontrolled manual changes
+
+Support:
+
+```text
+part_number
+product_id
+product_variant_id
+status
+revision
+issued_by
+issued_at
+retired_at
+```
+
+Where appropriate, use database uniqueness constraints rather than relying solely on front-end validation.
+
+---
+
+# 27. REVISION CONTROL
+
+Revision must normally remain separate from the base Part Number.
+
+Example:
+
+```text
+Part Number:
+TONE-BAP-0001
+
+Revision:
+A
+```
+
+Then:
+
+```text
+TONE-BAP-0001 Rev A
+TONE-BAP-0001 Rev B
+```
+
+Revision history must be preserved.
+
+Do not overwrite engineering history.
+
+---
+
+# 28. ATTRIBUTES MUST REMAIN SEPARATE FROM IDENTIFIERS
+
+Store technical attributes separately.
+
+Examples:
+
+```text
+Material
+Dimensions
+Thickness
+Weight
+Colour
+Finish
+Power
+Performance
+Supplier
+Manufacturing Process
+Compliance
+Revision
+```
+
+These should not normally determine the permanent identity of the Product.
+
+---
+
+# 29. PRODUCT MASTER
+
+Create a Product Master capability.
+
+Example display:
+
+```text
+DOMAIN BRAND
+TONE
+
+PRODUCT PROGRAMME
+TONE BioAcoustic
+
+PRODUCT FAMILY
+BioAcoustic Panels
+
+PRODUCT
+TONE BioAcoustic Studio Panel
+
+PRODUCT ID
+PROD-TONE-0012
+
+VARIANT
+60 mm
+
+PART NUMBER
+TONE-BAP-0001
+
+REVISION
+A
+
+STATUS
+Prototype
+```
+
+---
+
+# 30. PRODUCT PROVENANCE
+
+The Product Master must also expose provenance.
+
+Example:
+
+```text
+ORIGINATING VENTURE
+
+VEN-TONE-0027
+
+Bio-Composite Studio Acoustic Materials
+```
+
+The user should be able to navigate directly back to the originating venture and its evidence.
+
+---
+
+# 31. END-TO-END TRACEABILITY
+
+From any controlled Product or Part Number, ECOBLEND must be capable of reconstructing:
+
+```text
+Part Number
+↓
+Variant
+↓
+Product
+↓
+Product Family
+↓
+Product Programme
+↓
+Original Venture Candidate
+↓
+Validation Evidence
+↓
+Productisation Decision
+```
+
+The reverse relationship must also work.
+
+From a Venture Candidate, users should be able to see:
+
+```text
+Resulting Product Programmes
+Resulting Product Families
+Resulting Products
+Resulting Part Numbers
+```
+
+---
+
+# 32. DOMAIN BRAND DETAIL PAGE
+
+Create or refactor a Domain Brand page.
+
+Example:
+
+```text
+TONE
+Creative Industries
+```
+
+Display relevant portfolio information such as:
+
+```text
+Brand Thesis
+Mission
+Sector
+Target Markets
+Technology Domains
+IP Domains
+
+Active Ventures
+Validation Ventures
+Product Programmes
+Products Under Development
+Released Products
+```
+
+Potential tabs:
+
+```text
+Overview
+Venture Pipeline
+Product Portfolio
+Technology
+IP
+Readiness
+Market Evidence
+Financial
+Sustainability
+Risk
+Governance
+History
+```
+
+Reuse existing ECOBLEND modules where possible.
+
+---
+
+# 33. VENTURE PIPELINE
+
+Create a cross-brand Venture Pipeline.
+
+Allow filtering by:
+
+```text
+Domain Brand
+Unassigned
+Venture Stage
+Venture Status
+VRL
+TRL
+BRL
+MRL
+SRL
+Owner
+Sector
+Date
+```
+
+Example:
+
+```text
+VEN-TONE-0027
+Bio-Composite Acoustic Materials
+TONE
+Validation
+
+VEN-TONE-0030
+Sustainable Stage Equipment
+TONE
+Discovery
+
+VEN-REAL-0014
+Impact Protection System
+REAL
+Prototype
+
+VEN-UNASSIGNED-0041
+New Opportunity
+Unassigned
+Discovery
+```
+
+---
+
+# 34. PRODUCT PORTFOLIO
+
+Create a Product Portfolio separate from the Venture Pipeline.
+
+Example:
+
+```text
+TONE
+
+BioAcoustic
+│
+├── Studio Panel
+├── Stage Panel
+└── Isolation Panel
+
+Stage Equipment
+│
+├── StageBoard
+└── AmpShell
+```
+
+Do not show early unvalidated ventures as though they are existing products.
+
+---
+
+# 35. PORTFOLIO NAVIGATION
+
+Review current navigation and adapt it appropriately.
+
+A possible architecture is:
+
+```text
+PORTFOLIO
+
+Overview
+
+Domain Brands
+
+Venture Pipeline
+
+Product Programmes
+
+Product Portfolio
+
+Product Families
+
+Product / SKU Register
+
+Part Number Register
+
+Archived Ventures
+```
+
+Do not unnecessarily duplicate existing navigation if equivalent capabilities already exist.
+
+---
+
+# 36. COMMAND CENTRE
+
+Update relevant Command Centre portfolio intelligence.
+
+Potential metrics:
+
+```text
+Domain Brands
+Active Venture Candidates
+Unassigned Ventures
+Ventures by Stage
+Ventures by Domain Brand
+Ventures Awaiting Decisions
+Productisation Candidates
+Active Product Programmes
+Products Under Development
+Released Products
+Products by Domain Brand
+Part Numbers Issued
+```
+
+All metrics should support drill-down where practical.
+
+---
+
+# 37. PORTFOLIO FUNNEL
+
+Create or support a portfolio funnel:
+
+```text
+Ideas
+↓
+Venture Candidates
+↓
+Validated Ventures
+↓
+Productisation Approved
+↓
+Product Programmes
+↓
+Products
+↓
+Released Products
+```
+
+Where data exists, calculate conversion rates.
+
+Do not fabricate metrics for historical records lacking sufficient evidence.
+
+---
+
+# 38. SHARED TECHNOLOGY AND IP
+
+Do not create an architecture where each Product owns technology or IP exclusively.
+
+Products may share:
+
+* core ECORACE IP
+* ECOBLEND technology
+* patents
+* know-how
+* algorithms
+* materials technology
+* data
+* manufacturing processes
+* software components
+
+Use relationship tables where necessary.
+
+Potential logical structures:
+
+```text
+product_ip_links
+product_technology_links
+venture_ip_links
+programme_ip_links
+shared_platform_components
+cross_brand_dependencies
+```
+
+Use existing equivalent tables where they already exist.
+
+---
+
+# 39. CROSS-BRAND PRODUCTS
+
+The architecture must not assume every opportunity fits exclusively within one brand forever.
+
+Support future cases involving:
+
+* primary Domain Brand
+* secondary brand relationship
+* shared technology
+* co-branded products
+* licensing
+* technology transfer
+
+Do not over-engineer this immediately, but avoid schema decisions that make it impossible.
+
+---
+
+# 40. OWNERSHIP AND SPIN-OUT READINESS
+
+Do not assume every Product remains permanently owned or commercially operated by ECORACE Studio.
+
+The model should be capable of representing:
+
+```text
+originating_entity
+current_owner_entity
+IP_owner
+commercial_operator
+licence_status
+domain_brand
+```
+
+This allows future:
+
+* SPVs
+* licensing
+* joint ventures
+* partnerships
+* spin-outs
+* technology transfer
+
+without losing ECORACE provenance.
+
+---
+
+# 41. AUDIT ARCHITECTURE
+
+Major changes must be auditable.
+
+Track events including:
+
+```text
+Brand creation
+Brand status change
+Venture creation
+Brand assignment
+Brand reassignment
+Venture stage change
+Venture status change
+Productisation decision
+Product Programme creation
+Product creation
+Variant creation
+Part-number issuance
+Revision
+Ownership change
+Product retirement
+```
+
+Where appropriate store:
+
+```text
+actor
+timestamp
+entity
+event
+previous_value
+new_value
+reason
+approval_reference
+```
+
+Reuse existing audit infrastructure where available.
+
+---
+
+# 42. DATA INTEGRITY
+
+Use appropriate database controls.
+
+Potential requirements include:
+
+* unique Venture IDs
+* unique Product Programme IDs
+* unique Product IDs
+* unique active Part Numbers
+* valid foreign keys
+* controlled deletion
+* timestamps
+* audit history
+* migration flags
+
+Do not rely solely on UI validation for critical identifiers.
+
+---
+
+# 43. DO NOT HARD DELETE GOVERNED HISTORY
+
+Where records have validation evidence, governance decisions, released products or controlled identifiers, prefer:
+
+```text
+Archived
+Retired
+Cancelled
+Superseded
+```
+
+over destructive deletion.
+
+The exact implementation should respect the existing ECOBLEND data architecture.
+
+---
+
+# 44. MIGRATION REQUIREMENT
+
+This must be treated as a controlled migration.
+
+Do not assume existing "venture" records all represent the same entity type.
+
+During audit classify records into:
+
+```text
+Domain Brand
+Venture Candidate
+Product
+Unknown / Requires Review
+```
+
+If uncertain:
+
+```text
+migration_review_required = true
+```
+
+Do not guess.
+
+---
+
+# 45. MIGRATION MAPPING
+
+Before migrating existing records, produce a mapping such as:
+
+```text
+Existing Record
+Current Type
+Proposed Type
+Proposed Parent
+Confidence
+Migration Action
+Manual Review Required
+```
+
+No destructive migration should occur without understanding existing dependencies.
+
+---
+
+# 46. DEPENDENCY ANALYSIS
+
+Identify all existing components that reference the current venture architecture.
+
+This may include:
+
+* Command Centre
+* Portfolio
+* Venture Intake
+* Discovery
+* WTP
+* Proposition
+* Lean Canvas
+* TRL
+* BRL
+* MRL
+* SRL
+* VRL
+* Investment
+* Governance
+* IP
+* Sustainability
+* Supply Chain
+* Risk
+* Financial Model
+* Evidence
+* Reporting
+* API routes
+* database queries
+* dashboards
+* navigation
+
+Do not break these relationships during refactoring.
+
+---
+
+# 47. UI ENTITY DIFFERENTIATION
+
+Users must immediately understand which object they are viewing.
+
+Use explicit entity labels.
+
+Examples:
+
+```text
+[TONE]
+DOMAIN BRAND
+```
+
+```text
+[VEN-TONE-0027]
+VENTURE CANDIDATE
+```
+
+```text
+[PRG-TONE-0008]
+PRODUCT PROGRAMME
+```
+
+```text
+[PROD-TONE-0012]
+PRODUCT
+```
+
+```text
+[TONE-BAP-0001]
+PART NUMBER
+```
+
+Do not rely solely on colour for differentiation.
+
+Maintain accessibility.
+
+---
+
+# 48. TONE SYNTHETIC REFERENCE SCENARIO
+
+Use TONE as the principal synthetic architecture test.
+
+Create or simulate:
+
+```text
+DOMAIN BRAND
+
+TONE
+
+Sector:
+Creative Industries
+```
+
+Under TONE create:
+
+```text
+VENTURE A
+
+Sustainable Stage Equipment
+```
+
+and:
+
+```text
+VENTURE B
+
+Bio-Composite Studio Acoustic Materials
+```
+
+These must exist as two independent Venture Candidates.
+
+---
+
+# 49. TONE PRODUCTISATION TEST
+
+Progress:
+
+```text
+Bio-Composite Studio Acoustic Materials
+```
+
+through a synthetic Productisation Gate.
+
+Create:
+
+```text
+Product Programme:
+
+TONE BioAcoustic
+```
+
+Then:
+
+```text
+Product Family:
+
+BioAcoustic Panels
+```
+
+Then:
+
+```text
+Product:
+
+TONE BioAcoustic Studio Panel
+```
+
+Then variants:
+
+```text
+60 mm
+100 mm
+```
+
+Then controlled identifiers such as:
+
+```text
+TONE-BAP-0001
+TONE-BAP-0002
+```
+
+---
+
+# 50. TRACEABILITY TEST
+
+Open:
+
+```text
+TONE-BAP-0001
+```
+
+The application should expose lineage equivalent to:
+
+```text
+TONE-BAP-0001
+↓
+60 mm Variant
+↓
+TONE BioAcoustic Studio Panel
+↓
+BioAcoustic Panels
+↓
+TONE BioAcoustic Product Programme
+↓
+VEN-TONE-XXXX
+Bio-Composite Studio Acoustic Materials
+↓
+Validation Evidence
+↓
+Productisation Decision
+```
+
+No original evidence should be lost.
+
+---
+
+# 51. UNASSIGNED VENTURE TEST
+
+Create a venture without selecting a Domain Brand.
+
+Expected behaviour:
+
+```text
+Venture created successfully
+Domain Brand = Unassigned
+Validation workflow available
+Brand Fit Assessment available
+```
+
+The user must not be blocked.
+
+---
+
+# 52. FAILED VENTURE TEST
+
+Create a Venture Candidate under TONE and subsequently mark it:
+
+```text
+Killed
+```
+
+Expected:
+
+* TONE remains Active
+* venture evidence remains accessible
+* venture remains historically visible
+* no Product Programme is automatically created
+
+---
+
+# 53. MULTIPLE PRODUCT PROGRAMME TEST
+
+Create one synthetic validated venture that produces two Product Programmes.
+
+Expected:
+
+```text
+1 Venture
+↓
+2 Product Programmes
+```
+
+Both must preserve lineage to the same originating venture.
+
+---
+
+# 54. BRAND REASSIGNMENT TEST
+
+Create a Venture Candidate assigned initially to one Domain Brand.
+
+Move it through governed reassignment to another.
+
+Expected:
+
+* current brand updates
+* historical brand remains recorded
+* reason remains recorded
+* evidence remains associated with the venture
+* IDs do not change unnecessarily
+
+---
+
+# 55. PART NUMBER COLLISION TEST
+
+Attempt to generate the same Part Number twice.
+
+Expected:
+
+```text
+Duplicate rejected
+```
+
+This should be protected at the database level where appropriate.
+
+---
+
+# 56. PRODUCT REVISION TEST
+
+Create:
+
+```text
+TONE-BAP-0001 Rev A
+```
+
+then revise to:
+
+```text
+TONE-BAP-0001 Rev B
+```
+
+Expected:
+
+* base identifier remains stable
+* revision history preserved
+* Rev A remains auditable
+
+---
+
+# 57. RED-TEAM FAILURE MODE — BRAND LOCK-IN
+
+Risk:
+
+Every new venture gets forced into an existing Domain Brand.
+
+Consequence:
+
+The portfolio architecture begins determining innovation strategy rather than evidence determining portfolio fit.
+
+Mitigation:
+
+Support:
+
+```text
+Unassigned
+Candidate Brand
+Potential New Domain Brand
+```
+
+---
+
+# 58. RED-TEAM FAILURE MODE — VENTURE / PRODUCT CONFLATION
+
+Risk:
+
+A Venture Candidate is progressively modified until it becomes a Product record.
+
+Consequence:
+
+Original hypotheses, evidence, validation state and governance history are lost.
+
+Mitigation:
+
+Separate:
+
+```text
+VentureCandidate
+ProductProgramme
+Product
+```
+
+with persistent lineage.
+
+---
+
+# 59. RED-TEAM FAILURE MODE — DUPLICATE ARCHITECTURE
+
+Risk:
+
+The new architecture is added alongside the old venture architecture rather than properly integrating/refactoring it.
+
+Consequence:
+
+Two sources of truth emerge.
+
+Mitigation:
+
+During the audit identify the authoritative existing structures and produce a migration/refactor plan.
+
+Do not create parallel duplicate models simply because this specification proposes new entity names.
+
+---
+
+# 60. RED-TEAM FAILURE MODE — PART NUMBER INSTABILITY
+
+Risk:
+
+Technical characteristics are encoded excessively into Part Numbers.
+
+Consequence:
+
+Design changes invalidate identifiers.
+
+Mitigation:
+
+Use stable identifiers and separate attributes.
+
+---
+
+# 61. RED-TEAM FAILURE MODE — ONE VENTURE = ONE PRODUCT
+
+Risk:
+
+Database relationship assumes one Venture produces exactly one Product.
+
+Consequence:
+
+Future product families cannot be represented correctly.
+
+Mitigation:
+
+Use appropriate one-to-many relationships.
+
+---
+
+# 62. RED-TEAM FAILURE MODE — LOSS OF HISTORICAL BRAND DATA
+
+Risk:
+
+Brand reassignment simply overwrites `domain_brand_id`.
+
+Consequence:
+
+Historical portfolio reporting becomes unreliable.
+
+Mitigation:
+
+Maintain assignment history.
+
+---
+
+# 63. RED-TEAM FAILURE MODE — HARDWARE-ONLY MODEL
+
+Risk:
+
+Product architecture assumes every commercial output is a manufactured physical item.
+
+Consequence:
+
+Future software, AI, data, service or licensing products cannot be represented.
+
+Mitigation:
+
+Use Product Type and only require Part Numbers where appropriate.
+
+---
+
+# 64. RED-TEAM FAILURE MODE — UI REBUILD WITHOUT DATA REBUILD
+
+Risk:
+
+The interface visually shows Brands → Ventures → Products but the underlying database still uses one generic object.
+
+Consequence:
+
+The architectural problem remains and future modules become increasingly fragile.
+
+Mitigation:
+
+Validate database relationships, APIs and business logic—not merely UI presentation.
+
+---
+
+# 65. LOGICAL TARGET DATA MODEL
+
+The target logical relationship is approximately:
+
+```text
+domain_brands
+      │
+      │ 1:N
+      ▼
+venture_candidates
+      │
+      │ 1:N
+      ▼
+product_programmes
+      │
+      │ 1:N
+      ▼
+product_families
+      │
+      │ 1:N
+      ▼
+products
+      │
+      │ 1:N
+      ▼
+product_variants
+      │
+      │ 1:N
+      ▼
+part_numbers
+```
+
+Supporting concepts should include equivalents of:
+
+```text
+brand_fit_assessments
+brand_assignment_history
+venture_evidence
+venture_stage_history
+productisation_decisions
+product_revisions
+part_number_history
+audit_events
+```
+
+Do NOT automatically create all of these tables if the existing application already contains equivalent structures.
+
+Map the target concepts onto the existing architecture intelligently.
+
+---
+
+# 66. EXISTING READINESS SYSTEMS
+
+Existing readiness systems must remain connected primarily to the appropriate Venture Candidate and/or Product Programme depending on their purpose.
+
+Audit existing:
+
+```text
+TRL
+BRL
+MRL
+SRL
+VRL
+```
+
+relationships before changing them.
+
+Do not arbitrarily move historical readiness data.
+
+Where readiness meaning changes after productisation, preserve historical venture scores and allow later programme/product assessments separately if required.
+
+---
+
+# 67. REPORTING
+
+The architecture should ultimately support reporting such as:
+
+```text
+Ventures by Domain Brand
+Ventures by Stage
+Unassigned Ventures
+Brand Fit Decisions
+Venture Conversion Rate
+Productisation Rate
+Products by Originating Venture
+Products by Domain Brand
+Products by Lifecycle
+Product Families by Brand
+Part Numbers by Product
+Killed Ventures
+Licensed Ventures
+Spin-Out Candidates
+```
+
+Historical reports must remain reproducible.
+
+---
+
+# 68. API AND SERVICE ARCHITECTURE
+
+Audit all API routes/services that currently assume a generic venture entity.
+
+Refactor carefully.
+
+Avoid:
+
+* duplicated endpoints
+* broken foreign keys
+* hidden compatibility assumptions
+* client-side-only relationship logic
+
+Business rules involving productisation and identifier issuance should be enforced server-side where appropriate.
+
+---
+
+# 69. SECURITY AND PERMISSIONS
+
+Preserve existing authentication and authorisation.
+
+Review whether sensitive actions require stronger permissions, including:
+
+```text
+Create Domain Brand
+Retire Domain Brand
+Confirm Brand Assignment
+Approve Brand Reassignment
+Approve Productisation
+Issue Part Number
+Change Product Ownership
+Retire Product
+```
+
+Do not weaken current security controls during refactoring.
+
+---
+
+# 70. PERFORMANCE
+
+Add appropriate indexes for frequently queried relationships such as:
+
+```text
+domain_brand_id
+venture_candidate_id
+product_programme_id
+product_family_id
+product_id
+product_variant_id
+venture_status
+current_stage
+part_number
+```
+
+Only add indexes justified by the actual database technology and query patterns.
+
+---
+
+# 71. BACKWARDS COMPATIBILITY
+
+Where existing modules rely on legacy Venture IDs or routes, implement an explicit compatibility/migration strategy.
+
+Do not silently break bookmarks, API calls or relationships.
+
+Document deprecated structures.
+
+---
+
+# 72. NO DESTRUCTIVE ASSUMPTIONS
+
+If the existing implementation differs materially from this specification:
+
+STOP.
+
+Explain the conflict.
+
+Recommend the safest mapping.
+
+Do not delete working architecture simply because field or table names differ from this specification.
+
+The objective is architectural correctness, not literal naming compliance.
+
+---
+
+# 73. REQUIRED OUTPUT AFTER PHASE 1 AUDIT
+
+Before implementation, return:
+
+## A. Current-State Architecture
+
+Describe the existing:
+
+* portfolio model
+* venture model
+* product model
+* database schema
+* readiness relationships
+* evidence architecture
+* governance architecture
+
+## B. Architecture Conflicts
+
+Identify where the current implementation conflicts with this specification.
+
+## C. Existing Assets to Reuse
+
+Identify existing:
+
+* tables
+* services
+* APIs
+* components
+* hooks
+* workflows
+
+that should be retained.
+
+## D. Target Data Model
+
+Provide the proposed entity relationship architecture.
+
+## E. Migration Mapping
+
+Explain how existing records would be classified.
+
+## F. Dependency Map
+
+Identify affected modules and files.
+
+## G. Implementation Sequence
+
+Recommend the precise order of changes.
+
+## H. Risk Assessment
+
+Identify:
+
+* data-loss risk
+* migration risk
+* regression risk
+* UI risk
+* identifier risk
+* integration risk
+
+## I. Testing Strategy
+
+Explain how each implementation phase will be validated.
+
+Then STOP.
+
+Wait for explicit authorisation before Phase 2.
+
+---
+
+# 74. PHASE 2 TARGET — CORE DATA ARCHITECTURE
+
+When explicitly authorised, Phase 2 should implement the approved core architecture.
+
+Focus on:
+
+* schema
+* migrations
+* entities
+* relationships
+* constraints
+* history structures
+* APIs/services required by the new architecture
+
+Do not unnecessarily rebuild all UI during this phase.
+
+Run integrity tests.
+
+Report results.
+
+Then STOP.
+
+---
+
+# 75. PHASE 3 TARGET — DOMAIN BRAND + VENTURE WORKFLOW
+
+When explicitly authorised, implement:
+
+* Domain Brand management
+* Domain Brand pages
+* Venture Candidate creation
+* optional brand assignment
+* Unassigned state
+* Brand Fit Assessment
+* brand reassignment governance
+* Venture Pipeline
+* Productisation Gate
+
+Reconnect existing validation modules.
+
+Test.
+
+Report.
+
+Then STOP.
+
+---
+
+# 76. PHASE 4 TARGET — PRODUCT ARCHITECTURE
+
+When explicitly authorised, implement:
+
+* Product Programme
+* Product Family
+* Product
+* Product Variant
+* Product Master
+* controlled Part Number system
+* revision control
+* product provenance
+* product portfolio
+* end-to-end traceability
+
+Test.
+
+Report.
+
+Then STOP.
+
+---
+
+# 77. PHASE 5 TARGET — MIGRATION + INTEGRATION + REGRESSION
+
+When explicitly authorised:
+
+* execute approved legacy data migration
+* reconnect all dependent modules
+* resolve compatibility issues
+* run database integrity tests
+* run application tests
+* run navigation tests
+* run readiness tests
+* run governance tests
+* run TONE synthetic scenario
+* run Unassigned Venture scenario
+* run failed Venture scenario
+* run multiple Product Programme scenario
+* run Part Number collision test
+* run revision test
+* run traceability test
+
+Do not mark the architecture complete if critical regressions remain.
+
+---
+
+# 78. VERSION CONTROL REQUIREMENT
+
+Before each significant implementation phase:
+
+1. Confirm the current application state is working.
+2. Ensure changes are recoverable through the project's existing Git/version-control workflow.
+3. Keep each phase logically separable.
+4. Do not mix unrelated refactors into this work.
+5. Report the files changed after each phase.
+
+Do not overwrite known-good architecture without a rollback path.
+
+---
+
+# 79. FINAL TARGET EXAMPLE
+
+The completed architecture must be capable of representing:
+
+```text
+ECORACE STUDIO
+│
+└── TONE
+    Domain Brand
+    Creative Industries
+    │
+    ├── VEN-TONE-0027
+    │   Bio-Composite Acoustic Materials
+    │   Venture Candidate
+    │
+    │   ├── Discovery Evidence
+    │   ├── Customer Evidence
+    │   ├── WTP
+    │   ├── TRL
+    │   ├── BRL
+    │   ├── MRL
+    │   ├── SRL
+    │   ├── VRL
+    │   └── Governance Decision
+    │
+    │       ↓ APPROVED
+    │
+    └── PRG-TONE-0008
+        TONE BioAcoustic
+        Product Programme
+        │
+        └── BioAcoustic Panels
+            Product Family
+            │
+            └── TONE BioAcoustic Studio Panel
+                Product
+                │
+                ├── 60 mm Variant
+                │   └── TONE-BAP-0001
+                │
+                └── 100 mm Variant
+                    └── TONE-BAP-0002
+```
+
+At every level, ECOBLEND must preserve:
+
+```text
+identity
+lineage
+ownership
+evidence
+governance
+status
+history
+auditability
+```
+
+---
+
+# 80. DEFINITION OF DONE
+
+This architectural programme is complete only when ECOBLEND OS can correctly distinguish and manage:
+
+```text
+DOMAIN BRAND
+≠
+VENTURE CANDIDATE
+≠
+PRODUCT PROGRAMME
+≠
+PRODUCT FAMILY
+≠
+PRODUCT
+≠
+PRODUCT VARIANT
+≠
+PART NUMBER
+```
+
+and can trace a commercial Product backwards to the original opportunity, validation evidence and governance decision that created it.
+
+The system must also allow an early-stage Venture Candidate to exist without a Domain Brand and allow alternative venture outcomes that never become products.
+
+The rebuild must improve the existing ECOBLEND architecture rather than create a disconnected parallel system.
+
+Architectural integrity, data preservation, traceability and backwards compatibility take priority over speed of implementation.
+
+---
+
+# 81. EXECUTION INSTRUCTION
+
+Use this document as the authoritative TARGET-STATE SPECIFICATION.
+
+Follow the separate EXECUTION CONTROL instructions provided immediately before this specification.
+
+Start with PHASE 1 — AUDIT ONLY.
+
+Do not make implementation changes yet.
+
+Inspect the actual ECOBLEND codebase and database architecture.
+
+Return the Phase 1 audit, proposed migration architecture, dependency map, implementation sequence and risks.
+
+Then STOP and wait for my approval.

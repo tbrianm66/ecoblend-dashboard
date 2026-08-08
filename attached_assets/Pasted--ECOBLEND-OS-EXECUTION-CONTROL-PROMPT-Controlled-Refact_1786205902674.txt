@@ -1,0 +1,686 @@
+# ECOBLEND OS — EXECUTION CONTROL PROMPT
+
+## Controlled Refactor and Migration Instructions
+
+This is a master architecture specification for a significant ECOBLEND OS refactor.
+
+DO NOT attempt to implement the entire specification in a single autonomous coding pass.
+
+Use the full architecture specification that follows this instruction as the target-state design, but execute the work in controlled phases.
+
+The purpose of this execution control is to minimise:
+
+* data-loss risk
+* regression risk
+* schema corruption
+* duplicate architecture
+* broken module dependencies
+* incorrect migration of existing ventures
+* accidental conflation of Domain Brands, Ventures and Products
+
+Do not make destructive changes without first understanding the existing architecture.
+
+---
+
+# PHASE 1 — AUDIT ONLY
+
+First inspect the existing ECOBLEND OS application.
+
+Audit:
+
+* current database schema
+* tables
+* foreign keys
+* entity relationships
+* APIs
+* services
+* routes
+* components
+* hooks
+* state-management logic
+* navigation
+* Portfolio architecture
+* Venture Intake
+* venture records
+* existing brand records
+* product-related records
+* evidence structures
+* governance structures
+* readiness structures
+* TRL
+* BRL
+* MRL
+* SRL
+* VRL
+* WTP
+* Lean Canvas
+* financial-model relationships
+* IP relationships
+* sustainability relationships
+* supply-chain relationships
+* reporting dependencies
+
+Do not modify production data.
+
+Do not perform destructive schema changes.
+
+Do not delete, rename or migrate existing records during Phase 1.
+
+## Required Phase 1 Output
+
+Return:
+
+### 1. Current-State Architecture
+
+Explain how the application currently represents:
+
+* portfolio entities
+* ventures
+* brands
+* products
+* readiness assessments
+* evidence
+* governance
+* ownership
+* commercialisation
+
+### 2. Existing Database Structure
+
+Identify:
+
+* relevant tables
+* primary keys
+* foreign keys
+* important indexes
+* junction tables
+* legacy structures
+* duplicated structures
+
+### 3. Existing Records Classification
+
+Identify which existing records appear to represent:
+
+```text
+Domain Brands
+Venture Candidates
+Products
+Other / Unknown
+```
+
+Pay particular attention to records representing persistent brands such as:
+
+```text
+TONE
+REAL
+BEBUS
+ECOCOMP
+```
+
+These should not automatically be assumed to be Venture Candidates.
+
+### 4. Architecture Conflicts
+
+Identify where the current implementation conflicts with the target-state specification.
+
+### 5. Existing Assets to Reuse
+
+Identify working:
+
+* tables
+* components
+* APIs
+* routes
+* services
+* workflows
+* validation logic
+
+that should be retained rather than rebuilt.
+
+### 6. Dependency Map
+
+Identify every part of the application that depends on the existing venture architecture.
+
+### 7. Proposed Target Data Model
+
+Produce the recommended entity relationship structure for:
+
+```text
+Domain Brand
+↓
+Venture Candidate
+↓
+Product Programme
+↓
+Product Family
+↓
+Product
+↓
+Product Variant
+↓
+Part Number
+```
+
+### 8. Migration Mapping
+
+Explain how existing records could be mapped into the new architecture.
+
+Use a structure similar to:
+
+```text
+Existing Record
+Current Type
+Proposed Type
+Proposed Parent
+Confidence
+Migration Action
+Manual Review Required
+```
+
+If classification is uncertain, mark:
+
+```text
+Manual Review Required
+```
+
+Do not guess.
+
+### 9. Risk Assessment
+
+Identify:
+
+* data-loss risk
+* migration risk
+* foreign-key risk
+* API regression risk
+* routing risk
+* readiness-data risk
+* evidence-integrity risk
+* governance-history risk
+* identifier risk
+* UI regression risk
+
+### 10. Implementation Sequence
+
+Recommend the safest technical order for the subsequent phases.
+
+### 11. Testing Strategy
+
+Explain how each implementation phase should be validated.
+
+---
+
+# STOP CONDITION AFTER PHASE 1
+
+After providing the complete Phase 1 audit and implementation plan:
+
+STOP.
+
+Do not begin coding Phase 2.
+
+Wait for explicit authorisation.
+
+---
+
+# PHASE 2 — CORE DATA ARCHITECTURE
+
+Only begin this phase when explicitly instructed.
+
+Implement the approved core data architecture.
+
+This phase should focus on:
+
+* database schema
+* migrations
+* entity models
+* relationships
+* constraints
+* history structures
+* server-side business rules
+* required APIs/services
+
+Potential target entities include:
+
+```text
+DomainBrand
+VentureCandidate
+ProductProgramme
+ProductFamily
+Product
+ProductVariant
+PartNumber
+```
+
+and required relationship/history structures.
+
+Do not perform the complete UI rebuild during this phase unless required for minimal testing.
+
+## Phase 2 Requirements
+
+Before making changes:
+
+1. Confirm current application state is recoverable.
+2. Confirm existing migrations are understood.
+3. Create a rollback path.
+4. Avoid destructive modification of legacy data.
+5. Use migrations rather than direct uncontrolled database edits.
+
+After implementation:
+
+* run schema tests
+* run foreign-key tests
+* run uniqueness tests
+* run migration tests
+* confirm existing application still starts
+* confirm existing core modules remain accessible
+
+Return:
+
+* changes made
+* migrations created
+* files changed
+* tests run
+* test results
+* unresolved issues
+* remaining risks
+
+Then STOP.
+
+Wait for explicit approval before Phase 3.
+
+---
+
+# PHASE 3 — DOMAIN BRAND + VENTURE WORKFLOW
+
+Only begin when explicitly authorised.
+
+Implement the approved Domain Brand and Venture Candidate workflow.
+
+This may include:
+
+* Domain Brand management
+* Domain Brand detail pages
+* optional brand assignment
+* Unassigned Venture state
+* Potential New Domain Brand state
+* Brand Fit Assessment
+* Brand Assignment History
+* Brand Reassignment Governance
+* Venture Candidate creation
+* Venture Pipeline
+* productisation eligibility
+* Productisation Gate
+
+Reconnect existing ECOBLEND validation modules rather than unnecessarily duplicating them.
+
+Preserve:
+
+* venture evidence
+* readiness history
+* governance decisions
+* legacy IDs where required
+
+## Phase 3 Testing
+
+Test at minimum:
+
+```text
+Create Unassigned Venture
+Create TONE Venture
+Create Multiple Ventures Under TONE
+Reassign Venture Brand
+Kill Venture
+Preserve Evidence
+Preserve Existing Readiness Links
+```
+
+Report results.
+
+Then STOP.
+
+Wait for explicit approval before Phase 4.
+
+---
+
+# PHASE 4 — PRODUCT ARCHITECTURE
+
+Only begin when explicitly authorised.
+
+Implement:
+
+* Product Programme
+* Product Family
+* Product
+* Product Variant
+* Product Master
+* Product Portfolio
+* Product provenance
+* Product lifecycle
+* controlled Part Number architecture
+* Part Number issuance
+* uniqueness controls
+* revision management
+* end-to-end traceability
+
+Do not convert Venture Candidate records into Product records.
+
+Create new linked Product Programme/Product entities while preserving the original Venture Candidate.
+
+## Phase 4 Testing
+
+Test:
+
+```text
+One Venture → One Product Programme
+One Venture → Multiple Product Programmes
+Product Programme → Product Family
+Product Family → Multiple Products
+Product → Multiple Variants
+Part Number Generation
+Duplicate Part Number Rejection
+Revision History
+Full Backward Traceability
+```
+
+Report results.
+
+Then STOP.
+
+Wait for explicit approval before Phase 5.
+
+---
+
+# PHASE 5 — MIGRATION, INTEGRATION AND REGRESSION TESTING
+
+Only begin after explicit approval.
+
+Perform the approved migration of legacy records.
+
+Do not automatically migrate uncertain records.
+
+Use a flag or manual-review mechanism for ambiguous records.
+
+Reconnect all dependent modules.
+
+Validate:
+
+* Portfolio
+* Command Centre
+* Venture Intake
+* Discovery
+* WTP
+* Proposition
+* Lean Canvas
+* TRL
+* BRL
+* MRL
+* SRL
+* VRL
+* Investment
+* Governance
+* IP
+* Risk
+* Sustainability
+* Supply Chain
+* Evidence
+* Financial Model
+* Reporting
+* navigation
+* APIs
+
+Run full regression testing.
+
+---
+
+# REQUIRED SYNTHETIC TEST — TONE
+
+Use TONE as the main end-to-end synthetic test.
+
+Represent:
+
+```text
+TONE
+Domain Brand
+Creative Industries
+```
+
+Create two separate Venture Candidates:
+
+```text
+Sustainable Stage Equipment
+```
+
+and:
+
+```text
+Bio-Composite Studio Acoustic Materials
+```
+
+Confirm both independently belong under TONE.
+
+Progress the Bio-Composite Studio Acoustic Materials venture through synthetic productisation.
+
+Create:
+
+```text
+Product Programme:
+TONE BioAcoustic
+```
+
+Then:
+
+```text
+Product Family:
+BioAcoustic Panels
+```
+
+Then:
+
+```text
+Product:
+TONE BioAcoustic Studio Panel
+```
+
+Then variants:
+
+```text
+60 mm
+100 mm
+```
+
+Then controlled identifiers such as:
+
+```text
+TONE-BAP-0001
+TONE-BAP-0002
+```
+
+Confirm full traceability back to the originating venture and its evidence.
+
+---
+
+# REQUIRED REGRESSION TESTS
+
+Before declaring completion, test:
+
+### Test A — Unassigned Venture
+
+A Venture Candidate can exist without a Domain Brand.
+
+### Test B — Domain Brand Independence
+
+Killing a Venture Candidate does not kill or alter its Domain Brand.
+
+### Test C — Venture Evidence Preservation
+
+Productisation does not overwrite or remove original Venture evidence.
+
+### Test D — Multiple Products
+
+One Venture may produce multiple Product Programmes.
+
+### Test E — Brand Reassignment
+
+Changing a Venture's Domain Brand preserves assignment history.
+
+### Test F — Part Number Integrity
+
+Duplicate Part Numbers cannot be created.
+
+### Test G — Revision Integrity
+
+Revision changes do not overwrite prior revisions.
+
+### Test H — Backward Traceability
+
+A Product/Part Number can trace back to:
+
+```text
+Product
+→ Product Family
+→ Product Programme
+→ Venture Candidate
+→ Evidence
+→ Governance Decision
+```
+
+### Test I — Existing ECOBLEND Modules
+
+Existing validated functionality remains operational.
+
+---
+
+# VERSION CONTROL REQUIREMENTS
+
+Treat every phase as a separately recoverable implementation unit.
+
+Before each significant phase:
+
+1. Confirm the application is in a known working state.
+2. Ensure changes are recoverable through Git/version control.
+3. Keep unrelated refactors out of this work.
+4. Do not combine multiple high-risk migrations unnecessarily.
+5. Record the files changed.
+6. Record database migrations.
+7. Record tests performed.
+
+Where appropriate create clean commits/checkpoints for each phase.
+
+Suggested logical checkpoints:
+
+```text
+pre-domain-brand-refactor
+core-entity-architecture
+domain-brand-venture-workflow
+product-architecture
+portfolio-migration-complete
+```
+
+Adapt naming to the existing Git workflow.
+
+---
+
+# CRITICAL SAFETY RULE — DO NOT CREATE PARALLEL ARCHITECTURE
+
+Do not solve this specification by simply building new Domain Brand, Venture and Product screens alongside the old architecture.
+
+The objective is to establish a coherent authoritative data model.
+
+During the audit determine:
+
+* what should be retained
+* what should be refactored
+* what should be migrated
+* what should eventually be deprecated
+
+Avoid two competing sources of truth.
+
+---
+
+# CRITICAL SAFETY RULE — DO NOT GUESS MIGRATIONS
+
+If an existing record could reasonably represent either:
+
+```text
+Domain Brand
+```
+
+or:
+
+```text
+Venture Candidate
+```
+
+do not automatically classify it.
+
+Flag it for manual review.
+
+The same principle applies to uncertain:
+
+* products
+* programme records
+* ownership
+* readiness data
+* evidence
+* IP relationships
+
+---
+
+# CRITICAL SAFETY RULE — PRESERVE HISTORY
+
+Do not destroy historical:
+
+* venture hypotheses
+* evidence
+* readiness scores
+* governance decisions
+* brand assignments
+* productisation decisions
+* Part Numbers
+* revisions
+* ownership records
+
+Use governed status transitions, archive states and history tables where appropriate.
+
+---
+
+# CRITICAL SAFETY RULE — NO UI-ONLY SOLUTION
+
+Do not consider the task complete merely because the interface visually displays:
+
+```text
+Brand
+→ Venture
+→ Product
+```
+
+The underlying:
+
+* database schema
+* relationships
+* API logic
+* business rules
+* identifier controls
+* auditability
+* migration architecture
+
+must also implement the target model correctly.
+
+---
+
+# FINAL EXECUTION RULE
+
+The comprehensive architecture specification supplied immediately after this prompt defines the TARGET STATE.
+
+This prompt defines HOW that target state must be implemented.
+
+Begin with:
+
+```text
+PHASE 1 — AUDIT ONLY
+```
+
+Do not make implementation changes during Phase 1.
+
+Return the full architecture audit, migration assessment, dependency analysis, risk assessment and recommended implementation sequence.
+
+Then STOP and wait for my explicit instruction to proceed.
