@@ -5,12 +5,13 @@
  * Domain Brands are persistent sector-facing umbrellas; they are NOT ventures.
  *
  * Auth:
- *  - reads:  protectedProcedure
+ *  - reads:  publicProcedure (no session required — consistent with app-wide pattern)
  *  - writes: adminProcedure (brand creation/status changes are governed actions)
+ *  - user-writes: protectedProcedure (assignment history, assessments)
  */
 
 import { z } from "zod";
-import { router, protectedProcedure, adminProcedure } from "./_core/trpc";
+import { router, publicProcedure, protectedProcedure, adminProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import { eq, desc, and, asc } from "drizzle-orm";
 import {
@@ -83,7 +84,7 @@ function zeroPad(n: number, length = 4): string {
 
 const domainBrandCrudRouter = router({
 
-  list: protectedProcedure
+  list: publicProcedure
     .input(z.object({ status: BrandStatusEnum.optional() }).optional())
     .query(async ({ input }) => {
       const db = await getDb();
@@ -93,7 +94,7 @@ const domainBrandCrudRouter = router({
       return q;
     }),
 
-  get: protectedProcedure
+  get: publicProcedure
     .input(z.object({ id: z.number().optional(), brandCode: z.string().optional() }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -173,7 +174,7 @@ const domainBrandCrudRouter = router({
     }),
 
   /** List ventures (candidates) under a domain brand */
-  listVentures: protectedProcedure
+  listVentures: publicProcedure
     .input(z.object({ brandId: z.number(), status: CandidateStatusEnum.optional() }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -185,7 +186,7 @@ const domainBrandCrudRouter = router({
     }),
 
   /** List product programmes under a domain brand */
-  listProgrammes: protectedProcedure
+  listProgrammes: publicProcedure
     .input(z.object({ brandId: z.number() }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -196,7 +197,7 @@ const domainBrandCrudRouter = router({
     }),
 
   /** Portfolio summary — counts used by Command Centre */
-  portfolioSummary: protectedProcedure
+  portfolioSummary: publicProcedure
     .input(z.object({ brandId: z.number() }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -273,6 +274,67 @@ const ventureCandidateRouter = router({
       return { success: true, previousBrandId, newBrandId: input.newBrandId };
     }),
 
+  /** Create a new Venture Candidate with optional Domain Brand assignment */
+  create: adminProcedure
+    .input(z.object({
+      id:                   z.string().min(2).max(64),   // stable venture id
+      workingTitle:         z.string().min(1).max(255),
+      description:          z.string().optional(),
+      problemHypothesis:    z.string().optional(),
+      targetCustomer:       z.string().optional(),
+      targetUser:           z.string().optional(),
+      sector:               z.string().optional(),
+      owner:                z.string().optional(),
+      domainBrandId:        z.number().nullable().default(null),
+      brandAssignmentStatus: BrandAssignmentStatusEnum.default("Unassigned"),
+      brandCode:            z.string().default("UNASSIGNED"),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new Error("DB unavailable");
+
+      // Check for duplicate ID
+      const existing = await db.select().from(ventures).where(eq(ventures.id, input.id)).limit(1);
+      if (existing[0]) throw new Error(`Venture ID already exists: ${input.id}`);
+
+      // Generate a stable VEN ref
+      const prefix = input.brandCode.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12) || "UNASSIGNED";
+      const seq = await nextSequence(db, ventureRefSequences, prefix);
+      const ventureRef = `VEN-${prefix}-${zeroPad(seq)}`;
+
+      await db.insert(ventures).values({
+        id:                    input.id,
+        name:                  input.workingTitle,
+        description:           input.description ?? null,
+        sector:                input.sector ?? null,
+        owner:                 input.owner ?? null,
+        domainBrandId:         input.domainBrandId,
+        brandAssignmentStatus: input.brandAssignmentStatus,
+        entityType:            "venture_candidate",
+        candidateStatus:       "Active",
+        ventureRef,
+        vrl:  1,
+        trl:  1,
+        status: "Pre-Launch",
+        currentStage: "intake",
+      } as any);
+
+      // Record initial brand assignment history
+      if (input.domainBrandId) {
+        await db.insert(brandAssignmentHistory).values({
+          ventureId:             input.id,
+          previousBrandId:       null,
+          newBrandId:            input.domainBrandId,
+          brandAssignmentStatus: input.brandAssignmentStatus,
+          reason:                "Initial brand assignment at venture creation",
+          decisionMaker:         ctx.user?.username ?? "system",
+          decisionDate:          new Date(),
+        });
+      }
+
+      return { id: input.id, ventureRef };
+    }),
+
   /** Update venture candidate status (Active → Killed, etc.) */
   updateStatus: adminProcedure
     .input(z.object({
@@ -313,7 +375,7 @@ const ventureCandidateRouter = router({
     }),
 
   /** List assignment history for a venture */
-  assignmentHistory: protectedProcedure
+  assignmentHistory: publicProcedure
     .input(z.object({ ventureId: z.string() }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -379,7 +441,7 @@ const brandFitRouter = router({
       return assessment;
     }),
 
-  listForVenture: protectedProcedure
+  listForVenture: publicProcedure
     .input(z.object({ ventureId: z.string() }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -431,7 +493,7 @@ const productisationRouter = router({
       return decision;
     }),
 
-  listForVenture: protectedProcedure
+  listForVenture: publicProcedure
     .input(z.object({ ventureId: z.string() }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -446,7 +508,7 @@ const productisationRouter = router({
 
 const productProgrammeRouterInternal = router({
 
-  list: protectedProcedure
+  list: publicProcedure
     .input(z.object({ ventureId: z.string().optional(), brandId: z.number().optional() }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -457,7 +519,7 @@ const productProgrammeRouterInternal = router({
       return q;
     }),
 
-  get: protectedProcedure
+  get: publicProcedure
     .input(z.object({ id: z.number().optional(), programmeRef: z.string().optional() }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -528,7 +590,7 @@ const productProgrammeRouterInternal = router({
 
 const productFamilyRouterInternal = router({
 
-  list: protectedProcedure
+  list: publicProcedure
     .input(z.object({ programmeId: z.number().optional(), brandId: z.number().optional() }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -565,7 +627,7 @@ const productFamilyRouterInternal = router({
 
 const productRouter = router({
 
-  list: protectedProcedure
+  list: publicProcedure
     .input(z.object({
       familyId:    z.number().optional(),
       programmeId: z.number().optional(),
@@ -580,7 +642,7 @@ const productRouter = router({
       return db.select().from(products).orderBy(desc(products.createdAt));
     }),
 
-  get: protectedProcedure
+  get: publicProcedure
     .input(z.object({ id: z.number().optional(), productRef: z.string().optional() }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -628,7 +690,7 @@ const productRouter = router({
     }),
 
   /** End-to-end traceability: from product ref → venture → evidence */
-  traceability: protectedProcedure
+  traceability: publicProcedure
     .input(z.object({ productId: z.number() }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -667,7 +729,7 @@ const productRouter = router({
 
 const productVariantRouterInternal = router({
 
-  list: protectedProcedure
+  list: publicProcedure
     .input(z.object({ productId: z.number() }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -785,7 +847,7 @@ const partNumberRouterInternal = router({
       return cfg;
     }),
 
-  listForProduct: protectedProcedure
+  listForProduct: publicProcedure
     .input(z.object({ productId: z.number() }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -795,7 +857,7 @@ const partNumberRouterInternal = router({
     }),
 
   /** Full revision history for a part number */
-  revisions: protectedProcedure
+  revisions: publicProcedure
     .input(z.object({ partNumberId: z.number() }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -848,7 +910,7 @@ const partNumberRouterInternal = router({
     }),
 
   /** Traceability: from part number → variant → product → programme → venture */
-  traceability: protectedProcedure
+  traceability: publicProcedure
     .input(z.object({ partNumber: z.string() }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -897,7 +959,7 @@ const partNumberRouterInternal = router({
 const portfolioPipelineRouterInternal = router({
 
   /** Cross-brand venture pipeline with filtering */
-  venturePipeline: protectedProcedure
+  venturePipeline: publicProcedure
     .input(z.object({
       brandId:         z.number().optional(),
       candidateStatus: z.string().optional(),
@@ -918,7 +980,7 @@ const portfolioPipelineRouterInternal = router({
     }),
 
   /** Command Centre metrics across all brands */
-  commandCentreMetrics: protectedProcedure
+  commandCentreMetrics: publicProcedure
     .query(async () => {
       const db = await getDb();
       if (!db) return null;

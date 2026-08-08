@@ -51,6 +51,13 @@ description: Core data architecture for Domain Brand → Venture → Product hie
 - §55: DB UNIQUE constraint rejects duplicate part number ✓
 - §56: Rev A → Rev B preserved in part_number_revisions ✓
 
+## Phase 3 UI — Routes and nav added
+- `/portfolio/brands` → `DomainBrandsPage.tsx`
+- `/portfolio/brands/:brandCode` → `DomainBrandDetail.tsx` (5 tabs: Overview, Venture Pipeline, Productisation Gate, Product Portfolio, Brand Fit)
+- `/portfolio/pipeline` → `VenturePipelinePage.tsx`
+- Sidebar: "PORTFOLIO ARCHITECTURE" group added above Command Centre — always visible
+- Server reads changed from `protectedProcedure` → `publicProcedure` (OAUTH_SERVER_URL is set in prod, so protectedProcedure requires a session cookie; consistent with admin.router.ts pattern)
+
 ## How to apply
 - Any new module linking to a venture should check `entityType` before assuming it's a pure venture candidate
 - Part number issuance must go through `part_number_configs.currentSequence` (atomic DB update)

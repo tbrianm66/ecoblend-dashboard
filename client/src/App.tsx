@@ -5,6 +5,9 @@ import VrlDashboardV4 from "@/pages/VrlDashboardV4";
 import SpinoffSequenceOS from "@/pages/SpinoffSequenceOS";
 import BrandPipeline from "@/pages/BrandPipeline";
 import InsightAutomation from "@/pages/InsightAutomation";
+import DomainBrandsPage from "@/pages/portfolio/DomainBrandsPage";
+import DomainBrandDetail from "@/pages/portfolio/DomainBrandDetail";
+import VenturePipelinePage from "@/pages/portfolio/VenturePipelinePage";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -219,6 +222,10 @@ function Router() {
       <Route path="/vrl-results" component={VrlResults} />
       <Route path="/spinoff-sequence" component={SpinoffSequenceOS} />
       <Route path="/brand-pipeline" component={BrandPipeline} />
+      {/* ── Phase 2/3: Domain Brand → Venture → Product Architecture ── */}
+      <Route path="/portfolio/brands/:brandCode" component={DomainBrandDetail} />
+      <Route path="/portfolio/brands" component={DomainBrandsPage} />
+      <Route path="/portfolio/pipeline" component={VenturePipelinePage} />
       <Route path="/insight-automation" component={InsightAutomation} />
       <Route path="/srl-portfolio" component={SrlPortfolio} />
       <Route path="/srl-venture/:ventureId" component={SrlVentureDetail} />

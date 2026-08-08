@@ -30,6 +30,7 @@ import {
   UserCheck, Brain, GitBranch, Sliders, CheckSquare,
   ShieldCheck, Archive, Network, Star,
   Settings, Package2, RotateCcw, Crosshair, Eye, EyeOff,
+  Landmark, FolderKanban,
 } from "lucide-react";
 import { useVentures } from "@/contexts/VentureContext";
 import GlobalVentureSelector from "@/components/GlobalVentureSelector";
@@ -59,6 +60,7 @@ const iconMap: Record<string, React.ComponentType<{ size?: number; className?: s
   UserCheck, Brain, GitBranch, Sliders, CheckSquare,
   ShieldCheck, Archive, Network, Star,
   Settings, Package2, RotateCcw, Crosshair,
+  Landmark, FolderKanban,
 };
 
 interface NavItem {
@@ -77,6 +79,16 @@ interface NavGroup {
 
 // ── Navigation groups (unchanged content — Gate 4 changes presentation only) ──
 // FEDSILK removed from governance items; it now appears in the DEFERRED section.
+const PORTFOLIO_ARCHITECTURE_GROUP: NavGroup = {
+  id: "portfolio-architecture",
+  label: "Portfolio Architecture",
+  defaultOpen: true,
+  items: [
+    { id: "pa-brands",   label: "Domain Brands",    icon: "Landmark",      href: "/portfolio/brands" },
+    { id: "pa-pipeline", label: "Venture Pipeline",  icon: "FolderKanban",  href: "/portfolio/pipeline" },
+  ],
+};
+
 const COMMAND_CENTRE_GROUP: NavGroup = {
   id: "command-centre",
   label: "Command Centre",
@@ -824,7 +836,10 @@ export default function Sidebar() {
         {/* ★ Section 1: Core Workflow (always visible) */}
         <CoreWorkflowSection location={location} />
 
-        {/* Section 2: Command Centre (always visible) */}
+        {/* Section 2: Portfolio Architecture (Phase 3 — always visible) */}
+        <NavGroupSection group={PORTFOLIO_ARCHITECTURE_GROUP} location={location} />
+
+        {/* Section 3: Command Centre (always visible) */}
         <NavGroupSection group={COMMAND_CENTRE_GROUP} location={location} />
 
         {/* Divider */}
