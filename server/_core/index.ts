@@ -75,6 +75,17 @@ const CSP = [
 async function startServer() {
   const app = express();
   const server = createServer(app);
+
+  // ── Deployment health check — must be first, before all other middleware ──
+  // Cloud Run (and any load-balancer/orchestrator) probes this path to decide
+  // whether the instance is ready to receive traffic.  It must:
+  //   • return HTTP 200 unconditionally (no auth, no DB, no static files)
+  //   • not block on any asynchronous work
+  //   • not expose application data
+  app.get("/health", (_req, res) => {
+    res.status(200).json({ status: "ok" });
+  });
+
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));

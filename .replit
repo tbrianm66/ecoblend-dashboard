@@ -45,10 +45,19 @@ externalPort = 80
 localPort = 5001
 externalPort = 3001
 
+[[ports]]
+localPort = 5100
+externalPort = 3000
+
+[[ports]]
+localPort = 5101
+externalPort = 3002
+
 [deployment]
 deploymentTarget = "autoscale"
 run = ["node", "dist/index.js"]
 build = ["pnpm", "build"]
+healthCheckPath = "/health"
 
 [postMerge]
 path = "scripts/post-merge.sh"

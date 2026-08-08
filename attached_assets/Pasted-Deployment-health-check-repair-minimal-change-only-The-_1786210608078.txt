@@ -1,0 +1,40 @@
+Deployment health-check repair — minimal change only.
+
+The deployment logs now identify the blocking issue:
+
+System: healthcheck failed error=healthcheck_failure returned status 500
+
+The application itself starts successfully and reports:
+
+Server running on http://localhost:5000
+
+Database queries also appear operational.
+
+Diagnose why the Replit deployment health check is receiving HTTP 500.
+
+Specifically:
+
+Identify the exact route/path Replit is using for the deployment health check.
+Determine why that route returns HTTP 500.
+Check whether the health-check request is being passed through authentication/session middleware and failing because no session cookie exists.
+Check whether the root / route, health endpoint, middleware, database dependency, domain redirect, or authentication configuration is causing the 500.
+Confirm that the application is listening correctly on the Replit-provided port/environment configuration rather than relying incorrectly on a hard-coded port.
+If an explicit health endpoint is required, use a lightweight unauthenticated endpoint such as /health or the appropriate existing equivalent that returns HTTP 200 when the application process is healthy.
+The health endpoint must not require a logged-in user/session cookie.
+Do not expose protected application data through the health endpoint.
+Do not change the Phase 5 Domain Brand/Venture/Product architecture, database schema or migration unless evidence proves they are responsible.
+Make the smallest possible corrective change required to restore deployment health.
+
+After the repair:
+
+run the application;
+test the exact health-check route without authentication;
+confirm HTTP 200;
+confirm authenticated application routes still enforce authentication;
+confirm database connectivity;
+run the existing regression tests;
+report exactly which files were changed and why.
+
+Do not republish until these local/runtime checks pass.
+
+If the health check still returns 500, stop and report the underlying exception rather than making speculative additional changes.
