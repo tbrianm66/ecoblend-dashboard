@@ -1,0 +1,963 @@
+ECOBLEND OS v2.0
+MASTER SIDEBAR INFORMATION ARCHITECTURE + TYPOGRAPHY REFACTOR
+
+PROJECT:
+ECOBLEND OS / ecoblend.io
+
+OBJECTIVE
+
+Refactor the ECOBLEND OS left-hand navigation and typography into a coherent v2.0 product architecture before undertaking the wider colour, logo and visual-design implementation.
+
+This task has two linked objectives:
+
+A. INFORMATION ARCHITECTURE
+Simplify the sidebar into a clear phase-oriented structure.
+
+B. TYPOGRAPHY
+Apply the approved ECOBLEND typography hierarchy from the controlled brand guideline and UI/UX design documentation.
+
+This is NOT a backend refactor.
+
+Do not alter application functionality, business logic, database structure, scoring, authentication, permissions, APIs or canonical routes unless specifically required to prevent a UI regression.
+
+
+==================================================
+AUTHORITATIVE DESIGN REFERENCES
+==================================================
+
+Use the documents in:
+
+/docs/design/
+
+Primary references:
+
+1. Ecoblend-Brand-Guideline.pdf
+2. FHV-EB-DBR-004-UI-UX-Design-Brief-v1-0.pdf
+3. ecoblend-vbs-ui-documentation-June-2026.pdf
+
+Authority hierarchy:
+
+1. FHV-EB-DBR-004 UI/UX Design Brief
+   = product-interface rules
+
+2. Ecoblend Brand Guideline
+   = brand identity and typography
+
+3. June 2026 UI documentation
+   = current-state/reference baseline
+
+Where the UI/UX Design Brief is more specific about application usability, follow it.
+
+Do not change the wider brand colour system in this task unless required to preserve existing functionality.
+
+The full visual brand implementation will follow separately.
+
+
+==================================================
+PHASE 1 — AUDIT BEFORE MODIFYING CODE
+==================================================
+
+First inspect the existing repository.
+
+Identify:
+
+- frontend application root
+- sidebar component(s)
+- module registry
+- navigation configuration
+- route definitions
+- Core Workflow configuration
+- Command Centre configuration
+- Extended Backlog configuration
+- Deferred / Gate 4 configuration
+- Admin configuration
+- platform footer/version component
+- sidebar collapse state
+- active-route logic
+- navigation persistence logic
+- all existing visible module numbering
+- internal module IDs
+- hard-coded navigation labels
+- typography configuration
+- global CSS
+- Tailwind configuration, if present
+- font imports
+- Google Fonts
+- local font files
+- hard-coded font-family declarations
+- typography overrides
+- responsive sidebar rules
+- relevant automated tests
+
+Report the files that will need modification.
+
+Do not begin changing code until this audit is complete.
+
+
+==================================================
+PART A — INFORMATION ARCHITECTURE
+==================================================
+
+
+==================================================
+A1 — REMOVE VISIBLE MODULE NUMBERING
+==================================================
+
+Remove numerical prefixes from ALL user-facing sidebar module labels.
+
+For example:
+
+1. COMMAND CENTRE
+2. VENTURE INTAKE
+3. DISCOVERY & MARKET
+4. PROPOSITION & MODEL
+5. R&D HUB
+6. OPERATIONS & MFG
+7. BRAND & GTM
+8. SUSTAINABILITY & IMPACT
+9. RISK INTELLIGENCE
+10. READINESS SCORING
+11. INVESTMENT READINESS
+12. EXECUTION PLANNING
+13. COACHING
+14. COLLABORATION
+15. GOVERNANCE
+17. PEOPLE INTELLIGENCE
+18. ADMIN
+
+must display instead as:
+
+COMMAND CENTRE
+VENTURE INTAKE
+DISCOVERY & MARKET
+PROPOSITION & MODEL
+R&D HUB
+OPERATIONS & MFG
+BRAND & GTM
+SUSTAINABILITY & IMPACT
+RISK INTELLIGENCE
+READINESS SCORING
+INVESTMENT READINESS
+EXECUTION PLANNING
+COACHING
+COLLABORATION
+GOVERNANCE
+PEOPLE INTELLIGENCE
+ADMINISTRATION
+
+IMPORTANT:
+
+Remove numbers from the presentation layer ONLY.
+
+DO NOT renumber or modify:
+
+- module IDs
+- database keys
+- route paths
+- API identifiers
+- permission IDs
+- migration references
+- scoring references
+- audit records
+- governance records
+- documentation IDs
+- analytics keys
+
+Navigation ordering must not depend on parsing the visible number from a label.
+
+If it currently does, replace this with explicit order metadata.
+
+
+==================================================
+A2 — TARGET SIDEBAR ARCHITECTURE
+==================================================
+
+The primary sidebar architecture must become:
+
+CORE WORKFLOW
+
+COMMAND CENTRE
+
+LAUNCH PHASE
+
+SCALE PHASE
+
+ADMINISTRATION
+
+Then:
+
+ECOBLEND OS
+Platform v2.0
+
+Do not introduce another competing high-level navigation taxonomy.
+
+
+==================================================
+A3 — CORE WORKFLOW
+==================================================
+
+Retain the existing:
+
+CORE WORKFLOW
+
+This is the simplified high-frequency working layer.
+
+Preserve the currently configured Core Workflow items.
+
+Current examples include:
+
+- Onboarding
+- Experiment Log
+- Interview Tracker
+- Venture Model Canvas
+- Evidence Ledger
+
+Core Workflow items should act as shortcuts to canonical application functions where applicable.
+
+DO NOT create:
+
+- duplicate pages
+- duplicate components
+- duplicate databases
+- duplicate state
+- duplicate business logic
+
+If a Core Workflow item is also available elsewhere, both navigation entries should resolve to the same canonical route/component.
+
+Default sidebar state:
+
+CORE WORKFLOW = EXPANDED
+
+
+==================================================
+A4 — COMMAND CENTRE
+==================================================
+
+Retain:
+
+COMMAND CENTRE
+
+directly beneath CORE WORKFLOW.
+
+Preserve its current functions.
+
+Examples currently include:
+
+- Portfolio Overview
+- Control Desk
+- Opportunity Pipeline
+- Venture Status
+- Alerts & Approvals
+- Decision Gate
+- Venture Archive
+
+Do not change routes or business functionality.
+
+Default state:
+
+COMMAND CENTRE = EXPANDED
+
+
+==================================================
+A5 — RENAME EXTENDED BACKLOG
+==================================================
+
+Rename:
+
+EXTENDED BACKLOG
+
+to:
+
+LAUNCH PHASE
+
+Preserve all currently assigned modules.
+
+Do not move modules merely because the section is being renamed.
+
+Default state:
+
+LAUNCH PHASE = COLLAPSED
+
+Remove the existing:
+
+15/15
+
+badge IF it is merely communicating the number of modules.
+
+A static module count must not resemble:
+
+- completion
+- readiness
+- progress
+- validation status
+
+If 15/15 has genuine operational meaning, report it before removing it.
+
+
+==================================================
+A6 — RENAME DEFERRED
+==================================================
+
+Rename:
+
+DEFERRED
+
+or:
+
+DEFERRED (GATE 4)
+
+to:
+
+SCALE PHASE
+
+Preserve all modules currently contained in this group.
+
+Default state:
+
+SCALE PHASE = COLLAPSED
+
+IMPORTANT:
+
+This is a USER-FACING INFORMATION ARCHITECTURE change.
+
+Do NOT remove or weaken underlying:
+
+- Gate 4 eligibility
+- validation conditions
+- maturity rules
+- permissions
+- governance rules
+- workflow controls
+
+If Scale Phase modules remain gated internally, retain that behaviour.
+
+Where appropriate, show locked/gated states on individual modules rather than calling the whole section "Deferred".
+
+
+==================================================
+A7 — ADMINISTRATION
+==================================================
+
+Rename:
+
+18. ADMIN
+
+or:
+
+ADMIN
+
+to:
+
+ADMINISTRATION
+
+Remove the numerical prefix.
+
+ADMINISTRATION must remain near the bottom of the sidebar.
+
+Default state:
+
+ADMINISTRATION = COLLAPSED
+
+Do not move ordinary venture workflow functionality into Administration.
+
+Preserve current administrative permissions and routes.
+
+
+==================================================
+A8 — PLATFORM VERSION
+==================================================
+
+The sidebar/footer currently contains a Gate 4 platform reference.
+
+Change the USER-FACING product version display to:
+
+ECOBLEND OS
+Platform v2.0
+
+or where space requires:
+
+ECOBLEND OS · v2.0
+
+Remove Gate 4 only from locations where it is incorrectly being presented as the PLATFORM VERSION.
+
+IMPORTANT SEMANTIC DISTINCTION:
+
+v2.0
+= SOFTWARE / PRODUCT VERSION
+
+Gate 4
+= WORKFLOW / GOVERNANCE STATE
+
+These are separate concepts.
+
+Search the repository for all occurrences of:
+
+Gate 4
+
+Classify each occurrence before changing it.
+
+DO NOT perform a global replacement.
+
+Preserve legitimate Gate 4 references related to:
+
+- eligibility
+- governance
+- maturity
+- workflow
+- permissions
+- validation
+- audit history
+- Scale Phase access
+
+
+==================================================
+A9 — COLLAPSE BEHAVIOUR
+==================================================
+
+Recommended defaults:
+
+CORE WORKFLOW        Expanded
+COMMAND CENTRE       Expanded
+LAUNCH PHASE         Collapsed
+SCALE PHASE          Collapsed
+ADMINISTRATION       Collapsed
+
+Where the existing architecture supports it safely, persist the user's chosen expand/collapse state.
+
+Navigation must not unexpectedly reset when moving between pages.
+
+
+==================================================
+A10 — NAVIGATION HIERARCHY
+==================================================
+
+Use visual hierarchy rather than numerical prefixes.
+
+LEVEL 1:
+Navigation groups
+
+CORE WORKFLOW
+COMMAND CENTRE
+LAUNCH PHASE
+SCALE PHASE
+ADMINISTRATION
+
+LEVEL 2:
+Modules
+
+LEVEL 3:
+Submodules
+
+Hierarchy should be conveyed using:
+
+- typography
+- font weight
+- spacing
+- indentation
+- chevrons
+- icons
+- expanded/collapsed state
+- active-state treatment
+
+Do NOT restore numbers merely to communicate hierarchy.
+
+
+==================================================
+PART B — ECOBLEND TYPOGRAPHY
+==================================================
+
+
+==================================================
+B1 — BRAND TYPOGRAPHY AUTHORITY
+==================================================
+
+Typography must comply with:
+
+/docs/design/Ecoblend-Brand-Guideline.pdf
+
+The controlled brand typography system specifies:
+
+PRIMARY BRAND TYPEFACE:
+Avenir Next Condensed
+
+APPROVED WEB ALTERNATIVE:
+Prompt
+
+APPROVED SECONDARY TYPEFACES:
+Muli
+Nunito
+Lato
+
+The product-interface implementation should use this system intelligently rather than applying one font indiscriminately to every element.
+
+
+==================================================
+B2 — PRIMARY BRAND / DISPLAY TYPOGRAPHY
+==================================================
+
+Use:
+
+Avenir Next Condensed
+
+for ECOBLEND identity, display and navigation typography IF licensed webfont files are already available.
+
+Use it for appropriate elements such as:
+
+- major page titles
+- sidebar section headings
+- sidebar module labels
+- product identity
+- CORE WORKFLOW
+- COMMAND CENTRE
+- LAUNCH PHASE
+- SCALE PHASE
+- ADMINISTRATION
+- dashboard section headings
+- major card headings
+- selected-state navigation
+- controlled display typography
+
+Visual characteristics should reflect the brand guideline:
+
+- condensed form
+- clean geometry
+- clear weight contrast
+- strong hierarchy
+- restrained use
+- professional rather than decorative
+
+
+==================================================
+B3 — AVENIR LICENSING SAFEGUARD
+==================================================
+
+Before using Avenir Next Condensed, determine whether valid webfont assets and licensing already exist in the project.
+
+DO NOT:
+
+- download unofficial Avenir font files
+- scrape Avenir files
+- use unlicensed font copies
+- convert desktop fonts into webfonts without confirming licensing
+
+If licensed Avenir webfonts are not available, use the brand-approved alternative:
+
+Prompt
+
+The display font stack should therefore behave approximately as:
+
+"Avenir Next Condensed", "Prompt", sans-serif
+
+
+==================================================
+B4 — INTERFACE BODY TYPOGRAPHY
+==================================================
+
+Use:
+
+Lato
+
+for dense functional interface content.
+
+Appropriate uses include:
+
+- body copy
+- descriptions
+- evidence records
+- forms
+- form labels
+- input fields
+- tables
+- assessment content
+- audit records
+- calculations
+- longer instructions
+- tooltips
+- metadata
+- quantitative comparison
+
+Lato is explicitly approved within the ECOBLEND Brand Guideline.
+
+Do not use condensed typography for long paragraphs or dense numerical information when it reduces readability.
+
+
+==================================================
+B5 — NUMERALS AND DATA
+==================================================
+
+Use Lato for numerical and tabular information.
+
+Enable:
+
+font-variant-numeric: tabular-nums;
+
+where supported.
+
+Apply to:
+
+- readiness scores
+- percentages
+- financial values
+- dates
+- evidence counts
+- tables
+- metrics
+- model outputs
+- comparative values
+- version numbers where appropriate
+
+Numerical values in columns must align consistently.
+
+
+==================================================
+B6 — TYPOGRAPHY SCALE
+==================================================
+
+Implement a central reusable typography scale.
+
+Recommended:
+
+DISPLAY
+40px / 44px
+Weight 600
+Avenir Next Condensed / Prompt
+
+H1
+28px / 34px
+Weight 600
+Avenir Next Condensed / Prompt
+
+H2
+20px / 28px
+Weight 600
+Avenir Next Condensed / Prompt
+
+NAVIGATION SECTION
+13–14px
+Weight 600
+Avenir Next Condensed / Prompt
+Uppercase
+Controlled letter spacing
+
+NAVIGATION ITEM
+14–15px
+Weight 500
+Avenir Next Condensed / Prompt
+
+BODY
+15px / 24px
+Weight 400
+Lato
+
+DATA
+14px / 20px
+Weight 400–500
+Lato
+Tabular numerals
+
+META
+12px / 16px
+Weight 500
+Lato
+Letter spacing approximately 0.04em
+
+SCORE
+36px / 40px
+Weight 600
+Lato
+Tabular numerals
+
+Reserve SCORE typography exclusively for legitimate calculated assessment scores.
+
+
+==================================================
+B7 — SIDEBAR TYPOGRAPHY
+==================================================
+
+Apply the brand typography specifically to the new sidebar architecture.
+
+SECTION LABELS:
+
+CORE WORKFLOW
+COMMAND CENTRE
+LAUNCH PHASE
+SCALE PHASE
+ADMINISTRATION
+
+Use:
+
+Avenir Next Condensed / Prompt
+Semibold
+Uppercase
+Controlled letter spacing
+
+MODULE LABELS:
+
+Use:
+
+Avenir Next Condensed / Prompt
+Medium weight
+Title Case where appropriate
+
+SUBMODULES:
+
+Use slightly reduced size or weight to establish hierarchy.
+
+Do not use numbering for hierarchy.
+
+
+==================================================
+B8 — CASING RULES
+==================================================
+
+Use UPPERCASE selectively for:
+
+- high-level sidebar groups
+- compact metadata labels
+- controlled navigation headers
+
+Use Title Case or sentence case for:
+
+- modules
+- submodules
+- page titles
+- cards
+- descriptions
+- instructions
+- evidence records
+
+Do not render long-form content in uppercase.
+
+
+==================================================
+B9 — CENTRAL DESIGN TOKENS
+==================================================
+
+Create reusable typography tokens.
+
+For example:
+
+--font-brand: "Avenir Next Condensed", "Prompt", sans-serif;
+--font-interface: "Lato", sans-serif;
+--font-data: "Lato", sans-serif;
+--font-mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
+
+Create semantic type tokens such as:
+
+--text-display
+--text-h1
+--text-h2
+--text-nav-section
+--text-nav-item
+--text-body
+--text-data
+--text-meta
+--text-score
+
+Use the project's existing CSS/Tailwind/design-token architecture where possible rather than creating a competing styling system.
+
+Do not scatter hard-coded font declarations across individual components.
+
+
+==================================================
+B10 — MONOSPACED TECHNICAL DATA
+==================================================
+
+Use an appropriate monospaced interface font only where technically necessary, including:
+
+- hashes
+- content IDs
+- model IDs
+- version hashes
+- technical identifiers
+- code-like values
+
+Do not replace these with Avenir merely for visual consistency.
+
+
+==================================================
+PART C — RESPONSIVE AND ACCESSIBILITY REQUIREMENTS
+==================================================
+
+Verify the new sidebar and typography on:
+
+- large desktop
+- normal desktop
+- laptop
+- tablet
+- narrow viewport
+
+Check:
+
+- long module names
+- submodules
+- chevrons
+- icons
+- scrollbar position
+- active states
+- hover states
+- focus states
+- keyboard navigation
+- sidebar collapse controls
+- text clipping
+- font fallback
+- line height
+- readable data tables
+
+The internal sidebar scrollbar must not obscure:
+
+- labels
+- chevrons
+- icons
+- active states
+
+
+==================================================
+PART D — REGRESSION PROTECTION
+==================================================
+
+DO NOT alter:
+
+- database schemas
+- backend behaviour
+- authentication
+- permissions
+- scoring calculations
+- evidence logic
+- APIs
+- venture records
+- audit history
+- governance logic
+- gate eligibility
+- module functionality
+- canonical routes
+- migration history
+
+DO NOT:
+
+- globally replace "Gate 4"
+- globally strip numbers from code identifiers
+- create duplicate routes
+- create duplicate pages
+- duplicate business logic
+- add unlicensed fonts
+- perform the wider ECOBLEND colour redesign yet
+
+
+==================================================
+TARGET SIDEBAR
+==================================================
+
+The resulting interface should conceptually display:
+
+ECOBLEND
+VENTURE VALIDATION OS
+
+[System Status]
+
+[Venture Selector]
+
+
+CORE WORKFLOW
+  Onboarding
+  Experiment Log
+  Interview Tracker
+  Venture Model Canvas
+  Evidence Ledger
+
+
+COMMAND CENTRE
+  Portfolio Overview
+  Control Desk
+  Opportunity Pipeline
+  Venture Status
+  Alerts & Approvals
+  Decision Gate
+  Venture Archive
+
+
+LAUNCH PHASE
+  [all existing modules currently belonging
+   to Extended Backlog]
+
+
+SCALE PHASE
+  [all existing modules currently belonging
+   to Deferred / Gate 4]
+
+
+ADMINISTRATION
+  [existing administration functions]
+
+
+---------------------------------
+
+ECOBLEND OS
+Platform v2.0
+
+
+==================================================
+ACCEPTANCE CRITERIA
+==================================================
+
+The implementation passes only if:
+
+1. No visible numerical module prefixes remain.
+2. Internal module IDs remain intact.
+3. Core Workflow remains operational.
+4. Command Centre remains operational.
+5. Extended Backlog is displayed as LAUNCH PHASE.
+6. Deferred is displayed as SCALE PHASE.
+7. ADMIN is displayed as ADMINISTRATION.
+8. Administration remains at the bottom.
+9. Platform footer displays v2.0.
+10. Legitimate Gate 4 business logic remains operational.
+11. No modules are deleted.
+12. No canonical routes are changed unnecessarily.
+13. No duplicate functionality is introduced.
+14. Avenir Next Condensed is used only if legitimately available.
+15. Prompt is used as the approved brand fallback.
+16. Lato is used for dense interface/data typography.
+17. Sidebar hierarchy no longer depends on numbers.
+18. Desktop and narrow-view navigation remain usable.
+19. Existing application functionality passes regression checks.
+
+
+==================================================
+DELIVERABLES
+==================================================
+
+After implementation provide:
+
+1. Audit findings
+2. Files changed
+3. Previous navigation hierarchy
+4. New navigation hierarchy
+5. Modules in CORE WORKFLOW
+6. Modules in COMMAND CENTRE
+7. Modules in LAUNCH PHASE
+8. Modules in SCALE PHASE
+9. Modules in ADMINISTRATION
+10. Confirmation that visible numbering has been removed
+11. Confirmation that internal IDs remain unchanged
+12. Confirmation that canonical routes remain intact
+13. Confirmation that Gate 4 logic remains intact
+14. Remaining legitimate Gate 4 references
+15. Confirmation that footer displays Platform v2.0
+16. Fonts found before the change
+17. Fonts used after the change
+18. Whether licensed Avenir webfont files were available
+19. Typography/design tokens created or modified
+20. Duplicate navigation discovered
+21. Accessibility issues discovered
+22. Desktop screenshot of the full sidebar
+23. Narrow-view screenshot of the sidebar
+24. Lint results
+25. Type-check results
+26. Test results
+
+STOP after this navigation and typography refactor.
+
+DO NOT proceed automatically into the wider colour, logo, dashboard-card, chart or full UI brand redesign.
+
+Wait for approval before starting the next phase.

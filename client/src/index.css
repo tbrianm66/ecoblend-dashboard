@@ -82,6 +82,23 @@
   --text-body:        1rem;      /* 16px */
   --text-caption:     0.75rem;   /* 12px */
 
+  /* ── B9: Font family tokens (Avenir unavailable — Prompt is approved alternative) ── */
+  --font-brand:     "Avenir Next Condensed", "Prompt", sans-serif;
+  --font-interface: "Lato", sans-serif;
+  --font-data:      "Lato", sans-serif;
+  --font-mono:      ui-monospace, "SFMono-Regular", Consolas, monospace;
+
+  /* ── B6: Semantic type tokens ── */
+  --text-display:     2.5rem;     /* 40px  — display headlines */
+  --text-h1:          1.75rem;    /* 28px  — page title */
+  --text-h2:          1.25rem;    /* 20px  — section heading */
+  --text-nav-section: 0.8125rem;  /* 13px  — sidebar section label */
+  --text-nav-item:    0.875rem;   /* 14px  — sidebar module/item label */
+  --text-body:        0.9375rem;  /* 15px  — body copy */
+  --text-data:        0.875rem;   /* 14px  — tables, metrics */
+  --text-meta:        0.75rem;    /* 12px  — metadata, captions */
+  --text-score:       2.25rem;    /* 36px  — calculated scores only */
+
   /* ── 8px spacing grid tokens ── */
   --space-1: 0.5rem;    /* 8px  — micro */
   --space-2: 1rem;      /* 16px — component */
@@ -150,7 +167,7 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', 'Nunito', system-ui, sans-serif;
+    font-family: 'Lato', 'Nunito', system-ui, sans-serif; /* B4: Lato for interface body */
     font-size: 1rem;          /* 16px body */
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;

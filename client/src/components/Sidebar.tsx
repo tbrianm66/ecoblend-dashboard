@@ -1,13 +1,13 @@
 // ============================================================
-// ECOBLEND OS SIDEBAR — Gate 4 Consolidated Navigation
+// ECOBLEND OS SIDEBAR — v2.0 Navigation Architecture
 // FHV-EB-AUD-001 §3 — Core Consolidation & Backlog Archiving
 //
 // Sections:
 //   1. ★ CORE WORKFLOW     — 5 canonical modules, always visible
 //   2. COMMAND CENTRE      — dashboard hub, always visible
-//   3. EXTENDED BACKLOG    — advanced modules, require reactivationHypothesis
-//   4. DEFERRED (GATE 4)   — speculative infrastructure, locked
-//   5. ADMIN               — always visible at bottom
+//   3. LAUNCH PHASE        — advanced modules, require reactivationHypothesis
+//   4. SCALE PHASE         — gate-4-gated speculative infrastructure
+//   5. ADMINISTRATION      — always visible at bottom
 // ============================================================
 
 import { useState, useEffect } from "react";
@@ -79,7 +79,7 @@ interface NavGroup {
 // FEDSILK removed from governance items; it now appears in the DEFERRED section.
 const COMMAND_CENTRE_GROUP: NavGroup = {
   id: "command-centre",
-  label: "1. Command Centre",
+  label: "Command Centre",
   defaultOpen: true,
   items: [
     { id: "cc-overview",  label: "Portfolio Overview",    icon: "LayoutDashboard", href: "/" },
@@ -94,7 +94,7 @@ const COMMAND_CENTRE_GROUP: NavGroup = {
 
 const ADMIN_GROUP: NavGroup = {
   id: "admin",
-  label: "18. Admin",
+  label: "Administration",
   defaultOpen: false,
   items: [
     { id: "admin-playbooks",       label: "Playbook Library",     icon: "BookOpenCheck",    href: "/admin/playbooks" },
@@ -118,7 +118,7 @@ const ADMIN_GROUP: NavGroup = {
 const BACKLOG_GROUPS: NavGroup[] = [
   {
     id: "venture-intake",
-    label: "2. Venture Intake",
+    label: "Venture Intake",
     items: [
       { id: "intake-hub",         label: "Intake Overview",        icon: "Rocket",       href: "/intake" },
       { id: "intake-idea",        label: "Idea Capture",           icon: "Lightbulb",    href: "/intake/idea-capture" },
@@ -131,7 +131,7 @@ const BACKLOG_GROUPS: NavGroup[] = [
   },
   {
     id: "discovery",
-    label: "3. Discovery & Market",
+    label: "Discovery & Market",
     items: [
       { id: "disc-interviews",  label: "Customer Discovery",  icon: "MessageSquare", href: "/discovery" },
       { id: "disc-competitors", label: "Competitor Mapping",  icon: "Search",        href: "/discovery/competitors" },
@@ -142,7 +142,7 @@ const BACKLOG_GROUPS: NavGroup[] = [
   },
   {
     id: "proposition",
-    label: "4. Proposition & Model",
+    label: "Proposition & Model",
     items: [
       { id: "prop-overview",  label: "Overview",            icon: "Sparkles",     href: "/proposition" },
       { id: "prop-vp",        label: "Value Proposition",   icon: "Target",       href: "/proposition/value-proposition" },
@@ -157,7 +157,7 @@ const BACKLOG_GROUPS: NavGroup[] = [
   },
   {
     id: "rnd",
-    label: "5. R&D Hub",
+    label: "R&D Hub",
     items: [
       { id: "rnd-hub",         label: "R&D Hub",              icon: "FlaskConical", href: "/rnd" },
       { id: "rnd-experiments", label: "Validation Experiments",icon: "TestTube2",    href: "/rnd/experiments" },
@@ -168,7 +168,7 @@ const BACKLOG_GROUPS: NavGroup[] = [
   },
   {
     id: "operations",
-    label: "6. Operations & Mfg",
+    label: "Operations & Mfg",
     items: [
       { id: "ops-model",      label: "Operating Model",      icon: "Building2",    href: "/operations" },
       { id: "ops-suppliers",  label: "Supplier Assessment",  icon: "Truck",        href: "/operations/suppliers" },
@@ -179,7 +179,7 @@ const BACKLOG_GROUPS: NavGroup[] = [
   },
   {
     id: "gtm",
-    label: "7. Brand & GTM",
+    label: "Brand & GTM",
     items: [
       { id: "gtm-brand",     label: "Brand Readiness",      icon: "Sparkles",     href: "/gtm" },
       { id: "gtm-messaging", label: "Messaging Tests",      icon: "MessageSquare",href: "/gtm/messaging" },
@@ -190,7 +190,7 @@ const BACKLOG_GROUPS: NavGroup[] = [
   },
   {
     id: "sustainability",
-    label: "8. Sustainability & Impact",
+    label: "Sustainability & Impact",
     items: [
       { id: "sus-hub",         label: "Sustainability Hub",  icon: "Leaf",        href: "/sustainability" },
       { id: "sus-impact",      label: "Impact Metrics (IRL)",icon: "Heart",       href: "/sustainability/impact" },
@@ -201,7 +201,7 @@ const BACKLOG_GROUPS: NavGroup[] = [
   },
   {
     id: "risk",
-    label: "9. Risk Intelligence",
+    label: "Risk Intelligence",
     items: [
       { id: "risk-register",   label: "Central Risk Register",icon: "ShieldAlert", href: "/risk" },
       { id: "risk-heatmap",    label: "Risk Heatmap",         icon: "Map",         href: "/risk/heatmap" },
@@ -210,7 +210,7 @@ const BACKLOG_GROUPS: NavGroup[] = [
   },
   {
     id: "scoring",
-    label: "10. Readiness Scoring",
+    label: "Readiness Scoring",
     items: [
       { id: "score-composite", label: "Composite Score",  icon: "PieChart",    href: "/scoring" },
       { id: "score-vrl",       label: "VRL Analytics",    icon: "TrendingUp",  href: "/scoring/vrl" },
@@ -224,7 +224,7 @@ const BACKLOG_GROUPS: NavGroup[] = [
   },
   {
     id: "investment",
-    label: "11. Investment Readiness",
+    label: "Investment Readiness",
     items: [
       { id: "inv-hub",       label: "Investment Hub",     icon: "DollarSign",  href: "/investment" },
       { id: "inv-thesis",    label: "Investment Thesis",  icon: "BookOpen",    href: "/investment/thesis" },
@@ -235,7 +235,7 @@ const BACKLOG_GROUPS: NavGroup[] = [
   },
   {
     id: "execution",
-    label: "12. Execution Planning",
+    label: "Execution Planning",
     items: [
       { id: "exec-roadmap",    label: "Execution Roadmap", icon: "Map",      href: "/execution" },
       { id: "exec-milestones", label: "Milestone Tracker", icon: "Target",   href: "/execution/milestones" },
@@ -245,7 +245,7 @@ const BACKLOG_GROUPS: NavGroup[] = [
   },
   {
     id: "coaching",
-    label: "13. Coaching",
+    label: "Coaching",
     items: [
       { id: "coach-founder", label: "Founder Dashboard",  icon: "UserCircle2",   href: "/coaching/founder" },
       { id: "coach-studio",  label: "Studio Dashboard",   icon: "LayoutDashboard",href: "/coaching/studio" },
@@ -254,7 +254,7 @@ const BACKLOG_GROUPS: NavGroup[] = [
   },
   {
     id: "collaboration",
-    label: "14. Collaboration",
+    label: "Collaboration",
     items: [
       { id: "collab-team",       label: "Team Workspace",    icon: "Users",       href: "/collaboration" },
       { id: "collab-advisors",   label: "Advisor Directory", icon: "GraduationCap",href: "/collaboration/advisors" },
@@ -264,7 +264,7 @@ const BACKLOG_GROUPS: NavGroup[] = [
   },
   {
     id: "governance",
-    label: "15. Governance",
+    label: "Governance",
     items: [
       { id: "gov-dashboard", label: "Governance Dashboard", icon: "Building2",  href: "/governance" },
       { id: "gov-gates",     label: "Stage-Gate Approvals", icon: "Shield",     href: "/governance/gates" },
@@ -277,7 +277,7 @@ const BACKLOG_GROUPS: NavGroup[] = [
   },
   {
     id: "people",
-    label: "17. People Intelligence",
+    label: "People Intelligence",
     items: [
       { id: "people-intelligence", label: "People Intelligence", icon: "Users",   href: "/people-intelligence" },
       { id: "people-esop",         label: "ESOP & Equity",       icon: "PieChart",href: "/people" },
@@ -336,7 +336,7 @@ function NavGroupSection({ group, location }: { group: NavGroup; location: strin
       >
         <span
           className="text-xs font-bold uppercase tracking-widest"
-          style={{ fontFamily: "'Inter', sans-serif", letterSpacing: "0.07em", fontSize: "0.6rem" }}
+          style={{ fontFamily: "'Prompt', sans-serif", letterSpacing: "0.07em", fontSize: "0.6rem" }}
         >
           {group.label}
         </span>
@@ -376,7 +376,7 @@ function NavGroupSection({ group, location }: { group: NavGroup; location: strin
                   )}
                   <span
                     className="text-sm font-medium flex-1 truncate"
-                    style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.8125rem" }}
+                    style={{ fontFamily: "'Prompt', sans-serif", fontSize: "0.8125rem" }}
                   >
                     {item.label}
                   </span>
@@ -400,7 +400,7 @@ function CoreWorkflowSection({ location }: { location: string }) {
         <Star size={10} style={{ color: "#56A837" }} />
         <span
           className="text-xs font-bold uppercase tracking-widest"
-          style={{ color: "#56A837", fontFamily: "'Inter', sans-serif", letterSpacing: "0.07em", fontSize: "0.6rem" }}
+          style={{ color: "#56A837", fontFamily: "'Prompt', sans-serif", letterSpacing: "0.07em", fontSize: "0.6rem" }}
         >
           Core Workflow
         </span>
@@ -431,7 +431,7 @@ function CoreWorkflowSection({ location }: { location: string }) {
               )}
               <span
                 className="text-sm font-medium flex-1 truncate"
-                style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.8125rem" }}
+                style={{ fontFamily: "'Prompt', sans-serif", fontSize: "0.8125rem" }}
               >
                 {module.label}
               </span>
@@ -459,9 +459,9 @@ function DeferredSection() {
           <Lock size={9} style={{ color: "#ef4444", opacity: 0.7 }} />
           <span
             className="text-xs font-bold uppercase tracking-widest"
-            style={{ fontFamily: "'Inter', sans-serif", letterSpacing: "0.07em", fontSize: "0.6rem" }}
+            style={{ fontFamily: "'Prompt', sans-serif", letterSpacing: "0.07em", fontSize: "0.6rem" }}
           >
-            Deferred (Gate 4)
+            Scale Phase
           </span>
         </div>
         <ChevronDown
@@ -479,7 +479,7 @@ function DeferredSection() {
           style={{ background: "rgba(239,68,68,0.04)", border: "1px solid rgba(239,68,68,0.12)" }}
         >
           <div className="px-3 py-2 border-b" style={{ borderColor: "rgba(239,68,68,0.1)" }}>
-            <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.3)", fontFamily: "'Inter', sans-serif", fontSize: "0.65rem" }}>
+            <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.3)", fontFamily: "'Prompt', sans-serif", fontSize: "0.65rem" }}>
               These modules are in <strong style={{ color: "rgba(239,68,68,0.7)" }}>Deferred (Gate 4 Pending Validation)</strong> status and are excluded from the active workflow until independently validated.
             </p>
           </div>
@@ -500,7 +500,7 @@ function DeferredSection() {
                 )}
                 <span
                   className="text-sm flex-1 truncate line-through"
-                  style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.8rem", color: "rgba(255,255,255,0.25)" }}
+                  style={{ fontFamily: "'Prompt', sans-serif", fontSize: "0.8rem", color: "rgba(255,255,255,0.25)" }}
                 >
                   {mod.label}
                 </span>
@@ -536,7 +536,7 @@ function ReactivationPanel({ onClose }: ReactivationPanelProps) {
     >
       <div className="flex items-center justify-between px-3 py-2.5 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
         <div>
-          <div className="text-xs font-bold text-white" style={{ fontFamily: "'Inter', sans-serif" }}>
+          <div className="text-xs font-bold text-white" style={{ fontFamily: "'Prompt', sans-serif" }}>
             Module Reactivation
           </div>
           <div className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)", fontSize: "0.65rem" }}>
@@ -549,7 +549,7 @@ function ReactivationPanel({ onClose }: ReactivationPanelProps) {
       </div>
 
       <div className="px-3 py-2 border-b" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-        <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.35)", fontFamily: "'Inter', sans-serif", fontSize: "0.65rem" }}>
+        <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.35)", fontFamily: "'Prompt', sans-serif", fontSize: "0.65rem" }}>
           Backlogged modules are hidden from the active workflow by default (Gate 4). Enable a module per-venture to restore it to the navigation. Admin-only action.
         </p>
       </div>
@@ -566,7 +566,7 @@ function ReactivationPanel({ onClose }: ReactivationPanelProps) {
             >
               <span
                 className="text-xs flex-1 truncate"
-                style={{ fontFamily: "'Inter', sans-serif", color: active ? "rgba(255,255,255,0.65)" : "rgba(255,255,255,0.3)", fontSize: "0.75rem" }}
+                style={{ fontFamily: "'Prompt', sans-serif", color: active ? "rgba(255,255,255,0.65)" : "rgba(255,255,255,0.3)", fontSize: "0.75rem" }}
               >
                 {group.label}
               </span>
@@ -637,9 +637,9 @@ function ExtendedBacklogSection({
           <Package2 size={10} style={{ color: "rgba(255,255,255,0.25)" }} />
           <span
             className="text-xs font-bold uppercase tracking-widest"
-            style={{ fontFamily: "'Inter', sans-serif", letterSpacing: "0.07em", fontSize: "0.6rem" }}
+            style={{ fontFamily: "'Prompt', sans-serif", letterSpacing: "0.07em", fontSize: "0.6rem" }}
           >
-            Extended Backlog
+            Launch Phase
           </span>
           <span
             className="text-xs px-1.5 py-0.5 rounded-full font-bold"
@@ -678,7 +678,7 @@ function ExtendedBacklogSection({
                   <Lock size={9} style={{ color: "rgba(255,255,255,0.3)", flexShrink: 0 }} />
                   <span
                     className="text-xs flex-1 truncate"
-                    style={{ fontFamily: "'Inter', sans-serif", fontSize: "0.75rem", color: "rgba(255,255,255,0.3)" }}
+                    style={{ fontFamily: "'Prompt', sans-serif", fontSize: "0.75rem", color: "rgba(255,255,255,0.3)" }}
                   >
                     {group.label}
                   </span>
@@ -699,7 +699,7 @@ function ExtendedBacklogSection({
 
           {activeCount === 0 && (
             <div className="px-3 py-3 text-center">
-              <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.25)", fontFamily: "'Inter', sans-serif", fontSize: "0.7rem" }}>
+              <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.25)", fontFamily: "'Prompt', sans-serif", fontSize: "0.7rem" }}>
                 No backlog modules are active.
                 <br />
                 Use the <strong style={{ color: "rgba(255,255,255,0.35)" }}>⚙ Module Reactivation</strong> panel to enable modules for this venture.
@@ -729,7 +729,7 @@ function SyncAlertBanner() {
         }}
       >
         <Bell size={13} />
-        <span className="text-xs font-medium flex-1 text-left" style={{ fontFamily: "'Inter', sans-serif" }}>
+        <span className="text-xs font-medium flex-1 text-left" style={{ fontFamily: "'Prompt', sans-serif" }}>
           {alerts.length === 0 ? "All systems in sync" : `${alerts.length} sync alert${alerts.length > 1 ? "s" : ""}`}
         </span>
         {alerts.length > 0 && (
@@ -748,7 +748,7 @@ function SyncAlertBanner() {
           style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}
         >
           <div className="flex items-center justify-between px-3 py-2 border-b" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-            <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.35)", fontFamily: "'Inter', sans-serif", fontSize: "0.6rem" }}>
+            <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.35)", fontFamily: "'Prompt', sans-serif", fontSize: "0.6rem" }}>
               VRL / TRL Sync Alerts
             </span>
             <button onClick={() => setAlertsOpen(false)}>
@@ -756,7 +756,7 @@ function SyncAlertBanner() {
             </button>
           </div>
           {alerts.length === 0 ? (
-            <div className="px-3 py-3 text-xs" style={{ color: "rgba(255,255,255,0.3)", fontFamily: "'Inter', sans-serif" }}>
+            <div className="px-3 py-3 text-xs" style={{ color: "rgba(255,255,255,0.3)", fontFamily: "'Prompt', sans-serif" }}>
               All ventures are in sync.
             </div>
           ) : (
@@ -765,11 +765,11 @@ function SyncAlertBanner() {
                 <div key={i} className="px-3 py-2.5 border-b last:border-0" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
                   <div className="flex items-center gap-1.5 mb-1">
                     <AlertTriangle size={10} style={{ color: a.severity === "high" ? "#ef4444" : "#F69111", flexShrink: 0 }} />
-                    <span className="text-xs font-semibold" style={{ color: a.ventureColor, fontFamily: "'Inter', sans-serif" }}>
+                    <span className="text-xs font-semibold" style={{ color: a.ventureColor, fontFamily: "'Prompt', sans-serif" }}>
                       {a.ventureName}
                     </span>
                   </div>
-                  <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.38)", fontFamily: "'Inter', sans-serif", fontSize: "0.7rem" }}>
+                  <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.38)", fontFamily: "'Prompt', sans-serif", fontSize: "0.7rem" }}>
                     {a.message}
                   </p>
                 </div>
@@ -806,7 +806,7 @@ export default function Sidebar() {
           />
           <div
             className="text-xs font-semibold tracking-widest uppercase"
-            style={{ color: "rgba(255,255,255,0.28)", fontFamily: "'Inter', sans-serif", fontSize: "0.6rem" }}
+            style={{ color: "rgba(255,255,255,0.28)", fontFamily: "'Prompt', sans-serif", fontSize: "0.6rem" }}
           >
             Venture Validation OS
           </div>
@@ -858,11 +858,11 @@ export default function Sidebar() {
             E
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-xs font-semibold truncate" style={{ color: "rgba(255,255,255,0.5)", fontFamily: "'Inter', sans-serif", fontSize: "0.7rem" }}>
+            <div className="text-xs font-semibold truncate" style={{ color: "rgba(255,255,255,0.5)", fontFamily: "'Prompt', sans-serif", fontSize: "0.7rem" }}>
               EcoBlend OS
             </div>
-            <div className="text-xs truncate" style={{ color: "rgba(255,255,255,0.22)", fontFamily: "'Inter', sans-serif", fontSize: "0.65rem" }}>
-              Platform v2.0 · Gate 4
+            <div className="text-xs truncate" style={{ color: "rgba(255,255,255,0.22)", fontFamily: "'Prompt', sans-serif", fontSize: "0.65rem" }}>
+              Platform v2.0
             </div>
           </div>
           {/* Admin reactivation toggle */}
