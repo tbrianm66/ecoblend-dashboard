@@ -44,7 +44,7 @@ import {
   type BacklogGroupId,
 } from "@/lib/gate4Config";
 import { resolveModuleBadge, buildRowByGroup } from "@/lib/gate4Utils";
-import { showToggleToast, showBatchToast } from "@/lib/gate4ToastUtils";
+import { showToggleToast, showBatchToast, showResetToast } from "@/lib/gate4ToastUtils";
 
 type IconName = string;
 const iconMap: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
@@ -835,20 +835,16 @@ function ReactivationPanel({ onClose, ventureId, ventureName, ventureColor }: Re
               <button
                 onClick={() => {
                   if (alreadyDefault) return;
+                  const snapshotVId   = ventureId;
                   const snapshotVName = ventureName;
-                  resetToGlobalDefaults((svid) => {
-                    const currentVId = ventureIdRef.current;
-                    const drifted = svid !== currentVId;
-                    const scopeName = snapshotVName ?? svid ?? "venture";
-                    if (drifted) {
-                      const nowScope = ventureNameRef.current ?? currentVId ?? "current venture";
-                      toast.warning(
-                        `Module settings reset to global defaults for ${scopeName} — not the currently selected venture (${nowScope})`,
-                        { duration: 6000 },
-                      );
-                    } else {
-                      toast.success(`Module settings reset to global defaults for ${scopeName}`);
-                    }
+                  resetToGlobalDefaults(() => {
+                    showResetToast(
+                      toast,
+                      ventureIdRef.current,
+                      ventureNameRef.current,
+                      snapshotVId,
+                      snapshotVName,
+                    );
                   });
                 }}
                 disabled={alreadyDefault}

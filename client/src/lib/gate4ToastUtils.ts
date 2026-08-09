@@ -62,6 +62,41 @@ export function showToggleToast(
 }
 
 /**
+ * Show a toast confirming which venture the "Reset to global defaults" action
+ * was performed on.
+ *
+ * Same mismatch-detection logic as showToggleToast: when the venture selector
+ * changed between click and server response, a WARNING toast fires naming both
+ * the venture that was reset (snapshot) and the venture currently visible (now).
+ *
+ * @param toast          The toast API to call (sonner in production, spy in tests).
+ * @param currentVId     ventureId currently shown in the selector (ventureIdRef.current).
+ * @param currentVName   ventureName currently shown in the selector (ventureNameRef.current).
+ * @param snapshotVId    ventureId captured at the moment the user clicked.
+ * @param snapshotVName  ventureName captured at the moment the user clicked.
+ */
+export function showResetToast(
+  toast: ToastApi,
+  currentVId: string | null,
+  currentVName: string | undefined,
+  snapshotVId: string | null,
+  snapshotVName: string | undefined,
+): void {
+  const scopeName = snapshotVId ? (snapshotVName ?? snapshotVId) : "all ventures (global)";
+  const drifted   = snapshotVId !== currentVId;
+
+  if (drifted) {
+    const nowScope = currentVId ? (currentVName ?? currentVId) : "all ventures (global)";
+    toast.warning(
+      `Module settings reset to global defaults for ${scopeName} — not the currently selected venture (${nowScope})`,
+      { duration: 6000 },
+    );
+  } else {
+    toast.success(`Module settings reset to global defaults for ${scopeName}`);
+  }
+}
+
+/**
  * Show a toast for a bulk Enable-All / Disable-All batch action.
  *
  * Same mismatch-detection logic as showToggleToast.

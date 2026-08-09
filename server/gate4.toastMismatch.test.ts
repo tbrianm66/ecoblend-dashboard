@@ -33,7 +33,7 @@
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
-import { showToggleToast, showBatchToast } from "../client/src/lib/gate4ToastUtils";
+import { showToggleToast, showBatchToast, showResetToast } from "../client/src/lib/gate4ToastUtils";
 
 // ── Fake toast spy ────────────────────────────────────────────────────────────
 
@@ -230,6 +230,79 @@ describe("Gate 4 — venture-mismatch toast (production helpers)", () => {
       const call = toast.lastCall()!;
       expect(call.variant).toBe("warning");
       expect(call.message).toContain("venture-A");
+    });
+  });
+
+  // ── showResetToast ───────────────────────────────────────────────────────────
+
+  describe("showResetToast", () => {
+    it("fires WARNING when the venture selector changed between click and response", () => {
+      // Sequence:
+      //   1. Admin has venture-A selected and clicks "Reset to global defaults".
+      //   2. snapshotVId = "venture-A" captured at click time.
+      //   3. Admin switches to venture-B while the request is in-flight.
+      //   4. Server responds; currentVId now reflects venture-B.
+      showResetToast(
+        toast,
+        /* currentVId   */ "venture-B",
+        /* currentVName */ "Beta Ltd",
+        /* snapshotVId  */ "venture-A",
+        /* snapshotVName*/ "Alpha Corp",
+      );
+
+      const call = toast.lastCall()!;
+      expect(call.variant).toBe("warning");
+      // Must name the venture whose settings were actually reset.
+      expect(call.message).toContain("Alpha Corp");
+      // Must name the venture now visible in the selector.
+      expect(call.message).toContain("Beta Ltd");
+      expect(call.message).toContain("reset to global defaults");
+      // Warning toasts carry a longer duration so admins have time to read them.
+      expect(call.options?.duration).toBe(6000);
+    });
+
+    it("fires SUCCESS when no venture drift occurred", () => {
+      showResetToast(
+        toast,
+        "venture-A", "Alpha Corp",
+        "venture-A", "Alpha Corp",
+      );
+
+      const call = toast.lastCall()!;
+      expect(call.variant).toBe("success");
+      expect(call.message).toContain("Alpha Corp");
+      expect(call.message).toContain("reset to global defaults");
+      // Success toasts do not carry a custom duration.
+      expect(call.options).toBeUndefined();
+    });
+
+    it("falls back to snapshotVId in the message when snapshotVName is undefined", () => {
+      // Edge case: ventures list hasn't resolved; snapshot name is unavailable.
+      showResetToast(toast, "venture-B", "Beta Ltd", "venture-A", undefined);
+
+      const call = toast.lastCall()!;
+      expect(call.variant).toBe("warning");
+      // Must show the raw ID rather than an empty string.
+      expect(call.message).toContain("venture-A");
+      expect(call.message).toContain("Beta Ltd");
+    });
+
+    it("reports global scope when snapshotVId is null and currentVId has changed", () => {
+      // Unusual path: snapshot was null (global), now a specific venture is selected.
+      showResetToast(toast, "venture-A", "Alpha Corp", null, undefined);
+
+      const call = toast.lastCall()!;
+      expect(call.variant).toBe("warning");
+      expect(call.message).toContain("all ventures (global)");
+      expect(call.message).toContain("Alpha Corp");
+    });
+
+    it("fires SUCCESS for global scope when no drift occurred (both null)", () => {
+      showResetToast(toast, null, undefined, null, undefined);
+
+      const call = toast.lastCall()!;
+      expect(call.variant).toBe("success");
+      expect(call.message).toContain("all ventures (global)");
     });
   });
 
