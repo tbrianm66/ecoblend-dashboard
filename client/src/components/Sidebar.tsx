@@ -339,7 +339,16 @@ function useVrlTrlAlerts(): SyncAlert[] {
 }
 
 // ── NavGroupSection (existing, unchanged) ─────────────────────────────────────
-function NavGroupSection({ group, location }: { group: NavGroup; location: string }) {
+function NavGroupSection({
+  group,
+  location,
+  badge,
+}: {
+  group: NavGroup;
+  location: string;
+  /** Optional element rendered between the group label and the collapse chevron. */
+  badge?: React.ReactNode;
+}) {
   const isGroupActive = group.items.some(
     item => location === item.href || (item.href !== "/" && location.startsWith(item.href))
   );
@@ -352,11 +361,14 @@ function NavGroupSection({ group, location }: { group: NavGroup; location: strin
         className="w-full flex items-center justify-between px-3 py-1.5 rounded-md transition-colors duration-100"
         style={{ color: isGroupActive ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.35)" }}
       >
-        <span
-          className="text-xs font-bold uppercase tracking-widest"
-          style={{ fontFamily: "'Prompt', sans-serif", letterSpacing: "0.07em", fontSize: "0.6rem" }}
-        >
-          {group.label}
+        <span className="flex items-center gap-1.5 min-w-0">
+          <span
+            className="text-xs font-bold uppercase tracking-widest"
+            style={{ fontFamily: "'Prompt', sans-serif", letterSpacing: "0.07em", fontSize: "0.6rem" }}
+          >
+            {group.label}
+          </span>
+          {badge}
         </span>
         <ChevronDown
           size={11}
@@ -873,9 +885,17 @@ function ReactivationPanel({ onClose, ventureId, ventureName, ventureColor }: Re
 function ExtendedBacklogSection({
   location,
   isActivated,
+  rows,
+  isLoading,
+  isError,
+  ventureId,
 }: {
   location: string;
   isActivated: (id: string) => boolean;
+  rows: import("@/lib/gate4Utils").ReactivationRow[];
+  isLoading: boolean;
+  isError: boolean;
+  ventureId: string | null;
 }) {
   const activeCount  = BACKLOG_GROUPS.filter(g => isActivated(g.id)).length;
   const totalCount   = BACKLOG_GROUPS.length;
@@ -886,6 +906,9 @@ function ExtendedBacklogSection({
     g.items.some(item => location === item.href || (item.href !== "/" && location.startsWith(item.href)))
   );
   const [open, setOpen] = useState(hasActiveItem);
+
+  // Build the most-specific row for each group (mirrors ReactivationPanel logic).
+  const rowByGroup = buildRowByGroup(rows, ventureId);
 
   return (
     <div className="mb-2">
@@ -953,8 +976,69 @@ function ExtendedBacklogSection({
               );
             }
 
+            // Compute source badge for active groups — same visual language as ReactivationPanel rows.
+            const row = rowByGroup.get(group.id);
+            const badgeState = resolveModuleBadge(isLoading, isError, row);
+            let groupBadge: React.ReactNode = null;
+            if (badgeState === "default") {
+              groupBadge = (
+                <span
+                  className="shrink-0 inline-block px-1 py-0 rounded font-bold uppercase"
+                  aria-label="No override set; system default applies"
+                  title="No override set; system default applies"
+                  style={{
+                    fontFamily: "'Prompt', sans-serif",
+                    fontSize: "0.5rem",
+                    letterSpacing: "0.05em",
+                    background: "rgba(255,255,255,0.06)",
+                    color: "rgba(255,255,255,0.28)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                  }}
+                >
+                  DEFAULT
+                </span>
+              );
+            } else if (badgeState === "global") {
+              groupBadge = (
+                <span
+                  className="shrink-0 inline-block px-1 py-0 rounded font-bold uppercase"
+                  aria-label="Enabled by a global rule"
+                  title="Enabled by a global rule"
+                  style={{
+                    fontFamily: "'Prompt', sans-serif",
+                    fontSize: "0.5rem",
+                    letterSpacing: "0.05em",
+                    background: "rgba(245,158,11,0.15)",
+                    color: "rgba(245,158,11,0.8)",
+                    border: "1px solid rgba(245,158,11,0.3)",
+                  }}
+                >
+                  GLOBAL
+                </span>
+              );
+            } else if (badgeState === "venture") {
+              groupBadge = (
+                <span
+                  className="shrink-0 inline-block px-1 py-0 rounded font-bold uppercase"
+                  aria-label="Enabled by a venture-specific override"
+                  title="Enabled by a venture-specific override"
+                  style={{
+                    fontFamily: "'Prompt', sans-serif",
+                    fontSize: "0.5rem",
+                    letterSpacing: "0.05em",
+                    background: "rgba(86,168,55,0.13)",
+                    color: "rgba(86,168,55,0.85)",
+                    border: "1px solid rgba(86,168,55,0.25)",
+                  }}
+                >
+                  VENTURE
+                </span>
+              );
+            }
+            // "loading" | "unknown" → groupBadge stays null (no badge while indeterminate)
+
             return (
-              <NavGroupSection key={group.id} group={group} location={location} />
+              <NavGroupSection key={group.id} group={group} location={location} badge={groupBadge} />
             );
           })}
 
@@ -1051,7 +1135,7 @@ export default function Sidebar() {
   const [reactivationOpen, setReactivationOpen] = useState(false);
   const { selectedVenture } = useSelectedVenture();
   const selectedVentureId = selectedVenture?.id ?? null;
-  const { isActivated } = useGate4Reactivation(selectedVentureId);
+  const { isActivated, rows, isLoading, isError } = useGate4Reactivation(selectedVentureId);
 
   return (
     <aside
@@ -1097,7 +1181,14 @@ export default function Sidebar() {
         <div className="my-2 mx-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }} />
 
         {/* Section 3: Extended Backlog */}
-        <ExtendedBacklogSection location={location} isActivated={isActivated} />
+        <ExtendedBacklogSection
+          location={location}
+          isActivated={isActivated}
+          rows={rows}
+          isLoading={isLoading}
+          isError={isError}
+          ventureId={selectedVentureId}
+        />
 
         {/* Section 4: Deferred Speculative Infrastructure */}
         <DeferredSection />
