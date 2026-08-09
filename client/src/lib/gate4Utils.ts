@@ -102,3 +102,31 @@ export function resolveModuleBadge(
   if (!row)      return "default";
   return row.ventureId === "__global__" ? "global" : "venture";
 }
+
+// ── buildRowByGroup ───────────────────────────────────────────────────────────
+// Build a lookup from groupId → the most-specific row for the current scope.
+//
+// Resolution model (mirrors ReactivationPanel in Sidebar.tsx):
+//   1. Global rows (__global__ ventureId) seed the map.
+//   2. If a specific ventureId is provided, venture-specific rows overwrite any
+//      matching global entry — venture rows always take precedence.
+//   3. Groups that have no row at all are absent from the returned map.
+//
+// Extracted here (instead of kept inline in Sidebar.tsx) so tests can import
+// the exact production logic rather than maintaining a separate copy that can
+// silently diverge when the precedence rules change.
+export function buildRowByGroup(
+  rows: ReactivationRow[],
+  ventureId: string | null,
+): Map<string, ReactivationRow> {
+  const map = new Map<string, ReactivationRow>();
+  rows
+    .filter(r => r.ventureId === "__global__")
+    .forEach(r => map.set(r.groupId, r));
+  if (ventureId) {
+    rows
+      .filter(r => r.ventureId === ventureId)
+      .forEach(r => map.set(r.groupId, r)); // venture row overwrites global
+  }
+  return map;
+}

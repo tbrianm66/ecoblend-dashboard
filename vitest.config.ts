@@ -14,6 +14,15 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["server/**/*.test.ts", "server/**/*.spec.ts"],
+    environmentMatchGlobs: [
+      // Client hook/component tests need a browser-like DOM environment.
+      // happy-dom is lighter than jsdom and sufficient for renderHook tests.
+      ["client/**/*.test.ts", "happy-dom"],
+    ],
+    include: [
+      "server/**/*.test.ts",
+      "server/**/*.spec.ts",
+      "client/**/*.test.ts",
+    ],
   },
 });

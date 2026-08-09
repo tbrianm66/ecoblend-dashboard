@@ -43,7 +43,7 @@ import {
   useGate4Reactivation,
   type BacklogGroupId,
 } from "@/lib/gate4Config";
-import { resolveModuleBadge } from "@/lib/gate4Utils";
+import { resolveModuleBadge, buildRowByGroup } from "@/lib/gate4Utils";
 import { showToggleToast, showBatchToast } from "@/lib/gate4ToastUtils";
 
 type IconName = string;
@@ -607,15 +607,9 @@ function ReactivationPanel({ onClose, ventureId, ventureName, ventureColor }: Re
   // Build a lookup from groupId → most-specific row for the current scope.
   // Prefer the venture-specific row when one exists; fall back to the global row
   // so the audit trail still shows who last touched a global toggle.
-  const rowByGroup = new Map<string, typeof rows[number]>();
-  rows
-    .filter(r => r.ventureId === "__global__")
-    .forEach(r => rowByGroup.set(r.groupId, r));
-  if (ventureId) {
-    rows
-      .filter(r => r.ventureId === ventureId)
-      .forEach(r => rowByGroup.set(r.groupId, r)); // venture row overwrites global
-  }
+  // Uses the shared production helper (gate4Utils.ts) so the test suite exercises
+  // the exact same precedence logic as this component.
+  const rowByGroup = buildRowByGroup(rows, ventureId);
 
   // Scope badge: amber pill for GLOBAL, venture-colour dot + name for a specific venture.
   const scopeBadge = ventureId && ventureName ? (
