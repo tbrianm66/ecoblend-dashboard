@@ -104,23 +104,37 @@ interface HarnessRow {
   toggledAt: Date;
 }
 
+// onConflictDoUpdate returns an object that:
+//   • has a .returning() method (mimicking Drizzle's query builder chain), AND
+//   • is itself awaitable as a Promise<void> (for code that doesn't call .returning).
+// The router's updated code always calls .returning(), so the harness must
+// support the chain.  Callers that await the result directly (without .returning)
+// still work because the object also exposes .then / .catch / .finally.
+interface HarnessTxChain {
+  returning: (shape: Record<string, unknown>) => Promise<Array<Record<string, unknown>>>;
+  then:    PromiseLike<void>["then"];
+  catch:   PromiseLike<void>["catch"];
+  finally: (<T>(onfinally?: (() => void) | null | undefined) => Promise<T>);
+}
+
+interface HarnessTx {
+  insert: (table: unknown) => {
+    values: (row: Record<string, unknown>) => {
+      onConflictDoUpdate: (opts: { target: unknown; set: Record<string, unknown> }) => HarnessTxChain;
+    };
+  };
+}
+
 interface HarnessDb {
   /** All rows that have been committed (not staged). Read-only externally. */
   committed: Map<string, HarnessRow>;
   transaction: (fn: (tx: HarnessTx) => Promise<void>) => Promise<void>;
 }
 
-interface HarnessTx {
-  insert: (table: unknown) => {
-    values: (row: Record<string, unknown>) => {
-      onConflictDoUpdate: (opts: { target: unknown; set: Record<string, unknown> }) => Promise<void>;
-    };
-  };
-}
-
-function makeHarnessDb(opts?: { faultAfter?: number }): HarnessDb {
-  const committed = new Map<string, HarnessRow>();
-  const faultLimit = opts?.faultAfter;
+function makeHarnessDb(opts?: { faultAfter?: number; silentSkipAfter?: number }): HarnessDb {
+  const committed    = new Map<string, HarnessRow>();
+  const faultLimit   = opts?.faultAfter;
+  const silentLimit  = opts?.silentSkipAfter;
 
   return {
     committed,
@@ -134,18 +148,40 @@ function makeHarnessDb(opts?: { faultAfter?: number }): HarnessDb {
         insert: (_table) => ({
           values: (row) => ({
             onConflictDoUpdate: ({ set }) => {
-              // Simulate a DB failure BEFORE processing this insert.
+              // --- Fault injection: DB-level error (aborts the transaction) ---
               if (faultLimit !== undefined && insertsDone >= faultLimit) {
-                return Promise.reject(
+                const rejection = Promise.reject(
                   new Error(`Simulated DB timeout after ${faultLimit} insert(s)`),
                 );
+                return {
+                  returning: () => rejection as unknown as Promise<Array<Record<string, unknown>>>,
+                  then:    rejection.then.bind(rejection),
+                  catch:   rejection.catch.bind(rejection),
+                  finally: rejection.finally.bind(rejection) as HarnessTxChain["finally"],
+                };
               }
 
-              // Process the upsert into staging.
+              // --- Silent-skip injection: resolves without writing the row ---
+              // Simulates a future code path that conditionally skips an item
+              // without throwing (e.g. a DO NOTHING variant, a partial-index
+              // match, or a guard that returns early).  .returning() yields []
+              // so the router's integrity check sees a mismatch.
+              if (silentLimit !== undefined && insertsDone >= silentLimit) {
+                insertsDone++;
+                const emptyResolved = Promise.resolve([] as Array<Record<string, unknown>>);
+                const voidResolved  = Promise.resolve(undefined);
+                return {
+                  returning: () => emptyResolved,
+                  then:    voidResolved.then.bind(voidResolved),
+                  catch:   voidResolved.catch.bind(voidResolved),
+                  finally: voidResolved.finally.bind(voidResolved) as HarnessTxChain["finally"],
+                };
+              }
+
+              // --- Normal path: upsert the row into staging ---
               const k = `${row.groupId}:${row.ventureId}`;
               const existing = staging.get(k);
               if (existing) {
-                // onConflictDoUpdate: keep identity columns, apply `set` fields.
                 staging.set(k, {
                   ...existing,
                   active:    (set.active    as boolean)      ?? existing.active,
@@ -162,16 +198,25 @@ function makeHarnessDb(opts?: { faultAfter?: number }): HarnessDb {
                 });
               }
               insertsDone++;
-              return Promise.resolve();
+
+              const writtenGroupId = row.groupId as string;
+              const resolved       = Promise.resolve([{ groupId: writtenGroupId }]);
+              const voidResolved   = Promise.resolve(undefined);
+              return {
+                returning: (_shape: Record<string, unknown>) => resolved,
+                then:    voidResolved.then.bind(voidResolved),
+                catch:   voidResolved.catch.bind(voidResolved),
+                finally: voidResolved.finally.bind(voidResolved) as HarnessTxChain["finally"],
+              };
             },
           }),
         }),
       };
 
       // Run the transaction callback.
-      // If fn throws/rejects → the catch below discards staging (ROLLBACK).
-      // If fn resolves → commit staging into the durable committed store.
-      await fn(tx); // throws on fault → staging never committed below
+      // If fn throws/rejects → staging is discarded (ROLLBACK).
+      // If fn resolves      → staging is merged into committed (COMMIT).
+      await fn(tx);
 
       // COMMIT: merge staging into committed.
       // This loop is synchronous so no other transaction can interleave mid-commit.
@@ -691,5 +736,129 @@ describe("setModuleReactivationBatch — payload size validation (schema rejects
     expect((err as TRPCError).code).toBe("BAD_REQUEST");
     // Validation must fire before the transaction — committed store stays empty.
     expect(committedFor(db, "VENTURE-A")).toHaveLength(0);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("setModuleReactivationBatch — mismatch detection (DB confirms fewer rows than requested)", () => {
+  // This suite exercises the post-transaction integrity check introduced to
+  // prevent the endpoint from silently lying about the written count.
+  //
+  // The `silentSkipAfter` harness option causes onConflictDoUpdate to resolve
+  // (no throw) while returning [] from .returning() — simulating a DB-side
+  // silent skip such as a DO-NOTHING conflict target or a partial-index match
+  // that suppresses the write without aborting the transaction.
+  //
+  // The router MUST detect the shorter .returning() list and surface a
+  // TRPC INTERNAL_SERVER_ERROR rather than returning { success: true, count: N }
+  // where N is the original input length.
+
+  it("throws INTERNAL_SERVER_ERROR when the DB silently skips the first item", async () => {
+    // silentSkipAfter: 0 → first item resolves but returns [] from .returning()
+    const db = makeHarnessDb({ silentSkipAfter: 0 });
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: [
+          { groupId: "discovery",  active: true },
+          { groupId: "validation", active: true },
+        ],
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("INTERNAL_SERVER_ERROR");
+    // The error message must name the skipped group so admins can investigate.
+    expect((err as TRPCError).message).toContain("discovery");
+    // Critical: the mismatch throw is inside the transaction, so staging is
+    // discarded — zero rows must be committed (no partial state).
+    expect(committedFor(db, "VENTURE-A")).toHaveLength(0);
+  });
+
+  it("throws INTERNAL_SERVER_ERROR when the DB silently skips a mid-batch item", async () => {
+    // silentSkipAfter: 7 → items 0-6 write normally, item 7 is silently skipped.
+    const db = makeHarnessDb({ silentSkipAfter: 7 });
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: activateAllItems(true), // 15 items
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("INTERNAL_SERVER_ERROR");
+    // Message must report the written vs requested counts.
+    expect((err as TRPCError).message).toMatch(/7 of 15/);
+    // Throw inside the transaction → full rollback; the 7 staged rows are discarded.
+    expect(committedFor(db, "VENTURE-A")).toHaveLength(0);
+  });
+
+  it("throws INTERNAL_SERVER_ERROR when the DB silently skips the last item", async () => {
+    // silentSkipAfter: 14 → items 0-13 write normally, item 14 is silently skipped.
+    const db = makeHarnessDb({ silentSkipAfter: 14 });
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: activateAllItems(true), // 15 items
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("INTERNAL_SERVER_ERROR");
+    // 14 confirmed, 1 skipped.
+    expect((err as TRPCError).message).toMatch(/14 of 15/);
+    // All 14 staged rows must be rolled back — committed store stays empty.
+    expect(committedFor(db, "VENTURE-A")).toHaveLength(0);
+  });
+
+  it("does NOT throw when all items are confirmed by the DB", async () => {
+    // No faults, no silent skips — all .returning() calls yield the written groupId.
+    const db = makeHarnessDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    const result = await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: activateAllItems(true),
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.count).toBe(15);
+    // The upserted list must enumerate every confirmed groupId.
+    expect(result.upserted).toHaveLength(15);
+    expect(result.upserted.sort()).toEqual([...GATE4_GROUPS].sort());
+  });
+
+  it("upserted list in the response contains exactly the DB-confirmed groupIds", async () => {
+    const db = makeHarnessDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    const result = await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [
+        { groupId: "discovery",  active: true },
+        { groupId: "validation", active: false },
+        { groupId: "gtm",        active: true },
+      ],
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.count).toBe(3);
+    expect(result.upserted.sort()).toEqual(["discovery", "gtm", "validation"].sort());
   });
 });

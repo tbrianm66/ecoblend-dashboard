@@ -923,9 +923,22 @@ export const adminRouter = router({
       const ventureId = (input.ventureId && input.ventureId.trim()) ? input.ventureId.trim() : "__global__";
       const now = new Date();
 
+      // Collect the groupId of every row the DB confirms it wrote.
+      // Using .returning() means we get back the actual DB-confirmed record,
+      // not just the input we handed in.  If a future code change silently
+      // skips an item (e.g. a conditional guard, a violated partial-index
+      // that suppresses the upsert without aborting the transaction), the
+      // returned array will be shorter than input.items and we surface it.
+      // Collect the groupId of every row the DB confirms it wrote via .returning().
+      // This check runs INSIDE the transaction so that detecting fewer confirmed
+      // rows than requested causes the transaction to roll back — no partial state
+      // is committed and the admin UI will see a thrown error rather than a
+      // misleadingly successful response with a low count.
+      const upserted: string[] = [];
+
       await db.transaction(async tx => {
         for (const item of input.items) {
-          await tx
+          const written = await tx
             .insert(moduleReactivations)
             .values({
               groupId:   item.groupId,
@@ -941,11 +954,35 @@ export const adminRouter = router({
                 toggledBy,
                 toggledAt: now,
               },
-            });
+            })
+            .returning({ groupId: moduleReactivations.groupId });
+
+          for (const row of written) {
+            upserted.push(row.groupId);
+          }
+        }
+
+        // Integrity check INSIDE the transaction: if the DB confirmed fewer rows
+        // than we submitted, throw here so the transaction aborts and rolls back
+        // the entire batch.  A partial committed state would be worse than no
+        // change at all — the admin UI's optimistic state would diverge from what
+        // is actually durable.  In a healthy database this branch is never
+        // reached; it guards against future code paths that conditionally skip
+        // items without throwing (e.g. a DO-NOTHING conflict target, a partial
+        // index suppression, or a guard that returns early without writing).
+        if (upserted.length !== input.items.length) {
+          const requested = input.items.map(i => i.groupId);
+          const skipped   = requested.filter(id => !upserted.includes(id));
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message:
+              `Batch write incomplete: ${upserted.length} of ${input.items.length} group(s) confirmed by the DB. ` +
+              `Skipped group(s): ${skipped.join(", ")}`,
+          });
         }
       });
 
-      return { success: true, count: input.items.length };
+      return { success: true, count: upserted.length, upserted };
     }),
 
   // Delete all venture-specific module_reactivations rows for a given venture,
