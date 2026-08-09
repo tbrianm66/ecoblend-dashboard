@@ -43,7 +43,7 @@ import {
   useGate4Reactivation,
   type BacklogGroupId,
 } from "@/lib/gate4Config";
-import { resolveModuleBadge, buildRowByGroup } from "@/lib/gate4Utils";
+import { resolveModuleBadge, buildRowByGroup, formatToggleAudit } from "@/lib/gate4Utils";
 import { showToggleToast, showBatchToast, showResetToast } from "@/lib/gate4ToastUtils";
 
 type IconName = string;
@@ -557,15 +557,6 @@ interface ReactivationPanelProps {
   ventureColor?: string;
 }
 
-function formatToggleAudit(toggledBy: string | null | undefined, toggledAt: Date | string | null | undefined): string | null {
-  if (!toggledBy && !toggledAt) return null;
-  const who = toggledBy ?? "Unknown";
-  if (!toggledAt) return `by ${who}`;
-  const d = new Date(toggledAt);
-  const dateStr = d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-  const timeStr = d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
-  return `${who} · ${dateStr} ${timeStr}`;
-}
 function ReactivationPanel({ onClose, ventureId, ventureName, ventureColor }: ReactivationPanelProps) {
   const { isActivated, reactivate, deactivate, reactivateAll, deactivateAll, resetToGlobalDefaults, rows, isLoading, isError } = useGate4Reactivation(ventureId);
 

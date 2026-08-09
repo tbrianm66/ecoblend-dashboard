@@ -130,3 +130,23 @@ export function buildRowByGroup(
   }
   return map;
 }
+
+// ── formatToggleAudit ─────────────────────────────────────────────────────────
+// Formats the audit line rendered beneath each module toggle in the
+// ReactivationPanel: "<who> · <date> <time>" or "by <who>" or null.
+//
+// Returns null when both fields are absent (no toggle has ever been recorded).
+// Accepts toggledAt as Date or ISO string (the shape React Query returns after
+// JSON deserialisation).
+export function formatToggleAudit(
+  toggledBy: string | null | undefined,
+  toggledAt: Date | string | null | undefined,
+): string | null {
+  if (!toggledBy && !toggledAt) return null;
+  const who = toggledBy ?? "Unknown";
+  if (!toggledAt) return `by ${who}`;
+  const d       = new Date(toggledAt as string | Date);
+  const dateStr = d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const timeStr = d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  return `${who} · ${dateStr} ${timeStr}`;
+}
