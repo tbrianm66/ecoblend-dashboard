@@ -173,8 +173,9 @@ export function useGate4Reactivation(ventureId: string | null) {
     { staleTime: 30_000, refetchOnWindowFocus: true },
   );
 
-  // tRPC mutation.
+  // tRPC mutations.
   const setMutation = trpc.admin.setModuleReactivation.useMutation();
+  const setBatchMutation = trpc.admin.setModuleReactivationBatch.useMutation();
   const utils = trpc.useUtils();
 
   // Recompute activated state whenever server data arrives or the venture scope changes.
@@ -252,14 +253,18 @@ export function useGate4Reactivation(ventureId: string | null) {
     const all = new Set([...GATE4_BACKLOG_GROUP_IDS]);
     setActivated(all);
     writeLsCache(all);
-    // Batch: fire one mutation per group, all against the snapshotted venture.
+    // Single atomic batch mutation — all 15 groups written in one DB transaction.
     const vId = snapshotVentureId ?? undefined;
-    GATE4_BACKLOG_GROUP_IDS.forEach(groupId => {
-      setMutation.mutate({ groupId, ventureId: vId, active: true });
-    });
-    // Invalidate once after all mutations are queued.
-    setTimeout(() => utils.admin.getModuleReactivations.invalidate(), 500);
-  }, [setMutation, utils]);
+    setBatchMutation.mutate(
+      {
+        ventureId: vId,
+        items: GATE4_BACKLOG_GROUP_IDS.map(groupId => ({ groupId, active: true })),
+      },
+      {
+        onSuccess: () => { utils.admin.getModuleReactivations.invalidate(); },
+      },
+    );
+  }, [setBatchMutation, utils]);
 
   const deactivateAll = useCallback(() => {
     const snapshotVentureId = ventureIdRef.current;
@@ -267,11 +272,16 @@ export function useGate4Reactivation(ventureId: string | null) {
     setActivated(empty);
     writeLsCache(empty);
     const vId = snapshotVentureId ?? undefined;
-    GATE4_BACKLOG_GROUP_IDS.forEach(groupId => {
-      setMutation.mutate({ groupId, ventureId: vId, active: false });
-    });
-    setTimeout(() => utils.admin.getModuleReactivations.invalidate(), 500);
-  }, [setMutation, utils]);
+    setBatchMutation.mutate(
+      {
+        ventureId: vId,
+        items: GATE4_BACKLOG_GROUP_IDS.map(groupId => ({ groupId, active: false })),
+      },
+      {
+        onSuccess: () => { utils.admin.getModuleReactivations.invalidate(); },
+      },
+    );
+  }, [setBatchMutation, utils]);
 
   return {
     activatedGroups: activated,

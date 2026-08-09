@@ -901,6 +901,51 @@ export const adminRouter = router({
 
       return { success: true, groupId: input.groupId, active: input.active };
     }),
+
+  // Batch upsert: accepts an array of { groupId, active } and a single ventureId,
+  // processed atomically inside a DB transaction.  This prevents the race where 15
+  // individual mutations from reactivateAll / deactivateAll interleave with a
+  // concurrent admin doing the same operation on the same venture.
+  setModuleReactivationBatch: adminProcedure
+    .input(z.object({
+      ventureId: z.string().optional(),   // omit or "" → global scope
+      items: z.array(z.object({
+        groupId: z.string().min(1).max(64),
+        active:  z.boolean(),
+      })).min(1).max(50),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+
+      const toggledBy = ctx.user.name ?? ctx.user.email ?? ctx.user.openId;
+      const ventureId = (input.ventureId && input.ventureId.trim()) ? input.ventureId.trim() : "__global__";
+      const now = new Date();
+
+      await db.transaction(async tx => {
+        for (const item of input.items) {
+          await tx
+            .insert(moduleReactivations)
+            .values({
+              groupId:   item.groupId,
+              ventureId,
+              active:    item.active,
+              toggledBy,
+              toggledAt: now,
+            })
+            .onConflictDoUpdate({
+              target: [moduleReactivations.groupId, moduleReactivations.ventureId],
+              set: {
+                active:    item.active,
+                toggledBy,
+                toggledAt: now,
+              },
+            });
+        }
+      });
+
+      return { success: true, count: input.items.length };
+    }),
 });
 
 export type AdminRouter = typeof adminRouter;
