@@ -35,6 +35,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { TRPCError } from "@trpc/server";
 import { rowsToActivatedSet } from "../client/src/lib/gate4Utils";
+import { normaliseResetVentureId } from "./moduleReactivationUtils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -441,6 +442,91 @@ describe("resetVentureModuleReactivations — reset to global defaults", () => {
 
     // After reset, BEBUS must match global exactly
     expect([...bebusSet].sort()).toEqual([...globalSet].sort());
+  });
+
+});
+
+// ── normaliseResetVentureId — production router utility ───────────────────────
+//
+// This describe block tests the ACTUAL production function that
+// resetVentureModuleReactivations delegates to in admin.router.ts.
+// Because the function is imported directly from moduleReactivationUtils.ts,
+// any regression in the router (removing .trim(), removing the sentinel
+// check) will break these tests — not just the in-memory-store tests above.
+
+describe("normaliseResetVentureId — production trim + sentinel guard", () => {
+  // ── Basic trimming ────────────────────────────────────────────────────────
+
+  it("returns the exact ID unchanged when there is no whitespace", () => {
+    expect(normaliseResetVentureId("BEBUS")).toBe("BEBUS");
+  });
+
+  it("trims leading and trailing whitespace before returning", () => {
+    expect(normaliseResetVentureId("  BEBUS  ")).toBe("BEBUS");
+  });
+
+  it("trims only leading whitespace", () => {
+    expect(normaliseResetVentureId("   VENTURE-X")).toBe("VENTURE-X");
+  });
+
+  it("trims only trailing whitespace", () => {
+    expect(normaliseResetVentureId("VENTURE-Y   ")).toBe("VENTURE-Y");
+  });
+
+  it("trims tab and newline characters", () => {
+    expect(normaliseResetVentureId("\t BEBUS \n")).toBe("BEBUS");
+  });
+
+  it("preserves internal spaces (only leading/trailing are stripped)", () => {
+    expect(normaliseResetVentureId("  VENTURE ONE  ")).toBe("VENTURE ONE");
+  });
+
+  // ── __global__ sentinel rejection ─────────────────────────────────────────
+  // These tests are the primary regression guards: if the sentinel check or
+  // the trim is removed from the production function, these fail.
+
+  it("rejects the exact __global__ sentinel with BAD_REQUEST", () => {
+    let err: TRPCError | undefined;
+    try { normaliseResetVentureId("__global__"); } catch (e) { err = e as TRPCError; }
+    expect(err).toBeInstanceOf(TRPCError);
+    expect(err?.code).toBe("BAD_REQUEST");
+  });
+
+  it("rejects __global__ with leading/trailing whitespace after trimming", () => {
+    // "  __global__  ".trim() === "__global__" — must still be rejected.
+    // Verifies that .trim() happens BEFORE the sentinel check, not after.
+    let err: TRPCError | undefined;
+    try { normaliseResetVentureId("  __global__  "); } catch (e) { err = e as TRPCError; }
+    expect(err).toBeInstanceOf(TRPCError);
+    expect(err?.code).toBe("BAD_REQUEST");
+  });
+
+  it("rejects __global__ with tab padding", () => {
+    let err: TRPCError | undefined;
+    try { normaliseResetVentureId("\t__global__\t"); } catch (e) { err = e as TRPCError; }
+    expect(err).toBeInstanceOf(TRPCError);
+    expect(err?.code).toBe("BAD_REQUEST");
+  });
+
+  it("does NOT reject a ventureId that merely contains __global__ as a substring", () => {
+    // "__global__-extra" trims to "__global__-extra" which is not the sentinel.
+    expect(() => normaliseResetVentureId("__global__-extra")).not.toThrow();
+    expect(normaliseResetVentureId("__global__-extra")).toBe("__global__-extra");
+  });
+
+  // ── Regression guard: rows stored with exact ID ───────────────────────────
+  // Confirms that the value returned by normaliseResetVentureId matches the
+  // exact string that was stored in the DB (which always uses the trimmed form).
+  // If someone removes .trim() from the production function, the return value
+  // will be "  BEBUS  " instead of "BEBUS", causing the DELETE WHERE clause to
+  // match zero rows — silently skipping all of them.
+
+  it("returns the trimmed ID that matches exactly how the DB stored it", () => {
+    // The DB always stores trimmed IDs (setModuleReactivation also trims).
+    // The value returned here is what gets passed to eq(moduleReactivations.ventureId, vid).
+    const stored = "BEBUS";                         // stored in DB without padding
+    const fromInput = normaliseResetVentureId("  BEBUS  ");  // caller supplied padded
+    expect(fromInput).toBe(stored);                 // DELETE will match the stored row
   });
 });
 

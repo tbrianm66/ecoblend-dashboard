@@ -11,6 +11,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure, publicProcedure, adminProcedure } from "./_core/trpc";
+import { normaliseResetVentureId } from "./moduleReactivationUtils";
 import { getDb } from "./db";
 import {
   playbookLibrary, playbookVersions, adminTemplates, users,
@@ -958,10 +959,10 @@ export const adminRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
 
-      const vid = input.ventureId.trim();
-      if (vid === "__global__") {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot reset global scope via this endpoint" });
-      }
+      // normaliseResetVentureId trims whitespace and rejects the __global__
+      // sentinel with BAD_REQUEST.  Extracting this into a standalone function
+      // allows it to be unit-tested without importing the full Drizzle schema.
+      const vid = normaliseResetVentureId(input.ventureId);
 
       await db
         .delete(moduleReactivations)
