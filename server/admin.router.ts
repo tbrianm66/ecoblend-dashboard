@@ -11,7 +11,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure, publicProcedure, adminProcedure } from "./_core/trpc";
-import { normaliseResetVentureId, normaliseSetVentureId } from "./moduleReactivationUtils";
+import { normaliseResetVentureId, normaliseSetVentureId, execVentureReset } from "./moduleReactivationUtils";
 import { getDb } from "./db";
 import {
   playbookLibrary, playbookVersions, adminTemplates, users,
@@ -1002,9 +1002,9 @@ export const adminRouter = router({
       // allows it to be unit-tested without importing the full Drizzle schema.
       const vid = normaliseResetVentureId(input.ventureId);
 
-      await db
-        .delete(moduleReactivations)
-        .where(eq(moduleReactivations.ventureId, vid));
+      // execVentureReset is extracted so the delete predicate (ventureId-only,
+      // no per-writer filter) can be unit-tested without importing the schema.
+      await execVentureReset(db, moduleReactivations, eq, moduleReactivations.ventureId, vid);
 
       return { success: true, ventureId: vid };
     }),

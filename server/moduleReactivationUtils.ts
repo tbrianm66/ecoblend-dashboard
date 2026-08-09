@@ -46,3 +46,37 @@ export function normaliseResetVentureId(raw: string): string {
   }
   return vid;
 }
+
+/**
+ * Executes the venture-reset DELETE against the database.
+ *
+ * Extracted from the router mutation so the delete predicate can be tested
+ * without importing the Drizzle schema (which crashes the Vitest transform).
+ *
+ * The caller supplies the DB instance, the target table, Drizzle's `eq`
+ * function, and the specific column to filter on.  Keeping the column as an
+ * explicit parameter ensures the test can verify that the predicate uses
+ * only `ventureId` and not any additional per-writer column (e.g. toggledBy).
+ *
+ * @param db              - Drizzle DB instance (or a compatible mock).
+ * @param table           - The table to delete from (moduleReactivations in production).
+ * @param eqFn            - Drizzle's `eq` function (or a mock that records calls).
+ * @param ventureIdColumn - The ventureId column of the table.
+ * @param vid             - The normalised venture ID to delete rows for.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function execVentureReset(
+  // Typed as `any` intentionally: the real Drizzle DB returns a proprietary
+  // query-builder from `.delete().where()` that is not a plain Promise, so
+  // importing its exact generic type here would drag in the full Drizzle
+  // schema (crashing the Vitest transform).  The call is still await-able;
+  // correctness is verified by the unit tests in admin.moduleReactivation.test.ts.
+  db: any, // eslint-disable-line @typescript-eslint/no-explicit-any
+  table: unknown,
+  eqFn: (col: unknown, val: string) => unknown,
+  ventureIdColumn: unknown,
+  vid: string,
+): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+  await db.delete(table).where(eqFn(ventureIdColumn, vid));
+}

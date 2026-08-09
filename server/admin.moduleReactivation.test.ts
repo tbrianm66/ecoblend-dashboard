@@ -35,7 +35,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { TRPCError } from "@trpc/server";
 import { rowsToActivatedSet } from "../client/src/lib/gate4Utils";
-import { normaliseResetVentureId, normaliseSetVentureId } from "./moduleReactivationUtils";
+import { normaliseResetVentureId, normaliseSetVentureId, execVentureReset } from "./moduleReactivationUtils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -476,6 +476,56 @@ describe("resetVentureModuleReactivations — reset to global defaults", () => {
     expect([...bebusSet].sort()).toEqual([...globalSet].sort());
   });
 
+  // ── Multi-admin reset consistency ─────────────────────────────────────────
+  // Verifies that resetVentureModuleReactivations deletes ALL venture-scoped
+  // rows for the target venture, regardless of which admin originally wrote
+  // each row.  If the delete logic inadvertently filtered on the calling
+  // admin's identity, rows written by a different admin would be silently
+  // skipped — leaving stale overrides that the venture UI can never escape.
+
+  it("resets all venture rows regardless of which admin wrote them", () => {
+    const bob = makeAdminCtx("bob");
+
+    // Global rows from both admins — must survive the reset.
+    store.set(alice, { groupId: "discovery",  active: true  });
+    store.set(bob,   { groupId: "operations", active: true  });
+
+    // BEBUS rows: alice owns 3 groups, bob owns 2 groups.
+    store.set(alice, { groupId: "gtm",         ventureId: "BEBUS", active: true  });
+    store.set(alice, { groupId: "scoring",      ventureId: "BEBUS", active: false });
+    store.set(alice, { groupId: "risk",         ventureId: "BEBUS", active: true  });
+    store.set(bob,   { groupId: "rnd",          ventureId: "BEBUS", active: true  });
+    store.set(bob,   { groupId: "sustainability",ventureId: "BEBUS", active: false });
+
+    // Sanity-check: 5 BEBUS rows exist before reset.
+    const before = store.getAll().filter(r => r.ventureId === "BEBUS");
+    expect(before.length).toBe(5);
+
+    // Reset performed by alice — should delete all 5, including bob's rows.
+    store.reset(alice, { ventureId: "BEBUS" });
+
+    const after = store.getAll();
+
+    // All 5 BEBUS rows must be gone — zero venture-scoped rows remain.
+    const bebusRows = after.filter(r => r.ventureId === "BEBUS");
+    expect(bebusRows.length).toBe(0);
+
+    // Global rows from both admins must be unaffected.
+    expect(after.some(r => r.groupId === "discovery"  && r.ventureId === "__global__")).toBe(true);
+    expect(after.some(r => r.groupId === "operations" && r.ventureId === "__global__")).toBe(true);
+
+    // BEBUS now falls back to global defaults (discovery ON, operations ON).
+    const bebusSet = rowsToActivatedSet(after, "BEBUS");
+    expect(bebusSet.has("discovery")).toBe(true);
+    expect(bebusSet.has("operations")).toBe(true);
+    // Groups that only had venture-scoped rows are now inactive.
+    expect(bebusSet.has("gtm")).toBe(false);
+    expect(bebusSet.has("scoring")).toBe(false);
+    expect(bebusSet.has("risk")).toBe(false);
+    expect(bebusSet.has("rnd")).toBe(false);
+    expect(bebusSet.has("sustainability")).toBe(false);
+  });
+
 });
 
 // ── normaliseResetVentureId — production router utility ───────────────────────
@@ -640,6 +690,120 @@ describe("normaliseSetVentureId — production write-path trim + sentinel normal
     const stored   = "BEBUS";
     const fromInput = normaliseSetVentureId("  BEBUS  ");
     expect(fromInput).toBe(stored);
+  });
+});
+
+// ── execVentureReset — production delete-path coverage ────────────────────────
+//
+// Tests the ACTUAL production function that resetVentureModuleReactivations
+// delegates to after this refactor.  Because execVentureReset is imported
+// directly from moduleReactivationUtils (no Drizzle schema import), we can
+// inject a mock DB and a mock eq builder.
+//
+// Two complementary angles:
+//   A. Predicate-shape test — verifies that eqFn is called with exactly one
+//      (ventureIdColumn, vid) pair and no additional toggledBy column.  This
+//      is the direct regression guard: if someone adds
+//      `and(eq(ventureIdCol, vid), eq(toggledByCol, caller))`, the spy will
+//      record a second call and the assertion fires.
+//
+//   B. Behavioural test — uses a mock DB that actually evaluates the predicate
+//      to filter rows.  Seeds 3 rows from alice and 2 from bob under the same
+//      ventureId, runs execVentureReset, and confirms all 5 are deleted while
+//      the global rows (different ventureId) survive.  Would fail if the
+//      predicate carried a per-writer filter — only the calling admin's rows
+//      would be removed, leaving the other admin's rows behind.
+
+describe("execVentureReset — production delete predicate (no per-writer filter)", () => {
+  // ── Mock column tokens ────────────────────────────────────────────────────
+  // These stand in for the Drizzle column objects.  Using distinct objects
+  // (not plain strings) means the predicate spy can use referential equality
+  // to confirm which column was passed.
+  const mockVentureIdCol = { __col: "ventureId" } as const;
+  const mockToggledByCol = { __col: "toggledBy" } as const;
+
+  const mockTable = { ventureId: mockVentureIdCol, toggledBy: mockToggledByCol };
+
+  // ── A. Predicate-shape test ───────────────────────────────────────────────
+  it("calls eqFn with the ventureId column only — no toggledBy filter", async () => {
+    const eqCalls: Array<{ col: unknown; val: string }> = [];
+
+    const spyEq = (col: unknown, val: string) => {
+      eqCalls.push({ col, val });
+      return {}; // opaque predicate — the mock db doesn't evaluate it
+    };
+
+    const noopDb = {
+      delete: (_t: unknown) => ({
+        where: (_p: unknown) => Promise.resolve([] as unknown[]),
+      }),
+    };
+
+    await execVentureReset(noopDb, mockTable, spyEq, mockTable.ventureId, "BEBUS");
+
+    // eqFn must be called exactly once — for ventureId only.
+    expect(eqCalls.length).toBe(1);
+    // The column must be ventureId, not toggledBy.
+    expect(eqCalls[0].col).toBe(mockVentureIdCol);
+    expect(eqCalls[0].col).not.toBe(mockToggledByCol);
+    // The value must be the supplied venture ID.
+    expect(eqCalls[0].val).toBe("BEBUS");
+  });
+
+  // ── B. Behavioural test — all rows deleted regardless of writer ───────────
+  //
+  // The mock DB stores rows as plain objects and evaluates the predicate
+  // returned by mockEq.  mockEq returns a function `(row) => row[col] === val`
+  // so if execVentureReset ever passes toggledByCol, only rows matching the
+  // caller's name would be deleted — and the test would see surviving rows.
+  it("deletes all venture rows from alice AND bob; leaves global rows intact", async () => {
+    type Row = { ventureId: string; groupId: string; toggledBy: string };
+
+    // Mock eq: returns a row-predicate function so the mock DB can evaluate it.
+    const mockEq = (col: { __col: keyof Row }, val: string) =>
+      (row: Row) => row[col.__col] === val;
+
+    // Mock DB that stores rows and applies the where predicate as a filter.
+    const rows: Row[] = [];
+    const mockDb = {
+      delete: (_t: unknown) => ({
+        where: (pred: (row: Row) => boolean) => {
+          // Delete every row where pred returns true (mirrors the SQL DELETE WHERE).
+          const toDelete = rows.filter(pred);
+          toDelete.forEach(r => rows.splice(rows.indexOf(r), 1));
+          return Promise.resolve([]);
+        },
+      }),
+    };
+
+    // Seed: 3 BEBUS rows from alice, 2 BEBUS rows from bob.
+    rows.push(
+      { ventureId: "BEBUS", groupId: "gtm",          toggledBy: "alice" },
+      { ventureId: "BEBUS", groupId: "scoring",       toggledBy: "alice" },
+      { ventureId: "BEBUS", groupId: "risk",          toggledBy: "alice" },
+      { ventureId: "BEBUS", groupId: "rnd",           toggledBy: "bob"   },
+      { ventureId: "BEBUS", groupId: "sustainability", toggledBy: "bob"  },
+    );
+
+    // Global rows: one from alice, one from bob — must survive the reset.
+    rows.push(
+      { ventureId: "__global__", groupId: "discovery",  toggledBy: "alice" },
+      { ventureId: "__global__", groupId: "operations", toggledBy: "bob"   },
+    );
+
+    // Sanity-check: 5 BEBUS rows + 2 global rows before reset.
+    expect(rows.filter(r => r.ventureId === "BEBUS").length).toBe(5);
+    expect(rows.filter(r => r.ventureId === "__global__").length).toBe(2);
+
+    await execVentureReset(mockDb, mockTable, mockEq as any, mockTable.ventureId, "BEBUS");
+
+    // All 5 BEBUS rows must be gone — including bob's.
+    expect(rows.filter(r => r.ventureId === "BEBUS").length).toBe(0);
+
+    // Global rows must be unaffected.
+    expect(rows.filter(r => r.ventureId === "__global__").length).toBe(2);
+    expect(rows.some(r => r.groupId === "discovery"  && r.toggledBy === "alice")).toBe(true);
+    expect(rows.some(r => r.groupId === "operations" && r.toggledBy === "bob")).toBe(true);
   });
 });
 
