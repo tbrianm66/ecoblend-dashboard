@@ -145,7 +145,7 @@ function writeLsCache(groups: Set<string>) {
   localStorage.setItem(LS_KEY, JSON.stringify([...groups]));
 }
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 
 /**
@@ -165,12 +165,24 @@ import { trpc } from "@/lib/trpc";
 export function useGate4Reactivation(ventureId: string | null) {
   // Seed from localStorage so there's no flash on first render.
   const [activated, setActivated] = useState<Set<string>>(readLsCache);
-  const [rows, setRows] = useState<ReactivationRow[]>([]);
 
   // tRPC query — fetch all rows once, keep them up-to-date.
-  const { data: serverRows, isLoading } = trpc.admin.getModuleReactivations.useQuery(
+  const { data: serverRows, isLoading, isError } = trpc.admin.getModuleReactivations.useQuery(
     undefined,
     { staleTime: 30_000, refetchOnWindowFocus: true },
+  );
+
+  // Derive rows synchronously from serverRows so that `rows`, `isLoading`, and
+  // `isError` are always consistent within the same render cycle.
+  //
+  // The previous approach used useState + useEffect to copy serverRows into local
+  // state.  React Query sets isLoading→false in the render that delivers serverRows,
+  // but the useEffect fires only after the render commits — creating a one-render
+  // window where isLoading===false but rows was still the stale empty array.
+  // useMemo eliminates this race: rows always reflects the current serverRows value.
+  const rows = useMemo<ReactivationRow[]>(
+    () => (serverRows ? (serverRows as ReactivationRow[]) : []),
+    [serverRows],
   );
 
   // tRPC mutations.
@@ -189,7 +201,6 @@ export function useGate4Reactivation(ventureId: string | null) {
     serverRowsRef.current = serverRows;
 
     const typed = serverRows as ReactivationRow[];
-    setRows(typed);
     const serverSet = rowsToActivatedSet(typed, ventureId);
     setActivated(serverSet);
     writeLsCache(serverSet);
@@ -350,5 +361,6 @@ export function useGate4Reactivation(ventureId: string | null) {
     resetToGlobalDefaults,
     rows,
     isLoading,
+    isError,
   };
 }

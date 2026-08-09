@@ -68,3 +68,37 @@ export function rowsToActivatedSet(
 
   return result;
 }
+
+// ── resolveModuleBadge ────────────────────────────────────────────────────────
+// Pure function: given the query state and the most-specific row for a module
+// group, returns one of five badge states.
+//
+// "loading"  — query has not resolved yet; no badge should be rendered
+//              (avoids falsely labelling every module DEFAULT while data is in-flight)
+// "unknown"  — query resolved but with an error; state is genuinely unknown
+//              (must not show DEFAULT — that would assert a successful empty response)
+// "default"  — query resolved successfully but no DB row exists for this group
+//              (module has never been explicitly toggled; factory default applies)
+// "global"   — a __global__ row is the authoritative source
+// "venture"  — a venture-specific row is the authoritative source
+//
+// Important: `rows` must be derived synchronously from `serverRows` (via useMemo,
+// not setState+useEffect) so that isLoading/isError and the row lookup are always
+// consistent within the same render cycle. An effect-based copy would create a
+// one-render window where isLoading===false but rows still holds the stale empty
+// array, causing every module to appear DEFAULT immediately after the query resolves.
+//
+// This function is framework-free so it can be used in both the browser and
+// the Vitest Node test environment.
+export type ModuleBadgeState = "loading" | "unknown" | "default" | "global" | "venture";
+
+export function resolveModuleBadge(
+  isLoading: boolean,
+  isError: boolean,
+  row: Pick<ReactivationRow, "ventureId"> | undefined,
+): ModuleBadgeState {
+  if (isLoading) return "loading";
+  if (isError)   return "unknown";
+  if (!row)      return "default";
+  return row.ventureId === "__global__" ? "global" : "venture";
+}

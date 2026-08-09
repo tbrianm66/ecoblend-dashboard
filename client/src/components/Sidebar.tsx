@@ -43,6 +43,7 @@ import {
   useGate4Reactivation,
   type BacklogGroupId,
 } from "@/lib/gate4Config";
+import { resolveModuleBadge } from "@/lib/gate4Utils";
 import { showToggleToast, showBatchToast } from "@/lib/gate4ToastUtils";
 
 type IconName = string;
@@ -554,7 +555,7 @@ function formatToggleAudit(toggledBy: string | null | undefined, toggledAt: Date
   return `${who} · ${dateStr} ${timeStr}`;
 }
 function ReactivationPanel({ onClose, ventureId, ventureName, ventureColor }: ReactivationPanelProps) {
-  const { isActivated, reactivate, deactivate, reactivateAll, deactivateAll, resetToGlobalDefaults, rows, isLoading } = useGate4Reactivation(ventureId);
+  const { isActivated, reactivate, deactivate, reactivateAll, deactivateAll, resetToGlobalDefaults, rows, isLoading, isError } = useGate4Reactivation(ventureId);
 
   // Track the current ventureId and ventureName so onSuccess callbacks can detect
   // whether the venture selector drifted between the user's click and the server response.
@@ -719,35 +720,62 @@ function ReactivationPanel({ onClose, ventureId, ventureName, ventureColor }: Re
                 >
                   {group.label}
                 </span>
-                {(audit || row) && (
-                  <span className="flex items-center gap-1 mt-0.5 min-w-0">
-                    {row && (
+                {(() => {
+                  const badgeState = resolveModuleBadge(isLoading, isError, row);
+                  // "loading": query in-flight — show nothing (header already shows "Syncing…")
+                  // "unknown": query errored — state is indeterminate; show nothing rather than
+                  //            asserting DEFAULT, which would claim a successful empty response
+                  if (badgeState === "loading" || badgeState === "unknown") return null;
+                  if (badgeState === "default") {
+                    return (
+                      <span className="flex items-center gap-1 mt-0.5 min-w-0">
+                        <span
+                          className="shrink-0 inline-block px-1 py-0 rounded font-bold uppercase"
+                          aria-label="No override has been set; system default applies"
+                          title="No override has been set; system default applies"
+                          style={{
+                            fontFamily: "'Prompt', sans-serif",
+                            fontSize: "0.52rem",
+                            letterSpacing: "0.05em",
+                            background: "rgba(255,255,255,0.06)",
+                            color: "rgba(255,255,255,0.28)",
+                            border: "1px solid rgba(255,255,255,0.1)",
+                          }}
+                        >
+                          DEFAULT
+                        </span>
+                      </span>
+                    );
+                  }
+                  // "global" | "venture" — row is defined here
+                  return (
+                    <span className="flex items-center gap-1 mt-0.5 min-w-0">
                       <span
                         className="shrink-0 inline-block px-1 py-0 rounded font-bold uppercase"
                         style={{
                           fontFamily: "'Prompt', sans-serif",
                           fontSize: "0.52rem",
                           letterSpacing: "0.05em",
-                          ...(row.ventureId === "__global__"
+                          ...(badgeState === "global"
                             ? { background: "rgba(245,158,11,0.15)", color: "rgba(245,158,11,0.8)", border: "1px solid rgba(245,158,11,0.3)" }
                             : { background: "rgba(86,168,55,0.13)", color: "rgba(86,168,55,0.85)", border: "1px solid rgba(86,168,55,0.25)" }
                           ),
                         }}
                       >
-                        {row.ventureId === "__global__" ? "GLOBAL" : "VENTURE"}
+                        {badgeState === "global" ? "GLOBAL" : "VENTURE"}
                       </span>
-                    )}
-                    {audit && (
-                      <span
-                        className="text-xs truncate"
-                        style={{ fontFamily: "'Prompt', sans-serif", color: "rgba(255,255,255,0.22)", fontSize: "0.6rem" }}
-                        title={audit}
-                      >
-                        {audit}
-                      </span>
-                    )}
-                  </span>
-                )}
+                      {audit && (
+                        <span
+                          className="text-xs truncate"
+                          style={{ fontFamily: "'Prompt', sans-serif", color: "rgba(255,255,255,0.22)", fontSize: "0.6rem" }}
+                          title={audit}
+                        >
+                          {audit}
+                        </span>
+                      )}
+                    </span>
+                  );
+                })()}
               </div>
               <button
                 onClick={() => {
