@@ -8652,7 +8652,6 @@ export const mrlEvaluations = pgTable("mrl_evaluations", {
 });
 export type MrlEvaluation = typeof mrlEvaluations.$inferSelect;
 export type InsertMrlEvaluation = typeof mrlEvaluations.$inferInsert;
-export type InsertPrototypeTest = typeof prototypeTests.$inferInsert;
 
 // ============================================================================
 // PHASE 2 — DOMAIN BRAND → VENTURE → PRODUCT ARCHITECTURE
