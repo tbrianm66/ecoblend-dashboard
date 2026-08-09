@@ -823,35 +823,50 @@ function ReactivationPanel({ onClose, ventureId, ventureName, ventureColor }: Re
       {/* Reset to global defaults — only shown when a specific venture is selected */}
       {ventureId && ventureName && (
         <div className="px-3 pb-2">
-          <button
-            onClick={() => {
-              const snapshotVName = ventureName;
-              resetToGlobalDefaults((svid) => {
-                const currentVId = ventureIdRef.current;
-                const drifted = svid !== currentVId;
-                const scopeName = snapshotVName ?? svid ?? "venture";
-                if (drifted) {
-                  const nowScope = ventureNameRef.current ?? currentVId ?? "current venture";
-                  toast.warning(
-                    `Module settings reset to global defaults for ${scopeName} — not the currently selected venture (${nowScope})`,
-                    { duration: 6000 },
-                  );
-                } else {
-                  toast.success(`Module settings reset to global defaults for ${scopeName}`);
-                }
-              });
-            }}
-            className="w-full py-1.5 rounded text-xs font-semibold flex items-center justify-center gap-1.5"
-            style={{
-              background: "rgba(245,158,11,0.08)",
-              color: "rgba(245,158,11,0.75)",
-              border: "1px solid rgba(245,158,11,0.25)",
-              fontSize: "0.7rem",
-            }}
-          >
-            <RotateCcw size={10} />
-            Reset to global defaults
-          </button>
+          {(() => {
+            // Only treat "no overrides" as authoritative once the query has
+            // successfully loaded. While loading or on error, rows is [] which
+            // is indistinguishable from a venture with no overrides — so we
+            // must not disable the button in those states.
+            const querySettled = !isLoading && !isError;
+            const ventureOverrideCount = rows.filter(r => r.ventureId === ventureId).length;
+            const alreadyDefault = querySettled && ventureOverrideCount === 0;
+            return (
+              <button
+                onClick={() => {
+                  if (alreadyDefault) return;
+                  const snapshotVName = ventureName;
+                  resetToGlobalDefaults((svid) => {
+                    const currentVId = ventureIdRef.current;
+                    const drifted = svid !== currentVId;
+                    const scopeName = snapshotVName ?? svid ?? "venture";
+                    if (drifted) {
+                      const nowScope = ventureNameRef.current ?? currentVId ?? "current venture";
+                      toast.warning(
+                        `Module settings reset to global defaults for ${scopeName} — not the currently selected venture (${nowScope})`,
+                        { duration: 6000 },
+                      );
+                    } else {
+                      toast.success(`Module settings reset to global defaults for ${scopeName}`);
+                    }
+                  });
+                }}
+                disabled={alreadyDefault}
+                title={alreadyDefault ? "Already using global defaults" : undefined}
+                className="w-full py-1.5 rounded text-xs font-semibold flex items-center justify-center gap-1.5"
+                style={{
+                  background: alreadyDefault ? "rgba(255,255,255,0.03)" : "rgba(245,158,11,0.08)",
+                  color: alreadyDefault ? "rgba(255,255,255,0.2)" : "rgba(245,158,11,0.75)",
+                  border: alreadyDefault ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(245,158,11,0.25)",
+                  fontSize: "0.7rem",
+                  cursor: alreadyDefault ? "not-allowed" : "pointer",
+                }}
+              >
+                <RotateCcw size={10} />
+                {alreadyDefault ? "Already using global defaults" : "Reset to global defaults"}
+              </button>
+            );
+          })()}
         </div>
       )}
     </div>
