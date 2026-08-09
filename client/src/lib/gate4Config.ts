@@ -167,9 +167,17 @@ export function useGate4Reactivation(ventureId: string | null) {
   const [activated, setActivated] = useState<Set<string>>(readLsCache);
 
   // tRPC query — fetch all rows once, keep them up-to-date.
+  //
+  // refetchInterval: 10_000 — poll every 10 s so that when a second admin
+  //   removes venture overrides in another session, the reset button's disabled
+  //   state corrects itself within 10 seconds even when both windows are focused.
+  //   refetchOnWindowFocus covers the "return from another tab" case quickly;
+  //   the interval covers the "both windows open simultaneously" case.
+  // staleTime: 10_000 — matched to the interval so a background refetch is
+  //   triggered each cycle rather than being skipped because data looks fresh.
   const { data: serverRows, isLoading, isError } = trpc.admin.getModuleReactivations.useQuery(
     undefined,
-    { staleTime: 30_000, refetchOnWindowFocus: true },
+    { staleTime: 10_000, refetchOnWindowFocus: true, refetchInterval: 10_000 },
   );
 
   // Optimistic row overlay — keyed by "groupId:ventureId".
