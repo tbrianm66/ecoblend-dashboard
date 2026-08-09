@@ -539,6 +539,7 @@ interface ReactivationPanelProps {
   onClose: () => void;
   ventureId: string | null;
   ventureName?: string;
+  ventureColor?: string;
 }
 
 function formatToggleAudit(toggledBy: string | null | undefined, toggledAt: Date | string | null | undefined): string | null {
@@ -550,7 +551,7 @@ function formatToggleAudit(toggledBy: string | null | undefined, toggledAt: Date
   const timeStr = d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
   return `${who} · ${dateStr} ${timeStr}`;
 }
-function ReactivationPanel({ onClose, ventureId, ventureName }: ReactivationPanelProps) {
+function ReactivationPanel({ onClose, ventureId, ventureName, ventureColor }: ReactivationPanelProps) {
   const { isActivated, reactivate, deactivate, reactivateAll, deactivateAll, rows, isLoading } = useGate4Reactivation(ventureId);
 
   const activeCount = GATE4_BACKLOG_GROUP_IDS.filter(id => isActivated(id)).length;
@@ -568,34 +569,87 @@ function ReactivationPanel({ onClose, ventureId, ventureName }: ReactivationPane
       .forEach(r => rowByGroup.set(r.groupId, r)); // venture row overwrites global
   }
 
+  // Scope badge: amber pill for GLOBAL, venture-colour dot + name for a specific venture.
+  const scopeBadge = ventureId && ventureName ? (
+    <span
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold"
+      style={{
+        background: `${ventureColor ?? "#56A837"}22`,
+        border: `1px solid ${ventureColor ?? "#56A837"}55`,
+        color: ventureColor ?? "#56A837",
+        fontSize: "0.65rem",
+        fontFamily: "'Prompt', sans-serif",
+        maxWidth: "130px",
+      }}
+    >
+      <span
+        className="inline-block w-1.5 h-1.5 rounded-full shrink-0"
+        style={{ background: ventureColor ?? "#56A837" }}
+      />
+      <span className="truncate">{ventureName}</span>
+    </span>
+  ) : (
+    <span
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold"
+      style={{
+        background: "rgba(245,158,11,0.15)",
+        border: "1px solid rgba(245,158,11,0.4)",
+        color: "#F59E0B",
+        fontSize: "0.65rem",
+        fontFamily: "'Prompt', sans-serif",
+      }}
+    >
+      <span
+        className="inline-block w-1.5 h-1.5 rounded-full shrink-0"
+        style={{ background: "#F59E0B" }}
+      />
+      GLOBAL
+    </span>
+  );
+
   return (
     <div
       className="absolute bottom-14 left-2 right-2 rounded-xl overflow-hidden z-50"
       style={{ background: "#1a2332", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 8px 32px rgba(0,0,0,0.4)" }}
     >
       <div className="flex items-center justify-between px-3 py-2.5 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
-        <div>
-          <div className="text-xs font-bold text-white" style={{ fontFamily: "'Prompt', sans-serif" }}>
+        <div className="flex-1 min-w-0">
+          <div className="text-xs font-bold text-white mb-1" style={{ fontFamily: "'Prompt', sans-serif" }}>
             Module Reactivation
           </div>
-          <div className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)", fontSize: "0.65rem" }}>
-            {isLoading
-              ? "Syncing…"
-              : `${ventureName ?? "Global"} — ${activeCount}/${GATE4_BACKLOG_GROUP_IDS.length} active`}
+          <div className="flex items-center gap-2">
+            {isLoading ? (
+              <span style={{ color: "rgba(255,255,255,0.35)", fontSize: "0.65rem", fontFamily: "'Prompt', sans-serif" }}>Syncing…</span>
+            ) : (
+              <>
+                {scopeBadge}
+                <span style={{ color: "rgba(255,255,255,0.3)", fontSize: "0.6rem", fontFamily: "'Prompt', sans-serif" }}>
+                  {activeCount}/{GATE4_BACKLOG_GROUP_IDS.length} active
+                </span>
+              </>
+            )}
           </div>
         </div>
-        <button onClick={onClose}>
+        <button onClick={onClose} className="ml-2 shrink-0">
           <X size={13} style={{ color: "rgba(255,255,255,0.35)" }} />
         </button>
       </div>
 
       <div className="px-3 py-2 border-b" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-        <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.35)", fontFamily: "'Prompt', sans-serif", fontSize: "0.65rem" }}>
-          Backlogged modules are hidden by default (Gate 4). Toggles apply to{" "}
-          <strong style={{ color: "rgba(255,255,255,0.5)" }}>
-            {ventureName ?? "all ventures (global)"}
-          </strong>. Admin-only action.
-        </p>
+        {ventureId && ventureName ? (
+          <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.35)", fontFamily: "'Prompt', sans-serif", fontSize: "0.65rem" }}>
+            Editing module settings for{" "}
+            <strong style={{ color: ventureColor ?? "#56A837" }}>{ventureName}</strong> only.{" "}
+            <span style={{ color: "rgba(245,158,11,0.7)" }}>Global defaults are not inherited</span>{" "}
+            — venture-specific toggles override them. Admin-only action.
+          </p>
+        ) : (
+          <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.35)", fontFamily: "'Prompt', sans-serif", fontSize: "0.65rem" }}>
+            Backlogged modules are hidden by default (Gate 4). Toggles apply to{" "}
+            <strong style={{ color: "rgba(255,255,255,0.5)" }}>all ventures (global defaults)</strong>.{" "}
+            Venture-specific overrides take precedence. Admin-only action.
+          </p>
+        )}
       </div>
 
       {/* Scroll area */}
@@ -911,6 +965,7 @@ export default function Sidebar() {
           onClose={() => setReactivationOpen(false)}
           ventureId={selectedVentureId}
           ventureName={selectedVenture?.name}
+          ventureColor={selectedVenture?.color}
         />
       )}
 
