@@ -194,22 +194,38 @@ export function useGate4Reactivation(ventureId: string | null) {
     writeLsCache(serverSet);
   }, [serverRows, ventureId]);
 
-  // Optimistic toggle helper.
-  const persist = useCallback((groupId: string, active: boolean, next: Set<string>) => {
-    setActivated(next);
-    writeLsCache(next);
+  // Snapshot ref — always holds the ventureId that was current at the last render.
+  // Reading from this ref inside callbacks ensures that even if React re-renders
+  // with a new ventureId between the user's click and the closure executing, the
+  // mutation is dispatched against the venture the user was actually editing, not
+  // whichever venture happens to be selected when the callback runs.
+  const ventureIdRef = useRef(ventureId);
+  useEffect(() => {
+    ventureIdRef.current = ventureId;
+  });
 
-    // Write to server; on success invalidate the cache so all panels refresh.
-    const vId = ventureId ?? undefined;
-    setMutation.mutate(
-      { groupId, ventureId: vId, active },
-      {
-        onSuccess: () => {
-          utils.admin.getModuleReactivations.invalidate();
+  // Optimistic toggle helper.
+  // snapshotVentureId is captured by the *caller* at the moment of interaction,
+  // so the server write always targets the venture the user was editing — even if
+  // the venture selector is changed before the mutation response arrives.
+  const persist = useCallback(
+    (groupId: string, active: boolean, next: Set<string>, snapshotVentureId: string | null) => {
+      setActivated(next);
+      writeLsCache(next);
+
+      // Write to server; on success invalidate the cache so all panels refresh.
+      const vId = snapshotVentureId ?? undefined;
+      setMutation.mutate(
+        { groupId, ventureId: vId, active },
+        {
+          onSuccess: () => {
+            utils.admin.getModuleReactivations.invalidate();
+          },
         },
-      },
-    );
-  }, [ventureId, setMutation, utils]);
+      );
+    },
+    [setMutation, utils],
+  );
 
   const isActivated = useCallback(
     (groupId: string) => activated.has(groupId),
@@ -217,39 +233,45 @@ export function useGate4Reactivation(ventureId: string | null) {
   );
 
   const reactivate = useCallback((groupId: string) => {
+    // Snapshot ventureId at interaction time so a rapid venture-selector change
+    // cannot redirect this write to the wrong venture.
+    const snapshotVentureId = ventureIdRef.current;
     const next = new Set([...activated, groupId]);
-    persist(groupId, true, next);
+    persist(groupId, true, next, snapshotVentureId);
   }, [activated, persist]);
 
   const deactivate = useCallback((groupId: string) => {
+    const snapshotVentureId = ventureIdRef.current;
     const next = new Set(activated);
     next.delete(groupId);
-    persist(groupId, false, next);
+    persist(groupId, false, next, snapshotVentureId);
   }, [activated, persist]);
 
   const reactivateAll = useCallback(() => {
+    const snapshotVentureId = ventureIdRef.current;
     const all = new Set([...GATE4_BACKLOG_GROUP_IDS]);
     setActivated(all);
     writeLsCache(all);
-    // Batch: fire one mutation per group.
-    const vId = ventureId ?? undefined;
+    // Batch: fire one mutation per group, all against the snapshotted venture.
+    const vId = snapshotVentureId ?? undefined;
     GATE4_BACKLOG_GROUP_IDS.forEach(groupId => {
       setMutation.mutate({ groupId, ventureId: vId, active: true });
     });
     // Invalidate once after all mutations are queued.
     setTimeout(() => utils.admin.getModuleReactivations.invalidate(), 500);
-  }, [ventureId, setMutation, utils]);
+  }, [setMutation, utils]);
 
   const deactivateAll = useCallback(() => {
+    const snapshotVentureId = ventureIdRef.current;
     const empty = new Set<string>();
     setActivated(empty);
     writeLsCache(empty);
-    const vId = ventureId ?? undefined;
+    const vId = snapshotVentureId ?? undefined;
     GATE4_BACKLOG_GROUP_IDS.forEach(groupId => {
       setMutation.mutate({ groupId, ventureId: vId, active: false });
     });
     setTimeout(() => utils.admin.getModuleReactivations.invalidate(), 500);
-  }, [ventureId, setMutation, utils]);
+  }, [setMutation, utils]);
 
   return {
     activatedGroups: activated,
