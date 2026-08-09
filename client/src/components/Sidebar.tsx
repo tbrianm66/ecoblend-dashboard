@@ -734,13 +734,33 @@ function ReactivationPanel({ onClose, ventureId, ventureName, ventureColor }: Re
                 >
                   {group.label}
                 </span>
-                {audit && (
-                  <span
-                    className="text-xs block truncate mt-0.5"
-                    style={{ fontFamily: "'Prompt', sans-serif", color: "rgba(255,255,255,0.22)", fontSize: "0.6rem" }}
-                    title={audit}
-                  >
-                    {audit}
+                {(audit || row) && (
+                  <span className="flex items-center gap-1 mt-0.5 min-w-0">
+                    {row && (
+                      <span
+                        className="shrink-0 inline-block px-1 py-0 rounded font-bold uppercase"
+                        style={{
+                          fontFamily: "'Prompt', sans-serif",
+                          fontSize: "0.52rem",
+                          letterSpacing: "0.05em",
+                          ...(row.ventureId === "__global__"
+                            ? { background: "rgba(245,158,11,0.15)", color: "rgba(245,158,11,0.8)", border: "1px solid rgba(245,158,11,0.3)" }
+                            : { background: "rgba(86,168,55,0.13)", color: "rgba(86,168,55,0.85)", border: "1px solid rgba(86,168,55,0.25)" }
+                          ),
+                        }}
+                      >
+                        {row.ventureId === "__global__" ? "GLOBAL" : "VENTURE"}
+                      </span>
+                    )}
+                    {audit && (
+                      <span
+                        className="text-xs truncate"
+                        style={{ fontFamily: "'Prompt', sans-serif", color: "rgba(255,255,255,0.22)", fontSize: "0.6rem" }}
+                        title={audit}
+                      >
+                        {audit}
+                      </span>
+                    )}
                   </span>
                 )}
               </div>
