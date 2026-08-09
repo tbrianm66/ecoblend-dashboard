@@ -121,8 +121,14 @@ const ENGINE_COLORS: Record<string, { bg: string; color: string; label: string }
   Viral:   { bg: "#f0fdf4", color: "#15803d", label: "Viral" },
   Paid:    { bg: "#FEF0D9", color: "#b45309", label: "Paid" },
 };
+
+const MRL_LEVEL_COLORS: Record<number, string> = {
+  0: "#6b7280", 1: "#dc2626", 2: "#ea580c", 3: "#d97706",
+  4: "#ca8a04", 5: "#65a30d", 6: "#16a34a", 7: "#0d9488",
+  8: "#0284c7", 9: "#7c3aed",
+};
 function VentureCard({
-  venture, onClick, onEdit, onEditMilestones, computedVrlScore, computedVrlLevel, engineOfGrowth, pivot, hypothesisVrl,
+  venture, onClick, onEdit, onEditMilestones, computedVrlScore, computedVrlLevel, engineOfGrowth, pivot, hypothesisVrl, mrlData,
 }: {
   venture: Venture;
   onClick: () => void;
@@ -133,6 +139,7 @@ function VentureCard({
   engineOfGrowth?: string | null;
   pivot?: boolean;
   hypothesisVrl?: { vrl: number; stageLabel: string };
+  mrlData?: { mrlLevel: number; mrlLabel: string } | null;
 }) {
   const vrlStage = VRL_STAGES[venture.vrl - 1];
   // When the venture is driven by the Lean Startup Hypothesis Register, the
@@ -290,6 +297,30 @@ function VentureCard({
               />
             </div>
           </div>
+        </div>
+
+        {/* ── MRL Badge ── */}
+        <div className="mb-2">
+          {mrlData ? (
+            <span
+              className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full"
+              style={{
+                background: `${MRL_LEVEL_COLORS[mrlData.mrlLevel] ?? "#6b7280"}20`,
+                color: MRL_LEVEL_COLORS[mrlData.mrlLevel] ?? "#6b7280",
+              }}
+              title="Manufacturing Readiness Level (Engine A)"
+            >
+              MRL-{mrlData.mrlLevel}{mrlData.mrlLabel ? ` — ${mrlData.mrlLabel.replace(/^MRL-\d+:\s*/, "")}` : ""}
+            </span>
+          ) : (
+            <span
+              className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full"
+              style={{ background: "#f3f4f6", color: "#9ca3af" }}
+              title="No MRL assessment recorded"
+            >
+              MRL —
+            </span>
+          )}
         </div>
 
         {/* ── Milestone dots ── */}
@@ -554,6 +585,7 @@ export default function Home() {
                   engineOfGrowth={leanEntry?.engineOfGrowth}
                   pivot={hypVrl?.pivot}
                   hypothesisVrl={hypVrl ? { vrl: hypVrl.vrl, stageLabel: hypVrl.stageLabel } : undefined}
+                  mrlData={mrlExportData[venture.id] ?? null}
                 />
               );
             })}
@@ -578,6 +610,7 @@ export default function Home() {
                   computedVrlScore={vrlPortfolioScores.find(s => s.ventureId === internalLab.id)?.vrlScore}
                   computedVrlLevel={vrlPortfolioScores.find(s => s.ventureId === internalLab.id)?.vrlLevel}
                   engineOfGrowth={leanMetrics.find((m: any) => m.id === internalLab.id)?.engineOfGrowth}
+                  mrlData={mrlExportData[internalLab.id] ?? null}
                 />
               </div>
             )}
