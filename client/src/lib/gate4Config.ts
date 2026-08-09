@@ -172,6 +172,14 @@ export function useGate4Reactivation(ventureId: string | null) {
     { staleTime: 30_000, refetchOnWindowFocus: true },
   );
 
+  // Optimistic row overlay — keyed by "groupId:ventureId".
+  // Entries are injected immediately when a toggle fires so the badge updates
+  // from DEFAULT → GLOBAL/VENTURE before the server refetch resolves.
+  // The overlay is cleared as soon as fresh serverRows arrive.
+  const [optimisticRows, setOptimisticRows] = useState<Map<string, ReactivationRow>>(
+    () => new Map(),
+  );
+
   // Derive rows synchronously from serverRows so that `rows`, `isLoading`, and
   // `isError` are always consistent within the same render cycle.
   //
@@ -180,10 +188,18 @@ export function useGate4Reactivation(ventureId: string | null) {
   // but the useEffect fires only after the render commits — creating a one-render
   // window where isLoading===false but rows was still the stale empty array.
   // useMemo eliminates this race: rows always reflects the current serverRows value.
-  const rows = useMemo<ReactivationRow[]>(
-    () => (serverRows ? (serverRows as ReactivationRow[]) : []),
-    [serverRows],
-  );
+  //
+  // Optimistic overlay entries take precedence over server rows for the same key
+  // so that badge changes (DEFAULT→GLOBAL/VENTURE) appear synchronously on toggle.
+  const rows = useMemo<ReactivationRow[]>(() => {
+    const base: ReactivationRow[] = serverRows ? (serverRows as ReactivationRow[]) : [];
+    if (optimisticRows.size === 0) return base;
+    // Merge: server rows seed the map; optimistic entries overwrite matching keys.
+    const byKey = new Map<string, ReactivationRow>();
+    base.forEach(r => byKey.set(`${r.groupId}:${r.ventureId}`, r));
+    optimisticRows.forEach((r, key) => byKey.set(key, r));
+    return [...byKey.values()];
+  }, [serverRows, optimisticRows]);
 
   // tRPC mutations.
   const setMutation = trpc.admin.setModuleReactivation.useMutation();
@@ -195,6 +211,8 @@ export function useGate4Reactivation(ventureId: string | null) {
   // running the effect on ventureId changes without an identity guard is safe and necessary:
   // the prior guard (serverRows === serverRowsRef.current) would suppress a scope change
   // when the user switches ventures before a new fetch completes.
+  //
+  // Also clears the optimistic overlay so fresh server data takes over badge rendering.
   const serverRowsRef = useRef<typeof serverRows>(undefined);
   useEffect(() => {
     if (!serverRows) return;
@@ -204,6 +222,8 @@ export function useGate4Reactivation(ventureId: string | null) {
     const serverSet = rowsToActivatedSet(typed, ventureId);
     setActivated(serverSet);
     writeLsCache(serverSet);
+    // Discard optimistic overlay — real server data has now arrived.
+    setOptimisticRows(new Map());
   }, [serverRows, ventureId]);
 
   // Snapshot ref — always holds the ventureId that was current at the last render.
@@ -234,6 +254,23 @@ export function useGate4Reactivation(ventureId: string | null) {
     ) => {
       setActivated(next);
       writeLsCache(next);
+
+      // Inject a synthetic row immediately so the badge flips from DEFAULT →
+      // GLOBAL/VENTURE in the same render as the toggle button change, without
+      // waiting for the server refetch to complete.
+      const syntheticVId = snapshotVentureId ?? "__global__";
+      const syntheticRow: ReactivationRow = {
+        groupId,
+        ventureId: syntheticVId,
+        active,
+        toggledBy: null,
+        toggledAt: new Date().toISOString(),
+      };
+      setOptimisticRows(prev => {
+        const next = new Map(prev);
+        next.set(`${groupId}:${syntheticVId}`, syntheticRow);
+        return next;
+      });
 
       // Write to server; on success invalidate the cache so all panels refresh.
       const vId = snapshotVentureId ?? undefined;
@@ -282,6 +319,18 @@ export function useGate4Reactivation(ventureId: string | null) {
       const all = new Set([...GATE4_BACKLOG_GROUP_IDS]);
       setActivated(all);
       writeLsCache(all);
+
+      // Optimistically inject rows for every group so badges flip immediately.
+      const syntheticVId = snapshotVentureId ?? "__global__";
+      const now = new Date().toISOString();
+      setOptimisticRows(() => {
+        const m = new Map<string, ReactivationRow>();
+        GATE4_BACKLOG_GROUP_IDS.forEach(groupId => {
+          m.set(`${groupId}:${syntheticVId}`, { groupId, ventureId: syntheticVId, active: true, toggledBy: null, toggledAt: now });
+        });
+        return m;
+      });
+
       // Single atomic batch mutation — all 15 groups written in one DB transaction.
       const vId = snapshotVentureId ?? undefined;
       setBatchMutation.mutate(
@@ -306,6 +355,18 @@ export function useGate4Reactivation(ventureId: string | null) {
       const empty = new Set<string>();
       setActivated(empty);
       writeLsCache(empty);
+
+      // Optimistically inject rows for every group so badges flip immediately.
+      const syntheticVId = snapshotVentureId ?? "__global__";
+      const now = new Date().toISOString();
+      setOptimisticRows(() => {
+        const m = new Map<string, ReactivationRow>();
+        GATE4_BACKLOG_GROUP_IDS.forEach(groupId => {
+          m.set(`${groupId}:${syntheticVId}`, { groupId, ventureId: syntheticVId, active: false, toggledBy: null, toggledAt: now });
+        });
+        return m;
+      });
+
       const vId = snapshotVentureId ?? undefined;
       setBatchMutation.mutate(
         {

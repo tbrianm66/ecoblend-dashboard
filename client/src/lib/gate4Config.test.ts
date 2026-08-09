@@ -238,6 +238,52 @@ describe("useGate4Reactivation — live source-badge update after toggle", () =>
     expect(badgeFrom(result.current.rows, null, GROUP)).toBe("global");
   });
 
+  // ── Badge flips immediately on first toggle (no refetch required) ─────────────
+  it("badge flips DEFAULT → GLOBAL immediately after the first toggle, without a simulated refetch", async () => {
+    currentRows = [];   // no rows → every group starts DEFAULT
+
+    const { result } = renderHook(() => useGate4Reactivation(null));
+
+    // Before toggle: no server row → DEFAULT
+    expect(badgeFrom(result.current.rows, null, GROUP)).toBe("default");
+
+    // Admin clicks the first toggle — no refetch, no rerender
+    await act(async () => { result.current.reactivate(GROUP); });
+
+    // Badge must already read "global" via the optimistic overlay, WITHOUT a
+    // simulated refetch (i.e. we do NOT call rerender() or update currentRows here).
+    // This is the core invariant introduced to prevent the stale-DEFAULT problem.
+    expect(badgeFrom(result.current.rows, null, GROUP)).toBe("global");
+  });
+
+  it("badge flips DEFAULT → VENTURE immediately when the first venture toggle fires", async () => {
+    currentRows = [];   // no rows at all
+
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    expect(badgeFrom(result.current.rows, VENTURE, GROUP)).toBe("default");
+
+    await act(async () => { result.current.reactivate(GROUP); });
+
+    // The synthetic row is venture-scoped; badge should read "venture" immediately.
+    expect(badgeFrom(result.current.rows, VENTURE, GROUP)).toBe("venture");
+  });
+
+  it("badge remains non-DEFAULT after toggle OFF (second toggle stays GLOBAL)", async () => {
+    // Start with a global row already in place (badge starts "global")
+    currentRows = [globalRow(GROUP)];
+
+    const { result } = renderHook(() => useGate4Reactivation(null));
+
+    expect(badgeFrom(result.current.rows, null, GROUP)).toBe("global");
+
+    // Toggle OFF — optimistic row written with active: false; badge stays "global"
+    await act(async () => { result.current.deactivate(GROUP); });
+
+    // Should still be "global" (row exists, just with active=false) — never reverts to DEFAULT
+    expect(badgeFrom(result.current.rows, null, GROUP)).toBe("global");
+  });
+
   // ── reactivateAll also triggers invalidate ───────────────────────────────────
   it("reactivateAll() triggers invalidate() via the batch mutation onSuccess", async () => {
     const batchMutate = vi.fn(
