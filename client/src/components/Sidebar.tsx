@@ -538,10 +538,26 @@ interface ReactivationPanelProps {
   onClose: () => void;
 }
 
+function formatToggleAudit(toggledBy: string | null | undefined, toggledAt: Date | string | null | undefined): string | null {
+  if (!toggledBy && !toggledAt) return null;
+  const who = toggledBy ?? "Unknown";
+  if (!toggledAt) return `by ${who}`;
+  const d = new Date(toggledAt);
+  const dateStr = d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const timeStr = d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  return `${who} · ${dateStr} ${timeStr}`;
+}
 function ReactivationPanel({ onClose }: ReactivationPanelProps) {
-  const { isActivated, reactivate, deactivate, reactivateAll, deactivateAll } = useGate4Reactivation(null);
+  const { isActivated, reactivate, deactivate, reactivateAll, deactivateAll, rows, isLoading } = useGate4Reactivation(null);
 
   const activeCount = GATE4_BACKLOG_GROUP_IDS.filter(id => isActivated(id)).length;
+
+  // Build a lookup from groupId → row for the global scope
+  const rowByGroup = new Map(
+    rows
+      .filter(r => r.ventureId === "__global__")
+      .map(r => [r.groupId, r])
+  );
 
   return (
     <div
@@ -554,7 +570,7 @@ function ReactivationPanel({ onClose }: ReactivationPanelProps) {
             Module Reactivation
           </div>
           <div className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)", fontSize: "0.65rem" }}>
-            reactivationHypothesis — {activeCount}/{GATE4_BACKLOG_GROUP_IDS.length} active
+            {isLoading ? "Syncing…" : `reactivationHypothesis — ${activeCount}/${GATE4_BACKLOG_GROUP_IDS.length} active`}
           </div>
         </div>
         <button onClick={onClose}>
@@ -564,29 +580,42 @@ function ReactivationPanel({ onClose }: ReactivationPanelProps) {
 
       <div className="px-3 py-2 border-b" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
         <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.35)", fontFamily: "'Prompt', sans-serif", fontSize: "0.65rem" }}>
-          Backlogged modules are hidden from the active workflow by default (Gate 4). Enable a module per-venture to restore it to the navigation. Admin-only action.
+          Backlogged modules are hidden from the active workflow by default (Gate 4). Enable a module to restore it to the navigation. State is shared across all admin sessions. Admin-only action.
         </p>
       </div>
 
       {/* Scroll area */}
-      <div className="overflow-y-auto" style={{ maxHeight: "280px" }}>
+      <div className="overflow-y-auto" style={{ maxHeight: "300px" }}>
         {BACKLOG_GROUPS.map(group => {
           const active = isActivated(group.id);
+          const row = rowByGroup.get(group.id);
+          const audit = row ? formatToggleAudit(row.toggledBy, row.toggledAt) : null;
           return (
             <div
               key={group.id}
-              className="flex items-center justify-between px-3 py-1.5 border-b"
+              className="flex items-start justify-between px-3 py-2 border-b"
               style={{ borderColor: "rgba(255,255,255,0.04)" }}
             >
-              <span
-                className="text-xs flex-1 truncate"
-                style={{ fontFamily: "'Prompt', sans-serif", color: active ? "rgba(255,255,255,0.65)" : "rgba(255,255,255,0.3)", fontSize: "0.75rem" }}
-              >
-                {group.label}
-              </span>
+              <div className="flex-1 min-w-0 mr-2">
+                <span
+                  className="text-xs block truncate"
+                  style={{ fontFamily: "'Prompt', sans-serif", color: active ? "rgba(255,255,255,0.65)" : "rgba(255,255,255,0.3)", fontSize: "0.75rem" }}
+                >
+                  {group.label}
+                </span>
+                {audit && (
+                  <span
+                    className="text-xs block truncate mt-0.5"
+                    style={{ fontFamily: "'Prompt', sans-serif", color: "rgba(255,255,255,0.22)", fontSize: "0.6rem" }}
+                    title={audit}
+                  >
+                    {audit}
+                  </span>
+                )}
+              </div>
               <button
                 onClick={() => active ? deactivate(group.id) : reactivate(group.id)}
-                className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold transition-all"
+                className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold transition-all shrink-0"
                 style={{
                   background: active ? "rgba(86,168,55,0.15)" : "rgba(255,255,255,0.06)",
                   color: active ? "#56A837" : "rgba(255,255,255,0.3)",

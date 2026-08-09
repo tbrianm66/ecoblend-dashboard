@@ -17,6 +17,7 @@ import {
   usersRoles, systemAuditLogs, ventures,
   systemDataFields, systemModuleStatus, systemConfiguration,
   systemWidgetAnalytics, systemIntegrations, systemApiKeys,
+  moduleReactivations,
 } from "../drizzle/schema";
 import { eq, and, desc, asc, ilike, or } from "drizzle-orm";
 
@@ -847,6 +848,58 @@ export const adminRouter = router({
         })
         .returning();
       return row;
+    }),
+
+  // ── Gate 4: Module Reactivations ──────────────────────────────────────────
+  // Returns all reactivation rows.  "__global__" is the sentinel for global scope.
+  // publicProcedure intentionally: read-only, no sensitive data.
+  getModuleReactivations: publicProcedure
+    .query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      const rows = await db
+        .select()
+        .from(moduleReactivations)
+        .orderBy(moduleReactivations.groupId);
+      return rows;
+    }),
+
+  // Upsert a single group's activation state.
+  // ventureId omitted / null → stored as "__global__" (global scope sentinel).
+  // Admin-only: uses adminProcedure so non-admins receive a 403.
+  setModuleReactivation: adminProcedure
+    .input(z.object({
+      groupId:   z.string().min(1).max(64),
+      ventureId: z.string().optional(),   // omit or "" → global scope
+      active:    z.boolean(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+
+      const toggledBy = ctx.user.name ?? ctx.user.email ?? ctx.user.openId;
+      // Normalise: empty / missing → "__global__" sentinel
+      const ventureId = (input.ventureId && input.ventureId.trim()) ? input.ventureId.trim() : "__global__";
+
+      await db
+        .insert(moduleReactivations)
+        .values({
+          groupId:   input.groupId,
+          ventureId,
+          active:    input.active,
+          toggledBy,
+          toggledAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: [moduleReactivations.groupId, moduleReactivations.ventureId],
+          set: {
+            active:    input.active,
+            toggledBy,
+            toggledAt: new Date(),
+          },
+        });
+
+      return { success: true, groupId: input.groupId, active: input.active };
     }),
 });
 

@@ -6,14 +6,13 @@
  *   1. Which modules are "canonical core" (always active in workflow)
  *   2. Which modules are "extended backlog" (require reactivationHypothesis)
  *   3. Which modules are "deferred speculative infrastructure" (Gate 4 pending validation)
- *   4. The reactivationHypothesis toggle — admin-only, per-venture, persisted in localStorage
+ *   4. The reactivationHypothesis toggle — admin-only, per-venture, persisted server-side
  *
  * Reactivation governance rule (§3):
  *   An admin must set the `reactivationHypothesis` flag for a specific venture + module
  *   before that backlogged module appears in the active workflow navigation.
- *   The flag is stored as: localStorage key `gate4:reactivated:${ventureId}` → JSON array of groupIds.
- *   A global (venture-agnostic) override key `gate4:reactivated:global` is available for
- *   cross-venture platform-wide reactivation.
+ *   Server DB is authoritative; localStorage is used as an optimistic cache only.
+ *   Global scope uses "__global__" as the ventureId sentinel.
  */
 
 // ── 5 Canonical Core Modules (FHV-EB-AUD-001 §3.1) ───────────────────────────
@@ -122,56 +121,121 @@ export const GATE4_BACKLOG_GROUP_IDS = [
 
 export type BacklogGroupId = typeof GATE4_BACKLOG_GROUP_IDS[number];
 
-// ── reactivationHypothesis hook ───────────────────────────────────────────────
-// Reads and writes the per-venture reactivation state from localStorage.
-// The presence of a groupId in the stored set means that module is
-// "reactivated" for that venture and will appear in the active workflow.
+// ── Module reactivation server row type ──────────────────────────────────────
+export interface ReactivationRow {
+  groupId: string;
+  ventureId: string;   // "__global__" means global scope
+  active: boolean;
+  toggledBy: string | null;
+  toggledAt: Date | string;
+}
 
-const LS_KEY_FOR_VENTURE = (ventureId: string) =>
-  `gate4:reactivated:${ventureId}`;
-const LS_KEY_GLOBAL = "gate4:reactivated:global";
+// ── localStorage optimistic cache helpers ────────────────────────────────────
+// localStorage is kept as a fast initial seed; server state overrides on load.
+const LS_KEY = "gate4:reactivated:v2";   // v2 — new schema, different from old keys
 
-function readActivated(ventureId: string | null): Set<string> {
+function readLsCache(): Set<string> {
   try {
-    const ventureSet = ventureId
-      ? new Set<string>(JSON.parse(localStorage.getItem(LS_KEY_FOR_VENTURE(ventureId)) ?? "[]"))
-      : new Set<string>();
-    const globalSet = new Set<string>(JSON.parse(localStorage.getItem(LS_KEY_GLOBAL) ?? "[]"));
-    return new Set([...ventureSet, ...globalSet]);
+    return new Set<string>(JSON.parse(localStorage.getItem(LS_KEY) ?? "[]"));
   } catch {
     return new Set();
   }
 }
 
-function writeActivated(ventureId: string | null, groups: Set<string>) {
-  const arr = [...groups];
-  if (ventureId) {
-    localStorage.setItem(LS_KEY_FOR_VENTURE(ventureId), JSON.stringify(arr));
-  } else {
-    localStorage.setItem(LS_KEY_GLOBAL, JSON.stringify(arr));
-  }
+function writeLsCache(groups: Set<string>) {
+  localStorage.setItem(LS_KEY, JSON.stringify([...groups]));
 }
 
-import { useState, useCallback } from "react";
+// Convert server rows (for a given ventureId scope) into an activated Set.
+// Rows with ventureId === "__global__" and rows matching the requested ventureId
+// are both included; the venture-specific row takes precedence when both exist.
+export function rowsToActivatedSet(
+  rows: ReactivationRow[],
+  ventureId: string | null,
+): Set<string> {
+  const result = new Set<string>();
+  const vId = ventureId ?? "__global__";
+
+  // First apply global rows
+  rows
+    .filter(r => r.ventureId === "__global__" && r.active)
+    .forEach(r => result.add(r.groupId));
+
+  // Then apply venture-specific rows (override global for the same group)
+  rows
+    .filter(r => r.ventureId === vId && r.ventureId !== "__global__")
+    .forEach(r => {
+      if (r.active) {
+        result.add(r.groupId);
+      } else {
+        result.delete(r.groupId); // explicit per-venture deactivation overrides global
+      }
+    });
+
+  return result;
+}
+
+import { useState, useCallback, useEffect, useRef } from "react";
+import { trpc } from "@/lib/trpc";
 
 /**
  * useGate4Reactivation — admin-facing hook for the reactivationHypothesis toggle.
  *
+ * Server DB is authoritative; localStorage seeds the initial render to avoid flash.
+ * On mount the hook fetches server state and merges it into local state.
+ * Each toggle writes optimistically to local state, then persists to the server.
+ *
  * @param ventureId  The currently selected venture ID (or null for global scope).
- * @returns          { activatedGroups, isActivated, reactivate, deactivate, reactivateAll, deactivateAll }
+ * @returns          { activatedGroups, isActivated, reactivate, deactivate,
+ *                    reactivateAll, deactivateAll, rows, isLoading }
  *
  * GOVERNANCE RULE: Only admin users should be allowed to call reactivate/deactivate.
  * The sidebar enforces this by only rendering the reactivation panel for admin users.
  */
 export function useGate4Reactivation(ventureId: string | null) {
-  const [activated, setActivated] = useState<Set<string>>(() =>
-    readActivated(ventureId)
+  // Seed from localStorage so there's no flash on first render.
+  const [activated, setActivated] = useState<Set<string>>(readLsCache);
+  const [rows, setRows] = useState<ReactivationRow[]>([]);
+
+  // tRPC query — fetch all rows once, keep them up-to-date.
+  const { data: serverRows, isLoading } = trpc.admin.getModuleReactivations.useQuery(
+    undefined,
+    { staleTime: 30_000, refetchOnWindowFocus: true },
   );
 
-  const persist = useCallback((next: Set<string>) => {
+  // tRPC mutation.
+  const setMutation = trpc.admin.setModuleReactivation.useMutation();
+  const utils = trpc.useUtils();
+
+  // When server data arrives, merge into local state and update localStorage cache.
+  const serverRowsRef = useRef<typeof serverRows>(undefined);
+  useEffect(() => {
+    if (!serverRows || serverRows === serverRowsRef.current) return;
+    serverRowsRef.current = serverRows;
+
+    const typed = serverRows as ReactivationRow[];
+    setRows(typed);
+    const serverSet = rowsToActivatedSet(typed, ventureId);
+    setActivated(serverSet);
+    writeLsCache(serverSet);
+  }, [serverRows, ventureId]);
+
+  // Optimistic toggle helper.
+  const persist = useCallback((groupId: string, active: boolean, next: Set<string>) => {
     setActivated(next);
-    writeActivated(ventureId, next);
-  }, [ventureId]);
+    writeLsCache(next);
+
+    // Write to server; on success invalidate the cache so all panels refresh.
+    const vId = ventureId ?? undefined;
+    setMutation.mutate(
+      { groupId, ventureId: vId, active },
+      {
+        onSuccess: () => {
+          utils.admin.getModuleReactivations.invalidate();
+        },
+      },
+    );
+  }, [ventureId, setMutation, utils]);
 
   const isActivated = useCallback(
     (groupId: string) => activated.has(groupId),
@@ -179,22 +243,39 @@ export function useGate4Reactivation(ventureId: string | null) {
   );
 
   const reactivate = useCallback((groupId: string) => {
-    persist(new Set([...activated, groupId]));
+    const next = new Set([...activated, groupId]);
+    persist(groupId, true, next);
   }, [activated, persist]);
 
   const deactivate = useCallback((groupId: string) => {
     const next = new Set(activated);
     next.delete(groupId);
-    persist(next);
+    persist(groupId, false, next);
   }, [activated, persist]);
 
   const reactivateAll = useCallback(() => {
-    persist(new Set(GATE4_BACKLOG_GROUP_IDS));
-  }, [persist]);
+    const all = new Set([...GATE4_BACKLOG_GROUP_IDS]);
+    setActivated(all);
+    writeLsCache(all);
+    // Batch: fire one mutation per group.
+    const vId = ventureId ?? undefined;
+    GATE4_BACKLOG_GROUP_IDS.forEach(groupId => {
+      setMutation.mutate({ groupId, ventureId: vId, active: true });
+    });
+    // Invalidate once after all mutations are queued.
+    setTimeout(() => utils.admin.getModuleReactivations.invalidate(), 500);
+  }, [ventureId, setMutation, utils]);
 
   const deactivateAll = useCallback(() => {
-    persist(new Set());
-  }, [persist]);
+    const empty = new Set<string>();
+    setActivated(empty);
+    writeLsCache(empty);
+    const vId = ventureId ?? undefined;
+    GATE4_BACKLOG_GROUP_IDS.forEach(groupId => {
+      setMutation.mutate({ groupId, ventureId: vId, active: false });
+    });
+    setTimeout(() => utils.admin.getModuleReactivations.invalidate(), 500);
+  }, [ventureId, setMutation, utils]);
 
   return {
     activatedGroups: activated,
@@ -203,5 +284,7 @@ export function useGate4Reactivation(ventureId: string | null) {
     deactivate,
     reactivateAll,
     deactivateAll,
+    rows,
+    isLoading,
   };
 }

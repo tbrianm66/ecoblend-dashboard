@@ -8487,6 +8487,18 @@ export const scoreDisputes = pgTable("score_disputes", {
 export type ScoreDispute = typeof scoreDisputes.$inferSelect;
 export type InsertScoreDispute = typeof scoreDisputes.$inferInsert;
 
+export const moduleReactivations = pgTable("module_reactivations", {
+  id:         serial("id").primaryKey(),
+  groupId:    varchar("group_id", { length: 64 }).notNull(),
+  ventureId:  varchar("venture_id", { length: 64 }).notNull().default("__global__"),
+  active:     boolean("active").notNull().default(false),
+  toggledBy:  varchar("toggled_by", { length: 255 }),  // admin name / email
+  toggledAt:  timestamp("toggled_at").defaultNow().notNull(),
+  createdAt:  timestamp("created_at").defaultNow().notNull(),
+}, (t) => ({
+  groupVentureUnique: unique("module_reactivations_group_venture_unique").on(t.groupId, t.ventureId),
+}));
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Phase 3 — R&D Hub & IP Tracker (Section 5)
 // Migration 0013
@@ -8947,3 +8959,7 @@ export const productRefSequences = pgTable("product_ref_sequences", {
   currentSequence: integer("currentSequence").notNull().default(0),
   updatedAt:       timestamp("updatedAt").defaultNow().notNull(),
 });
+
+export type ModuleReactivation = typeof moduleReactivations.$inferSelect;
+
+export type InsertModuleReactivation = typeof moduleReactivations.$inferInsert;
