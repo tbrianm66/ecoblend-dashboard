@@ -121,14 +121,13 @@ export const GATE4_BACKLOG_GROUP_IDS = [
 
 export type BacklogGroupId = typeof GATE4_BACKLOG_GROUP_IDS[number];
 
-// ── Module reactivation server row type ──────────────────────────────────────
-export interface ReactivationRow {
-  groupId: string;
-  ventureId: string;   // "__global__" means global scope
-  active: boolean;
-  toggledBy: string | null;
-  toggledAt: Date | string;
-}
+// ── Module reactivation server row type & rowsToActivatedSet ─────────────────
+// Defined in gate4Utils.ts (dependency-free) so Node.js / Vitest test contexts
+// can import the production implementation without pulling in React / tRPC.
+// Imported locally for use within this file AND re-exported for consumers.
+import { type ReactivationRow, rowsToActivatedSet } from "./gate4Utils";
+export type { ReactivationRow };
+export { rowsToActivatedSet };
 
 // ── localStorage optimistic cache helpers ────────────────────────────────────
 // localStorage is kept as a fast initial seed; server state overrides on load.
@@ -144,41 +143,6 @@ function readLsCache(): Set<string> {
 
 function writeLsCache(groups: Set<string>) {
   localStorage.setItem(LS_KEY, JSON.stringify([...groups]));
-}
-
-// Convert server rows into an activated Set for the given scope.
-//
-// Isolation model (Task #34):
-//   • ventureId === null  → "Global" scope: read __global__ rows only.
-//   • ventureId provided  → venture scope: read only rows for that venture; default is
-//     INACTIVE for any group without an explicit row.  Global rows are NOT inherited so
-//     that each venture has a fully independent enabled set.
-//
-// This means toggling modules in global mode never affects per-venture navigation and
-// vice versa.  An admin managing global defaults and per-venture overrides must visit
-// each context explicitly.
-export function rowsToActivatedSet(
-  rows: ReactivationRow[],
-  ventureId: string | null,
-): Set<string> {
-  const result = new Set<string>();
-
-  if (ventureId === null) {
-    // Global scope — only __global__ rows contribute.
-    rows
-      .filter(r => r.ventureId === "__global__" && r.active)
-      .forEach(r => result.add(r.groupId));
-  } else {
-    // Venture scope — only rows explicitly belonging to this venture contribute.
-    // No global inheritance; an absent row means inactive.
-    rows
-      .filter(r => r.ventureId === ventureId)
-      .forEach(r => {
-        if (r.active) result.add(r.groupId);
-      });
-  }
-
-  return result;
 }
 
 import { useState, useCallback, useEffect, useRef } from "react";
