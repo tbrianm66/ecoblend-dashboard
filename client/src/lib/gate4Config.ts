@@ -146,31 +146,37 @@ function writeLsCache(groups: Set<string>) {
   localStorage.setItem(LS_KEY, JSON.stringify([...groups]));
 }
 
-// Convert server rows (for a given ventureId scope) into an activated Set.
-// Rows with ventureId === "__global__" and rows matching the requested ventureId
-// are both included; the venture-specific row takes precedence when both exist.
+// Convert server rows into an activated Set for the given scope.
+//
+// Isolation model (Task #34):
+//   • ventureId === null  → "Global" scope: read __global__ rows only.
+//   • ventureId provided  → venture scope: read only rows for that venture; default is
+//     INACTIVE for any group without an explicit row.  Global rows are NOT inherited so
+//     that each venture has a fully independent enabled set.
+//
+// This means toggling modules in global mode never affects per-venture navigation and
+// vice versa.  An admin managing global defaults and per-venture overrides must visit
+// each context explicitly.
 export function rowsToActivatedSet(
   rows: ReactivationRow[],
   ventureId: string | null,
 ): Set<string> {
   const result = new Set<string>();
-  const vId = ventureId ?? "__global__";
 
-  // First apply global rows
-  rows
-    .filter(r => r.ventureId === "__global__" && r.active)
-    .forEach(r => result.add(r.groupId));
-
-  // Then apply venture-specific rows (override global for the same group)
-  rows
-    .filter(r => r.ventureId === vId && r.ventureId !== "__global__")
-    .forEach(r => {
-      if (r.active) {
-        result.add(r.groupId);
-      } else {
-        result.delete(r.groupId); // explicit per-venture deactivation overrides global
-      }
-    });
+  if (ventureId === null) {
+    // Global scope — only __global__ rows contribute.
+    rows
+      .filter(r => r.ventureId === "__global__" && r.active)
+      .forEach(r => result.add(r.groupId));
+  } else {
+    // Venture scope — only rows explicitly belonging to this venture contribute.
+    // No global inheritance; an absent row means inactive.
+    rows
+      .filter(r => r.ventureId === ventureId)
+      .forEach(r => {
+        if (r.active) result.add(r.groupId);
+      });
+  }
 
   return result;
 }
@@ -207,10 +213,14 @@ export function useGate4Reactivation(ventureId: string | null) {
   const setMutation = trpc.admin.setModuleReactivation.useMutation();
   const utils = trpc.useUtils();
 
-  // When server data arrives, merge into local state and update localStorage cache.
+  // Recompute activated state whenever server data arrives or the venture scope changes.
+  // serverRows is a stable React Query reference that only changes on a fresh fetch, so
+  // running the effect on ventureId changes without an identity guard is safe and necessary:
+  // the prior guard (serverRows === serverRowsRef.current) would suppress a scope change
+  // when the user switches ventures before a new fetch completes.
   const serverRowsRef = useRef<typeof serverRows>(undefined);
   useEffect(() => {
-    if (!serverRows || serverRows === serverRowsRef.current) return;
+    if (!serverRows) return;
     serverRowsRef.current = serverRows;
 
     const typed = serverRows as ReactivationRow[];

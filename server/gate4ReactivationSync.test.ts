@@ -13,9 +13,9 @@
  * -------------------
  * 1. `rowsToActivatedSet` converts server rows into the correct activated Set,
  *    representing the "server wins" outcome regardless of what was in localStorage.
- * 2. Global-scope rows (ventureId === "__global__") are included for every venture.
- * 3. Venture-specific rows override the global row for the same group.
- * 4. An explicit per-venture deactivation overrides a global activation.
+ * 2. Global scope (ventureId === null) reads __global__ rows only.
+ * 3. Venture scope reads ONLY that venture's own rows — global rows are NOT inherited.
+ * 4. Two ventures' activation state for the same group is fully independent.
  * 5. Empty/null ventureId defaults to global scope resolution.
  * 6. localStorage helpers (`readLsCache` / `writeLsCache`) round-trip correctly
  *    and silently recover from corrupt cache entries.
@@ -108,10 +108,12 @@ describe("rowsToActivatedSet — server state overrides stale localStorage", () 
     expect(result.has("risk")).toBe(false);
   });
 
-  it("includes globally active groups for any ventureId", () => {
-    const rows = [makeRow("coaching", true)];
+  it("global rows are NOT inherited by a specific venture (isolation model)", () => {
+    // A globally-active row must not appear in a venture's activated set.
+    // Each venture starts with a clean slate; only its own rows count.
+    const rows = [makeRow("coaching", true)]; // __global__ row
     const result = rowsToActivatedSet(rows, "venture-abc");
-    expect(result.has("coaching")).toBe(true);
+    expect(result.has("coaching")).toBe(false);
   });
 
   it("a venture-specific active row adds the group even if no global row exists", () => {
@@ -120,23 +122,47 @@ describe("rowsToActivatedSet — server state overrides stale localStorage", () 
     expect(result.has("gtm")).toBe(true);
   });
 
-  it("a venture-specific inactive row removes a group that was globally active", () => {
-    // Global says active; venture-specific says inactive — venture wins.
+  it("a venture-specific inactive row keeps a group off (global row is irrelevant)", () => {
+    // Isolation: the global row is ignored for venture scope; only the
+    // venture-specific inactive row is evaluated, so the group stays off.
     const rows = [
-      makeRow("investment", true, "__global__"),
-      makeRow("investment", false, "venture-xyz"),
+      makeRow("investment", true, "__global__"),   // ignored in venture scope
+      makeRow("investment", false, "venture-xyz"), // evaluated: group stays off
     ];
     const result = rowsToActivatedSet(rows, "venture-xyz");
     expect(result.has("investment")).toBe(false);
   });
 
-  it("a venture-specific active row adds a group that was globally inactive", () => {
+  it("a venture-specific active row enables a group regardless of global state", () => {
+    // Isolation: the global inactive row is ignored; the venture's own active row
+    // is the only thing that determines the outcome.
     const rows = [
-      makeRow("operations", false, "__global__"),
-      makeRow("operations", true, "venture-abc"),
+      makeRow("operations", false, "__global__"), // ignored in venture scope
+      makeRow("operations", true, "venture-abc"), // evaluated: group is on
     ];
     const result = rowsToActivatedSet(rows, "venture-abc");
     expect(result.has("operations")).toBe(true);
+  });
+
+  it("two ventures with the same group are fully independent", () => {
+    // Enable "gtm" for venture-A but explicitly disable it for venture-B.
+    const rows = [
+      makeRow("gtm", true,  "venture-a"),
+      makeRow("gtm", false, "venture-b"),
+    ];
+    const forA = rowsToActivatedSet(rows, "venture-a");
+    const forB = rowsToActivatedSet(rows, "venture-b");
+    expect(forA.has("gtm")).toBe(true);
+    expect(forB.has("gtm")).toBe(false);
+  });
+
+  it("enabling a group globally does not activate it for any venture", () => {
+    // Global and venture scopes are fully isolated: global ON ≠ venture ON.
+    const rows = [makeRow("scoring", true, "__global__")];
+    const globalResult  = rowsToActivatedSet(rows, null);
+    const ventureResult = rowsToActivatedSet(rows, "venture-x");
+    expect(globalResult.has("scoring")).toBe(true);   // visible in global view
+    expect(ventureResult.has("scoring")).toBe(false); // not visible in venture view
   });
 
   it("venture-specific rows for a different venture do not affect the result", () => {

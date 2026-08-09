@@ -12,6 +12,7 @@
 
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
+import { useSelectedVenture } from "@/contexts/SelectedVentureContext";
 import {
   Zap, LayoutDashboard, Layers, Lightbulb, Rocket,
   Search, MessageSquare, Users, TrendingUp, BarChart2,
@@ -536,6 +537,8 @@ function DeferredSection() {
 // ── Reactivation Panel (admin-only) ───────────────────────────────────────────
 interface ReactivationPanelProps {
   onClose: () => void;
+  ventureId: string | null;
+  ventureName?: string;
 }
 
 function formatToggleAudit(toggledBy: string | null | undefined, toggledAt: Date | string | null | undefined): string | null {
@@ -547,17 +550,23 @@ function formatToggleAudit(toggledBy: string | null | undefined, toggledAt: Date
   const timeStr = d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
   return `${who} · ${dateStr} ${timeStr}`;
 }
-function ReactivationPanel({ onClose }: ReactivationPanelProps) {
-  const { isActivated, reactivate, deactivate, reactivateAll, deactivateAll, rows, isLoading } = useGate4Reactivation(null);
+function ReactivationPanel({ onClose, ventureId, ventureName }: ReactivationPanelProps) {
+  const { isActivated, reactivate, deactivate, reactivateAll, deactivateAll, rows, isLoading } = useGate4Reactivation(ventureId);
 
   const activeCount = GATE4_BACKLOG_GROUP_IDS.filter(id => isActivated(id)).length;
 
-  // Build a lookup from groupId → row for the global scope
-  const rowByGroup = new Map(
+  // Build a lookup from groupId → most-specific row for the current scope.
+  // Prefer the venture-specific row when one exists; fall back to the global row
+  // so the audit trail still shows who last touched a global toggle.
+  const rowByGroup = new Map<string, typeof rows[number]>();
+  rows
+    .filter(r => r.ventureId === "__global__")
+    .forEach(r => rowByGroup.set(r.groupId, r));
+  if (ventureId) {
     rows
-      .filter(r => r.ventureId === "__global__")
-      .map(r => [r.groupId, r])
-  );
+      .filter(r => r.ventureId === ventureId)
+      .forEach(r => rowByGroup.set(r.groupId, r)); // venture row overwrites global
+  }
 
   return (
     <div
@@ -570,7 +579,9 @@ function ReactivationPanel({ onClose }: ReactivationPanelProps) {
             Module Reactivation
           </div>
           <div className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)", fontSize: "0.65rem" }}>
-            {isLoading ? "Syncing…" : `reactivationHypothesis — ${activeCount}/${GATE4_BACKLOG_GROUP_IDS.length} active`}
+            {isLoading
+              ? "Syncing…"
+              : `${ventureName ?? "Global"} — ${activeCount}/${GATE4_BACKLOG_GROUP_IDS.length} active`}
           </div>
         </div>
         <button onClick={onClose}>
@@ -580,7 +591,10 @@ function ReactivationPanel({ onClose }: ReactivationPanelProps) {
 
       <div className="px-3 py-2 border-b" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
         <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.35)", fontFamily: "'Prompt', sans-serif", fontSize: "0.65rem" }}>
-          Backlogged modules are hidden from the active workflow by default (Gate 4). Enable a module to restore it to the navigation. State is shared across all admin sessions. Admin-only action.
+          Backlogged modules are hidden by default (Gate 4). Toggles apply to{" "}
+          <strong style={{ color: "rgba(255,255,255,0.5)" }}>
+            {ventureName ?? "all ventures (global)"}
+          </strong>. Admin-only action.
         </p>
       </div>
 
@@ -831,7 +845,9 @@ const ECOBLEND_LOGO_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310419663031397
 export default function Sidebar() {
   const [location] = useLocation();
   const [reactivationOpen, setReactivationOpen] = useState(false);
-  const { isActivated } = useGate4Reactivation(null);
+  const { selectedVenture } = useSelectedVenture();
+  const selectedVentureId = selectedVenture?.id ?? null;
+  const { isActivated } = useGate4Reactivation(selectedVentureId);
 
   return (
     <aside
@@ -891,7 +907,11 @@ export default function Sidebar() {
 
       {/* Reactivation panel (absolute overlay) */}
       {reactivationOpen && (
-        <ReactivationPanel onClose={() => setReactivationOpen(false)} />
+        <ReactivationPanel
+          onClose={() => setReactivationOpen(false)}
+          ventureId={selectedVentureId}
+          ventureName={selectedVenture?.name}
+        />
       )}
 
       {/* Footer */}
