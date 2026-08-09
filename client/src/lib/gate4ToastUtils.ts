@@ -17,6 +17,7 @@
 export interface ToastApi {
   success(message: string): void;
   warning(message: string, options?: { duration?: number }): void;
+  error(message: string, options?: { duration?: number }): void;
 }
 
 /**
@@ -93,6 +94,33 @@ export function showResetToast(
     );
   } else {
     toast.success(`Module settings reset to global defaults for ${scopeName}`);
+  }
+}
+
+/**
+ * Show an error toast when a batch reactivation write fails.
+ *
+ * When the server error message contains "Skipped group(s): X, Y" the skipped
+ * IDs are parsed out and displayed explicitly so the admin can see exactly
+ * which groups were not written.  When the message cannot be parsed a generic
+ * error toast is shown instead.
+ *
+ * @param toast         The toast API to call (sonner in production, spy in tests).
+ * @param skippedGroups Array of groupId strings parsed from the error message.
+ * @param rawMessage    The raw error message from the TRPC response.
+ */
+export function showBatchErrorToast(
+  toast: ToastApi,
+  skippedGroups: string[],
+  rawMessage: string,
+): void {
+  if (skippedGroups.length > 0) {
+    toast.error(
+      `Batch write incomplete — skipped group(s): ${skippedGroups.join(", ")}`,
+      { duration: 8000 },
+    );
+  } else {
+    toast.error(`Batch write failed: ${rawMessage}`, { duration: 6000 });
   }
 }
 

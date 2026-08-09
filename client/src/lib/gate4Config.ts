@@ -322,7 +322,10 @@ export function useGate4Reactivation(ventureId: string | null) {
   );
 
   const reactivateAll = useCallback(
-    (onSuccess?: (snapshotVentureId: string | null) => void) => {
+    (
+      onSuccess?: (snapshotVentureId: string | null) => void,
+      onError?: (skippedGroups: string[], rawMessage: string) => void,
+    ) => {
       const snapshotVentureId = ventureIdRef.current;
       const all = new Set([...GATE4_BACKLOG_GROUP_IDS]);
       setActivated(all);
@@ -341,15 +344,31 @@ export function useGate4Reactivation(ventureId: string | null) {
 
       // Single atomic batch mutation — all 15 groups written in one DB transaction.
       const vId = snapshotVentureId ?? undefined;
+      const requested = GATE4_BACKLOG_GROUP_IDS.length;
       setBatchMutation.mutate(
         {
           ventureId: vId,
           items: GATE4_BACKLOG_GROUP_IDS.map(groupId => ({ groupId, active: true })),
         },
         {
-          onSuccess: () => {
+          onSuccess: (data) => {
+            // Dev transparency: log confirmed vs requested so discrepancies are
+            // visible in the browser console without needing a server round-trip.
+            console.info(
+              `[setModuleReactivationBatch] reactivateAll: ${data.upserted.length}/${requested} group(s) confirmed by DB`,
+              data.upserted,
+            );
             utils.admin.getModuleReactivations.invalidate();
             onSuccess?.(snapshotVentureId);
+          },
+          onError: (err) => {
+            const rawMessage = err instanceof Error ? err.message : String(err);
+            // Parse "Skipped group(s): X, Y, Z" from the server error message.
+            const match = rawMessage.match(/Skipped group\(s\):\s*(.+)$/);
+            const skippedGroups = match
+              ? match[1].split(",").map(s => s.trim()).filter(Boolean)
+              : [];
+            onError?.(skippedGroups, rawMessage);
           },
         },
       );
@@ -358,7 +377,10 @@ export function useGate4Reactivation(ventureId: string | null) {
   );
 
   const deactivateAll = useCallback(
-    (onSuccess?: (snapshotVentureId: string | null) => void) => {
+    (
+      onSuccess?: (snapshotVentureId: string | null) => void,
+      onError?: (skippedGroups: string[], rawMessage: string) => void,
+    ) => {
       const snapshotVentureId = ventureIdRef.current;
       const empty = new Set<string>();
       setActivated(empty);
@@ -376,15 +398,31 @@ export function useGate4Reactivation(ventureId: string | null) {
       });
 
       const vId = snapshotVentureId ?? undefined;
+      const requested = GATE4_BACKLOG_GROUP_IDS.length;
       setBatchMutation.mutate(
         {
           ventureId: vId,
           items: GATE4_BACKLOG_GROUP_IDS.map(groupId => ({ groupId, active: false })),
         },
         {
-          onSuccess: () => {
+          onSuccess: (data) => {
+            // Dev transparency: log confirmed vs requested so discrepancies are
+            // visible in the browser console without needing a server round-trip.
+            console.info(
+              `[setModuleReactivationBatch] deactivateAll: ${data.upserted.length}/${requested} group(s) confirmed by DB`,
+              data.upserted,
+            );
             utils.admin.getModuleReactivations.invalidate();
             onSuccess?.(snapshotVentureId);
+          },
+          onError: (err) => {
+            const rawMessage = err instanceof Error ? err.message : String(err);
+            // Parse "Skipped group(s): X, Y, Z" from the server error message.
+            const match = rawMessage.match(/Skipped group\(s\):\s*(.+)$/);
+            const skippedGroups = match
+              ? match[1].split(",").map(s => s.trim()).filter(Boolean)
+              : [];
+            onError?.(skippedGroups, rawMessage);
           },
         },
       );

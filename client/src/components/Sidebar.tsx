@@ -44,7 +44,7 @@ import {
   type BacklogGroupId,
 } from "@/lib/gate4Config";
 import { resolveModuleBadge, buildRowByGroup, formatToggleAudit } from "@/lib/gate4Utils";
-import { showToggleToast, showBatchToast, showResetToast } from "@/lib/gate4ToastUtils";
+import { showToggleToast, showBatchToast, showBatchErrorToast, showResetToast } from "@/lib/gate4ToastUtils";
 
 type IconName = string;
 const iconMap: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
@@ -605,6 +605,19 @@ function ReactivationPanel({ onClose, ventureId, ventureName, ventureColor }: Re
     [],
   );
 
+  /**
+   * Show an error toast when a batch Enable-All / Disable-All write fails.
+   * When the server named specific skipped groups they are displayed explicitly;
+   * otherwise a generic error message is shown.
+   * Delegates to the exported showBatchErrorToast helper (gate4ToastUtils.ts).
+   */
+  const handleBatchErrorToast = useCallback(
+    (skippedGroups: string[], rawMessage: string) => {
+      showBatchErrorToast(toast, skippedGroups, rawMessage);
+    },
+    [],
+  );
+
   const activeCount = GATE4_BACKLOG_GROUP_IDS.filter(id => isActivated(id)).length;
 
   // Build a lookup from groupId → most-specific row for the current scope.
@@ -804,7 +817,10 @@ function ReactivationPanel({ onClose, ventureId, ventureName, ventureColor }: Re
         <button
           onClick={() => {
             const snapshotVName = ventureName;
-            reactivateAll(svid => handleBatchToast(true, svid, snapshotVName));
+            reactivateAll(
+              svid => handleBatchToast(true, svid, snapshotVName),
+              (skippedGroups, rawMessage) => handleBatchErrorToast(skippedGroups, rawMessage),
+            );
           }}
           className="flex-1 py-1.5 rounded text-xs font-semibold"
           style={{ background: "rgba(86,168,55,0.12)", color: "#56A837", border: "1px solid rgba(86,168,55,0.2)", fontSize: "0.7rem" }}
@@ -814,7 +830,10 @@ function ReactivationPanel({ onClose, ventureId, ventureName, ventureColor }: Re
         <button
           onClick={() => {
             const snapshotVName = ventureName;
-            deactivateAll(svid => handleBatchToast(false, svid, snapshotVName));
+            deactivateAll(
+              svid => handleBatchToast(false, svid, snapshotVName),
+              (skippedGroups, rawMessage) => handleBatchErrorToast(skippedGroups, rawMessage),
+            );
           }}
           className="flex-1 py-1.5 rounded text-xs font-semibold"
           style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.4)", border: "1px solid rgba(255,255,255,0.08)", fontSize: "0.7rem" }}

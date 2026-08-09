@@ -287,8 +287,8 @@ describe("useGate4Reactivation — live source-badge update after toggle", () =>
   // ── reactivateAll also triggers invalidate ───────────────────────────────────
   it("reactivateAll() triggers invalidate() via the batch mutation onSuccess", async () => {
     const batchMutate = vi.fn(
-      (_input: unknown, options?: { onSuccess?: () => void }) => {
-        options?.onSuccess?.();
+      (_input: unknown, options?: { onSuccess?: (data: { success: boolean; count: number; upserted: string[] }) => void }) => {
+        options?.onSuccess?.({ success: true, count: 0, upserted: [] });
       },
     );
     vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
@@ -304,5 +304,65 @@ describe("useGate4Reactivation — live source-badge update after toggle", () =>
       expect.objectContaining({ ventureId: VENTURE }),
       expect.objectContaining({ onSuccess: expect.any(Function) }),
     );
+  });
+
+  // ── reactivateAll onError: skipped group names passed to the callback ─────────
+  it("reactivateAll() parses skipped group IDs from the error message and passes them to onError", async () => {
+    const skippedIds = ["backlog-team-growth", "backlog-unit-economics"];
+    const errorMessage =
+      `Batch write incomplete: 13 of 15 group(s) confirmed by the DB. ` +
+      `Skipped group(s): ${skippedIds.join(", ")}`;
+
+    const batchMutate = vi.fn(
+      (_input: unknown, options?: { onError?: (err: Error) => void }) => {
+        options?.onError?.(new Error(errorMessage));
+      },
+    );
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: batchMutate } as any,
+    );
+
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    const receivedSkipped: string[] = [];
+    let receivedRaw = "";
+
+    await act(async () => {
+      result.current.reactivateAll(
+        undefined,
+        (skippedGroups, rawMessage) => {
+          receivedSkipped.push(...skippedGroups);
+          receivedRaw = rawMessage;
+        },
+      );
+    });
+
+    expect(receivedSkipped).toEqual(skippedIds);
+    expect(receivedRaw).toContain("Batch write incomplete");
+  });
+
+  // ── reactivateAll onError: empty skippedGroups when message cannot be parsed ──
+  it("reactivateAll() passes empty skippedGroups array when the error message has no 'Skipped group(s):' section", async () => {
+    const batchMutate = vi.fn(
+      (_input: unknown, options?: { onError?: (err: Error) => void }) => {
+        options?.onError?.(new Error("DB unavailable"));
+      },
+    );
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: batchMutate } as any,
+    );
+
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    const receivedSkipped: string[] = [];
+
+    await act(async () => {
+      result.current.reactivateAll(
+        undefined,
+        (skippedGroups) => { receivedSkipped.push(...skippedGroups); },
+      );
+    });
+
+    expect(receivedSkipped).toHaveLength(0);
   });
 });
