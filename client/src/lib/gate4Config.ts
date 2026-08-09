@@ -209,8 +209,18 @@ export function useGate4Reactivation(ventureId: string | null) {
   // snapshotVentureId is captured by the *caller* at the moment of interaction,
   // so the server write always targets the venture the user was editing — even if
   // the venture selector is changed before the mutation response arrives.
+  //
+  // onSuccess is an optional callback fired after the server confirms the write.
+  // It receives the snapshotVentureId so callers can show a contextual toast
+  // ("applied to Venture X") and detect selector drift.
   const persist = useCallback(
-    (groupId: string, active: boolean, next: Set<string>, snapshotVentureId: string | null) => {
+    (
+      groupId: string,
+      active: boolean,
+      next: Set<string>,
+      snapshotVentureId: string | null,
+      onSuccess?: (snapshotVentureId: string | null) => void,
+    ) => {
       setActivated(next);
       writeLsCache(next);
 
@@ -221,6 +231,7 @@ export function useGate4Reactivation(ventureId: string | null) {
         {
           onSuccess: () => {
             utils.admin.getModuleReactivations.invalidate();
+            onSuccess?.(snapshotVentureId);
           },
         },
       );
@@ -233,55 +244,73 @@ export function useGate4Reactivation(ventureId: string | null) {
     [activated],
   );
 
-  const reactivate = useCallback((groupId: string) => {
-    // Snapshot ventureId at interaction time so a rapid venture-selector change
-    // cannot redirect this write to the wrong venture.
-    const snapshotVentureId = ventureIdRef.current;
-    const next = new Set([...activated, groupId]);
-    persist(groupId, true, next, snapshotVentureId);
-  }, [activated, persist]);
+  const reactivate = useCallback(
+    (groupId: string, onSuccess?: (snapshotVentureId: string | null) => void) => {
+      // Snapshot ventureId at interaction time so a rapid venture-selector change
+      // cannot redirect this write to the wrong venture.
+      const snapshotVentureId = ventureIdRef.current;
+      const next = new Set([...activated, groupId]);
+      persist(groupId, true, next, snapshotVentureId, onSuccess);
+    },
+    [activated, persist],
+  );
 
-  const deactivate = useCallback((groupId: string) => {
-    const snapshotVentureId = ventureIdRef.current;
-    const next = new Set(activated);
-    next.delete(groupId);
-    persist(groupId, false, next, snapshotVentureId);
-  }, [activated, persist]);
+  const deactivate = useCallback(
+    (groupId: string, onSuccess?: (snapshotVentureId: string | null) => void) => {
+      const snapshotVentureId = ventureIdRef.current;
+      const next = new Set(activated);
+      next.delete(groupId);
+      persist(groupId, false, next, snapshotVentureId, onSuccess);
+    },
+    [activated, persist],
+  );
 
-  const reactivateAll = useCallback(() => {
-    const snapshotVentureId = ventureIdRef.current;
-    const all = new Set([...GATE4_BACKLOG_GROUP_IDS]);
-    setActivated(all);
-    writeLsCache(all);
-    // Single atomic batch mutation — all 15 groups written in one DB transaction.
-    const vId = snapshotVentureId ?? undefined;
-    setBatchMutation.mutate(
-      {
-        ventureId: vId,
-        items: GATE4_BACKLOG_GROUP_IDS.map(groupId => ({ groupId, active: true })),
-      },
-      {
-        onSuccess: () => { utils.admin.getModuleReactivations.invalidate(); },
-      },
-    );
-  }, [setBatchMutation, utils]);
+  const reactivateAll = useCallback(
+    (onSuccess?: (snapshotVentureId: string | null) => void) => {
+      const snapshotVentureId = ventureIdRef.current;
+      const all = new Set([...GATE4_BACKLOG_GROUP_IDS]);
+      setActivated(all);
+      writeLsCache(all);
+      // Single atomic batch mutation — all 15 groups written in one DB transaction.
+      const vId = snapshotVentureId ?? undefined;
+      setBatchMutation.mutate(
+        {
+          ventureId: vId,
+          items: GATE4_BACKLOG_GROUP_IDS.map(groupId => ({ groupId, active: true })),
+        },
+        {
+          onSuccess: () => {
+            utils.admin.getModuleReactivations.invalidate();
+            onSuccess?.(snapshotVentureId);
+          },
+        },
+      );
+    },
+    [setBatchMutation, utils],
+  );
 
-  const deactivateAll = useCallback(() => {
-    const snapshotVentureId = ventureIdRef.current;
-    const empty = new Set<string>();
-    setActivated(empty);
-    writeLsCache(empty);
-    const vId = snapshotVentureId ?? undefined;
-    setBatchMutation.mutate(
-      {
-        ventureId: vId,
-        items: GATE4_BACKLOG_GROUP_IDS.map(groupId => ({ groupId, active: false })),
-      },
-      {
-        onSuccess: () => { utils.admin.getModuleReactivations.invalidate(); },
-      },
-    );
-  }, [setBatchMutation, utils]);
+  const deactivateAll = useCallback(
+    (onSuccess?: (snapshotVentureId: string | null) => void) => {
+      const snapshotVentureId = ventureIdRef.current;
+      const empty = new Set<string>();
+      setActivated(empty);
+      writeLsCache(empty);
+      const vId = snapshotVentureId ?? undefined;
+      setBatchMutation.mutate(
+        {
+          ventureId: vId,
+          items: GATE4_BACKLOG_GROUP_IDS.map(groupId => ({ groupId, active: false })),
+        },
+        {
+          onSuccess: () => {
+            utils.admin.getModuleReactivations.invalidate();
+            onSuccess?.(snapshotVentureId);
+          },
+        },
+      );
+    },
+    [setBatchMutation, utils],
+  );
 
   return {
     activatedGroups: activated,
