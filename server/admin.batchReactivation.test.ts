@@ -737,6 +737,50 @@ describe("setModuleReactivationBatch — payload size validation (schema rejects
     // Validation must fire before the transaction — committed store stays empty.
     expect(committedFor(db, "VENTURE-A")).toHaveLength(0);
   });
+
+  it("rejects a single item with an empty groupId with BAD_REQUEST and writes zero rows", async () => {
+    // groupId: "" violates z.string().min(1) — Zod rejects before the DB is touched.
+    const db = makeHarnessDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: [{ groupId: "", active: true }],
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("BAD_REQUEST");
+    // The handler must not have entered the transaction — no rows committed.
+    expect(committedFor(db, "VENTURE-A")).toHaveLength(0);
+  });
+
+  it("rejects a single item with a 65-character groupId with BAD_REQUEST and writes zero rows", async () => {
+    // groupId of 65 chars violates z.string().max(64) — Zod rejects before the DB is touched.
+    const db = makeHarnessDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    const tooLong = "a".repeat(65);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: [{ groupId: tooLong, active: true }],
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("BAD_REQUEST");
+    // The handler must not have entered the transaction — no rows committed.
+    expect(committedFor(db, "VENTURE-A")).toHaveLength(0);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
