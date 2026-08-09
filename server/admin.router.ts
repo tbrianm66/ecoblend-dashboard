@@ -11,7 +11,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure, publicProcedure, adminProcedure } from "./_core/trpc";
-import { normaliseResetVentureId } from "./moduleReactivationUtils";
+import { normaliseResetVentureId, normaliseSetVentureId } from "./moduleReactivationUtils";
 import { getDb } from "./db";
 import {
   playbookLibrary, playbookVersions, adminTemplates, users,
@@ -879,8 +879,8 @@ export const adminRouter = router({
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
 
       const toggledBy = ctx.user.name ?? ctx.user.email ?? ctx.user.openId;
-      // Normalise: empty / missing → "__global__" sentinel
-      const ventureId = (input.ventureId && input.ventureId.trim()) ? input.ventureId.trim() : "__global__";
+      // Normalise: empty / missing / whitespace-only → "__global__" sentinel
+      const ventureId = normaliseSetVentureId(input.ventureId);
 
       await db
         .insert(moduleReactivations)
@@ -920,7 +920,8 @@ export const adminRouter = router({
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
 
       const toggledBy = ctx.user.name ?? ctx.user.email ?? ctx.user.openId;
-      const ventureId = (input.ventureId && input.ventureId.trim()) ? input.ventureId.trim() : "__global__";
+      // Normalise: empty / missing / whitespace-only → "__global__" sentinel
+      const ventureId = normaliseSetVentureId(input.ventureId);
       const now = new Date();
 
       // Collect the groupId of every row the DB confirms it wrote.

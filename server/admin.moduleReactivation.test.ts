@@ -35,7 +35,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { TRPCError } from "@trpc/server";
 import { rowsToActivatedSet } from "../client/src/lib/gate4Utils";
-import { normaliseResetVentureId } from "./moduleReactivationUtils";
+import { normaliseResetVentureId, normaliseSetVentureId } from "./moduleReactivationUtils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -74,8 +74,9 @@ class ReactivationStore {
   set(ctx: AdminCtx, input: { groupId: string; ventureId?: string; active: boolean }) {
     adminProcedureGuard(ctx);
 
-    const ventureId =
-      input.ventureId && input.ventureId.trim() ? input.ventureId.trim() : "__global__";
+    // Use the same production helper the router uses, so a regression there
+    // will also break tests that exercise this store.
+    const ventureId = normaliseSetVentureId(input.ventureId);
 
     const k = this.key(input.groupId, ventureId);
     const existing = this.rows.get(k);
@@ -268,6 +269,37 @@ describe("Gate 4 module reactivation — concurrent admin sync", () => {
 
     expect(global?.active).toBe(true);
     expect(venture?.active).toBe(false);
+  });
+
+  // ── Padded venture ID write-path trimming ─────────────────────────────────────
+  // Confirms that setModuleReactivation (via the store's set()) always stores
+  // the TRIMMED form of a real venture ID — not the raw padded input.
+  // This closes the gap where "  BEBUS  " could be stored as a distinct key that
+  // never matches a future lookup using the DB-stored (trimmed) value.
+
+  it("stores the trimmed ventureId when the caller supplies leading/trailing spaces", () => {
+    store.set(alice, { groupId: "gtm", ventureId: "  BEBUS  ", active: true });
+
+    const rows = store.getAll().filter(r => r.groupId === "gtm");
+    expect(rows.length).toBe(1);
+    // The stored ventureId must be the trimmed form, not the padded input.
+    expect(rows[0].ventureId).toBe("BEBUS");
+    expect(rows[0].active).toBe(true);
+  });
+
+  it("treats padded and non-padded ventureId as the same key — upsert, not two rows", () => {
+    // First write uses the padded form; second uses the clean form.
+    store.set(alice, { groupId: "gtm", ventureId: "  BEBUS  ", active: true  });
+    store.set(bob,   { groupId: "gtm", ventureId: "BEBUS",     active: false });
+
+    // Both writes must resolve to the same (groupId, ventureId) key —
+    // the result is a single upserted row, not two separate rows.
+    const rows = store.getAll().filter(r => r.groupId === "gtm");
+    expect(rows.length).toBe(1);
+    expect(rows[0].ventureId).toBe("BEBUS");
+    // Last write (bob, false) wins — confirms it's an upsert on the shared key.
+    expect(rows[0].active).toBe(false);
+    expect(rows[0].toggledBy).toBe("bob");
   });
 
   // ── 8. Non-admin guard ───────────────────────────────────────────────────────
@@ -527,6 +559,87 @@ describe("normaliseResetVentureId — production trim + sentinel guard", () => {
     const stored = "BEBUS";                         // stored in DB without padding
     const fromInput = normaliseResetVentureId("  BEBUS  ");  // caller supplied padded
     expect(fromInput).toBe(stored);                 // DELETE will match the stored row
+  });
+});
+
+// ── normaliseSetVentureId — production write-path utility ─────────────────────
+//
+// This describe block tests the ACTUAL production function used by
+// setModuleReactivation and setModuleReactivationBatch in admin.router.ts.
+// Because both mutations now call normaliseSetVentureId() instead of inlining
+// the trim logic, removing or changing .trim() in the helper will immediately
+// break these tests — giving a genuine regression guard over the DB write path.
+
+describe("normaliseSetVentureId — production write-path trim + sentinel normalisation", () => {
+  // ── Real venture IDs: trim behaviour ─────────────────────────────────────
+
+  it("returns the exact ID unchanged when there is no whitespace", () => {
+    expect(normaliseSetVentureId("BEBUS")).toBe("BEBUS");
+  });
+
+  it("trims leading and trailing whitespace from a real venture ID", () => {
+    // This is the primary regression guard: if .trim() is removed from the
+    // production function the stored key will be "  BEBUS  " — a key that can
+    // never be matched by a future lookup that uses the unpadded DB value.
+    expect(normaliseSetVentureId("  BEBUS  ")).toBe("BEBUS");
+  });
+
+  it("trims only leading whitespace", () => {
+    expect(normaliseSetVentureId("   VENTURE-X")).toBe("VENTURE-X");
+  });
+
+  it("trims only trailing whitespace", () => {
+    expect(normaliseSetVentureId("VENTURE-Y   ")).toBe("VENTURE-Y");
+  });
+
+  it("trims tab and newline characters", () => {
+    expect(normaliseSetVentureId("\t BEBUS \n")).toBe("BEBUS");
+  });
+
+  it("preserves internal spaces — only leading/trailing are stripped", () => {
+    expect(normaliseSetVentureId("  VENTURE ONE  ")).toBe("VENTURE ONE");
+  });
+
+  // ── Global sentinel normalisation ─────────────────────────────────────────
+  // Confirms that the function is the single source of truth for the
+  // "__global__" sentinel used by the DB upsert key.
+
+  it("maps undefined to __global__", () => {
+    expect(normaliseSetVentureId(undefined)).toBe("__global__");
+  });
+
+  it("maps an empty string to __global__", () => {
+    expect(normaliseSetVentureId("")).toBe("__global__");
+  });
+
+  it("maps a whitespace-only string to __global__", () => {
+    expect(normaliseSetVentureId("   ")).toBe("__global__");
+  });
+
+  it("maps a tab-only string to __global__", () => {
+    expect(normaliseSetVentureId("\t")).toBe("__global__");
+  });
+
+  // ── Upsert key consistency ────────────────────────────────────────────────
+  // Confirms that a padded and a clean ID normalise to the SAME key.
+  // This is what prevents a padded write ("  BEBUS  ") from creating a
+  // distinct DB row that never merges with a subsequent clean write ("BEBUS").
+
+  it("padded and non-padded forms produce the same normalised key", () => {
+    const fromPadded = normaliseSetVentureId("  BEBUS  ");
+    const fromClean  = normaliseSetVentureId("BEBUS");
+    // If both resolve to the same string the DB's (groupId, ventureId) unique
+    // constraint will treat them as the same row — upsert, not insert.
+    expect(fromPadded).toBe(fromClean);
+  });
+
+  it("the normalised key matches exactly how the DB stores an unpadded write", () => {
+    // A row written with "BEBUS" is stored as "BEBUS".
+    // A future reset/lookup using a padded input must normalise to the same
+    // value or the WHERE clause will match zero rows.
+    const stored   = "BEBUS";
+    const fromInput = normaliseSetVentureId("  BEBUS  ");
+    expect(fromInput).toBe(stored);
   });
 });
 

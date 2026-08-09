@@ -1,11 +1,29 @@
 /**
- * Shared utility for resetVentureModuleReactivations.
+ * Shared utilities for module-reactivation mutations.
  *
- * Exported separately from admin.router so it can be unit-tested without
+ * Exported separately from admin.router so they can be unit-tested without
  * importing the full Drizzle schema (which crashes the Vitest transform).
  */
 
 import { TRPCError } from "@trpc/server";
+
+/**
+ * Normalises the ventureId supplied to setModuleReactivation /
+ * setModuleReactivationBatch before it is written to the DB.
+ *
+ * Rules:
+ *   • undefined  → "__global__"
+ *   • "" or whitespace-only  → "__global__"
+ *   • Any other value        → trimmed string
+ *
+ * This is the single source of truth for the write-path normalisation.
+ * Testing this function directly means any regression (e.g. removing the
+ * .trim() call in the router) is caught without needing a live database.
+ */
+export function normaliseSetVentureId(raw?: string): string {
+  if (!raw || !raw.trim()) return "__global__";
+  return raw.trim();
+}
 
 /**
  * Trims leading/trailing whitespace from a raw ventureId and rejects the
