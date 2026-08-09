@@ -553,7 +553,7 @@ function formatToggleAudit(toggledBy: string | null | undefined, toggledAt: Date
   return `${who} · ${dateStr} ${timeStr}`;
 }
 function ReactivationPanel({ onClose, ventureId, ventureName, ventureColor }: ReactivationPanelProps) {
-  const { isActivated, reactivate, deactivate, reactivateAll, deactivateAll, rows, isLoading } = useGate4Reactivation(ventureId);
+  const { isActivated, reactivate, deactivate, reactivateAll, deactivateAll, resetToGlobalDefaults, rows, isLoading } = useGate4Reactivation(ventureId);
 
   // Track the current ventureId and ventureName so onSuccess callbacks can detect
   // whether the venture selector drifted between the user's click and the server response.
@@ -702,9 +702,10 @@ function ReactivationPanel({ onClose, ventureId, ventureName, ventureColor }: Re
         {ventureId && ventureName ? (
           <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.35)", fontFamily: "'Prompt', sans-serif", fontSize: "0.65rem" }}>
             Editing module settings for{" "}
-            <strong style={{ color: ventureColor ?? "#56A837" }}>{ventureName}</strong> only.{" "}
-            <span style={{ color: "rgba(245,158,11,0.7)" }}>Global defaults are not inherited</span>{" "}
-            — venture-specific toggles override them. Admin-only action.
+            <strong style={{ color: ventureColor ?? "#56A837" }}>{ventureName}</strong>.{" "}
+            Venture-specific toggles override the{" "}
+            <span style={{ color: "rgba(245,158,11,0.7)" }}>global defaults</span>
+            {" "}— groups with no venture row fall back to the global setting. Admin-only action.
           </p>
         ) : (
           <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.35)", fontFamily: "'Prompt', sans-serif", fontSize: "0.65rem" }}>
@@ -790,7 +791,7 @@ function ReactivationPanel({ onClose, ventureId, ventureName, ventureColor }: Re
         })}
       </div>
 
-      <div className="flex gap-2 px-3 py-2">
+      <div className="flex gap-2 px-3 pt-2 pb-1">
         <button
           onClick={() => {
             const snapshotVName = ventureName;
@@ -812,6 +813,41 @@ function ReactivationPanel({ onClose, ventureId, ventureName, ventureColor }: Re
           Disable All
         </button>
       </div>
+
+      {/* Reset to global defaults — only shown when a specific venture is selected */}
+      {ventureId && ventureName && (
+        <div className="px-3 pb-2">
+          <button
+            onClick={() => {
+              const snapshotVName = ventureName;
+              resetToGlobalDefaults((svid) => {
+                const currentVId = ventureIdRef.current;
+                const drifted = svid !== currentVId;
+                const scopeName = snapshotVName ?? svid ?? "venture";
+                if (drifted) {
+                  const nowScope = ventureNameRef.current ?? currentVId ?? "current venture";
+                  toast.warning(
+                    `Module settings reset to global defaults for ${scopeName} — not the currently selected venture (${nowScope})`,
+                    { duration: 6000 },
+                  );
+                } else {
+                  toast.success(`Module settings reset to global defaults for ${scopeName}`);
+                }
+              });
+            }}
+            className="w-full py-1.5 rounded text-xs font-semibold flex items-center justify-center gap-1.5"
+            style={{
+              background: "rgba(245,158,11,0.08)",
+              color: "rgba(245,158,11,0.75)",
+              border: "1px solid rgba(245,158,11,0.25)",
+              fontSize: "0.7rem",
+            }}
+          >
+            <RotateCcw size={10} />
+            Reset to global defaults
+          </button>
+        </div>
+      )}
     </div>
   );
 }

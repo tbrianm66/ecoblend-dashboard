@@ -20,15 +20,19 @@ export interface ReactivationRow {
 // ── rowsToActivatedSet ────────────────────────────────────────────────────────
 // Convert server rows into an activated Set for the given scope.
 //
-// Isolation model:
+// Resolution model:
 //   • ventureId === null  → "Global" scope: read __global__ rows only.
-//   • ventureId provided  → venture scope: read only rows for that venture;
-//     default is INACTIVE for any group without an explicit row.
-//     Global rows are NOT inherited so that each venture has a fully
-//     independent enabled set.
+//   • ventureId provided  → venture scope, with fallback:
+//       1. If a venture-specific row exists for a group, use its active flag.
+//       2. If no venture row exists, fall back to the __global__ row (if any).
+//       3. If neither exists, the group is inactive.
 //
-// This means toggling modules in global mode never affects per-venture
-// navigation and vice-versa.
+// Venture rows always take precedence over global; global is the default that
+// ventures inherit when no override has been written.  Deleting all venture
+// rows (the "reset to global defaults" operation) therefore causes the venture
+// to show exactly the global default state.
+//
+// Global scope never sees venture-specific rows.
 export function rowsToActivatedSet(
   rows: ReactivationRow[],
   ventureId: string | null,
@@ -41,13 +45,25 @@ export function rowsToActivatedSet(
       .filter(r => r.ventureId === "__global__" && r.active)
       .forEach(r => result.add(r.groupId));
   } else {
-    // Venture scope — only rows explicitly belonging to this venture contribute.
-    // No global inheritance; an absent row means inactive.
+    // Build lookup maps for global and venture rows.
+    const globalActive = new Map<string, boolean>();
+    rows
+      .filter(r => r.ventureId === "__global__")
+      .forEach(r => globalActive.set(r.groupId, r.active));
+
+    const ventureActive = new Map<string, boolean>();
     rows
       .filter(r => r.ventureId === ventureId)
-      .forEach(r => {
-        if (r.active) result.add(r.groupId);
-      });
+      .forEach(r => ventureActive.set(r.groupId, r.active));
+
+    // Union of all known group IDs; resolve each with venture row taking precedence.
+    const allGroupIds = new Set([...globalActive.keys(), ...ventureActive.keys()]);
+    allGroupIds.forEach(groupId => {
+      const active = ventureActive.has(groupId)
+        ? ventureActive.get(groupId)!
+        : (globalActive.get(groupId) ?? false);
+      if (active) result.add(groupId);
+    });
   }
 
   return result;

@@ -298,7 +298,7 @@ describe("Gate 4 — venture-switch race condition: toggles reach the correct ve
     // Venture-A also has it ON (its own row).
     expect(rowsToActivatedSet(rows, "venture-A").has("investment")).toBe(true);
 
-    // Venture-B has no row → still OFF.
-    expect(rowsToActivatedSet(rows, "venture-B").has("investment")).toBe(false);
+    // Venture-B has no row → falls back to global (ON).
+    expect(rowsToActivatedSet(rows, "venture-B").has("investment")).toBe(true);
   });
 });

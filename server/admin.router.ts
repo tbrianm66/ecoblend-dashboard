@@ -946,6 +946,29 @@ export const adminRouter = router({
 
       return { success: true, count: input.items.length };
     }),
+
+  // Delete all venture-specific module_reactivations rows for a given venture,
+  // causing that venture to fall back to global defaults.
+  // Only meaningful for a real ventureId — passing "__global__" is rejected.
+  resetVentureModuleReactivations: adminProcedure
+    .input(z.object({
+      ventureId: z.string().min(1).max(128),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+
+      const vid = input.ventureId.trim();
+      if (vid === "__global__") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot reset global scope via this endpoint" });
+      }
+
+      await db
+        .delete(moduleReactivations)
+        .where(eq(moduleReactivations.ventureId, vid));
+
+      return { success: true, ventureId: vid };
+    }),
 });
 
 export type AdminRouter = typeof adminRouter;

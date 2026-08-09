@@ -263,23 +263,32 @@ describe("Gate 4 per-venture module toggle persist round-trip", () => {
     expect(rowsToActivatedSet(rows, null).has("coaching")).toBe(false);
   });
 
-  // ⑤ No cross-scope bleed (venture ↔ global) ─────────────────────────────────
+  // ⑤ Fallback semantics (venture → global) and global isolation ────────────────
 
-  it("⑤ venture scope does NOT inherit activated modules from __global__ rows", async () => {
-    await dbUpsert(db, { groupId: "discovery", ventureId: undefined, active: true }); // global
+  it("⑤ venture scope inherits a global ON row when no venture row exists (fallback)", async () => {
+    await dbUpsert(db, { groupId: "discovery", ventureId: undefined, active: true }); // global ON
 
     const rows = await dbGetAll(db);
-    // BEBUS has no explicit row → default inactive; global must not bleed in
-    expect(rowsToActivatedSet(rows, "BEBUS").has("discovery")).toBe(false);
+    // BEBUS has no explicit row → falls back to global (active:true)
+    expect(rowsToActivatedSet(rows, "BEBUS").has("discovery")).toBe(true);
   });
 
-  it("⑤ venture scope does NOT inherit a global OFF row as an override", async () => {
+  it("⑤ venture row overrides global OFF — venture ON wins", async () => {
     await dbUpsert(db, { groupId: "gtm", ventureId: undefined, active: false }); // global OFF
     await dbUpsert(db, { groupId: "gtm", ventureId: "BEBUS",   active: true  }); // BEBUS ON
 
     const rows = await dbGetAll(db);
-    // BEBUS's own active row must not be shadowed by the global OFF
+    // BEBUS's own active row takes precedence over the global OFF
     expect(rowsToActivatedSet(rows, "BEBUS").has("gtm")).toBe(true);
+  });
+
+  it("⑤ venture row overrides global ON — venture OFF wins", async () => {
+    await dbUpsert(db, { groupId: "scoring", ventureId: undefined, active: true  }); // global ON
+    await dbUpsert(db, { groupId: "scoring", ventureId: "BEBUS",   active: false }); // BEBUS OFF
+
+    const rows = await dbGetAll(db);
+    // BEBUS explicitly opted out; global default must not re-enable it
+    expect(rowsToActivatedSet(rows, "BEBUS").has("scoring")).toBe(false);
   });
 
   it("⑤ global scope does NOT see venture-specific rows", async () => {
@@ -289,14 +298,36 @@ describe("Gate 4 per-venture module toggle persist round-trip", () => {
     expect(rowsToActivatedSet(rows, null).has("risk")).toBe(false);
   });
 
-  it("⑤ deactivating a global module does not touch a venture's own active row", async () => {
+  it("⑤ deactivating a global module does not override a venture's own active row", async () => {
     await dbUpsert(db, { groupId: "people", ventureId: undefined, active: true  }); // global
     await dbUpsert(db, { groupId: "people", ventureId: "BEBUS",   active: true  }); // venture
     await dbUpsert(db, { groupId: "people", ventureId: undefined, active: false }); // deactivate global
 
     const rows = await dbGetAll(db);
-    expect(rowsToActivatedSet(rows, null).has("people")).toBe(false);    // gone from global
-    expect(rowsToActivatedSet(rows, "BEBUS").has("people")).toBe(true);  // still ON for BEBUS
+    expect(rowsToActivatedSet(rows, null).has("people")).toBe(false);   // gone from global
+    expect(rowsToActivatedSet(rows, "BEBUS").has("people")).toBe(true); // venture row still ON
+  });
+
+  it("⑤ resetting venture rows causes venture to reflect global defaults", async () => {
+    // Global: discovery ON, scoring ON, rnd OFF (not set → absent means inactive at global)
+    await dbUpsert(db, { groupId: "discovery", ventureId: undefined, active: true });
+    await dbUpsert(db, { groupId: "scoring",   ventureId: undefined, active: true });
+
+    // BEBUS overrides: discovery OFF, scoring OFF, people ON
+    await dbUpsert(db, { groupId: "discovery", ventureId: "BEBUS", active: false });
+    await dbUpsert(db, { groupId: "scoring",   ventureId: "BEBUS", active: false });
+    await dbUpsert(db, { groupId: "people",    ventureId: "BEBUS", active: true  });
+
+    // Simulate reset: delete all BEBUS-specific rows.
+    const allRows = await dbGetAll(db);
+    const remainingRows = allRows.filter(r => r.ventureId !== "BEBUS");
+
+    const afterReset = rowsToActivatedSet(remainingRows, "BEBUS");
+
+    // Should now reflect global: discovery ON, scoring ON, people absent → OFF
+    expect(afterReset.has("discovery")).toBe(true);
+    expect(afterReset.has("scoring")).toBe(true);
+    expect(afterReset.has("people")).toBe(false);
   });
 
   // ── Edge cases ────────────────────────────────────────────────────────────────

@@ -312,6 +312,34 @@ export function useGate4Reactivation(ventureId: string | null) {
     [setBatchMutation, utils],
   );
 
+  // tRPC mutation for resetting venture-specific overrides.
+  const resetMutation = trpc.admin.resetVentureModuleReactivations.useMutation();
+
+  /**
+   * resetToGlobalDefaults — deletes all venture-specific rows for the current
+   * ventureId so the venture inherits global defaults.  No-op when ventureId is null.
+   *
+   * @param onSuccess  Called after server confirms the delete, with the snapshotVentureId.
+   */
+  const resetToGlobalDefaults = useCallback(
+    (onSuccess?: (snapshotVentureId: string | null) => void) => {
+      const snapshotVentureId = ventureIdRef.current;
+      if (!snapshotVentureId) return; // global scope has nothing to reset
+
+      resetMutation.mutate(
+        { ventureId: snapshotVentureId },
+        {
+          onSuccess: () => {
+            // After deletion, invalidate so the query re-fetches the global defaults.
+            utils.admin.getModuleReactivations.invalidate();
+            onSuccess?.(snapshotVentureId);
+          },
+        },
+      );
+    },
+    [resetMutation, utils],
+  );
+
   return {
     activatedGroups: activated,
     isActivated,
@@ -319,6 +347,7 @@ export function useGate4Reactivation(ventureId: string | null) {
     deactivate,
     reactivateAll,
     deactivateAll,
+    resetToGlobalDefaults,
     rows,
     isLoading,
   };

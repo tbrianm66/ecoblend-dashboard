@@ -34,6 +34,7 @@
 
 import { describe, it, expect, beforeEach } from "vitest";
 import { TRPCError } from "@trpc/server";
+import { rowsToActivatedSet } from "../client/src/lib/gate4Utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -98,6 +99,25 @@ class ReactivationStore {
   /** Mirrors getModuleReactivations — return all rows, no per-caller filter. */
   getAll(): ReactivationRow[] {
     return [...this.rows.values()].sort((a, b) => a.groupId.localeCompare(b.groupId));
+  }
+
+  /**
+   * Mirrors resetVentureModuleReactivations — deletes all rows for the given ventureId.
+   * Rejects "__global__" (mirrors the BAD_REQUEST guard in the router).
+   */
+  reset(ctx: AdminCtx, input: { ventureId: string }): { success: boolean; ventureId: string } {
+    adminProcedureGuard(ctx);
+
+    const vid = input.ventureId.trim();
+    if (vid === "__global__") {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot reset global scope via this endpoint" });
+    }
+
+    for (const [k, row] of this.rows.entries()) {
+      if (row.ventureId === vid) this.rows.delete(k);
+    }
+
+    return { success: true, ventureId: vid };
   }
 }
 
@@ -301,6 +321,126 @@ describe("Gate 4 module reactivation — concurrent admin sync", () => {
     // The row must still reflect Alice's write, not the rejected attempt.
     expect(row?.active).toBe(true);
     expect(row?.toggledBy).toBe("alice");
+  });
+});
+
+// ── resetVentureModuleReactivations — integration tests ───────────────────────
+//
+// Verifies that the reset endpoint:
+//   • Deletes all venture-specific rows, causing the venture to fall back to
+//     global defaults via the rowsToActivatedSet fallback semantics.
+//   • Does not touch global rows or other ventures' rows.
+//   • Rejects the "__global__" sentinel with BAD_REQUEST.
+//   • Rejects non-admin callers with FORBIDDEN.
+//   • Is safe to call when the venture has no rows (no-op).
+
+describe("resetVentureModuleReactivations — reset to global defaults", () => {
+  let store: ReactivationStore;
+  const alice = makeAdminCtx("alice");
+
+  beforeEach(() => {
+    store = new ReactivationStore();
+  });
+
+  it("deletes all venture-specific rows so the venture falls back to global defaults", () => {
+    // Global: discovery ON, scoring ON
+    store.set(alice, { groupId: "discovery", active: true });
+    store.set(alice, { groupId: "scoring",   active: true });
+
+    // BEBUS overrides: discovery OFF, scoring OFF, rnd ON
+    store.set(alice, { groupId: "discovery", ventureId: "BEBUS", active: false });
+    store.set(alice, { groupId: "scoring",   ventureId: "BEBUS", active: false });
+    store.set(alice, { groupId: "rnd",       ventureId: "BEBUS", active: true  });
+
+    // Reset BEBUS
+    store.reset(alice, { ventureId: "BEBUS" });
+
+    const rows = store.getAll();
+    const bebusSet = rowsToActivatedSet(rows, "BEBUS");
+
+    // After reset, BEBUS should reflect global defaults: discovery ON, scoring ON
+    expect(bebusSet.has("discovery")).toBe(true);
+    expect(bebusSet.has("scoring")).toBe(true);
+    // rnd had no global row → absent means inactive
+    expect(bebusSet.has("rnd")).toBe(false);
+  });
+
+  it("does not touch global rows after reset", () => {
+    store.set(alice, { groupId: "discovery", active: true });
+    store.set(alice, { groupId: "discovery", ventureId: "BEBUS", active: false });
+
+    store.reset(alice, { ventureId: "BEBUS" });
+
+    const rows = store.getAll();
+    // Global row must survive
+    expect(rowsToActivatedSet(rows, null).has("discovery")).toBe(true);
+  });
+
+  it("does not touch another venture's rows after reset", () => {
+    store.set(alice, { groupId: "gtm", ventureId: "BEBUS",     active: true });
+    store.set(alice, { groupId: "gtm", ventureId: "VENTURE-B", active: true });
+
+    store.reset(alice, { ventureId: "BEBUS" });
+
+    const rows = store.getAll();
+    const bSet = rowsToActivatedSet(rows, "VENTURE-B");
+    // VENTURE-B's own row must be unaffected
+    expect(bSet.has("gtm")).toBe(true);
+  });
+
+  it("is a no-op when the venture has no rows (result is still consistent)", () => {
+    store.set(alice, { groupId: "operations", active: true }); // global only
+
+    // BEBUS has no rows — reset should succeed without error
+    expect(() => store.reset(alice, { ventureId: "BEBUS" })).not.toThrow();
+
+    const rows = store.getAll();
+    // BEBUS still falls back to global ON
+    expect(rowsToActivatedSet(rows, "BEBUS").has("operations")).toBe(true);
+  });
+
+  it("rejects __global__ as ventureId with BAD_REQUEST", () => {
+    let err: TRPCError | undefined;
+    try {
+      store.reset(alice, { ventureId: "__global__" });
+    } catch (e) {
+      err = e as TRPCError;
+    }
+    expect(err).toBeInstanceOf(TRPCError);
+    expect(err?.code).toBe("BAD_REQUEST");
+  });
+
+  it("rejects a non-admin caller with FORBIDDEN", () => {
+    const ctx = makeNonAdminCtx("founder");
+    let err: TRPCError | undefined;
+    try {
+      store.reset(ctx, { ventureId: "BEBUS" });
+    } catch (e) {
+      err = e as TRPCError;
+    }
+    expect(err).toBeInstanceOf(TRPCError);
+    expect(err?.code).toBe("FORBIDDEN");
+  });
+
+  it("active set after reset exactly matches global defaults", () => {
+    // Set a known global state: rnd + sustainability ON
+    store.set(alice, { groupId: "rnd",            active: true  });
+    store.set(alice, { groupId: "sustainability",  active: true  });
+    store.set(alice, { groupId: "risk",            active: false });
+
+    // BEBUS diverges completely
+    store.set(alice, { groupId: "rnd",           ventureId: "BEBUS", active: false });
+    store.set(alice, { groupId: "sustainability", ventureId: "BEBUS", active: false });
+    store.set(alice, { groupId: "gtm",           ventureId: "BEBUS", active: true  });
+
+    store.reset(alice, { ventureId: "BEBUS" });
+
+    const rows = store.getAll();
+    const globalSet = rowsToActivatedSet(rows, null);
+    const bebusSet  = rowsToActivatedSet(rows, "BEBUS");
+
+    // After reset, BEBUS must match global exactly
+    expect([...bebusSet].sort()).toEqual([...globalSet].sort());
   });
 });
 
