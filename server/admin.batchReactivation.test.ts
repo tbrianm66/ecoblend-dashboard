@@ -640,3 +640,56 @@ describe("setModuleReactivationBatch — access control (real router, admin guar
     expect(committedFor(db, "VENTURE-A")).toHaveLength(1);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("setModuleReactivationBatch — payload size validation (schema rejects before DB)", () => {
+  // tRPC wraps Zod validation failures in a TRPCError with code BAD_REQUEST.
+  // These tests confirm the schema boundary (.min(1).max(50)) is enforced at
+  // the validation layer so the DB transaction is never entered.
+
+  it("rejects an empty items array with BAD_REQUEST and writes zero rows", async () => {
+    const db = makeHarnessDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: [],
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("BAD_REQUEST");
+    // No rows should have been committed — the handler never reached the DB.
+    expect(committedFor(db, "VENTURE-A")).toHaveLength(0);
+  });
+
+  it("rejects a 51-item array with BAD_REQUEST and writes zero rows", async () => {
+    const db = makeHarnessDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    const oversized = Array.from({ length: 51 }, (_, i) => ({
+      groupId: `group-${i}`,
+      active:  true,
+    }));
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: oversized,
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("BAD_REQUEST");
+    // Validation must fire before the transaction — committed store stays empty.
+    expect(committedFor(db, "VENTURE-A")).toHaveLength(0);
+  });
+});
