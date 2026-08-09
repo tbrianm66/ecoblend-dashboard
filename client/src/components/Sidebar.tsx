@@ -43,6 +43,7 @@ import {
   useGate4Reactivation,
   type BacklogGroupId,
 } from "@/lib/gate4Config";
+import { showToggleToast, showBatchToast } from "@/lib/gate4ToastUtils";
 
 type IconName = string;
 const iconMap: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
@@ -564,55 +565,38 @@ function ReactivationPanel({ onClose, ventureId, ventureName, ventureColor }: Re
 
   /**
    * Show a toast confirming which venture the toggle was written to.
-   * When the selector has changed since the click, use a warning toast with
-   * extra context so the admin knows the write went to a different venture.
-   *
-   * @param label           Module group label (e.g. "Discovery")
-   * @param activated       true = module enabled, false = disabled
-   * @param snapshotVId     The ventureId that was current *at click time*
-   * @param snapshotVName   The ventureName that was current *at click time*
+   * Delegates to the exported showToggleToast helper (gate4ToastUtils.ts)
+   * so the decision logic can be unit-tested independently of React.
    */
-  const showToggleToast = useCallback(
+  const handleToggleToast = useCallback(
     (label: string, activated: boolean, snapshotVId: string | null, snapshotVName: string | undefined) => {
-      const currentVId = ventureIdRef.current;
-      const currentVName = ventureNameRef.current;
-      const action = activated ? "activated" : "deactivated";
-      const scopeName = snapshotVId ? (snapshotVName ?? snapshotVId) : "all ventures (global)";
-      const drifted = snapshotVId !== currentVId;
-
-      if (drifted) {
-        const nowScope = currentVId ? (currentVName ?? currentVId) : "all ventures (global)";
-        toast.warning(
-          `"${label}" ${action} for ${scopeName} — not the currently selected venture (${nowScope})`,
-          { duration: 6000 },
-        );
-      } else {
-        toast.success(`"${label}" ${action} for ${scopeName}`);
-      }
+      showToggleToast(
+        toast,
+        ventureIdRef.current,
+        ventureNameRef.current,
+        label,
+        activated,
+        snapshotVId,
+        snapshotVName,
+      );
     },
     [],
   );
 
   /**
    * Show a toast for a bulk (Enable All / Disable All) batch action.
+   * Delegates to the exported showBatchToast helper (gate4ToastUtils.ts).
    */
-  const showBatchToast = useCallback(
+  const handleBatchToast = useCallback(
     (allActivated: boolean, snapshotVId: string | null, snapshotVName: string | undefined) => {
-      const currentVId = ventureIdRef.current;
-      const currentVName = ventureNameRef.current;
-      const action = allActivated ? "All modules enabled" : "All modules disabled";
-      const scopeName = snapshotVId ? (snapshotVName ?? snapshotVId) : "all ventures (global)";
-      const drifted = snapshotVId !== currentVId;
-
-      if (drifted) {
-        const nowScope = currentVId ? (currentVName ?? currentVId) : "all ventures (global)";
-        toast.warning(
-          `${action} for ${scopeName} — not the currently selected venture (${nowScope})`,
-          { duration: 6000 },
-        );
-      } else {
-        toast.success(`${action} for ${scopeName}`);
-      }
+      showBatchToast(
+        toast,
+        ventureIdRef.current,
+        ventureNameRef.current,
+        allActivated,
+        snapshotVId,
+        snapshotVName,
+      );
     },
     [],
   );
@@ -771,7 +755,7 @@ function ReactivationPanel({ onClose, ventureId, ventureName, ventureColor }: Re
                   const snapshotVId = ventureId;
                   const snapshotVName = ventureName;
                   const onSuccess = (svid: string | null) =>
-                    showToggleToast(group.label, !active, svid, snapshotVName);
+                    handleToggleToast(group.label, !active, svid, snapshotVName);
                   if (active) deactivate(group.id, onSuccess);
                   else reactivate(group.id, onSuccess);
                 }}
@@ -795,7 +779,7 @@ function ReactivationPanel({ onClose, ventureId, ventureName, ventureColor }: Re
         <button
           onClick={() => {
             const snapshotVName = ventureName;
-            reactivateAll(svid => showBatchToast(true, svid, snapshotVName));
+            reactivateAll(svid => handleBatchToast(true, svid, snapshotVName));
           }}
           className="flex-1 py-1.5 rounded text-xs font-semibold"
           style={{ background: "rgba(86,168,55,0.12)", color: "#56A837", border: "1px solid rgba(86,168,55,0.2)", fontSize: "0.7rem" }}
@@ -805,7 +789,7 @@ function ReactivationPanel({ onClose, ventureId, ventureName, ventureColor }: Re
         <button
           onClick={() => {
             const snapshotVName = ventureName;
-            deactivateAll(svid => showBatchToast(false, svid, snapshotVName));
+            deactivateAll(svid => handleBatchToast(false, svid, snapshotVName));
           }}
           className="flex-1 py-1.5 rounded text-xs font-semibold"
           style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.4)", border: "1px solid rgba(255,255,255,0.08)", fontSize: "0.7rem" }}
