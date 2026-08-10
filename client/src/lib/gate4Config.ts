@@ -121,6 +121,36 @@ export const GATE4_BACKLOG_GROUP_IDS = [
 
 export type BacklogGroupId = typeof GATE4_BACKLOG_GROUP_IDS[number];
 
+/**
+ * Human-readable label for each backlog group ID.
+ * Used to map raw groupId strings to display names in error toasts.
+ * Kept in sync with the group definitions in Sidebar.tsx.
+ */
+export const GATE4_BACKLOG_GROUPS: ReadonlyArray<{ id: BacklogGroupId; label: string }> = [
+  { id: "venture-intake",  label: "Venture Intake" },
+  { id: "discovery",       label: "Discovery & Market" },
+  { id: "proposition",     label: "Proposition & Model" },
+  { id: "rnd",             label: "R&D Hub" },
+  { id: "operations",      label: "Operations & Mfg" },
+  { id: "gtm",             label: "Brand & GTM" },
+  { id: "sustainability",  label: "Sustainability & Impact" },
+  { id: "risk",            label: "Risk Intelligence" },
+  { id: "scoring",         label: "Readiness Scoring" },
+  { id: "investment",      label: "Investment Readiness" },
+  { id: "execution",       label: "Execution Planning" },
+  { id: "coaching",        label: "Coaching" },
+  { id: "collaboration",   label: "Collaboration" },
+  { id: "governance",      label: "Governance" },
+  { id: "people",          label: "People Intelligence" },
+] as const;
+
+/**
+ * Convenience lookup: groupId → human-readable label.
+ * Falls back to the raw ID for any unknown groupId.
+ */
+export const GATE4_BACKLOG_GROUP_LABEL_MAP: Readonly<Record<string, string>> =
+  Object.fromEntries(GATE4_BACKLOG_GROUPS.map(g => [g.id, g.label]));
+
 // ── Module reactivation server row type & rowsToActivatedSet ─────────────────
 // Defined in gate4Utils.ts (dependency-free) so Node.js / Vitest test contexts
 // can import the production implementation without pulling in React / tRPC.

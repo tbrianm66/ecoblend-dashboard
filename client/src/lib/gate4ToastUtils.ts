@@ -108,15 +108,26 @@ export function showResetToast(
  * @param toast         The toast API to call (sonner in production, spy in tests).
  * @param skippedGroups Array of groupId strings parsed from the error message.
  * @param rawMessage    The raw error message from the TRPC response.
+ * @param labelMap      Optional map of groupId → human-readable label.
+ *                      When provided each skipped ID is resolved to its display
+ *                      name (e.g. "discovery" → "Discovery & Market").
+ *                      Unknown IDs fall back to the raw ID string.
+ *                      Pass GATE4_BACKLOG_GROUP_LABEL_MAP from gate4Config.ts in
+ *                      production; omit (or pass undefined) in tests that only
+ *                      care about the raw-ID path.
  */
 export function showBatchErrorToast(
   toast: ToastApi,
   skippedGroups: string[],
   rawMessage: string,
+  labelMap?: Readonly<Record<string, string>>,
 ): void {
   if (skippedGroups.length > 0) {
+    const labels = labelMap
+      ? skippedGroups.map(id => labelMap[id] ?? id)
+      : skippedGroups;
     toast.error(
-      `Batch write incomplete — skipped group(s): ${skippedGroups.join(", ")}`,
+      `Batch write incomplete — skipped group(s): ${labels.join(", ")}`,
       { duration: 8000 },
     );
   } else {

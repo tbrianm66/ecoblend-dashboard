@@ -40,6 +40,7 @@ import {
   GATE4_CORE_MODULES,
   GATE4_DEFERRED_MODULES,
   GATE4_BACKLOG_GROUP_IDS,
+  GATE4_BACKLOG_GROUP_LABEL_MAP,
   useGate4Reactivation,
   type BacklogGroupId,
 } from "@/lib/gate4Config";
@@ -648,7 +649,7 @@ function ReactivationPanel({
    */
   const handleBatchErrorToast = useCallback(
     (skippedGroups: string[], rawMessage: string) => {
-      showBatchErrorToast(toast, skippedGroups, rawMessage);
+      showBatchErrorToast(toast, skippedGroups, rawMessage, GATE4_BACKLOG_GROUP_LABEL_MAP);
     },
     [],
   );
