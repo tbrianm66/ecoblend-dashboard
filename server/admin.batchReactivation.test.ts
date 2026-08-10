@@ -828,6 +828,61 @@ describe("setModuleReactivationBatch — payload size validation (schema rejects
     // The handler must not have entered the transaction — no rows committed.
     expect(committedFor(db, "VENTURE-A")).toHaveLength(0);
   });
+
+  it("rejects a mixed batch where one item has a blank groupId — entire batch rejected, zero rows written", async () => {
+    // Zod validates each item in the array.  A blank groupId on ANY item
+    // must cause the entire input to be rejected (BAD_REQUEST) before the
+    // transaction is entered — no partial writes from the valid item.
+    const db = makeHarnessDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: [
+          { groupId: "discovery", active: true }, // valid
+          { groupId: "",          active: true }, // blank — violates min(1)
+        ],
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("BAD_REQUEST");
+    // Zod rejects the whole input — the transaction is never entered.
+    expect(committedFor(db, "VENTURE-A")).toHaveLength(0);
+  });
+
+  it("rejects a mixed batch where one item has a 65-char groupId — entire batch rejected, zero rows written", async () => {
+    // A 65-character groupId on ANY item must cause the entire input to be
+    // rejected (BAD_REQUEST) before the transaction is entered — no partial
+    // writes from the remaining valid items.
+    const db = makeHarnessDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    const tooLong = "b".repeat(65);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: [
+          { groupId: "discovery",  active: true }, // valid
+          { groupId: "validation", active: true }, // valid
+          { groupId: tooLong,      active: true }, // 65 chars — violates max(64)
+        ],
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("BAD_REQUEST");
+    // Zod rejects the whole input — the transaction is never entered.
+    expect(committedFor(db, "VENTURE-A")).toHaveLength(0);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
