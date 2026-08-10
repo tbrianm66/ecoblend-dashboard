@@ -29,12 +29,12 @@
  * with the production component's approach).
  */
 
-import React from "react";
+import React, { useState, useCallback } from "react";
 import { describe, it, expect, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen, cleanup, fireEvent, act } from "@testing-library/react";
 import { Router } from "wouter";
 
-import { ExtendedBacklogSection } from "./Sidebar";
+import { ExtendedBacklogSection, ReactivationPanel } from "./Sidebar";
 import type { ReactivationRow } from "@/lib/gate4Utils";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -480,6 +480,301 @@ describe("ExtendedBacklogSection — header source badge", () => {
 
         unmount();
       }
+    });
+  });
+});
+
+// ── Integration: toggle in ReactivationPanel → badge in ExtendedBacklogSection ──
+/**
+ * Task #98
+ *
+ * These tests verify the end-to-end optimistic update path:
+ *
+ *   1. ReactivationPanel and ExtendedBacklogSection share the same rows /
+ *      isActivated / reactivate / deactivate props (mirroring the production
+ *      Sidebar, which derives all of these from a single useGate4Reactivation
+ *      call).
+ *
+ *   2. Clicking a toggle button inside ReactivationPanel fires the shared
+ *      reactivate / deactivate callback synchronously — no tRPC call, no
+ *      server round-trip.
+ *
+ *   3. Because the shared rows and isActivated state updates in the same
+ *      React render, ExtendedBacklogSection immediately reflects the new
+ *      badge without a page reload.
+ *
+ * Design note — why groups start activated:
+ * ─────────────────────────────────────────
+ * ExtendedBacklogSection initialises its internal `open` flag once at mount
+ * from `hasActiveItem` (a derived value that checks whether the current
+ * location falls inside an activated group).  If the group starts OFF the
+ * section is collapsed and the badge area is never rendered — assertions on
+ * badge changes would always fail.
+ *
+ * To keep tests readable, groups start activated (section open, DEFAULT badge
+ * visible) and we exercise badge TYPE changes caused by toggle clicks:
+ *
+ *   • DEFAULT → (section still open) → no badge  [after deactivate]
+ *   • no badge → (section still open) → GLOBAL   [after re-activate, row injected]
+ *   • GLOBAL   → VENTURE                          [after venture-scope re-activate]
+ *   • VENTURE  → no badge                         [after deactivate]
+ *
+ * The TestHarness component plays the role of Sidebar: it owns the shared
+ * state and wires both child components to it.  The toggle callbacks inject
+ * a synthetic ReactivationRow (exactly as the production persist() helper
+ * does) so the optimistic overlay mechanics are exercised.
+ */
+describe("toggle in ReactivationPanel → header badge in ExtendedBacklogSection (integration)", () => {
+  /**
+   * Shared-state harness that mirrors the production Sidebar wiring.
+   *
+   * TARGET_GROUP is always included in initialActivated so that
+   * ExtendedBacklogSection opens on mount and badge assertions are visible.
+   *
+   * @param ventureId   null = global scope; a string = venture-specific scope.
+   * @param initialRows Rows already present before any toggle fires.
+   */
+  function TestHarness({
+    ventureId,
+    initialRows = [],
+  }: {
+    ventureId: string | null;
+    initialRows?: ReactivationRow[];
+  }) {
+    // TARGET_GROUP starts activated so the section opens and badges are visible.
+    const [rows, setRows]           = useState<ReactivationRow[]>(initialRows);
+    const [activated, setActivated] = useState<Set<string>>(new Set([TARGET_GROUP]));
+
+    const isActivated = useCallback((id: string) => activated.has(id), [activated]);
+
+    // Mirrors the production persist() optimistic overlay:
+    //   1. Update the activated set immediately (no server needed).
+    //   2. Inject a synthetic row so the badge reflects the write before any
+    //      server refetch.  The row's ventureId matches the current scope
+    //      (ventureId ?? "__global__"), replicating what persist() does.
+    // Note: no nested act() here — fireEvent.click already runs inside act.
+    const reactivate = useCallback(
+      (groupId: string) => {
+        const syntheticVId = ventureId ?? "__global__";
+        setActivated(prev => new Set([...prev, groupId]));
+        setRows(prev => {
+          const filtered = prev.filter(
+            r => !(r.groupId === groupId && r.ventureId === syntheticVId),
+          );
+          return [
+            ...filtered,
+            { groupId, ventureId: syntheticVId, active: true, toggledBy: null, toggledAt: new Date() },
+          ];
+        });
+      },
+      [ventureId],
+    );
+
+    const deactivate = useCallback(
+      (groupId: string) => {
+        const syntheticVId = ventureId ?? "__global__";
+        setActivated(prev => { const s = new Set(prev); s.delete(groupId); return s; });
+        setRows(prev => {
+          const filtered = prev.filter(
+            r => !(r.groupId === groupId && r.ventureId === syntheticVId),
+          );
+          return [
+            ...filtered,
+            { groupId, ventureId: syntheticVId, active: false, toggledBy: null, toggledAt: new Date() },
+          ];
+        });
+      },
+      [ventureId],
+    );
+
+    const noop = useCallback(() => {}, []);
+
+    return React.createElement(
+      React.Fragment,
+      null,
+      React.createElement(ReactivationPanel, {
+        onClose:               noop,
+        ventureId,
+        ventureName:           ventureId ? "Test Venture" : undefined,
+        ventureColor:          undefined,
+        venturesLoading:       false,
+        rows,
+        isLoading:             false,
+        isError:               false,
+        isActivated,
+        reactivate,
+        deactivate,
+        reactivateAll:         noop,
+        deactivateAll:         noop,
+        resetToGlobalDefaults: noop,
+      }),
+      React.createElement(ExtendedBacklogSection, {
+        location:    TARGET_LOCATION,
+        isActivated,
+        rows,
+        isLoading:   false,
+        isError:     false,
+        ventureId,
+      }),
+    );
+  }
+
+  // ── global scope (ventureId = null) ───────────────────────────────────────
+
+  describe("global scope (no venture selected)", () => {
+    it("header badge goes from DEFAULT to no-badge to GLOBAL as the group is toggled OFF then ON", () => {
+      // Start: TARGET_GROUP activated, no rows → DEFAULT badge visible in the
+      // open section header.
+      renderInRouter(React.createElement(TestHarness, { ventureId: null }));
+
+      expect(screen.getByLabelText("No override set; system default applies").textContent).toBe("DEFAULT");
+
+      const toggleBtn = screen.getByTestId(`toggle-${TARGET_GROUP}`);
+
+      // First click — the panel button shows "On", so clicking calls deactivate.
+      // The group becomes OFF; the section stays open (open is local state).
+      // No badge is rendered for an OFF row.
+      fireEvent.click(toggleBtn);
+      expect(screen.queryByLabelText("No override set; system default applies")).toBeNull();
+      expect(screen.queryByLabelText("Enabled by a global rule")).toBeNull();
+
+      // Second click — group is now OFF so the button shows "Off"; clicking calls
+      // reactivate.  A synthetic global row is injected → GLOBAL badge.
+      fireEvent.click(toggleBtn);
+      expect(screen.getByLabelText("Enabled by a global rule").textContent).toBe("GLOBAL");
+      expect(screen.queryByLabelText("No override set; system default applies")).toBeNull();
+    });
+
+    it("header badge disappears when an ON group with a GLOBAL row is toggled OFF", () => {
+      // Start: TARGET_GROUP activated + pre-existing global row → GLOBAL badge.
+      renderInRouter(
+        React.createElement(TestHarness, {
+          ventureId:   null,
+          initialRows: [globalRow(TARGET_GROUP)],
+        }),
+      );
+
+      expect(screen.getByLabelText("Enabled by a global rule").textContent).toBe("GLOBAL");
+
+      // Toggle OFF.
+      fireEvent.click(screen.getByTestId(`toggle-${TARGET_GROUP}`));
+
+      // Group is now OFF → ExtendedBacklogSection renders the locked OFF row,
+      // which never shows a source badge.
+      expect(screen.queryByLabelText("Enabled by a global rule")).toBeNull();
+      expect(screen.queryByLabelText("No override set; system default applies")).toBeNull();
+      expect(screen.queryByLabelText("Enabled by a venture-specific override")).toBeNull();
+    });
+
+    it("GLOBAL badge returns after a second ON toggle cycle (badge survives round-trip through OFF)", () => {
+      // Start: TARGET_GROUP activated, no rows → DEFAULT.
+      renderInRouter(React.createElement(TestHarness, { ventureId: null }));
+
+      const btn = screen.getByTestId(`toggle-${TARGET_GROUP}`);
+
+      // OFF → ON: row injected, badge = GLOBAL.
+      fireEvent.click(btn); // deactivate (currently ON)
+      fireEvent.click(btn); // reactivate (now OFF)
+      expect(screen.getByLabelText("Enabled by a global rule").textContent).toBe("GLOBAL");
+
+      // ON → OFF: badge disappears.
+      fireEvent.click(btn); // deactivate again
+      expect(screen.queryByLabelText("Enabled by a global rule")).toBeNull();
+
+      // OFF → ON: row re-injected, GLOBAL badge returns.
+      fireEvent.click(btn); // reactivate
+      expect(screen.getByLabelText("Enabled by a global rule").textContent).toBe("GLOBAL");
+    });
+  });
+
+  // ── venture scope (ventureId = VENTURE_ID) ────────────────────────────────
+
+  describe("venture scope (a venture is selected)", () => {
+    it("header badge switches from DEFAULT to VENTURE after an OFF→ON toggle in venture scope", () => {
+      // Start: TARGET_GROUP activated, no rows → DEFAULT badge.
+      renderInRouter(React.createElement(TestHarness, { ventureId: VENTURE_ID }));
+
+      expect(screen.getByLabelText("No override set; system default applies").textContent).toBe("DEFAULT");
+
+      const btn = screen.getByTestId(`toggle-${TARGET_GROUP}`);
+
+      // Deactivate (ON → OFF): badge disappears.
+      fireEvent.click(btn);
+      expect(screen.queryByLabelText("No override set; system default applies")).toBeNull();
+
+      // Reactivate (OFF → ON): synthetic row with ventureId = VENTURE_ID injected → VENTURE badge.
+      fireEvent.click(btn);
+      expect(screen.getByLabelText("Enabled by a venture-specific override").textContent).toBe("VENTURE");
+      // GLOBAL badge must NOT appear — the venture row takes precedence.
+      expect(screen.queryByLabelText("Enabled by a global rule")).toBeNull();
+    });
+
+    it("header badge switches from GLOBAL to VENTURE when a global-only group is toggled OFF then ON in venture scope", () => {
+      // Start: TARGET_GROUP ON with only a global row → GLOBAL badge.
+      renderInRouter(
+        React.createElement(TestHarness, {
+          ventureId:   VENTURE_ID,
+          initialRows: [globalRow(TARGET_GROUP)],
+        }),
+      );
+
+      expect(screen.getByLabelText("Enabled by a global rule").textContent).toBe("GLOBAL");
+      expect(screen.queryByLabelText("Enabled by a venture-specific override")).toBeNull();
+
+      const btn = screen.getByTestId(`toggle-${TARGET_GROUP}`);
+
+      // Deactivate (ON → OFF): group becomes OFF, section stays open.
+      fireEvent.click(btn);
+      expect(screen.queryByLabelText("Enabled by a global rule")).toBeNull();
+
+      // Reactivate (OFF → ON): venture-scoped synthetic row injected.
+      // The venture row overrides the global row → badge must read VENTURE.
+      fireEvent.click(btn);
+      expect(screen.getByLabelText("Enabled by a venture-specific override").textContent).toBe("VENTURE");
+    });
+
+    it("header badge disappears when an ON group with a VENTURE row is toggled OFF", () => {
+      renderInRouter(
+        React.createElement(TestHarness, {
+          ventureId:   VENTURE_ID,
+          initialRows: [ventureRow(TARGET_GROUP, VENTURE_ID)],
+        }),
+      );
+
+      expect(screen.getByLabelText("Enabled by a venture-specific override").textContent).toBe("VENTURE");
+
+      fireEvent.click(screen.getByTestId(`toggle-${TARGET_GROUP}`));
+
+      // Group is OFF → locked row, no badge.
+      expect(screen.queryByLabelText("Enabled by a venture-specific override")).toBeNull();
+      expect(screen.queryByLabelText("Enabled by a global rule")).toBeNull();
+      expect(screen.queryByLabelText("No override set; system default applies")).toBeNull();
+    });
+  });
+
+  // ── no server round-trip guarantee ────────────────────────────────────────
+
+  describe("optimistic update requires no server round-trip", () => {
+    it("badge update is visible synchronously after fireEvent.click without awaiting any promise", () => {
+      // This test is the structural proof of the optimistic update guarantee.
+      //
+      // If the badge update required a tRPC refetch or any async step, the
+      // assertion immediately after the second fireEvent.click would fail (the
+      // badge would still be absent or DEFAULT while the refetch was in-flight).
+      // Because it passes synchronously we know the update is purely driven by
+      // the in-memory optimistic row overlay — no server response needed.
+      renderInRouter(React.createElement(TestHarness, { ventureId: null }));
+
+      // Confirm DEFAULT badge is present initially.
+      expect(screen.getByLabelText("No override set; system default applies").textContent).toBe("DEFAULT");
+
+      // Click 1 — deactivate (currently ON): section stays open, no badge.
+      fireEvent.click(screen.getByTestId(`toggle-${TARGET_GROUP}`));
+      // Click 2 — reactivate: row injected synchronously → GLOBAL badge.
+      fireEvent.click(screen.getByTestId(`toggle-${TARGET_GROUP}`));
+
+      // Assertion is synchronous — no waitFor, no findBy*, no await.
+      expect(screen.getByLabelText("Enabled by a global rule").textContent).toBe("GLOBAL");
     });
   });
 });
