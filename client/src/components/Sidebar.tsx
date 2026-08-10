@@ -556,9 +556,11 @@ interface ReactivationPanelProps {
   ventureId: string | null;
   ventureName?: string;
   ventureColor?: string;
+  /** True while the venture list is still loading — disables all toggle/batch buttons. */
+  venturesLoading?: boolean;
 }
 
-function ReactivationPanel({ onClose, ventureId, ventureName, ventureColor }: ReactivationPanelProps) {
+function ReactivationPanel({ onClose, ventureId, ventureName, ventureColor, venturesLoading = false }: ReactivationPanelProps) {
   const { isActivated, reactivate, deactivate, reactivateAll, deactivateAll, resetToGlobalDefaults, rows, isLoading, isError } = useGate4Reactivation(ventureId);
 
   // Track the current ventureId and ventureName so onSuccess callbacks can detect
@@ -789,6 +791,7 @@ function ReactivationPanel({ onClose, ventureId, ventureName, ventureColor }: Re
                 })()}
               </div>
               <button
+                disabled={venturesLoading}
                 onClick={() => {
                   // Capture venture name at click time; the hook captures the ID via its own ref.
                   const snapshotVId = ventureId;
@@ -800,10 +803,12 @@ function ReactivationPanel({ onClose, ventureId, ventureName, ventureColor }: Re
                 }}
                 className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold transition-all shrink-0"
                 style={{
-                  background: active ? "rgba(86,168,55,0.15)" : "rgba(255,255,255,0.06)",
-                  color: active ? "#56A837" : "rgba(255,255,255,0.3)",
-                  border: active ? "1px solid rgba(86,168,55,0.3)" : "1px solid rgba(255,255,255,0.08)",
+                  background: venturesLoading ? "rgba(255,255,255,0.03)" : active ? "rgba(86,168,55,0.15)" : "rgba(255,255,255,0.06)",
+                  color: venturesLoading ? "rgba(255,255,255,0.15)" : active ? "#56A837" : "rgba(255,255,255,0.3)",
+                  border: venturesLoading ? "1px solid rgba(255,255,255,0.05)" : active ? "1px solid rgba(86,168,55,0.3)" : "1px solid rgba(255,255,255,0.08)",
                   fontSize: "0.65rem",
+                  cursor: venturesLoading ? "not-allowed" : "pointer",
+                  opacity: venturesLoading ? 0.5 : 1,
                 }}
               >
                 {active ? <Eye size={9} /> : <EyeOff size={9} />}
@@ -816,6 +821,7 @@ function ReactivationPanel({ onClose, ventureId, ventureName, ventureColor }: Re
 
       <div className="flex gap-2 px-3 pt-2 pb-1">
         <button
+          disabled={venturesLoading}
           onClick={() => {
             const snapshotVName = ventureName;
             reactivateAll(
@@ -824,11 +830,18 @@ function ReactivationPanel({ onClose, ventureId, ventureName, ventureColor }: Re
             );
           }}
           className="flex-1 py-1.5 rounded text-xs font-semibold"
-          style={{ background: "rgba(86,168,55,0.12)", color: "#56A837", border: "1px solid rgba(86,168,55,0.2)", fontSize: "0.7rem" }}
+          style={{
+            background: venturesLoading ? "rgba(86,168,55,0.05)" : "rgba(86,168,55,0.12)",
+            color: venturesLoading ? "rgba(86,168,55,0.3)" : "#56A837",
+            border: venturesLoading ? "1px solid rgba(86,168,55,0.08)" : "1px solid rgba(86,168,55,0.2)",
+            fontSize: "0.7rem",
+            cursor: venturesLoading ? "not-allowed" : "pointer",
+          }}
         >
-          Enable All
+          {venturesLoading ? "Loading…" : "Enable All"}
         </button>
         <button
+          disabled={venturesLoading}
           onClick={() => {
             const snapshotVName = ventureName;
             deactivateAll(
@@ -837,9 +850,15 @@ function ReactivationPanel({ onClose, ventureId, ventureName, ventureColor }: Re
             );
           }}
           className="flex-1 py-1.5 rounded text-xs font-semibold"
-          style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.4)", border: "1px solid rgba(255,255,255,0.08)", fontSize: "0.7rem" }}
+          style={{
+            background: "rgba(255,255,255,0.05)",
+            color: venturesLoading ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.4)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            fontSize: "0.7rem",
+            cursor: venturesLoading ? "not-allowed" : "pointer",
+          }}
         >
-          Disable All
+          {venturesLoading ? "Loading…" : "Disable All"}
         </button>
       </div>
 
@@ -1128,7 +1147,7 @@ const ECOBLEND_LOGO_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310419663031397
 export default function Sidebar() {
   const [location] = useLocation();
   const [reactivationOpen, setReactivationOpen] = useState(false);
-  const { selectedVenture } = useSelectedVenture();
+  const { selectedVenture, loading: venturesLoading } = useSelectedVenture();
   const selectedVentureId = selectedVenture?.id ?? null;
   const { isActivated, rows, isLoading, isError } = useGate4Reactivation(selectedVentureId);
 
@@ -1202,6 +1221,7 @@ export default function Sidebar() {
           ventureId={selectedVentureId}
           ventureName={selectedVenture?.name}
           ventureColor={selectedVenture?.color}
+          venturesLoading={venturesLoading}
         />
       )}
 
