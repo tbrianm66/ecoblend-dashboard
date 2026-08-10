@@ -560,7 +560,7 @@ function DeferredSection() {
 // optimisticRows state: panel badges would update immediately on toggle but the
 // header badges (fed by Sidebar's hook instance) would not, because the two
 // hook instances never share their in-memory overlay state.
-interface ReactivationPanelProps {
+export interface ReactivationPanelProps {
   onClose: () => void;
   ventureId: string | null;
   ventureName?: string;
@@ -590,7 +590,7 @@ interface ReactivationPanelProps {
   ) => void;
 }
 
-function ReactivationPanel({
+export function ReactivationPanel({
   onClose, ventureId, ventureName, ventureColor, venturesLoading = false,
   rows, isLoading, isError, isActivated, reactivate, deactivate,
   reactivateAll, deactivateAll, resetToGlobalDefaults,
@@ -835,6 +835,7 @@ function ReactivationPanel({
                 })()}
               </div>
               <button
+                data-testid={`toggle-${group.id}`}
                 disabled={actionsDisabled}
                 onClick={() => {
                   // Capture venture name at click time; the hook captures the ID via its own ref.
@@ -867,6 +868,7 @@ function ReactivationPanel({
 
       <div className="flex gap-2 px-3 pt-2 pb-1">
         <button
+          data-testid="enable-all-btn"
           disabled={actionsDisabled}
           onClick={() => {
             const snapshotVName = ventureName;
@@ -887,6 +889,7 @@ function ReactivationPanel({
           {venturesLoading ? "Loading…" : "Enable All"}
         </button>
         <button
+          data-testid="disable-all-btn"
           disabled={actionsDisabled}
           onClick={() => {
             const snapshotVName = ventureName;

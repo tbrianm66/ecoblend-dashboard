@@ -42,14 +42,38 @@ vi.mock("@/lib/trpc", () => ({
       resetVentureModuleReactivations:{ useMutation: vi.fn() },
     },
     useUtils: vi.fn(),
+    auth: { me: { useQuery: vi.fn(() => ({ data: null, isLoading: false })) }, logout: { useMutation: vi.fn(() => ({ mutateAsync: vi.fn() })) } },
   },
 }));
+
+// ── Stub Sidebar's transitive module-level dependencies ────────────────────────
+// These modules are loaded when Sidebar.tsx is imported (for ReactivationPanel).
+// The hooks and components they export are never CALLED during ReactivationPanel
+// tests (the panel receives everything as props), but the modules must be
+// importable to avoid module-resolution errors.
+vi.mock("wouter", () => ({
+  Link: ({ children }: { children: unknown }) => children,
+  useLocation: () => ["/", vi.fn()],
+}));
+vi.mock("@/contexts/SelectedVentureContext", () => ({
+  useSelectedVenture: vi.fn(() => ({
+    selectedVenture: null,
+    availableVentures: [],
+    setSelectedVentureId: vi.fn(),
+    loading: false,
+  })),
+}));
+vi.mock("@/contexts/VentureContext", () => ({
+  useVentures: vi.fn(() => ({ ventures: [] })),
+}));
+vi.mock("@/components/GlobalVentureSelector", () => ({ default: () => null }));
 
 // ── Production imports (resolved after mock is registered) ────────────────────
 import { trpc } from "@/lib/trpc";
 import { useGate4Reactivation, GATE4_BACKLOG_GROUP_IDS } from "./gate4Config";
 import { buildRowByGroup, resolveModuleBadge, type ReactivationRow } from "./gate4Utils";
 import { showToggleToast, showBatchToast, type ToastApi } from "./gate4ToastUtils";
+import { ReactivationPanel } from "@/components/Sidebar";
 
 // ── Row factories ─────────────────────────────────────────────────────────────
 function globalRow(groupId: string, active = true): ReactivationRow {
@@ -1538,5 +1562,207 @@ describe("ReactivationPanel drift notice — mid-flight venture switch triggers 
     expect(toast.calls.success).toHaveLength(1);
     expect(toast.calls.warning).toHaveLength(0);
     expect(toast.calls.success[0]).toContain(VENTURE_A_NAME);
+  });
+});
+
+// ── ReactivationPanel props-refactor: injected callbacks fire correctly ────────
+//
+// Task #74 refactored ReactivationPanel from owning its own useGate4Reactivation
+// call to receiving all hook values as props from Sidebar.  This removes the
+// stale-rows bug but means every interactive button in the panel now depends on
+// externally-injected callbacks.  These tests render the real exported
+// ReactivationPanel component with spy callbacks and verify:
+//
+//   1. Clicking a row's toggle button calls reactivate(groupId, fn, fn) when OFF.
+//   2. Clicking a row's toggle button calls deactivate(groupId, fn, fn) when ON.
+//   3. Clicking "Enable All"  calls reactivateAll(fn, fn).
+//   4. Clicking "Disable All" calls deactivateAll(fn, fn).
+//   5. None of the above callbacks fire when venturesLoading=true.
+//   6. None of the above callbacks fire when ventureId is set but ventureName is
+//      absent (transient window between venture selection and name resolution).
+//
+// Strategy
+// --------
+// ReactivationPanel is now exported from Sidebar.tsx and rendered directly.
+// If the prop interface changes, the component wiring changes, or a callback
+// is dropped/misdirected, the relevant test will fail immediately.
+
+describe("ReactivationPanel props-refactor — injected callbacks fire correctly", () => {
+  // The first BACKLOG_GROUP — stable because the list is a static constant.
+  const FIRST_GROUP_ID = "venture-intake";
+
+  // Minimal base props shared across tests.  Overridden per-test as needed.
+  function makeProps(overrides: Partial<React.ComponentProps<typeof ReactivationPanel>> = {}) {
+    return {
+      onClose:               vi.fn(),
+      ventureId:             null as string | null,
+      ventureName:           undefined as string | undefined,
+      ventureColor:          undefined as string | undefined,
+      venturesLoading:       false,
+      rows:                  [] as ReactivationRow[],
+      isLoading:             false,
+      isError:               false,
+      isActivated:           vi.fn().mockReturnValue(false),
+      reactivate:            vi.fn(),
+      deactivate:            vi.fn(),
+      reactivateAll:         vi.fn(),
+      deactivateAll:         vi.fn(),
+      resetToGlobalDefaults: vi.fn(),
+      ...overrides,
+    };
+  }
+
+  afterEach(() => {
+    cleanup();
+    vi.clearAllMocks();
+  });
+
+  // ── 1. Toggle OFF → ON: reactivate(groupId, onSuccess, onError) fires ──────
+  // The panel always calls reactivate with three arguments: the groupId, an
+  // onSuccess closure (for the success toast), and an onError closure (for
+  // showToggleErrorToast).  Verifying all three arguments confirms the
+  // post-refactor wiring is intact.
+  it("clicking the toggle button on an OFF group calls reactivate(groupId, fn, fn)", () => {
+    const props = makeProps({ isActivated: vi.fn().mockReturnValue(false) });
+    render(React.createElement(ReactivationPanel, props));
+
+    fireEvent.click(screen.getByTestId(`toggle-${FIRST_GROUP_ID}`));
+
+    expect(props.reactivate).toHaveBeenCalledOnce();
+    expect(props.reactivate).toHaveBeenCalledWith(
+      FIRST_GROUP_ID,
+      expect.any(Function),   // onSuccess → handleToggleToast
+      expect.any(Function),   // onError → showToggleErrorToast
+    );
+    expect(props.deactivate).not.toHaveBeenCalled();
+  });
+
+  // ── 2. Toggle ON → OFF: deactivate(groupId, onSuccess, onError) fires ──────
+  it("clicking the toggle button on an ON group calls deactivate(groupId, fn, fn)", () => {
+    // Make the first group active so its button reads "On".
+    const isActivated = vi.fn((id: string) => id === FIRST_GROUP_ID);
+    const props = makeProps({ isActivated });
+    render(React.createElement(ReactivationPanel, props));
+
+    fireEvent.click(screen.getByTestId(`toggle-${FIRST_GROUP_ID}`));
+
+    expect(props.deactivate).toHaveBeenCalledOnce();
+    expect(props.deactivate).toHaveBeenCalledWith(
+      FIRST_GROUP_ID,
+      expect.any(Function),   // onSuccess → handleToggleToast
+      expect.any(Function),   // onError → showToggleErrorToast
+    );
+    expect(props.reactivate).not.toHaveBeenCalled();
+  });
+
+  // ── 3. Toggle routes to the correct groupId regardless of which row ──────────
+  // Clicking a different row's button must pass THAT row's groupId, not a
+  // hard-coded value.  We use the "discovery" group (second BACKLOG_GROUP).
+  it("clicking a different row's toggle passes that row's groupId to reactivate", () => {
+    const props = makeProps({ isActivated: vi.fn().mockReturnValue(false) });
+    render(React.createElement(ReactivationPanel, props));
+
+    fireEvent.click(screen.getByTestId("toggle-discovery"));
+
+    expect(props.reactivate).toHaveBeenCalledWith(
+      "discovery",
+      expect.any(Function),
+      expect.any(Function),
+    );
+  });
+
+  // ── 4. Enable All: reactivateAll(onSuccess, onError) fires ──────────────────
+  // Production code: reactivateAll(svid => handleBatchToast(...), (skipped, raw) => ...)
+  it("clicking Enable All calls reactivateAll with success and error callbacks", () => {
+    const props = makeProps();
+    render(React.createElement(ReactivationPanel, props));
+
+    fireEvent.click(screen.getByTestId("enable-all-btn"));
+
+    expect(props.reactivateAll).toHaveBeenCalledOnce();
+    expect(props.reactivateAll).toHaveBeenCalledWith(
+      expect.any(Function),   // onSuccess → handleBatchToast(true, ...)
+      expect.any(Function),   // onError   → handleBatchErrorToast(...)
+    );
+    expect(props.deactivateAll).not.toHaveBeenCalled();
+  });
+
+  // ── 5. Disable All: deactivateAll(onSuccess, onError) fires ─────────────────
+  it("clicking Disable All calls deactivateAll with success and error callbacks", () => {
+    const props = makeProps();
+    render(React.createElement(ReactivationPanel, props));
+
+    fireEvent.click(screen.getByTestId("disable-all-btn"));
+
+    expect(props.deactivateAll).toHaveBeenCalledOnce();
+    expect(props.deactivateAll).toHaveBeenCalledWith(
+      expect.any(Function),   // onSuccess → handleBatchToast(false, ...)
+      expect.any(Function),   // onError   → handleBatchErrorToast(...)
+    );
+    expect(props.reactivateAll).not.toHaveBeenCalled();
+  });
+
+  // ── 6. venturesLoading=true: all buttons disabled, no callbacks fired ────────
+  // When the venture list is still loading, actionsDisabled=true.  The real
+  // panel sets `disabled={actionsDisabled}` on every button; React will not
+  // invoke onClick on a disabled button even when fireEvent.click is used.
+  it("no callback fires on any button when venturesLoading=true (actionsDisabled guard)", () => {
+    const props = makeProps({ venturesLoading: true });
+    render(React.createElement(ReactivationPanel, props));
+
+    // Buttons must be disabled.
+    expect((screen.getByTestId(`toggle-${FIRST_GROUP_ID}`) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByTestId("enable-all-btn")           as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByTestId("disable-all-btn")          as HTMLButtonElement).disabled).toBe(true);
+
+    // fireEvent.click should not reach onClick on a disabled button.
+    fireEvent.click(screen.getByTestId(`toggle-${FIRST_GROUP_ID}`));
+    fireEvent.click(screen.getByTestId("enable-all-btn"));
+    fireEvent.click(screen.getByTestId("disable-all-btn"));
+
+    expect(props.reactivate).not.toHaveBeenCalled();
+    expect(props.deactivate).not.toHaveBeenCalled();
+    expect(props.reactivateAll).not.toHaveBeenCalled();
+    expect(props.deactivateAll).not.toHaveBeenCalled();
+  });
+
+  // ── 7. ventureId set but ventureName absent: all buttons disabled, no callbacks
+  // Models the transient window where venture selection has changed but the name
+  // hasn't resolved yet.  actionsDisabled = venturesLoading || (!!ventureId && !ventureName).
+  it("no callback fires on any button when ventureId is set but ventureName is absent", () => {
+    const props = makeProps({
+      ventureId:       "ven-alpha",
+      ventureName:     undefined,    // name not yet resolved
+      venturesLoading: false,
+    });
+    render(React.createElement(ReactivationPanel, props));
+
+    // All buttons must be disabled under the second actionsDisabled condition.
+    expect((screen.getByTestId(`toggle-${FIRST_GROUP_ID}`) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByTestId("enable-all-btn")           as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByTestId("disable-all-btn")          as HTMLButtonElement).disabled).toBe(true);
+
+    fireEvent.click(screen.getByTestId(`toggle-${FIRST_GROUP_ID}`));
+    fireEvent.click(screen.getByTestId("enable-all-btn"));
+    fireEvent.click(screen.getByTestId("disable-all-btn"));
+
+    expect(props.reactivate).not.toHaveBeenCalled();
+    expect(props.deactivate).not.toHaveBeenCalled();
+    expect(props.reactivateAll).not.toHaveBeenCalled();
+    expect(props.deactivateAll).not.toHaveBeenCalled();
+  });
+
+  // ── 8. All buttons enabled when venturesLoading=false and ventureName present ─
+  it("all buttons are enabled when venturesLoading=false and ventureName is resolved", () => {
+    const props = makeProps({
+      ventureId:       "ven-alpha",
+      ventureName:     "Venture Alpha",
+      venturesLoading: false,
+    });
+    render(React.createElement(ReactivationPanel, props));
+
+    expect((screen.getByTestId(`toggle-${FIRST_GROUP_ID}`) as HTMLButtonElement).disabled).toBe(false);
+    expect((screen.getByTestId("enable-all-btn")           as HTMLButtonElement).disabled).toBe(false);
+    expect((screen.getByTestId("disable-all-btn")          as HTMLButtonElement).disabled).toBe(false);
   });
 });
