@@ -1305,15 +1305,22 @@ export default function Sidebar() {
               Platform v2.0
             </div>
           </div>
-          {/* Admin reactivation toggle */}
+          {/* Admin reactivation toggle — disabled while ventures are loading */}
           <button
-            onClick={() => setReactivationOpen(o => !o)}
+            onClick={() => !venturesLoading && setReactivationOpen(o => !o)}
+            disabled={venturesLoading}
             className="p-1.5 rounded-md transition-all"
-            title="Module Reactivation (reactivationHypothesis)"
+            title={venturesLoading ? "Loading ventures…" : "Module Reactivation (reactivationHypothesis)"}
             style={{
               background: reactivationOpen ? "rgba(86,168,55,0.15)" : "rgba(255,255,255,0.05)",
-              color: reactivationOpen ? "#56A837" : "rgba(255,255,255,0.3)",
+              color: venturesLoading
+                ? "rgba(255,255,255,0.15)"
+                : reactivationOpen
+                  ? "#56A837"
+                  : "rgba(255,255,255,0.3)",
               border: reactivationOpen ? "1px solid rgba(86,168,55,0.25)" : "1px solid rgba(255,255,255,0.07)",
+              opacity: venturesLoading ? 0.4 : 1,
+              cursor: venturesLoading ? "not-allowed" : "pointer",
             }}
           >
             <Settings size={12} />
