@@ -131,10 +131,19 @@ interface HarnessDb {
   transaction: (fn: (tx: HarnessTx) => Promise<void>) => Promise<void>;
 }
 
-function makeHarnessDb(opts?: { faultAfter?: number; silentSkipAfter?: number }): HarnessDb {
-  const committed    = new Map<string, HarnessRow>();
-  const faultLimit   = opts?.faultAfter;
-  const silentLimit  = opts?.silentSkipAfter;
+function makeHarnessDb(opts?: {
+  faultAfter?:       number;
+  silentSkipAfter?:  number;
+  /** After Nth insert, .returning() yields 2 rows instead of 1 (extra-row injection). */
+  extraRowsAfter?:   number;
+  /** After Nth insert, .returning() yields a row whose groupId is replaced with a sentinel. */
+  wrongGroupIdAfter?: number;
+}): HarnessDb {
+  const committed        = new Map<string, HarnessRow>();
+  const faultLimit       = opts?.faultAfter;
+  const silentLimit      = opts?.silentSkipAfter;
+  const extraRowsLimit   = opts?.extraRowsAfter;
+  const wrongGroupLimit  = opts?.wrongGroupIdAfter;
 
   return {
     committed,
@@ -172,6 +181,44 @@ function makeHarnessDb(opts?: { faultAfter?: number; silentSkipAfter?: number })
                 const voidResolved  = Promise.resolve(undefined);
                 return {
                   returning: () => emptyResolved,
+                  then:    voidResolved.then.bind(voidResolved),
+                  catch:   voidResolved.catch.bind(voidResolved),
+                  finally: voidResolved.finally.bind(voidResolved) as HarnessTxChain["finally"],
+                };
+              }
+
+              // --- Extra-rows injection: .returning() yields 2 rows for one upsert ---
+              // Simulates a DB trigger (or future schema change) that produces an
+              // additional row from a single INSERT ... ON CONFLICT ... RETURNING,
+              // causing the router's "exactly 1 row" per-item check to fire.
+              if (extraRowsLimit !== undefined && insertsDone >= extraRowsLimit) {
+                insertsDone++;
+                const writtenGroupId = row.groupId as string;
+                const multiRow = Promise.resolve([
+                  { groupId: writtenGroupId },
+                  { groupId: writtenGroupId }, // second row — same key, simulates a trigger
+                ] as Array<Record<string, unknown>>);
+                const voidResolved = Promise.resolve(undefined);
+                return {
+                  returning: () => multiRow,
+                  then:    voidResolved.then.bind(voidResolved),
+                  catch:   voidResolved.catch.bind(voidResolved),
+                  finally: voidResolved.finally.bind(voidResolved) as HarnessTxChain["finally"],
+                };
+              }
+
+              // --- Wrong-groupId injection: .returning() yields a row with a different groupId ---
+              // Simulates a conflict-resolution rewrite or future schema change that
+              // causes the DB to return a confirmed row for a different groupId than
+              // the one submitted, triggering the router's groupId-match check.
+              if (wrongGroupLimit !== undefined && insertsDone >= wrongGroupLimit) {
+                insertsDone++;
+                const wrongRow = Promise.resolve([
+                  { groupId: "__wrong_sentinel__" },
+                ] as Array<Record<string, unknown>>);
+                const voidResolved = Promise.resolve(undefined);
+                return {
+                  returning: () => wrongRow,
                   then:    voidResolved.then.bind(voidResolved),
                   catch:   voidResolved.catch.bind(voidResolved),
                   finally: voidResolved.finally.bind(voidResolved) as HarnessTxChain["finally"],
@@ -842,8 +889,9 @@ describe("setModuleReactivationBatch — mismatch detection (DB confirms fewer r
 
     expect(err).toBeInstanceOf(TRPCError);
     expect((err as TRPCError).code).toBe("INTERNAL_SERVER_ERROR");
-    // Message must report the written vs requested counts.
-    expect((err as TRPCError).message).toMatch(/7 of 15/);
+    // The per-item check fires first: written.length === 0 for the skipped item,
+    // so the error message names the specific groupId that returned 0 rows.
+    expect((err as TRPCError).message).toContain("got 0");
     // Throw inside the transaction → full rollback; the 7 staged rows are discarded.
     expect(committedFor(db, "VENTURE-A")).toHaveLength(0);
   });
@@ -865,8 +913,9 @@ describe("setModuleReactivationBatch — mismatch detection (DB confirms fewer r
 
     expect(err).toBeInstanceOf(TRPCError);
     expect((err as TRPCError).code).toBe("INTERNAL_SERVER_ERROR");
-    // 14 confirmed, 1 skipped.
-    expect((err as TRPCError).message).toMatch(/14 of 15/);
+    // The per-item check fires first: written.length === 0 for the skipped item,
+    // so the error message names the specific groupId that returned 0 rows.
+    expect((err as TRPCError).message).toContain("got 0");
     // All 14 staged rows must be rolled back — committed store stays empty.
     expect(committedFor(db, "VENTURE-A")).toHaveLength(0);
   });
@@ -904,5 +953,160 @@ describe("setModuleReactivationBatch — mismatch detection (DB confirms fewer r
     expect(result.success).toBe(true);
     expect(result.count).toBe(3);
     expect(result.upserted.sort()).toEqual(["discovery", "gtm", "validation"].sort());
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("setModuleReactivationBatch — per-row shape validation (extra rows and wrong groupId)", () => {
+  // This suite exercises the two per-item invariants introduced alongside the
+  // broader mismatch check:
+  //
+  //   1. "Extra rows" — .returning() yields more than one row for a single upsert.
+  //      This can happen if a DB trigger produces additional rows, or a future
+  //      schema change alters the conflict-resolution target.  The router must
+  //      detect written.length !== 1 and throw INTERNAL_SERVER_ERROR, rolling
+  //      back the entire transaction so no partial state is committed.
+  //
+  //   2. "Wrong groupId" — .returning() yields exactly one row but its groupId
+  //      does not match the item we submitted.  This can occur if the conflict
+  //      clause is misconfigured and resolves against a different row, or if a
+  //      trigger rewrites the returned value.  The router must detect the mismatch
+  //      and throw INTERNAL_SERVER_ERROR.
+  //
+  // In both cases the throw happens INSIDE the transaction callback, so the
+  // harness discards staging and the committed store remains empty.
+
+  it("throws INTERNAL_SERVER_ERROR when .returning() yields 2 rows for the first item", async () => {
+    // extraRowsAfter: 0 → first upsert returns [{ groupId }, { groupId }]
+    const db = makeHarnessDb({ extraRowsAfter: 0 });
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: [
+          { groupId: "discovery",  active: true },
+          { groupId: "validation", active: true },
+        ],
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("INTERNAL_SERVER_ERROR");
+    // Message must name the offending groupId and indicate the unexpected count.
+    expect((err as TRPCError).message).toContain("discovery");
+    expect((err as TRPCError).message).toContain("2");
+    // Throw inside the transaction → full rollback; committed store stays empty.
+    expect(committedFor(db, "VENTURE-A")).toHaveLength(0);
+  });
+
+  it("throws INTERNAL_SERVER_ERROR when .returning() yields 2 rows for a mid-batch item", async () => {
+    // extraRowsAfter: 5 → items 0-4 write normally, item 5 returns 2 rows.
+    const db = makeHarnessDb({ extraRowsAfter: 5 });
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: activateAllItems(true), // 15 items
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("INTERNAL_SERVER_ERROR");
+    // The 5 staged rows must be rolled back — committed store stays empty.
+    expect(committedFor(db, "VENTURE-A")).toHaveLength(0);
+  });
+
+  it("throws INTERNAL_SERVER_ERROR when .returning() yields 2 rows for the last item", async () => {
+    // extraRowsAfter: 14 → items 0-13 write normally, item 14 returns 2 rows.
+    const db = makeHarnessDb({ extraRowsAfter: 14 });
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: activateAllItems(true), // 15 items
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("INTERNAL_SERVER_ERROR");
+    // All 14 staged rows must be rolled back.
+    expect(committedFor(db, "VENTURE-A")).toHaveLength(0);
+  });
+
+  it("throws INTERNAL_SERVER_ERROR when .returning() returns a wrong groupId for the first item", async () => {
+    // wrongGroupIdAfter: 0 → first upsert returns [{ groupId: "__wrong_sentinel__" }]
+    const db = makeHarnessDb({ wrongGroupIdAfter: 0 });
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: [
+          { groupId: "discovery",  active: true },
+          { groupId: "validation", active: true },
+        ],
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("INTERNAL_SERVER_ERROR");
+    // Message must name both the unexpected and the expected groupId.
+    expect((err as TRPCError).message).toContain("__wrong_sentinel__");
+    expect((err as TRPCError).message).toContain("discovery");
+    // Throw inside the transaction → full rollback.
+    expect(committedFor(db, "VENTURE-A")).toHaveLength(0);
+  });
+
+  it("throws INTERNAL_SERVER_ERROR when .returning() returns a wrong groupId for a mid-batch item", async () => {
+    // wrongGroupIdAfter: 7 → items 0-6 write normally, item 7 returns wrong groupId.
+    const db = makeHarnessDb({ wrongGroupIdAfter: 7 });
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: activateAllItems(true), // 15 items
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("INTERNAL_SERVER_ERROR");
+    expect((err as TRPCError).message).toContain("__wrong_sentinel__");
+    // The 7 staged rows must be rolled back.
+    expect(committedFor(db, "VENTURE-A")).toHaveLength(0);
+  });
+
+  it("does NOT throw when every item returns exactly one row with the correct groupId", async () => {
+    // Baseline: verify the normal path is unaffected by the new per-item checks.
+    const db = makeHarnessDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    const result = await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: activateAllItems(true),
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.count).toBe(15);
+    expect(committedFor(db, "VENTURE-A")).toHaveLength(15);
   });
 });

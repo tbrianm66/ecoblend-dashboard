@@ -958,9 +958,34 @@ export const adminRouter = router({
             })
             .returning({ groupId: moduleReactivations.groupId });
 
-          for (const row of written) {
-            upserted.push(row.groupId);
+          // Per-row integrity: .returning() must yield exactly ONE row per upsert.
+          // More than one row indicates a trigger or schema change producing extra
+          // rows; zero rows is a silent skip already caught by the length check
+          // below, but catching it here surfaces the specific groupId that failed.
+          if (written.length !== 1) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message:
+                `Batch write integrity error: expected exactly 1 confirmed row from DB ` +
+                `for groupId "${item.groupId}", got ${written.length}. ` +
+                `This may indicate a DB trigger producing extra rows or a silent skip.`,
+            });
           }
+
+          // Per-row integrity: the DB-confirmed groupId must match what we submitted.
+          // A mismatch indicates the DB returned a row for a different record (e.g.
+          // due to a trigger rewrite or a future schema change that changes the
+          // conflict-resolution target).
+          if (written[0].groupId !== item.groupId) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message:
+                `Batch write integrity error: DB confirmed groupId "${written[0].groupId}" ` +
+                `but expected "${item.groupId}". The returned row does not correspond to the submitted item.`,
+            });
+          }
+
+          upserted.push(written[0].groupId);
         }
 
         // Integrity check INSIDE the transaction: if the DB confirmed fewer rows
