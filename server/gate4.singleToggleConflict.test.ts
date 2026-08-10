@@ -148,8 +148,20 @@ function makeToggleSpy() {
                 });
               }
 
-              // Return a thenable (the router does not call .returning() on single-toggle)
-              return Promise.resolve();
+              // Return an object that supports both:
+              //   • .returning()  — called by the updated handler for integrity validation
+              //     (returns both groupId and ventureId so the composite-key check passes)
+              //   • direct await  — thenable fallback for any other code path
+              const confirmedGroupId   = row.groupId   as string;
+              const confirmedVentureId = row.ventureId as string;
+              const voidResolved = Promise.resolve(undefined);
+              return {
+                returning: (_shape: unknown) =>
+                  Promise.resolve([{ groupId: confirmedGroupId, ventureId: confirmedVentureId }]),
+                then:    voidResolved.then.bind(voidResolved),
+                catch:   voidResolved.catch.bind(voidResolved),
+                finally: voidResolved.finally.bind(voidResolved),
+              };
             },
           }),
         }),

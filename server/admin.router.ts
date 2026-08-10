@@ -887,7 +887,7 @@ export const adminRouter = router({
       // Normalise: empty / missing / whitespace-only → "__global__" sentinel
       const ventureId = normaliseSetVentureId(input.ventureId);
 
-      await db
+      const written = await db
         .insert(moduleReactivations)
         .values({
           groupId:   input.groupId,
@@ -903,7 +903,44 @@ export const adminRouter = router({
             toggledBy,
             toggledAt: new Date(),
           },
+        })
+        .returning({
+          groupId:   moduleReactivations.groupId,
+          ventureId: moduleReactivations.ventureId,
         });
+
+      // Integrity check: the DB must confirm exactly one row whose composite key
+      // (groupId, ventureId) matches what we submitted.
+      // Zero rows means a silent skip (e.g. a partial-index DO-NOTHING variant).
+      // More than one row means a trigger or schema change produced extra rows.
+      // A mismatched groupId or ventureId means the conflict clause resolved against
+      // a different record (e.g. same group in a different venture scope).
+      if (written.length !== 1) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message:
+            `Single-toggle integrity error: expected 1 confirmed row from DB for ` +
+            `groupId "${input.groupId}" / ventureId "${ventureId}", got ${written.length}.`,
+        });
+      }
+
+      if (written[0].groupId !== input.groupId) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message:
+            `Single-toggle integrity error: DB confirmed groupId "${written[0].groupId}" ` +
+            `but expected "${input.groupId}". The returned row does not correspond to the submitted item.`,
+        });
+      }
+
+      if (written[0].ventureId !== ventureId) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message:
+            `Single-toggle integrity error: DB confirmed ventureId "${written[0].ventureId}" ` +
+            `but expected "${ventureId}". The returned row does not correspond to the submitted item.`,
+        });
+      }
 
       return { success: true, groupId: input.groupId, active: input.active };
     }),

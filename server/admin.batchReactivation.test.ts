@@ -1165,3 +1165,224 @@ describe("setModuleReactivationBatch — per-row shape validation (extra rows an
     expect(committedFor(db, "VENTURE-A")).toHaveLength(15);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Single-toggle DB mock ─────────────────────────────────────────────────────
+//
+// `setModuleReactivation` calls the DB directly (no transaction):
+//   db.insert(...).values(...).onConflictDoUpdate(...).returning(...)
+//
+// This helper builds a minimal mock that satisfies that chain and lets each
+// test control what .returning() produces.
+
+function makeSingleToggleDb(opts: {
+  /** What .returning() resolves to.
+   *  Pass [] to simulate zero rows.
+   *  Pass [{ groupId: "...", ventureId: "..." }] to control both identity fields. */
+  returningRows: Array<{ groupId: string; ventureId: string }>;
+}): unknown {
+  return {
+    insert: (_table: unknown) => ({
+      values: (_row: unknown) => ({
+        onConflictDoUpdate: (_opts: unknown) => ({
+          returning: (_shape: unknown) => Promise.resolve(opts.returningRows),
+        }),
+      }),
+    }),
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("setModuleReactivation — DB row integrity checks", () => {
+  // These tests exercise the per-row validation added to the single-item toggle.
+  // The handler must throw INTERNAL_SERVER_ERROR (not silently succeed) when:
+  //   1. The DB confirms zero rows  (silent skip)
+  //   2. The DB confirms a row with a different groupId (conflict-target rewrite)
+
+  it("throws INTERNAL_SERVER_ERROR when the DB returns zero rows (silent skip)", async () => {
+    // .returning() yields [] — simulates a DO-NOTHING conflict target or a
+    // partial-index match that suppresses the write without aborting.
+    const db = makeSingleToggleDb({ returningRows: [] });
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivation({
+        groupId: "discovery",
+        active:  true,
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("INTERNAL_SERVER_ERROR");
+    // The error message must name the expected groupId and the actual count (0).
+    expect((err as TRPCError).message).toContain("discovery");
+    expect((err as TRPCError).message).toContain("0");
+  });
+
+  it("throws INTERNAL_SERVER_ERROR when the DB confirms a different groupId", async () => {
+    // .returning() yields a row whose groupId is a sentinel that does not match
+    // the submitted "discovery".  This simulates a conflict-target rewrite or a
+    // trigger that returns a row for a different record.
+    const db = makeSingleToggleDb({
+      returningRows: [{ groupId: "__wrong_sentinel__", ventureId: "__global__" }],
+    });
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivation({
+        groupId: "discovery",
+        active:  true,
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("INTERNAL_SERVER_ERROR");
+    // The error message must name both the unexpected and the expected groupId.
+    expect((err as TRPCError).message).toContain("__wrong_sentinel__");
+    expect((err as TRPCError).message).toContain("discovery");
+  });
+
+  it("succeeds and returns { success: true } when the DB confirms the correct row", async () => {
+    // Normal path: .returning() yields the matching (groupId, ventureId) —
+    // the handler must return without throwing.
+    const db = makeSingleToggleDb({
+      returningRows: [{ groupId: "discovery", ventureId: "__global__" }],
+    });
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    const result = await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivation({
+      groupId: "discovery",
+      active:  true,
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.groupId).toBe("discovery");
+    expect(result.active).toBe(true);
+  });
+
+  it("throws INTERNAL_SERVER_ERROR when the DB returns zero rows for a venture-scoped toggle", async () => {
+    // Same zero-rows check, but with a ventureId in the input — confirms the
+    // guard fires regardless of scope.
+    const db = makeSingleToggleDb({ returningRows: [] });
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivation({
+        groupId:   "scoring",
+        ventureId: "VENTURE-A",
+        active:    false,
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("INTERNAL_SERVER_ERROR");
+    expect((err as TRPCError).message).toContain("scoring");
+    expect((err as TRPCError).message).toContain("0");
+  });
+
+  it("throws INTERNAL_SERVER_ERROR when the DB confirms a wrong groupId for a venture-scoped toggle", async () => {
+    const db = makeSingleToggleDb({
+      returningRows: [{ groupId: "__wrong_sentinel__", ventureId: "VENTURE-A" }],
+    });
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivation({
+        groupId:   "scoring",
+        ventureId: "VENTURE-A",
+        active:    false,
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("INTERNAL_SERVER_ERROR");
+    expect((err as TRPCError).message).toContain("__wrong_sentinel__");
+    expect((err as TRPCError).message).toContain("scoring");
+  });
+
+  it("throws INTERNAL_SERVER_ERROR when the DB confirms the correct groupId but a different ventureId", async () => {
+    // The groupId matches but the DB confirmed a row belonging to a different
+    // venture (e.g. a conflict-target rewrite resolved against the same group in
+    // global scope while the toggle was venture-scoped).  The composite-key check
+    // must catch this mismatch — returning { success: true } here would be a
+    // silent state divergence on the wrong venture's record.
+    const db = makeSingleToggleDb({
+      returningRows: [{ groupId: "scoring", ventureId: "__global__" }], // wrong venture
+    });
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivation({
+        groupId:   "scoring",
+        ventureId: "VENTURE-A", // submitted for VENTURE-A
+        active:    false,
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("INTERNAL_SERVER_ERROR");
+    // The error message must surface the mismatched ventureId values.
+    expect((err as TRPCError).message).toContain("__global__");
+    expect((err as TRPCError).message).toContain("VENTURE-A");
+  });
+
+  it("throws INTERNAL_SERVER_ERROR when a global toggle is confirmed under a different ventureId", async () => {
+    // Inverse case: global toggle (no ventureId → normalised to __global__) but the
+    // DB confirms a row scoped to VENTURE-A.  The handler must reject this.
+    const db = makeSingleToggleDb({
+      returningRows: [{ groupId: "discovery", ventureId: "VENTURE-A" }], // wrong scope
+    });
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivation({
+        groupId: "discovery",
+        // ventureId omitted → normalised to __global__
+        active: true,
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("INTERNAL_SERVER_ERROR");
+    expect((err as TRPCError).message).toContain("VENTURE-A");
+    expect((err as TRPCError).message).toContain("__global__");
+  });
+
+  it("succeeds for a venture-scoped toggle when the DB confirms the correct composite key", async () => {
+    // Normal venture-scoped path: groupId and ventureId both match.
+    const db = makeSingleToggleDb({
+      returningRows: [{ groupId: "scoring", ventureId: "VENTURE-A" }],
+    });
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    const result = await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivation({
+      groupId:   "scoring",
+      ventureId: "VENTURE-A",
+      active:    false,
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.groupId).toBe("scoring");
+    expect(result.active).toBe(false);
+  });
+});
