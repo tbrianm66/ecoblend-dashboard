@@ -45,7 +45,7 @@ import {
   type BacklogGroupId,
 } from "@/lib/gate4Config";
 import { resolveModuleBadge, buildRowByGroup, formatToggleAudit } from "@/lib/gate4Utils";
-import { showToggleToast, showBatchToast, showBatchErrorToast, showResetToast, showResetErrorToast } from "@/lib/gate4ToastUtils";
+import { showToggleToast, showToggleErrorToast, showBatchToast, showBatchErrorToast, showResetToast, showResetErrorToast } from "@/lib/gate4ToastUtils";
 import { ReactivationResetButton } from "@/components/ReactivationResetButton";
 
 type IconName = string;
@@ -574,8 +574,8 @@ interface ReactivationPanelProps {
   isLoading: boolean;
   isError: boolean;
   isActivated: (id: string) => boolean;
-  reactivate: (groupId: string, onSuccess?: (snapshotVId: string | null) => void) => void;
-  deactivate: (groupId: string, onSuccess?: (snapshotVId: string | null) => void) => void;
+  reactivate: (groupId: string, onSuccess?: (snapshotVId: string | null) => void, onError?: (groupId: string, rawMessage: string) => void) => void;
+  deactivate: (groupId: string, onSuccess?: (snapshotVId: string | null) => void, onError?: (groupId: string, rawMessage: string) => void) => void;
   reactivateAll: (
     onSuccess?: (snapshotVId: string | null) => void,
     onError?: (skippedGroups: string[], rawMessage: string) => void,
@@ -831,8 +831,10 @@ function ReactivationPanel({
                   const snapshotVName = ventureName;
                   const onSuccess = (svid: string | null) =>
                     handleToggleToast(group.label, !active, svid, snapshotVName);
-                  if (active) deactivate(group.id, onSuccess);
-                  else reactivate(group.id, onSuccess);
+                  const onError = (_gid: string, rawMessage: string) =>
+                    showToggleErrorToast(toast, group.label, rawMessage);
+                  if (active) deactivate(group.id, onSuccess, onError);
+                  else reactivate(group.id, onSuccess, onError);
                 }}
                 className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold transition-all shrink-0"
                 style={{

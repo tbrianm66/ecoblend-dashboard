@@ -301,6 +301,11 @@ export function useGate4Reactivation(ventureId: string | null, panelOpen = false
   // onSuccess is an optional callback fired after the server confirms the write.
   // It receives the snapshotVentureId so callers can show a contextual toast
   // ("applied to Venture X") and detect selector drift.
+  //
+  // onError is an optional callback fired when the server rejects the write.
+  // It receives the groupId and raw error message so callers can show a named
+  // error toast.  The optimistic state is rolled back automatically so the badge
+  // and activated set revert to their pre-click values without a page reload.
   const persist = useCallback(
     (
       groupId: string,
@@ -308,7 +313,15 @@ export function useGate4Reactivation(ventureId: string | null, panelOpen = false
       next: Set<string>,
       snapshotVentureId: string | null,
       onSuccess?: (snapshotVentureId: string | null) => void,
+      onError?: (groupId: string, rawMessage: string) => void,
     ) => {
+      // Capture the pre-toggle activated set so we can roll back on failure.
+      // `next` is always built by the caller from the *current* `activated` state,
+      // so the previous state is the inverse of `next` w.r.t. this groupId.
+      const previous = new Set(next);
+      if (active) previous.delete(groupId);
+      else previous.add(groupId);
+
       setActivated(next);
       writeLsCache(next);
 
@@ -330,6 +343,8 @@ export function useGate4Reactivation(ventureId: string | null, panelOpen = false
       });
 
       // Write to server; on success invalidate the cache so all panels refresh.
+      // On failure, roll back the optimistic state so the UI reflects the real
+      // server state without requiring a page reload.
       const vId = snapshotVentureId ?? undefined;
       setMutation.mutate(
         { groupId, ventureId: vId, active },
@@ -337,6 +352,20 @@ export function useGate4Reactivation(ventureId: string | null, panelOpen = false
           onSuccess: () => {
             utils.admin.getModuleReactivations.invalidate();
             onSuccess?.(snapshotVentureId);
+          },
+          onError: (err) => {
+            // Roll back optimistic activated state to the pre-click value.
+            setActivated(previous);
+            writeLsCache(previous);
+            // Remove the optimistic overlay row so the badge reverts to its
+            // pre-click state (DEFAULT / prior GLOBAL / prior VENTURE).
+            setOptimisticRows(prev => {
+              const m = new Map(prev);
+              m.delete(`${groupId}:${syntheticVId}`);
+              return m;
+            });
+            const rawMessage = err instanceof Error ? err.message : String(err);
+            onError?.(groupId, rawMessage);
           },
         },
       );
@@ -350,22 +379,30 @@ export function useGate4Reactivation(ventureId: string | null, panelOpen = false
   );
 
   const reactivate = useCallback(
-    (groupId: string, onSuccess?: (snapshotVentureId: string | null) => void) => {
+    (
+      groupId: string,
+      onSuccess?: (snapshotVentureId: string | null) => void,
+      onError?: (groupId: string, rawMessage: string) => void,
+    ) => {
       // Snapshot ventureId at interaction time so a rapid venture-selector change
       // cannot redirect this write to the wrong venture.
       const snapshotVentureId = ventureIdRef.current;
       const next = new Set([...activated, groupId]);
-      persist(groupId, true, next, snapshotVentureId, onSuccess);
+      persist(groupId, true, next, snapshotVentureId, onSuccess, onError);
     },
     [activated, persist],
   );
 
   const deactivate = useCallback(
-    (groupId: string, onSuccess?: (snapshotVentureId: string | null) => void) => {
+    (
+      groupId: string,
+      onSuccess?: (snapshotVentureId: string | null) => void,
+      onError?: (groupId: string, rawMessage: string) => void,
+    ) => {
       const snapshotVentureId = ventureIdRef.current;
       const next = new Set(activated);
       next.delete(groupId);
-      persist(groupId, false, next, snapshotVentureId, onSuccess);
+      persist(groupId, false, next, snapshotVentureId, onSuccess, onError);
     },
     [activated, persist],
   );

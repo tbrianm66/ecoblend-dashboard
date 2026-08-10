@@ -98,6 +98,25 @@ export function showResetToast(
 }
 
 /**
+ * Show an error toast when a single-group toggle write fails.
+ *
+ * Fired from the `onError` callback of `persist()` in `useGate4Reactivation`
+ * so admins receive explicit feedback (and see the optimistic badge reverted)
+ * instead of a silent no-op when the server rejects the write.
+ *
+ * @param toast      The toast API to call (sonner in production, spy in tests).
+ * @param label      Module group label, e.g. "Discovery & Market".
+ * @param rawMessage The raw error message from the tRPC response.
+ */
+export function showToggleErrorToast(
+  toast: ToastApi,
+  label: string,
+  rawMessage: string,
+): void {
+  toast.error(`Failed to update "${label}": ${rawMessage}`, { duration: 6000 });
+}
+
+/**
  * Show an error toast when a batch reactivation write fails.
  *
  * When the server error message contains "Skipped group(s): X, Y" the skipped
