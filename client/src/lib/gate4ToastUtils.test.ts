@@ -1,15 +1,19 @@
 /**
  * Gate 4 — gate4ToastUtils unit tests
  *
- * Covers showBatchErrorToast — the helper that extracts skipped group names
- * from a server error message and surfaces them in an error toast.
+ * Covers:
+ *   - showResetErrorToast — error toast fired when the server rejects a
+ *     "Reset to global defaults" action (the path that was silent before
+ *     the onError callback was wired in ReactivationPanel).
+ *   - showBatchErrorToast — the helper that extracts skipped group names
+ *     from a server error message and surfaces them in an error toast.
  *
  * Tests run in Node.js (no browser/React/sonner dependency) because all
  * helpers receive a plain ToastApi spy object.
  */
 
 import { describe, it, expect } from "vitest";
-import { showBatchErrorToast, type ToastApi } from "./gate4ToastUtils";
+import { showResetErrorToast, showBatchErrorToast, type ToastApi } from "./gate4ToastUtils";
 
 function makeToast(): ToastApi & { calls: Record<string, string[]> } {
   const calls: Record<string, string[]> = { success: [], warning: [], error: [] };
@@ -20,6 +24,53 @@ function makeToast(): ToastApi & { calls: Record<string, string[]> } {
     error:   (m) => calls.error.push(m),
   };
 }
+
+// ── showResetErrorToast ───────────────────────────────────────────────────────
+// Confirms the helper that fires when the server rejects a
+// "Reset to global defaults" action actually calls toast.error with the raw
+// server message — the path that was silently swallowed before the onError
+// callback was wired in ReactivationPanel.
+
+describe("showResetErrorToast", () => {
+  it("fires toast.error with the raw server message", () => {
+    const toast = makeToast();
+    showResetErrorToast(toast, "Permission denied: venture overrides cannot be reset");
+
+    expect(toast.calls.error).toHaveLength(1);
+    expect(toast.calls.error[0]).toContain("Permission denied: venture overrides cannot be reset");
+  });
+
+  it("prefixes the message with 'Reset failed:'", () => {
+    const toast = makeToast();
+    showResetErrorToast(toast, "DB write failed");
+
+    expect(toast.calls.error[0]).toMatch(/^Reset failed:/);
+  });
+
+  it("does not call success or warning", () => {
+    const toast = makeToast();
+    showResetErrorToast(toast, "some error");
+
+    expect(toast.calls.success).toHaveLength(0);
+    expect(toast.calls.warning).toHaveLength(0);
+  });
+
+  it("includes the full raw message in the error toast text", () => {
+    const toast = makeToast();
+    const rawMessage = "TRPC_INTERNAL_SERVER_ERROR: venture not found";
+    showResetErrorToast(toast, rawMessage);
+
+    expect(toast.calls.error[0]).toContain(rawMessage);
+  });
+
+  it("handles an empty error message without throwing", () => {
+    const toast = makeToast();
+    showResetErrorToast(toast, "");
+
+    expect(toast.calls.error).toHaveLength(1);
+    // Should still fire — empty message is valid (server gave no detail)
+  });
+});
 
 describe("showBatchErrorToast", () => {
   it("surfaces the skipped group IDs when the error message contains them (no labelMap)", () => {
