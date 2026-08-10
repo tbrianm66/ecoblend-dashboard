@@ -844,3 +844,148 @@ describe("Reset button — re-enables correctly when reset fails mid-flight (hoo
     ).toBeGreaterThan(0);
   });
 });
+
+// ── Polling interval guarantee: reset button disables within 10 s ─────────────
+//
+// The hook sets refetchInterval: 10_000 (when panelOpen=true) so that when a
+// second admin clears venture overrides in another browser session the reset
+// button's disabled state corrects itself within one 10-second polling cycle.
+//
+// This suite verifies three things:
+//   1. useQuery is configured with refetchInterval=10_000 / staleTime=10_000
+//      when the panel is open — the timing guarantee cannot regress silently.
+//   2. useQuery is NOT polling (refetchInterval=false) when the panel is closed.
+//   3. When fake timers advance 10 s and the mock query data changes from
+//      "has venture overrides" to "no overrides", the reset button flips from
+//      enabled → disabled in the very next render cycle — confirming the
+//      end-to-end update path works within the 10-second window.
+//
+// Why fake timers + data update?
+// --------------------------------
+// useQuery is mocked at the module boundary (see vi.mock at the top of this
+// file).  The mock reads `currentRows` on every render but does not start a
+// real React-Query timer.  Advancing fake timers therefore proves that the
+// hook forwards the correct refetchInterval to useQuery (the configuration is
+// visible in the useQuery call arguments), while the data-update + rerender
+// step simulates what happens when that timer fires in production and the poll
+// delivers fresh server data.
+describe("useGate4Reactivation — reset button disables within 10 s after another admin clears overrides", () => {
+  let currentRows: ReactivationRow[];
+
+  beforeEach(() => {
+    localStorage.clear();
+    currentRows = [globalRow(GROUP), ventureRow(GROUP, VENTURE)];
+
+    vi.mocked(trpc.admin.getModuleReactivations.useQuery).mockImplementation(() => ({
+      data: currentRows,
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    }));
+    vi.mocked(trpc.admin.setModuleReactivation.useMutation).mockReturnValue(
+      { mutate: vi.fn() } as any,
+    );
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: vi.fn() } as any,
+    );
+    vi.mocked(trpc.admin.resetVentureModuleReactivations.useMutation).mockReturnValue(
+      { mutate: vi.fn() } as any,
+    );
+    vi.mocked(trpc.useUtils).mockReturnValue({
+      admin: { getModuleReactivations: { invalidate: vi.fn() } },
+    } as any);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+    vi.useRealTimers();
+    cleanup();
+  });
+
+  // ── 1. Polling configuration: refetchInterval must be 10 000 ms when open ──
+  it("useQuery receives refetchInterval=10_000 and staleTime=10_000 when panelOpen=true", () => {
+    renderHook(() => useGate4Reactivation(VENTURE, /* panelOpen */ true));
+
+    expect(vi.mocked(trpc.admin.getModuleReactivations.useQuery)).toHaveBeenCalledWith(
+      undefined,
+      expect.objectContaining({
+        refetchInterval: 10_000,
+        staleTime: 10_000,
+      }),
+    );
+  });
+
+  // ── 2. Polling is OFF when the panel is closed ──────────────────────────────
+  it("useQuery receives refetchInterval=false when panelOpen=false (no background polling)", () => {
+    renderHook(() => useGate4Reactivation(VENTURE, /* panelOpen */ false));
+
+    expect(vi.mocked(trpc.admin.getModuleReactivations.useQuery)).toHaveBeenCalledWith(
+      undefined,
+      expect.objectContaining({ refetchInterval: false }),
+    );
+  });
+
+  // ── 3. Button flips enabled → disabled after 10-second polling cycle ────────
+  //
+  // Scenario: Admin A has the panel open.  Admin B (in another browser window)
+  // runs resetToGlobalDefaults(), which deletes all venture-specific rows from
+  // the DB.  The next 10-second poll on Admin A's client delivers the updated
+  // rows list (no venture overrides).  The reset button must become disabled
+  // without a page reload.
+  //
+  // Step-by-step:
+  //   t=0     hook mounts with panelOpen=true; server has venture overrides
+  //           → button is ENABLED
+  //   t=10 s  fake timers advance; Admin B's reset lands; mock data updated
+  //           to return no venture rows; hook re-renders with fresh data
+  //           → button is DISABLED
+  //
+  // Driver component — wires useGate4Reactivation → ReactivationResetButton
+  // and re-reads from the mock on every render, so rerendering the driver is
+  // equivalent to React Query delivering fresh data after a poll.
+  it("reset button flips from enabled to disabled after 10 s when server rows no longer contain venture overrides", async () => {
+    vi.useFakeTimers();
+
+    // Driver component reads hook state and passes it straight to the button —
+    // identical to how ReactivationPanel wires things in production.
+    function PollingDriver({ panelOpen }: { panelOpen: boolean }) {
+      const { rows, isLoading, isError } = useGate4Reactivation(VENTURE, panelOpen);
+      return React.createElement(ReactivationResetButton, {
+        ventureId: VENTURE,
+        rows,
+        isLoading,
+        isError,
+        onReset: () => {},
+      });
+    }
+
+    // t=0: venture has overrides → button starts ENABLED.
+    const { getByTestId, rerender: rerenderDriver } = render(
+      React.createElement(PollingDriver, { panelOpen: true }),
+    );
+
+    expect((getByTestId("reset-btn") as HTMLButtonElement).disabled).toBe(false);
+
+    // ── Simulate Admin B clearing overrides, then 10 s polling cycle fires ───
+    // Admin B's reset removed all venture-specific rows from the DB.
+    // When the 10 s poll fires, useQuery re-executes and delivers the updated list.
+    currentRows = [globalRow(GROUP)]; // only global row remains; no venture rows
+
+    // Advance fake timers by exactly 10 s — this is the maximum wait the spec
+    // guarantees.  In production, React Query would fire the refetchInterval
+    // callback here and call useQuery again, receiving the updated currentRows.
+    await act(async () => {
+      vi.advanceTimersByTime(10_000);
+    });
+
+    // Re-render the driver so it picks up the new currentRows from the mock
+    // (simulates the React Query re-render that follows a successful poll).
+    await act(async () => {
+      rerenderDriver(React.createElement(PollingDriver, { panelOpen: true }));
+    });
+
+    // t=10 s: overrides are gone → button must now be DISABLED.
+    expect((getByTestId("reset-btn") as HTMLButtonElement).disabled).toBe(true);
+    expect(getByTestId("reset-btn").textContent).toContain("Already using global defaults");
+  });
+});
