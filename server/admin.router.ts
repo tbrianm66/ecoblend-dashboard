@@ -878,7 +878,12 @@ export const adminRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
 
-      const toggledBy = ctx.user.name ?? ctx.user.email ?? ctx.user.openId;
+      // Fallback to a clearly-labeled sentinel rather than null so the audit
+      // line never goes blank.  adminProcedure already guarantees ctx.user is
+      // present; this guards the unlikely case where all identity fields are
+      // empty (e.g. auth middleware misconfiguration).
+      const toggledBy =
+        ctx.user.name ?? ctx.user.email ?? ctx.user.openId ?? "[anonymous admin]";
       // Normalise: empty / missing / whitespace-only → "__global__" sentinel
       const ventureId = normaliseSetVentureId(input.ventureId);
 
@@ -919,7 +924,9 @@ export const adminRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
 
-      const toggledBy = ctx.user.name ?? ctx.user.email ?? ctx.user.openId;
+      // Same fallback as setModuleReactivation: never store null for toggledBy.
+      const toggledBy =
+        ctx.user.name ?? ctx.user.email ?? ctx.user.openId ?? "[anonymous admin]";
       // Normalise: empty / missing / whitespace-only → "__global__" sentinel
       const ventureId = normaliseSetVentureId(input.ventureId);
       const now = new Date();
