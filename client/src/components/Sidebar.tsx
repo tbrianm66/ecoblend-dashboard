@@ -596,6 +596,17 @@ function ReactivationPanel({
   reactivateAll, deactivateAll, resetToGlobalDefaults,
 }: ReactivationPanelProps) {
 
+  // Disable all toggle / batch / reset actions when:
+  //   (a) the ventures query is still in-flight, OR
+  //   (b) a venture ID is selected but its name has not resolved yet
+  //       (can happen during a query error or in the transient window between
+  //       isLoading→false and the fallback-selection effect completing).
+  //
+  // Without condition (b), a click could land while snapshotVName is undefined,
+  // causing showToggleToast / showBatchToast to fall back to the raw venture ID
+  // in the toast message instead of a human-readable name.
+  const actionsDisabled = venturesLoading || (!!ventureId && !ventureName);
+
   // Track the current ventureId and ventureName so onSuccess callbacks can detect
   // whether the venture selector drifted between the user's click and the server response.
   const ventureIdRef = useRef(ventureId);
@@ -824,7 +835,7 @@ function ReactivationPanel({
                 })()}
               </div>
               <button
-                disabled={venturesLoading}
+                disabled={actionsDisabled}
                 onClick={() => {
                   // Capture venture name at click time; the hook captures the ID via its own ref.
                   const snapshotVId = ventureId;
@@ -838,12 +849,12 @@ function ReactivationPanel({
                 }}
                 className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold transition-all shrink-0"
                 style={{
-                  background: venturesLoading ? "rgba(255,255,255,0.03)" : active ? "rgba(86,168,55,0.15)" : "rgba(255,255,255,0.06)",
-                  color: venturesLoading ? "rgba(255,255,255,0.15)" : active ? "#56A837" : "rgba(255,255,255,0.3)",
-                  border: venturesLoading ? "1px solid rgba(255,255,255,0.05)" : active ? "1px solid rgba(86,168,55,0.3)" : "1px solid rgba(255,255,255,0.08)",
+                  background: actionsDisabled ? "rgba(255,255,255,0.03)" : active ? "rgba(86,168,55,0.15)" : "rgba(255,255,255,0.06)",
+                  color: actionsDisabled ? "rgba(255,255,255,0.15)" : active ? "#56A837" : "rgba(255,255,255,0.3)",
+                  border: actionsDisabled ? "1px solid rgba(255,255,255,0.05)" : active ? "1px solid rgba(86,168,55,0.3)" : "1px solid rgba(255,255,255,0.08)",
                   fontSize: "0.65rem",
-                  cursor: venturesLoading ? "not-allowed" : "pointer",
-                  opacity: venturesLoading ? 0.5 : 1,
+                  cursor: actionsDisabled ? "not-allowed" : "pointer",
+                  opacity: actionsDisabled ? 0.5 : 1,
                 }}
               >
                 {active ? <Eye size={9} /> : <EyeOff size={9} />}
@@ -856,7 +867,7 @@ function ReactivationPanel({
 
       <div className="flex gap-2 px-3 pt-2 pb-1">
         <button
-          disabled={venturesLoading}
+          disabled={actionsDisabled}
           onClick={() => {
             const snapshotVName = ventureName;
             reactivateAll(
@@ -866,17 +877,17 @@ function ReactivationPanel({
           }}
           className="flex-1 py-1.5 rounded text-xs font-semibold"
           style={{
-            background: venturesLoading ? "rgba(86,168,55,0.05)" : "rgba(86,168,55,0.12)",
-            color: venturesLoading ? "rgba(86,168,55,0.3)" : "#56A837",
-            border: venturesLoading ? "1px solid rgba(86,168,55,0.08)" : "1px solid rgba(86,168,55,0.2)",
+            background: actionsDisabled ? "rgba(86,168,55,0.05)" : "rgba(86,168,55,0.12)",
+            color: actionsDisabled ? "rgba(86,168,55,0.3)" : "#56A837",
+            border: actionsDisabled ? "1px solid rgba(86,168,55,0.08)" : "1px solid rgba(86,168,55,0.2)",
             fontSize: "0.7rem",
-            cursor: venturesLoading ? "not-allowed" : "pointer",
+            cursor: actionsDisabled ? "not-allowed" : "pointer",
           }}
         >
           {venturesLoading ? "Loading…" : "Enable All"}
         </button>
         <button
-          disabled={venturesLoading}
+          disabled={actionsDisabled}
           onClick={() => {
             const snapshotVName = ventureName;
             deactivateAll(
@@ -887,10 +898,10 @@ function ReactivationPanel({
           className="flex-1 py-1.5 rounded text-xs font-semibold"
           style={{
             background: "rgba(255,255,255,0.05)",
-            color: venturesLoading ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.4)",
+            color: actionsDisabled ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.4)",
             border: "1px solid rgba(255,255,255,0.08)",
             fontSize: "0.7rem",
-            cursor: venturesLoading ? "not-allowed" : "pointer",
+            cursor: actionsDisabled ? "not-allowed" : "pointer",
           }}
         >
           {venturesLoading ? "Loading…" : "Disable All"}

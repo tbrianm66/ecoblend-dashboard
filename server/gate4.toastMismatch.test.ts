@@ -34,6 +34,7 @@
 
 import { describe, it, expect, beforeEach } from "vitest";
 import { showToggleToast, showBatchToast, showResetToast, showResetErrorToast } from "../client/src/lib/gate4ToastUtils";
+import type { ToastApi } from "../client/src/lib/gate4ToastUtils";
 
 // ── Fake toast spy ────────────────────────────────────────────────────────────
 
@@ -428,5 +429,316 @@ describe("Gate 4 — venture-mismatch toast (production helpers)", () => {
       expect(toast.calls[0].variant).toBe("warning");
       expect(toast.calls[1].variant).toBe("success");
     });
+  });
+});
+
+// ── Load-guarding — raw-ID fallback cannot fire on the happy path ─────────────
+//
+// Background
+// ----------
+// showToggleToast / showBatchToast contain a raw-ID fallback:
+//   const scopeName = snapshotVId ? (snapshotVName ?? snapshotVId) : "all ventures (global)";
+// When snapshotVName is undefined the venture ID is shown instead of the name.
+//
+// Production guard (ReactivationPanel in Sidebar.tsx)
+// ---------------------------------------------------
+// Every toggle / batch button is disabled when:
+//   actionsDisabled = venturesLoading || (!!ventureId && !ventureName)
+//
+// The compound condition covers three failure modes:
+//   (a) venturesLoading=true:  query in-flight, no data yet.
+//   (b) ventureId set, ventureName undefined, venturesLoading=false:
+//       query errored (availableVentures=[]) or transient window between
+//       isLoading→false and the fallback-selection effect completing with a
+//       stored/URL ID that doesn't match any loaded venture.
+//   (c) Actions are enabled only when ventureId is null (global scope, no name
+//       needed) OR when both ventureId and ventureName are defined (fully resolved).
+//
+// These tests model the guard formula and verify that when actionsDisabled is
+// false the snapshot can never contain an undefined ventureName alongside a
+// non-null ventureId.
+
+describe("Gate 4 — load-guarding (actionsDisabled guard) prevents raw-ID fallback", () => {
+
+  // ── Mirror of the production guard formula ───────────────────────────────────
+  //
+  // Mirrors: const actionsDisabled = venturesLoading || (!!ventureId && !ventureName);
+  // Used in the simulate* helpers below to gate whether the click handler fires.
+
+  function computeActionsDisabled(
+    venturesLoading: boolean,
+    ventureId: string | null,
+    ventureName: string | undefined,
+  ): boolean {
+    return venturesLoading || (!!ventureId && !ventureName);
+  }
+
+  /** Models a toggle-button click with the production guard; returns true if the handler ran. */
+  function simulateToggleClick(
+    venturesLoading: boolean,
+    ventureId: string | null,
+    ventureName: string | undefined,
+    handler: (snapshotVId: string | null, snapshotVName: string | undefined) => void,
+  ): boolean {
+    if (computeActionsDisabled(venturesLoading, ventureId, ventureName)) return false;
+    handler(ventureId, ventureName); // snapshot captured at click time
+    return true;
+  }
+
+  /** Models a batch-button click with the production guard; returns true if the handler ran. */
+  function simulateBatchClick(
+    venturesLoading: boolean,
+    ventureId: string | null,
+    ventureName: string | undefined,
+    handler: (snapshotVId: string | null, snapshotVName: string | undefined) => void,
+  ): boolean {
+    if (computeActionsDisabled(venturesLoading, ventureId, ventureName)) return false;
+    handler(ventureId, ventureName);
+    return true;
+  }
+
+  let toast: ReturnType<typeof makeToastSpy>;
+
+  beforeEach(() => {
+    toast = makeToastSpy();
+  });
+
+  // ── actionsDisabled formula ──────────────────────────────────────────────────
+
+  it("actionsDisabled is true when venturesLoading is true (query in-flight)", () => {
+    expect(computeActionsDisabled(true, null,        undefined   )).toBe(true);
+    expect(computeActionsDisabled(true, "venture-A", "Alpha Corp")).toBe(true);
+    expect(computeActionsDisabled(true, "venture-A", undefined   )).toBe(true);
+  });
+
+  it("actionsDisabled is true when ventureId is set but ventureName has not resolved (error / transient state)", () => {
+    // This covers: query errored (ventures=[]) or transient between isLoading→false
+    // and the fallback-selection effect completing.
+    expect(computeActionsDisabled(false, "venture-A", undefined)).toBe(true);
+    expect(computeActionsDisabled(false, "venture-B", undefined)).toBe(true);
+  });
+
+  it("actionsDisabled is false when fully resolved — ventureId and ventureName both defined", () => {
+    expect(computeActionsDisabled(false, "venture-A", "Alpha Corp")).toBe(false);
+  });
+
+  it("actionsDisabled is false for global scope — ventureId null, ventureName undefined", () => {
+    // Global scope: no venture selected. ventureName is undefined but there is no
+    // ventureId to fall back to, so showToggleToast will show "all ventures (global)".
+    expect(computeActionsDisabled(false, null, undefined)).toBe(false);
+  });
+
+  // ── Guard: no click handler fires while disabled ─────────────────────────────
+
+  it("toggle click does NOT fire while venturesLoading is true", () => {
+    let fired = false;
+    const ran = simulateToggleClick(true, "venture-A", "Alpha Corp", () => { fired = true; });
+    expect(ran).toBe(false);
+    expect(fired).toBe(false);
+  });
+
+  it("toggle click does NOT fire when ventureId is set but ventureName is unresolved (error/transient)", () => {
+    // Models the query-error and transient-selection states the reviewer identified.
+    let fired = false;
+    const ran = simulateToggleClick(false, "venture-A", undefined, () => { fired = true; });
+    expect(ran).toBe(false);
+    expect(fired).toBe(false);
+  });
+
+  it("batch click does NOT fire while venturesLoading is true", () => {
+    let fired = false;
+    const ran = simulateBatchClick(true, "venture-A", "Alpha Corp", () => { fired = true; });
+    expect(ran).toBe(false);
+    expect(fired).toBe(false);
+  });
+
+  it("batch click does NOT fire when ventureId is set but ventureName is unresolved (error/transient)", () => {
+    let fired = false;
+    const ran = simulateBatchClick(false, "venture-A", undefined, () => { fired = true; });
+    expect(ran).toBe(false);
+    expect(fired).toBe(false);
+  });
+
+  // ── Guard allows clicks only in safe states ──────────────────────────────────
+
+  it("toggle click fires when fully resolved (ventureId + ventureName both defined)", () => {
+    let snapId: string | null = null;
+    let snapName: string | undefined;
+
+    const ran = simulateToggleClick(false, "venture-A", "Alpha Corp", (id, name) => {
+      snapId = id; snapName = name;
+    });
+
+    expect(ran).toBe(true);
+    expect(snapId).toBe("venture-A");
+    expect(snapName).toBe("Alpha Corp");
+    expect(typeof snapName).toBe("string");
+  });
+
+  it("toggle click fires for global scope (ventureId null, ventureName undefined)", () => {
+    // Global scope is always safe: snapshotVId=null means showToggleToast uses
+    // "all ventures (global)" — the raw-ID fallback branch is unreachable.
+    let snapId: string | null = "SENTINEL" as any;
+    let snapName: string | undefined = "SENTINEL";
+
+    const ran = simulateToggleClick(false, null, undefined, (id, name) => {
+      snapId = id; snapName = name;
+    });
+
+    expect(ran).toBe(true);
+    expect(snapId).toBeNull();  // global scope
+    expect(snapName).toBeUndefined();
+  });
+
+  it("batch click fires when fully resolved (ventureId + ventureName both defined)", () => {
+    let snapId: string | null = null;
+    let snapName: string | undefined;
+
+    const ran = simulateBatchClick(false, "venture-A", "Alpha Corp", (id, name) => {
+      snapId = id; snapName = name;
+    });
+
+    expect(ran).toBe(true);
+    expect(snapId).toBe("venture-A");
+    expect(snapName).toBe("Alpha Corp");
+  });
+
+  // ── Full loading → error → resolved sequence ─────────────────────────────────
+
+  it("toggle: blocked during load, blocked during error/transient, fires only after full resolution", () => {
+    let fired = false;
+    let snapName: string | undefined;
+
+    // Phase 1: isLoading=true (query in-flight).
+    simulateToggleClick(true, "venture-A", undefined, (_, n) => { fired = true; snapName = n; });
+    expect(fired).toBe(false);
+
+    // Phase 2: isLoading=false, but ventures query errored — ventureName still undefined.
+    simulateToggleClick(false, "venture-A", undefined, (_, n) => { fired = true; snapName = n; });
+    expect(fired).toBe(false);
+
+    // Phase 3: fully resolved — both ventureId and ventureName are defined.
+    simulateToggleClick(false, "venture-A", "Alpha Corp", (_, n) => { fired = true; snapName = n; });
+    expect(fired).toBe(true);
+    expect(snapName).toBe("Alpha Corp");
+    expect(typeof snapName).toBe("string");
+  });
+
+  it("batch: blocked during load, blocked during error/transient, fires only after full resolution", () => {
+    let fired = false;
+    let snapName: string | undefined;
+
+    simulateBatchClick(true,  "venture-A", undefined,    (_, n) => { fired = true; snapName = n; });
+    expect(fired).toBe(false);
+
+    simulateBatchClick(false, "venture-A", undefined,    (_, n) => { fired = true; snapName = n; });
+    expect(fired).toBe(false);
+
+    simulateBatchClick(false, "venture-A", "Alpha Corp", (_, n) => { fired = true; snapName = n; });
+    expect(fired).toBe(true);
+    expect(snapName).toBe("Alpha Corp");
+  });
+
+  // ── End-to-end: guarded snapshot flows into toast helpers ────────────────────
+
+  it("showToggleToast never uses raw ID when snapshotVName comes from a fully-resolved guard", () => {
+    let snapId: string | null = null;
+    let snapName: string | undefined;
+
+    simulateToggleClick(false, "venture-A", "Alpha Corp", (id, name) => {
+      snapId = id; snapName = name;
+    });
+
+    showToggleToast(
+      toast,
+      /* currentVId   */ "venture-A",
+      /* currentVName */ "Alpha Corp",
+      /* label        */ "Discovery",
+      /* activated    */ true,
+      snapId,
+      snapName,
+    );
+
+    const call = toast.lastCall()!;
+    expect(call.variant).toBe("success");
+    expect(call.message).toContain("Alpha Corp");
+    // Raw ID must not appear as the scope name (would indicate the fallback fired).
+    expect(call.message).not.toMatch(/for venture-A[^:]/); // "for venture-A" without a colon
+  });
+
+  it("showBatchToast never uses raw ID when snapshotVName comes from a fully-resolved guard", () => {
+    let snapId: string | null = null;
+    let snapName: string | undefined;
+
+    simulateBatchClick(false, "venture-A", "Alpha Corp", (id, name) => {
+      snapId = id; snapName = name;
+    });
+
+    showBatchToast(
+      toast,
+      /* currentVId   */ "venture-A",
+      /* currentVName */ "Alpha Corp",
+      /* allActivated */ true,
+      snapId,
+      snapName,
+    );
+
+    const call = toast.lastCall()!;
+    expect(call.variant).toBe("success");
+    expect(call.message).toContain("Alpha Corp");
+    expect(call.message).not.toMatch(/for venture-A[^:]/);
+  });
+
+  it("showToggleToast with drift shows human-readable name (not raw ID) on warning path when guard passed", () => {
+    // Admin clicks while venture-A is fully resolved, then switches to venture-B.
+    // Even in the WARNING path, the snapshot name is always a string because the
+    // guard only passes when both ventureId and ventureName are defined.
+    let snapId: string | null = null;
+    let snapName: string | undefined;
+
+    simulateToggleClick(false, "venture-A", "Alpha Corp", (id, name) => {
+      snapId = id; snapName = name;
+    });
+
+    showToggleToast(
+      toast,
+      /* currentVId   */ "venture-B",  // selector drifted after click
+      /* currentVName */ "Beta Ltd",
+      /* label        */ "Risk Intelligence",
+      /* activated    */ false,
+      snapId,
+      snapName,
+    );
+
+    const call = toast.lastCall()!;
+    expect(call.variant).toBe("warning");
+    expect(call.message).toContain("Alpha Corp"); // snapshot name — not raw ID
+    expect(call.message).toContain("Beta Ltd");   // current venture name
+    expect(call.message).not.toMatch(/for venture-A[^:]/);
+  });
+
+  it("showToggleToast for global scope shows 'all ventures (global)' — not a raw ID", () => {
+    // Global scope is allowed through the guard with ventureId=null.
+    // snapshotVId=null causes showToggleToast to produce "all ventures (global)".
+    let snapId: string | null = null;
+    let snapName: string | undefined;
+
+    simulateToggleClick(false, null, undefined, (id, name) => {
+      snapId = id; snapName = name;
+    });
+
+    showToggleToast(
+      toast,
+      /* currentVId   */ null,
+      /* currentVName */ undefined,
+      /* label        */ "Governance",
+      /* activated    */ true,
+      snapId,
+      snapName,
+    );
+
+    const call = toast.lastCall()!;
+    expect(call.variant).toBe("success");
+    expect(call.message).toContain("all ventures (global)");
   });
 });
