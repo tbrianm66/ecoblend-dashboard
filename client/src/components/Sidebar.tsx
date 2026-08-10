@@ -551,6 +551,14 @@ function DeferredSection() {
 }
 
 // ── Reactivation Panel (admin-only) ───────────────────────────────────────────
+//
+// All Gate 4 hook values are injected by the parent Sidebar so that both the
+// panel rows and the Extended Backlog section-header badges read from the
+// SAME `rows` reference (including the optimistic overlay).  If this component
+// called useGate4Reactivation() independently it would own a separate
+// optimisticRows state: panel badges would update immediately on toggle but the
+// header badges (fed by Sidebar's hook instance) would not, because the two
+// hook instances never share their in-memory overlay state.
 interface ReactivationPanelProps {
   onClose: () => void;
   ventureId: string | null;
@@ -558,10 +566,34 @@ interface ReactivationPanelProps {
   ventureColor?: string;
   /** True while the venture list is still loading — disables all toggle/batch buttons. */
   venturesLoading?: boolean;
+  // ── Gate 4 hook values passed from Sidebar ──────────────────────────────
+  // Sharing these with ExtendedBacklogSection ensures both consumers always
+  // render from the same rows (optimistic overlay included).
+  rows: import("@/lib/gate4Utils").ReactivationRow[];
+  isLoading: boolean;
+  isError: boolean;
+  isActivated: (id: string) => boolean;
+  reactivate: (groupId: string, onSuccess?: (snapshotVId: string | null) => void) => void;
+  deactivate: (groupId: string, onSuccess?: (snapshotVId: string | null) => void) => void;
+  reactivateAll: (
+    onSuccess?: (snapshotVId: string | null) => void,
+    onError?: (skippedGroups: string[], rawMessage: string) => void,
+  ) => void;
+  deactivateAll: (
+    onSuccess?: (snapshotVId: string | null) => void,
+    onError?: (skippedGroups: string[], rawMessage: string) => void,
+  ) => void;
+  resetToGlobalDefaults: (
+    onSuccess?: (snapshotVId: string | null) => void,
+    onError?: (rawMessage: string) => void,
+  ) => void;
 }
 
-function ReactivationPanel({ onClose, ventureId, ventureName, ventureColor, venturesLoading = false }: ReactivationPanelProps) {
-  const { isActivated, reactivate, deactivate, reactivateAll, deactivateAll, resetToGlobalDefaults, rows, isLoading, isError } = useGate4Reactivation(ventureId);
+function ReactivationPanel({
+  onClose, ventureId, ventureName, ventureColor, venturesLoading = false,
+  rows, isLoading, isError, isActivated, reactivate, deactivate,
+  reactivateAll, deactivateAll, resetToGlobalDefaults,
+}: ReactivationPanelProps) {
 
   // Track the current ventureId and ventureName so onSuccess callbacks can detect
   // whether the venture selector drifted between the user's click and the server response.
@@ -1149,7 +1181,13 @@ export default function Sidebar() {
   const [reactivationOpen, setReactivationOpen] = useState(false);
   const { selectedVenture, loading: venturesLoading } = useSelectedVenture();
   const selectedVentureId = selectedVenture?.id ?? null;
-  const { isActivated, rows, isLoading, isError } = useGate4Reactivation(selectedVentureId);
+  // Single hook call — rows (including the optimistic overlay) is shared with
+  // both ExtendedBacklogSection (header badges) and ReactivationPanel (row badges)
+  // so both update simultaneously when a toggle fires.
+  const {
+    isActivated, rows, isLoading, isError,
+    reactivate, deactivate, reactivateAll, deactivateAll, resetToGlobalDefaults,
+  } = useGate4Reactivation(selectedVentureId);
 
   return (
     <aside
@@ -1222,6 +1260,15 @@ export default function Sidebar() {
           ventureName={selectedVenture?.name}
           ventureColor={selectedVenture?.color}
           venturesLoading={venturesLoading}
+          rows={rows}
+          isLoading={isLoading}
+          isError={isError}
+          isActivated={isActivated}
+          reactivate={reactivate}
+          deactivate={deactivate}
+          reactivateAll={reactivateAll}
+          deactivateAll={deactivateAll}
+          resetToGlobalDefaults={resetToGlobalDefaults}
         />
       )}
 

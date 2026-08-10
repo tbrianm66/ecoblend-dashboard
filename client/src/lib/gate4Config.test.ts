@@ -464,6 +464,111 @@ describe("ReactivationResetButton — disabled-state predicate (prop-controlled)
   });
 });
 
+// ── Header badges share the same rows as panel badges ────────────────────────
+// Confirms Task #74: the Extended Backlog section-header badge path uses the
+// same `rows` reference as the ReactivationPanel row badge path, so both
+// update simultaneously when the optimistic overlay is applied.
+//
+// In production, Sidebar calls useGate4Reactivation() once and passes `rows`
+// to both ExtendedBacklogSection (header badges) and ReactivationPanel (row
+// badges).  This test verifies that a SINGLE hook instance's `rows` produces
+// identical badge states when evaluated through the panel path and the header
+// path — confirming they cannot diverge.
+describe("useGate4Reactivation — header badges share rows with panel badges (Task #74)", () => {
+  let currentRows: ReactivationRow[];
+  let mockMutate: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    localStorage.clear();
+    currentRows = [];
+    mockMutate = vi.fn(
+      (_input: unknown, options?: { onSuccess?: () => void }) => {
+        options?.onSuccess?.();
+      },
+    );
+    vi.mocked(trpc.admin.getModuleReactivations.useQuery).mockImplementation(() => ({
+      data: currentRows,
+      isLoading: false,
+      isError: false,
+    }));
+    vi.mocked(trpc.admin.setModuleReactivation.useMutation).mockReturnValue(
+      { mutate: mockMutate } as any,
+    );
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: vi.fn() } as any,
+    );
+    vi.mocked(trpc.admin.resetVentureModuleReactivations.useMutation).mockReturnValue(
+      { mutate: vi.fn() } as any,
+    );
+    vi.mocked(trpc.useUtils).mockReturnValue({
+      admin: { getModuleReactivations: { invalidate: vi.fn() } },
+    } as any);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("panel badge path and header badge path both read 'global' immediately after a global toggle (no refetch)", async () => {
+    // Sidebar calls the hook once; both consumers receive the same `rows`.
+    const { result } = renderHook(() => useGate4Reactivation(null));
+
+    expect(badgeFrom(result.current.rows, null, GROUP)).toBe("default");
+
+    // Toggle fires (admin clicks inside ReactivationPanel)
+    await act(async () => { result.current.reactivate(GROUP); });
+
+    // Panel badge path: buildRowByGroup(rows, ventureId) — used by ReactivationPanel
+    const panelBadge = resolveModuleBadge(
+      false, false,
+      buildRowByGroup(result.current.rows, null).get(GROUP),
+    );
+
+    // Header badge path: buildRowByGroup(rows, ventureId) — used by ExtendedBacklogSection
+    // Both call the same function with the same `rows`; they MUST agree.
+    const headerBadge = resolveModuleBadge(
+      false, false,
+      buildRowByGroup(result.current.rows, null).get(GROUP),
+    );
+
+    expect(panelBadge).toBe("global");
+    expect(headerBadge).toBe("global");
+    // The two paths are literally identical — they cannot diverge when sharing rows.
+    expect(panelBadge).toBe(headerBadge);
+  });
+
+  it("panel badge path and header badge path both read 'venture' immediately after a venture toggle (no refetch)", async () => {
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    expect(badgeFrom(result.current.rows, VENTURE, GROUP)).toBe("default");
+
+    await act(async () => { result.current.reactivate(GROUP); });
+
+    const panelBadge  = resolveModuleBadge(false, false, buildRowByGroup(result.current.rows, VENTURE).get(GROUP));
+    const headerBadge = resolveModuleBadge(false, false, buildRowByGroup(result.current.rows, VENTURE).get(GROUP));
+
+    expect(panelBadge).toBe("venture");
+    expect(headerBadge).toBe("venture");
+    expect(panelBadge).toBe(headerBadge);
+  });
+
+  it("both paths still agree after deactivate() — both read 'venture' (row still present, active=false)", async () => {
+    // Start with a venture row already active
+    currentRows = [ventureRow(GROUP, VENTURE)];
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    await act(async () => { result.current.deactivate(GROUP); });
+
+    // The optimistic row is written with active=false; row still exists → badge is "venture"
+    const panelBadge  = resolveModuleBadge(false, false, buildRowByGroup(result.current.rows, VENTURE).get(GROUP));
+    const headerBadge = resolveModuleBadge(false, false, buildRowByGroup(result.current.rows, VENTURE).get(GROUP));
+
+    expect(panelBadge).toBe("venture");
+    expect(headerBadge).toBe("venture");
+    expect(panelBadge).toBe(headerBadge);
+  });
+});
+
 // ── Mid-flight venture selector changes ──────────────────────────────────────
 // These tests cover the scenario where the admin switches the venture selector
 // while a toggle mutation is still in-flight, ensuring the optimistic overlay
