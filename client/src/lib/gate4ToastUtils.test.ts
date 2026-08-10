@@ -13,7 +13,14 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { showResetErrorToast, showBatchErrorToast, type ToastApi } from "./gate4ToastUtils";
+import {
+  showResetErrorToast,
+  showBatchErrorToast,
+  showToggleToast,
+  showBatchToast,
+  showToggleErrorToast,
+  type ToastApi,
+} from "./gate4ToastUtils";
 
 function makeToast(): ToastApi & { calls: Record<string, string[]> } {
   const calls: Record<string, string[]> = { success: [], warning: [], error: [] };
@@ -149,5 +156,193 @@ describe("showBatchErrorToast", () => {
 
     expect(toast.calls.error[0]).toContain("risk");
     expect(toast.calls.error[0]).toContain("scoring");
+  });
+});
+
+// ── showToggleToast ───────────────────────────────────────────────────────────
+// Confirms the helper that surfaces the per-row toggle result toast correctly
+// distinguishes between the "same venture" (success) and "different venture"
+// (warning with drift notice) paths.
+
+describe("showToggleToast", () => {
+  it("fires toast.success when snapshotVId matches currentVId (no drift)", () => {
+    const toast = makeToast();
+    showToggleToast(toast, "ven-alpha", "Venture Alpha", "Discovery", true, "ven-alpha", "Venture Alpha");
+
+    expect(toast.calls.success).toHaveLength(1);
+    expect(toast.calls.warning).toHaveLength(0);
+    expect(toast.calls.error).toHaveLength(0);
+  });
+
+  it("success message contains the group label and the venture name", () => {
+    const toast = makeToast();
+    showToggleToast(toast, "ven-alpha", "Venture Alpha", "Discovery", true, "ven-alpha", "Venture Alpha");
+
+    expect(toast.calls.success[0]).toContain("Discovery");
+    expect(toast.calls.success[0]).toContain("Venture Alpha");
+    expect(toast.calls.success[0]).toContain("activated");
+  });
+
+  it("success message says 'deactivated' when activated=false", () => {
+    const toast = makeToast();
+    showToggleToast(toast, "ven-alpha", "Venture Alpha", "Proposition", false, "ven-alpha", "Venture Alpha");
+
+    expect(toast.calls.success[0]).toContain("deactivated");
+    expect(toast.calls.success[0]).toContain("Proposition");
+  });
+
+  it("fires toast.warning when snapshotVId differs from currentVId (drift)", () => {
+    const toast = makeToast();
+    showToggleToast(
+      toast,
+      /* currentVId   */ "ven-beta",
+      /* currentVName */ "Venture Beta",
+      /* label        */ "Discovery",
+      /* activated    */ true,
+      /* snapshotVId  */ "ven-alpha",
+      /* snapshotVName*/ "Venture Alpha",
+    );
+
+    expect(toast.calls.warning).toHaveLength(1);
+    expect(toast.calls.success).toHaveLength(0);
+    expect(toast.calls.error).toHaveLength(0);
+  });
+
+  it("drift warning message names the snapshot venture (where toggle landed)", () => {
+    const toast = makeToast();
+    showToggleToast(toast, "ven-beta", "Venture Beta", "Discovery", true, "ven-alpha", "Venture Alpha");
+
+    expect(toast.calls.warning[0]).toContain("Venture Alpha");
+  });
+
+  it("drift warning message names the current venture (where admin is now looking)", () => {
+    const toast = makeToast();
+    showToggleToast(toast, "ven-beta", "Venture Beta", "Discovery", true, "ven-alpha", "Venture Alpha");
+
+    expect(toast.calls.warning[0]).toContain("Venture Beta");
+  });
+
+  it("drift warning message contains the group label", () => {
+    const toast = makeToast();
+    showToggleToast(toast, "ven-beta", "Venture Beta", "R&D Hub", true, "ven-alpha", "Venture Alpha");
+
+    expect(toast.calls.warning[0]).toContain("R&D Hub");
+  });
+
+  it("drift warning message contains the action word (activated / deactivated)", () => {
+    const toast = makeToast();
+    showToggleToast(toast, "ven-beta", "Venture Beta", "Discovery", true, "ven-alpha", "Venture Alpha");
+    expect(toast.calls.warning[0]).toContain("activated");
+
+    const toast2 = makeToast();
+    showToggleToast(toast2, "ven-beta", "Venture Beta", "Discovery", false, "ven-alpha", "Venture Alpha");
+    expect(toast2.calls.warning[0]).toContain("deactivated");
+  });
+
+  it("falls back to snapshotVId when snapshotVName is undefined (drift path)", () => {
+    const toast = makeToast();
+    showToggleToast(toast, "ven-beta", "Venture Beta", "Discovery", true, "ven-alpha", undefined);
+
+    // The raw ID must appear in the warning since no name was available.
+    expect(toast.calls.warning[0]).toContain("ven-alpha");
+  });
+
+  it("fires toast.success with 'all ventures (global)' scope when both VIds are null (no drift)", () => {
+    const toast = makeToast();
+    showToggleToast(toast, null, undefined, "Coaching", true, null, undefined);
+
+    expect(toast.calls.success).toHaveLength(1);
+    expect(toast.calls.success[0]).toContain("all ventures (global)");
+  });
+
+  it("fires toast.warning when snapshot was global but current is a venture (drift)", () => {
+    const toast = makeToast();
+    showToggleToast(toast, "ven-beta", "Venture Beta", "Coaching", true, null, undefined);
+
+    expect(toast.calls.warning).toHaveLength(1);
+    expect(toast.calls.warning[0]).toContain("all ventures (global)");
+    expect(toast.calls.warning[0]).toContain("Venture Beta");
+  });
+});
+
+// ── showBatchToast ────────────────────────────────────────────────────────────
+// Confirms the Enable All / Disable All batch toast helper surfaces drift
+// correctly — same mismatch-detection logic as showToggleToast.
+
+describe("showBatchToast", () => {
+  it("fires toast.success when there is no drift (snapshot === current)", () => {
+    const toast = makeToast();
+    showBatchToast(toast, "ven-alpha", "Venture Alpha", true, "ven-alpha", "Venture Alpha");
+
+    expect(toast.calls.success).toHaveLength(1);
+    expect(toast.calls.warning).toHaveLength(0);
+  });
+
+  it("success message says 'All modules enabled' for allActivated=true", () => {
+    const toast = makeToast();
+    showBatchToast(toast, "ven-alpha", "Venture Alpha", true, "ven-alpha", "Venture Alpha");
+
+    expect(toast.calls.success[0]).toContain("All modules enabled");
+  });
+
+  it("success message says 'All modules disabled' for allActivated=false", () => {
+    const toast = makeToast();
+    showBatchToast(toast, "ven-alpha", "Venture Alpha", false, "ven-alpha", "Venture Alpha");
+
+    expect(toast.calls.success[0]).toContain("All modules disabled");
+  });
+
+  it("fires toast.warning when snapshotVId differs from currentVId (drift)", () => {
+    const toast = makeToast();
+    showBatchToast(toast, "ven-beta", "Venture Beta", true, "ven-alpha", "Venture Alpha");
+
+    expect(toast.calls.warning).toHaveLength(1);
+    expect(toast.calls.success).toHaveLength(0);
+  });
+
+  it("drift warning names the snapshot venture and the current venture", () => {
+    const toast = makeToast();
+    showBatchToast(toast, "ven-beta", "Venture Beta", true, "ven-alpha", "Venture Alpha");
+
+    expect(toast.calls.warning[0]).toContain("Venture Alpha");  // where batch landed
+    expect(toast.calls.warning[0]).toContain("Venture Beta");   // where admin is now
+  });
+
+  it("drift warning for allActivated=false also names both ventures", () => {
+    const toast = makeToast();
+    showBatchToast(toast, "ven-beta", "Venture Beta", false, "ven-alpha", "Venture Alpha");
+
+    expect(toast.calls.warning).toHaveLength(1);
+    expect(toast.calls.warning[0]).toContain("Venture Alpha");
+    expect(toast.calls.warning[0]).toContain("Venture Beta");
+  });
+});
+
+// ── showToggleErrorToast ──────────────────────────────────────────────────────
+// Confirms the helper that fires when a single-group toggle write is rejected
+// calls toast.error with the group label and the raw server message.
+
+describe("showToggleErrorToast", () => {
+  it("fires toast.error with the group label", () => {
+    const toast = makeToast();
+    showToggleErrorToast(toast, "Discovery & Market", "DB write failed");
+
+    expect(toast.calls.error).toHaveLength(1);
+    expect(toast.calls.error[0]).toContain("Discovery & Market");
+  });
+
+  it("fires toast.error with the raw server message", () => {
+    const toast = makeToast();
+    showToggleErrorToast(toast, "Discovery", "Permission denied: venture read-only");
+
+    expect(toast.calls.error[0]).toContain("Permission denied: venture read-only");
+  });
+
+  it("does not call success or warning", () => {
+    const toast = makeToast();
+    showToggleErrorToast(toast, "Discovery", "some error");
+
+    expect(toast.calls.success).toHaveLength(0);
+    expect(toast.calls.warning).toHaveLength(0);
   });
 });

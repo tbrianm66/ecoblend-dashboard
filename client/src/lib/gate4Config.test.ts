@@ -49,6 +49,7 @@ vi.mock("@/lib/trpc", () => ({
 import { trpc } from "@/lib/trpc";
 import { useGate4Reactivation, GATE4_BACKLOG_GROUP_IDS } from "./gate4Config";
 import { buildRowByGroup, resolveModuleBadge, type ReactivationRow } from "./gate4Utils";
+import { showToggleToast, showBatchToast, type ToastApi } from "./gate4ToastUtils";
 
 // ── Row factories ─────────────────────────────────────────────────────────────
 function globalRow(groupId: string, active = true): ReactivationRow {
@@ -1298,5 +1299,244 @@ describe("useGate4Reactivation — reset button disables within 10 s after anoth
     // t=10 s: overrides are gone → button must now be DISABLED.
     expect((getByTestId("reset-btn") as HTMLButtonElement).disabled).toBe(true);
     expect(getByTestId("reset-btn").textContent).toContain("Already using global defaults");
+  });
+});
+
+// ── Drift notice: toggle landed on a different venture ────────────────────────
+//
+// Scenario: the admin is viewing venture A, clicks a toggle, then switches to
+// venture B before the server responds.  When onSuccess fires, snapshotVId is
+// still "ven-alpha" but ventureIdRef.current is now "ven-beta".  The panel
+// must surface a WARNING toast naming venture A (where the write landed) and
+// venture B (where the admin is now looking) — never a plain SUCCESS toast.
+//
+// Strategy
+// --------
+// A small panel driver component wires useGate4Reactivation → reactivate(),
+// passing a custom onSuccess that calls showToggleToast with a spy ToastApi.
+// The mutation mock is deferred: it captures the onSuccess callback and exposes
+// it so the test can:
+//   1. call reactivate() on venture A (snapshot taken)
+//   2. switch the hook to venture B via rerender()
+//   3. manually resolve the deferred onSuccess
+//   4. assert toast.warning was called with both venture names
+//
+// The driver uses a React ref for the toast spy so the captured onSuccess
+// closure always calls the same stable reference regardless of renders.
+
+describe("ReactivationPanel drift notice — mid-flight venture switch triggers warning toast", () => {
+  const VENTURE_A    = "ven-alpha";
+  const VENTURE_B    = "ven-beta";
+  const VENTURE_A_NAME = "Venture Alpha";
+  const VENTURE_B_NAME = "Venture Beta";
+  const GROUP_ID     = "discovery";
+  const GROUP_LABEL  = "Discovery & Market";
+
+  // Deferred onSuccess handle — set by the mutation mock so the test can resolve it later.
+  let deferredOnSuccess: (() => void) | null = null;
+
+  // Panel driver: uses the real useGate4Reactivation hook and calls showToggleToast
+  // in the per-row toggle's onSuccess, exactly as ReactivationPanel does in production.
+  //
+  // `toastRef` is a stable React ref to the toast spy so the captured onSuccess
+  // closure picks up the same object even if the component re-renders.
+  function PanelDriver({
+    ventureId,
+    ventureName,
+    toastRef,
+  }: {
+    ventureId: string;
+    ventureName: string;
+    toastRef: React.MutableRefObject<ToastApi & { calls: Record<string, string[]> }>;
+  }) {
+    const { reactivate } = useGate4Reactivation(ventureId);
+    // ventureNameRef tracks the latest ventureName so the onSuccess closure
+    // sees the current value at resolution time (mirrors Sidebar.tsx behaviour).
+    const ventureNameRef = React.useRef(ventureName);
+    React.useEffect(() => { ventureNameRef.current = ventureName; });
+    // ventureIdRef tracks the latest ventureId — same pattern as Sidebar.tsx.
+    const ventureIdRef = React.useRef(ventureId);
+    React.useEffect(() => { ventureIdRef.current = ventureId; });
+
+    const handleClick = () => {
+      const snapshotVId   = ventureId;
+      const snapshotVName = ventureName;
+      reactivate(GROUP_ID, (svid) => {
+        showToggleToast(
+          toastRef.current,
+          ventureIdRef.current,
+          ventureNameRef.current,
+          GROUP_LABEL,
+          true,
+          svid,
+          snapshotVName,
+        );
+      });
+    };
+
+    return React.createElement(
+      "button",
+      { "data-testid": "toggle-btn", onClick: handleClick },
+      "Toggle",
+    );
+  }
+
+  // Toast spy factory — mirrors the one in gate4ToastUtils.test.ts.
+  function makeToast(): ToastApi & { calls: Record<string, string[]> } {
+    const calls: Record<string, string[]> = { success: [], warning: [], error: [] };
+    return {
+      calls,
+      success: (m) => calls.success.push(m),
+      warning: (m) => calls.warning.push(m),
+      error:   (m) => calls.error.push(m),
+    };
+  }
+
+  beforeEach(() => {
+    localStorage.clear();
+    deferredOnSuccess = null;
+
+    // Mutation mock captures onSuccess so the test controls when it resolves.
+    const deferredMutate = vi.fn(
+      (_input: unknown, options?: { onSuccess?: () => void }) => {
+        deferredOnSuccess = options?.onSuccess ?? null;
+      },
+    );
+
+    vi.mocked(trpc.admin.getModuleReactivations.useQuery).mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+    } as any);
+    vi.mocked(trpc.admin.setModuleReactivation.useMutation).mockReturnValue(
+      { mutate: deferredMutate } as any,
+    );
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: vi.fn() } as any,
+    );
+    vi.mocked(trpc.admin.resetVentureModuleReactivations.useMutation).mockReturnValue(
+      { mutate: vi.fn() } as any,
+    );
+    vi.mocked(trpc.useUtils).mockReturnValue({
+      admin: { getModuleReactivations: { invalidate: vi.fn() } },
+    } as any);
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.clearAllMocks();
+  });
+
+  // ── Core contract: warning toast fires when venture drifts mid-toggle ──────
+  it("fires toast.warning naming both ventures when the selector changes between click and server response", async () => {
+    const toast    = makeToast();
+    const toastRef = React.createRef<typeof toast>() as React.MutableRefObject<typeof toast>;
+    toastRef.current = toast;
+
+    const { rerender } = render(
+      React.createElement(PanelDriver, {
+        ventureId:   VENTURE_A,
+        ventureName: VENTURE_A_NAME,
+        toastRef,
+      }),
+    );
+
+    // Step 1 — admin clicks the toggle while viewing venture A.
+    // Mutation fires but onSuccess is deferred; snapshotVId is now "ven-alpha".
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("toggle-btn"));
+    });
+
+    // Step 2 — admin switches the selector to venture B before the server responds.
+    await act(async () => {
+      rerender(
+        React.createElement(PanelDriver, {
+          ventureId:   VENTURE_B,
+          ventureName: VENTURE_B_NAME,
+          toastRef,
+        }),
+      );
+    });
+
+    // Step 3 — server responds; onSuccess fires with snapshotVId = "ven-alpha"
+    // but ventureIdRef.current is now "ven-beta" → drift detected.
+    await act(async () => {
+      deferredOnSuccess?.();
+    });
+
+    // Step 4 — must be a WARNING, never a success toast.
+    expect(toast.calls.warning).toHaveLength(1);
+    expect(toast.calls.success).toHaveLength(0);
+  });
+
+  it("drift warning names the snapshot venture (where the write landed)", async () => {
+    const toast    = makeToast();
+    const toastRef = { current: toast } as React.MutableRefObject<typeof toast>;
+
+    const { rerender } = render(
+      React.createElement(PanelDriver, { ventureId: VENTURE_A, ventureName: VENTURE_A_NAME, toastRef }),
+    );
+
+    await act(async () => { fireEvent.click(screen.getByTestId("toggle-btn")); });
+    await act(async () => {
+      rerender(React.createElement(PanelDriver, { ventureId: VENTURE_B, ventureName: VENTURE_B_NAME, toastRef }));
+    });
+    await act(async () => { deferredOnSuccess?.(); });
+
+    // The snapshot venture name must appear — this is where the write actually landed.
+    expect(toast.calls.warning[0]).toContain(VENTURE_A_NAME);
+  });
+
+  it("drift warning names the current venture (where the admin is now looking)", async () => {
+    const toast    = makeToast();
+    const toastRef = { current: toast } as React.MutableRefObject<typeof toast>;
+
+    const { rerender } = render(
+      React.createElement(PanelDriver, { ventureId: VENTURE_A, ventureName: VENTURE_A_NAME, toastRef }),
+    );
+
+    await act(async () => { fireEvent.click(screen.getByTestId("toggle-btn")); });
+    await act(async () => {
+      rerender(React.createElement(PanelDriver, { ventureId: VENTURE_B, ventureName: VENTURE_B_NAME, toastRef }));
+    });
+    await act(async () => { deferredOnSuccess?.(); });
+
+    // The current venture name must appear — this is where the admin is now looking.
+    expect(toast.calls.warning[0]).toContain(VENTURE_B_NAME);
+  });
+
+  it("drift warning contains the group label", async () => {
+    const toast    = makeToast();
+    const toastRef = { current: toast } as React.MutableRefObject<typeof toast>;
+
+    const { rerender } = render(
+      React.createElement(PanelDriver, { ventureId: VENTURE_A, ventureName: VENTURE_A_NAME, toastRef }),
+    );
+
+    await act(async () => { fireEvent.click(screen.getByTestId("toggle-btn")); });
+    await act(async () => {
+      rerender(React.createElement(PanelDriver, { ventureId: VENTURE_B, ventureName: VENTURE_B_NAME, toastRef }));
+    });
+    await act(async () => { deferredOnSuccess?.(); });
+
+    expect(toast.calls.warning[0]).toContain(GROUP_LABEL);
+  });
+
+  // ── No drift: success toast fires when venture does not change mid-toggle ──
+  it("fires toast.success (no warning) when the venture selector does not change between click and response", async () => {
+    const toast    = makeToast();
+    const toastRef = { current: toast } as React.MutableRefObject<typeof toast>;
+
+    render(
+      React.createElement(PanelDriver, { ventureId: VENTURE_A, ventureName: VENTURE_A_NAME, toastRef }),
+    );
+
+    // Click then immediately resolve — no venture switch.
+    await act(async () => { fireEvent.click(screen.getByTestId("toggle-btn")); });
+    await act(async () => { deferredOnSuccess?.(); });
+
+    expect(toast.calls.success).toHaveLength(1);
+    expect(toast.calls.warning).toHaveLength(0);
+    expect(toast.calls.success[0]).toContain(VENTURE_A_NAME);
   });
 });
