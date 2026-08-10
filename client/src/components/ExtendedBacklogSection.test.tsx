@@ -158,9 +158,11 @@ describe("ExtendedBacklogSection — header source badge", () => {
         }),
       );
 
-      const badge = screen.getByLabelText("No override set; system default applies");
-      expect(badge).toBeDefined();
-      expect(badge.textContent).toBe("DEFAULT");
+      // With no rows, both ON and OFF groups show DEFAULT.  Use getAllByLabelText
+      // and verify at least one badge is present with the correct text.
+      const badges = screen.getAllByLabelText("No override set; system default applies");
+      expect(badges.length).toBeGreaterThan(0);
+      expect(badges[0].textContent).toBe("DEFAULT");
     });
 
     it("DEFAULT badge uses the grey colour tokens (rgba white palette, not amber or green)", () => {
@@ -175,7 +177,8 @@ describe("ExtendedBacklogSection — header source badge", () => {
         }),
       );
 
-      const badge = screen.getByLabelText("No override set; system default applies");
+      // Multiple DEFAULT badges are present (ON and OFF groups with no rows all show DEFAULT).
+      const badge = screen.getAllByLabelText("No override set; system default applies")[0];
       const style = (badge as HTMLElement).getAttribute("style") ?? "";
 
       // Must contain a neutral white-based colour (not amber 245,158,11 or green 86,168,55).
@@ -260,7 +263,10 @@ describe("ExtendedBacklogSection — header source badge", () => {
       expect(screen.queryByLabelText("Enabled by a venture-specific override")).toBeNull();
     });
 
-    it("does not render DEFAULT or VENTURE badges when state is global", () => {
+    it("does not render a VENTURE badge when state is global", () => {
+      // With onlyTargetActive, other groups are OFF with no rows → they show DEFAULT.
+      // The meaningful assertion is that no VENTURE badge appears, since TARGET_GROUP's
+      // most-specific row is a global rule (not venture-specific).
       renderInRouter(
         React.createElement(ExtendedBacklogSection, {
           location:    TARGET_LOCATION,
@@ -272,7 +278,6 @@ describe("ExtendedBacklogSection — header source badge", () => {
         }),
       );
 
-      expect(screen.queryByLabelText("No override set; system default applies")).toBeNull();
       expect(screen.queryByLabelText("Enabled by a venture-specific override")).toBeNull();
     });
   });
@@ -334,7 +339,10 @@ describe("ExtendedBacklogSection — header source badge", () => {
       expect(screen.queryByLabelText("Enabled by a global rule")).toBeNull();
     });
 
-    it("does not render DEFAULT or GLOBAL badges when state is venture", () => {
+    it("does not render a GLOBAL badge when state is venture", () => {
+      // With onlyTargetActive, other groups are OFF with no rows → they show DEFAULT.
+      // The meaningful assertion is that no GLOBAL badge appears, since TARGET_GROUP's
+      // most-specific row is a venture override (not a global rule).
       renderInRouter(
         React.createElement(ExtendedBacklogSection, {
           location:    TARGET_LOCATION,
@@ -346,104 +354,188 @@ describe("ExtendedBacklogSection — header source badge", () => {
         }),
       );
 
-      expect(screen.queryByLabelText("No override set; system default applies")).toBeNull();
       expect(screen.queryByLabelText("Enabled by a global rule")).toBeNull();
     });
   });
 
-  // ── locked (OFF) groups — no badge ever ───────────────────────────────────
+  // ── locked (OFF) groups — source badge visible ────────────────────────────
   /**
-   * Task #97
+   * Task #99
    *
-   * When isActivated(id) === false the component renders the locked/greyed OFF
-   * row directly — it never delegates to NavGroupSection and therefore never
-   * receives a badge prop.  Even when the DB has rows for that group, no badge
-   * element should appear beside the OFF row.
+   * When isActivated(id) === false the component renders a locked/greyed OFF
+   * row.  Admins need to know WHY a group is OFF — was it never touched
+   * (DEFAULT) or was it explicitly disabled by a global or venture-level
+   * override (GLOBAL / VENTURE)?  The same resolveModuleBadge logic that
+   * drives ON-group headers is now also applied to OFF rows.
+   *
+   * The source badge is shown beside the OFF pill using identical colour
+   * tokens to the active-group badge so the visual language is consistent.
    *
    * We verify this with two groups in the same render:
-   *   - TARGET_GROUP (venture-intake)   → activated   → badge IS rendered
-   *   - LOCKED_GROUP (discovery)        → NOT activated → no badge, "OFF" shown
+   *   - TARGET_GROUP (venture-intake)   → activated   → badge rendered by NavGroupSection
+   *   - LOCKED_GROUP (discovery)        → NOT activated → badge rendered inline in the locked row
    */
-  describe("locked (OFF) groups never render a source badge", () => {
+  describe("locked (OFF) groups show the source badge from the DB row", () => {
     const LOCKED_GROUP = "discovery";
 
-    /** isActivated: only TARGET_GROUP is active; LOCKED_GROUP stays OFF. */
-    const oneActiveOneLocked = (id: string) => id === TARGET_GROUP;
+    /**
+     * isActivated: ALL groups active EXCEPT LOCKED_GROUP.
+     *
+     * Using (id) => id !== LOCKED_GROUP (rather than id === TARGET_GROUP)
+     * makes LOCKED_GROUP the *only* OFF group in the render.  This lets us
+     * use `getByLabelText` (singular) for badge types that only LOCKED_GROUP
+     * should carry, without false positives from other OFF groups.
+     */
+    const allExceptLocked = (id: string) => id !== LOCKED_GROUP;
 
-    it("renders no badge aria-label on the locked OFF row even when a global DB row exists for it", () => {
+    it("shows a GLOBAL badge on a locked OFF row when a global DB row exists for it", () => {
       renderInRouter(
         React.createElement(ExtendedBacklogSection, {
           location:    TARGET_LOCATION,
-          isActivated: oneActiveOneLocked,
-          // DB rows exist for BOTH groups; only TARGET_GROUP is activated
-          rows:        [globalRow(TARGET_GROUP), globalRow(LOCKED_GROUP)],
+          isActivated: allExceptLocked,
+          // LOCKED_GROUP is the only OFF group and has a global row.
+          // TARGET_GROUP and other ON groups have no rows → DEFAULT badges.
+          rows:        [globalRow(LOCKED_GROUP)],
           isLoading:   false,
           isError:     false,
           ventureId:   null,
         }),
       );
 
-      // The activated group should have a badge …
-      expect(screen.getByLabelText("Enabled by a global rule")).toBeDefined();
+      // Exactly one GLOBAL badge: LOCKED_GROUP's locked OFF row.
+      const globalBadge = screen.getByLabelText("Enabled by a global rule");
+      expect(globalBadge).toBeDefined();
+      expect(globalBadge.textContent).toBe("GLOBAL");
 
-      // … but the locked group must have NONE of the three badge aria-labels
-      // We can't query "by group" directly, so we assert none of the three
-      // labels appears more than once (only the active group owns it).
-      const globalBadges = screen.getAllByLabelText("Enabled by a global rule");
-      expect(globalBadges).toHaveLength(1);
-
-      expect(screen.queryByLabelText("No override set; system default applies")).toBeNull();
+      // No VENTURE badge — only a global row was provided for LOCKED_GROUP.
       expect(screen.queryByLabelText("Enabled by a venture-specific override")).toBeNull();
     });
 
-    it("renders no badge aria-label on the locked OFF row even when a venture DB row exists for it", () => {
+    it("shows a VENTURE badge on a locked OFF row when a venture DB row exists for it", () => {
       renderInRouter(
         React.createElement(ExtendedBacklogSection, {
           location:    TARGET_LOCATION,
-          isActivated: oneActiveOneLocked,
-          rows:        [ventureRow(TARGET_GROUP, VENTURE_ID), ventureRow(LOCKED_GROUP, VENTURE_ID)],
+          isActivated: allExceptLocked,
+          // LOCKED_GROUP is the only OFF group and has a venture row.
+          rows:        [ventureRow(LOCKED_GROUP, VENTURE_ID)],
           isLoading:   false,
           isError:     false,
           ventureId:   VENTURE_ID,
         }),
       );
 
-      // One VENTURE badge for the active group only
-      const ventureBadges = screen.getAllByLabelText("Enabled by a venture-specific override");
-      expect(ventureBadges).toHaveLength(1);
+      // Exactly one VENTURE badge: LOCKED_GROUP's locked OFF row.
+      const ventureBadge = screen.getByLabelText("Enabled by a venture-specific override");
+      expect(ventureBadge).toBeDefined();
+      expect(ventureBadge.textContent).toBe("VENTURE");
 
-      expect(screen.queryByLabelText("No override set; system default applies")).toBeNull();
+      // No GLOBAL badge — the venture row is the only row provided.
       expect(screen.queryByLabelText("Enabled by a global rule")).toBeNull();
     });
 
-    it("still shows the OFF text on the locked row", () => {
+    it("shows a DEFAULT badge on a locked OFF row when no DB row exists for it", () => {
+      // Provide global rows for every group except LOCKED_GROUP so that
+      // all ON-group badges are GLOBAL and only LOCKED_GROUP shows DEFAULT.
+      // This isolates the DEFAULT badge on the locked OFF row.
+      const rowsForOthers = [
+        globalRow(TARGET_GROUP),
+        // Other ON groups also get a global row to avoid their DEFAULT badges
+        // polluting the DEFAULT count.  We only need the known BACKLOG groups;
+        // the rows for non-backlog IDs are silently ignored by buildRowByGroup.
+        globalRow("proposition"), globalRow("rnd"), globalRow("operations"),
+        globalRow("gtm"), globalRow("sustainability"), globalRow("risk"),
+        globalRow("scoring"), globalRow("investment"), globalRow("execution"),
+        globalRow("coaching"), globalRow("collaboration"), globalRow("governance"),
+        globalRow("people"),
+      ];
+
       renderInRouter(
         React.createElement(ExtendedBacklogSection, {
           location:    TARGET_LOCATION,
-          isActivated: oneActiveOneLocked,
-          rows:        [globalRow(TARGET_GROUP), globalRow(LOCKED_GROUP)],
+          isActivated: allExceptLocked,
+          rows:        rowsForOthers,   // LOCKED_GROUP deliberately has no row
           isLoading:   false,
           isError:     false,
           ventureId:   null,
         }),
       );
 
-      // The "OFF" label must be present on the locked row (multiple groups are
-      // locked in this render, so there are several OFF spans — just confirm ≥1)
-      const offLabels = screen.getAllByText("OFF");
-      expect(offLabels.length).toBeGreaterThan(0);
+      // Exactly one DEFAULT badge: LOCKED_GROUP's locked OFF row.
+      const defaultBadge = screen.getByLabelText("No override set; system default applies");
+      expect(defaultBadge).toBeDefined();
+      expect(defaultBadge.textContent).toBe("DEFAULT");
+
+      // No VENTURE badge — no venture rows were provided.
+      expect(screen.queryByLabelText("Enabled by a venture-specific override")).toBeNull();
     });
 
-    it("renders no badge on ANY non-activated group regardless of badge state (default/global/venture)", () => {
-      // All groups locked — none activated
+    it("venture row takes precedence over global row for a locked OFF group", () => {
       renderInRouter(
         React.createElement(ExtendedBacklogSection, {
-          location:    "/nowhere-matching",  // no active item → section may close but rows still evaluated
-          isActivated: () => false,           // nothing is activated
-          rows:        [globalRow(TARGET_GROUP), ventureRow(LOCKED_GROUP, VENTURE_ID)],
+          location:    TARGET_LOCATION,
+          isActivated: allExceptLocked,
+          // LOCKED_GROUP has both a global and a venture row; venture must win.
+          // TARGET_GROUP has only a global row (no venture row) → GLOBAL badge.
+          rows:        [
+            globalRow(TARGET_GROUP),
+            globalRow(LOCKED_GROUP),
+            ventureRow(LOCKED_GROUP, VENTURE_ID),
+          ],
           isLoading:   false,
           isError:     false,
           ventureId:   VENTURE_ID,
+        }),
+      );
+
+      // TARGET_GROUP (ON) → GLOBAL badge (from NavGroupSection, via global row)
+      // LOCKED_GROUP (OFF) → venture row overwrites global → VENTURE badge on locked row
+      expect(screen.getByLabelText("Enabled by a global rule").textContent).toBe("GLOBAL");
+      expect(screen.getByLabelText("Enabled by a venture-specific override").textContent).toBe("VENTURE");
+    });
+
+    it("still shows the OFF text label on the locked row", () => {
+      renderInRouter(
+        React.createElement(ExtendedBacklogSection, {
+          location:    TARGET_LOCATION,
+          isActivated: allExceptLocked,
+          rows:        [globalRow(LOCKED_GROUP)],
+          isLoading:   false,
+          isError:     false,
+          ventureId:   null,
+        }),
+      );
+
+      // LOCKED_GROUP is the only OFF group → exactly one OFF label.
+      const offLabels = screen.getAllByText("OFF");
+      expect(offLabels).toHaveLength(1);
+    });
+
+    it("shows no badge on a locked OFF row while the query is loading (isLoading=true)", () => {
+      renderInRouter(
+        React.createElement(ExtendedBacklogSection, {
+          location:    TARGET_LOCATION,
+          isActivated: allExceptLocked,
+          rows:        [globalRow(LOCKED_GROUP)],
+          isLoading:   true,   // indeterminate — must not show any badge
+          isError:     false,
+          ventureId:   null,
+        }),
+      );
+
+      expect(screen.queryByLabelText("No override set; system default applies")).toBeNull();
+      expect(screen.queryByLabelText("Enabled by a global rule")).toBeNull();
+      expect(screen.queryByLabelText("Enabled by a venture-specific override")).toBeNull();
+    });
+
+    it("shows no badge on a locked OFF row when the query errored (isError=true)", () => {
+      renderInRouter(
+        React.createElement(ExtendedBacklogSection, {
+          location:    TARGET_LOCATION,
+          isActivated: allExceptLocked,
+          rows:        [globalRow(LOCKED_GROUP)],
+          isLoading:   false,
+          isError:     true,   // indeterminate — must not assert DEFAULT
+          ventureId:   null,
         }),
       );
 
@@ -622,30 +714,33 @@ describe("toggle in ReactivationPanel → header badge in ExtendedBacklogSection
   // ── global scope (ventureId = null) ───────────────────────────────────────
 
   describe("global scope (no venture selected)", () => {
-    it("header badge goes from DEFAULT to no-badge to GLOBAL as the group is toggled OFF then ON", () => {
+    it("header badge transitions from DEFAULT to GLOBAL when the group is toggled OFF (deactivate injects a global row)", () => {
       // Start: TARGET_GROUP activated, no rows → DEFAULT badge visible in the
-      // open section header.
+      // open section header.  Other groups are OFF with no rows, so multiple
+      // DEFAULT badges exist; we use getAllByLabelText and check at least one.
       renderInRouter(React.createElement(TestHarness, { ventureId: null }));
 
-      expect(screen.getByLabelText("No override set; system default applies").textContent).toBe("DEFAULT");
+      const startBadges = screen.getAllByLabelText("No override set; system default applies");
+      expect(startBadges.length).toBeGreaterThan(0);
+      expect(startBadges[0].textContent).toBe("DEFAULT");
 
       const toggleBtn = screen.getByTestId(`toggle-${TARGET_GROUP}`);
 
       // First click — the panel button shows "On", so clicking calls deactivate.
-      // The group becomes OFF; the section stays open (open is local state).
-      // No badge is rendered for an OFF row.
-      fireEvent.click(toggleBtn);
-      expect(screen.queryByLabelText("No override set; system default applies")).toBeNull();
-      expect(screen.queryByLabelText("Enabled by a global rule")).toBeNull();
-
-      // Second click — group is now OFF so the button shows "Off"; clicking calls
-      // reactivate.  A synthetic global row is injected → GLOBAL badge.
+      // deactivate() injects a synthetic global row (active=false) so TARGET_GROUP's
+      // locked row now shows GLOBAL.  Other groups with no rows still show DEFAULT.
       fireEvent.click(toggleBtn);
       expect(screen.getByLabelText("Enabled by a global rule").textContent).toBe("GLOBAL");
-      expect(screen.queryByLabelText("No override set; system default applies")).toBeNull();
+      // (DEFAULT badges from other OFF groups are intentionally not asserted null here)
+
+      // Second click — group is now OFF so the button shows "Off"; clicking calls
+      // reactivate.  A synthetic global row (active=true) is injected → GLOBAL badge
+      // now appears on the re-activated ON row (via NavGroupSection).
+      fireEvent.click(toggleBtn);
+      expect(screen.getByLabelText("Enabled by a global rule").textContent).toBe("GLOBAL");
     });
 
-    it("header badge disappears when an ON group with a GLOBAL row is toggled OFF", () => {
+    it("GLOBAL badge stays visible on the locked OFF row when an ON group with a GLOBAL row is toggled OFF", () => {
       // Start: TARGET_GROUP activated + pre-existing global row → GLOBAL badge.
       renderInRouter(
         React.createElement(TestHarness, {
@@ -656,33 +751,37 @@ describe("toggle in ReactivationPanel → header badge in ExtendedBacklogSection
 
       expect(screen.getByLabelText("Enabled by a global rule").textContent).toBe("GLOBAL");
 
-      // Toggle OFF.
+      // Toggle OFF — deactivate() re-injects a global row (active=false).
+      // resolveModuleBadge ignores the active flag; the OFF locked row keeps
+      // the GLOBAL badge so admins can see the rule that drove the deactivation.
       fireEvent.click(screen.getByTestId(`toggle-${TARGET_GROUP}`));
 
-      // Group is now OFF → ExtendedBacklogSection renders the locked OFF row,
-      // which never shows a source badge.
-      expect(screen.queryByLabelText("Enabled by a global rule")).toBeNull();
-      expect(screen.queryByLabelText("No override set; system default applies")).toBeNull();
+      // Only TARGET_GROUP has a global row → exactly one GLOBAL badge on its
+      // locked row.  Other OFF groups with no rows show DEFAULT — not asserted.
+      expect(screen.getByLabelText("Enabled by a global rule").textContent).toBe("GLOBAL");
       expect(screen.queryByLabelText("Enabled by a venture-specific override")).toBeNull();
     });
 
-    it("GLOBAL badge returns after a second ON toggle cycle (badge survives round-trip through OFF)", () => {
+    it("GLOBAL badge is present in both OFF and ON states across a full toggle round-trip", () => {
       // Start: TARGET_GROUP activated, no rows → DEFAULT.
       renderInRouter(React.createElement(TestHarness, { ventureId: null }));
 
       const btn = screen.getByTestId(`toggle-${TARGET_GROUP}`);
 
-      // OFF → ON: row injected, badge = GLOBAL.
-      fireEvent.click(btn); // deactivate (currently ON)
-      fireEvent.click(btn); // reactivate (now OFF)
+      // ON → OFF: deactivate() injects global row (active=false) → GLOBAL on OFF row.
+      fireEvent.click(btn);
       expect(screen.getByLabelText("Enabled by a global rule").textContent).toBe("GLOBAL");
 
-      // ON → OFF: badge disappears.
-      fireEvent.click(btn); // deactivate again
-      expect(screen.queryByLabelText("Enabled by a global rule")).toBeNull();
+      // OFF → ON: reactivate() injects global row (active=true) → GLOBAL on ON row.
+      fireEvent.click(btn);
+      expect(screen.getByLabelText("Enabled by a global rule").textContent).toBe("GLOBAL");
 
-      // OFF → ON: row re-injected, GLOBAL badge returns.
-      fireEvent.click(btn); // reactivate
+      // ON → OFF again: GLOBAL persists on the OFF row.
+      fireEvent.click(btn);
+      expect(screen.getByLabelText("Enabled by a global rule").textContent).toBe("GLOBAL");
+
+      // OFF → ON again: GLOBAL persists on the ON row.
+      fireEvent.click(btn);
       expect(screen.getByLabelText("Enabled by a global rule").textContent).toBe("GLOBAL");
     });
   });
@@ -690,26 +789,32 @@ describe("toggle in ReactivationPanel → header badge in ExtendedBacklogSection
   // ── venture scope (ventureId = VENTURE_ID) ────────────────────────────────
 
   describe("venture scope (a venture is selected)", () => {
-    it("header badge switches from DEFAULT to VENTURE after an OFF→ON toggle in venture scope", () => {
+    it("header badge transitions from DEFAULT to VENTURE when toggled OFF (deactivate injects venture row)", () => {
       // Start: TARGET_GROUP activated, no rows → DEFAULT badge.
+      // Other groups are OFF with no rows → they also show DEFAULT.
       renderInRouter(React.createElement(TestHarness, { ventureId: VENTURE_ID }));
 
-      expect(screen.getByLabelText("No override set; system default applies").textContent).toBe("DEFAULT");
+      const startBadges = screen.getAllByLabelText("No override set; system default applies");
+      expect(startBadges.length).toBeGreaterThan(0);
+      expect(startBadges[0].textContent).toBe("DEFAULT");
 
       const btn = screen.getByTestId(`toggle-${TARGET_GROUP}`);
 
-      // Deactivate (ON → OFF): badge disappears.
-      fireEvent.click(btn);
-      expect(screen.queryByLabelText("No override set; system default applies")).toBeNull();
-
-      // Reactivate (OFF → ON): synthetic row with ventureId = VENTURE_ID injected → VENTURE badge.
+      // Deactivate (ON → OFF): deactivate() injects a venture-scoped row (active=false).
+      // TARGET_GROUP's locked row now shows VENTURE.  Other OFF groups with no
+      // rows still show DEFAULT — not asserted here since they're unrelated.
       fireEvent.click(btn);
       expect(screen.getByLabelText("Enabled by a venture-specific override").textContent).toBe("VENTURE");
-      // GLOBAL badge must NOT appear — the venture row takes precedence.
+      // Only TARGET_GROUP has a row, so no GLOBAL badge is present.
+      expect(screen.queryByLabelText("Enabled by a global rule")).toBeNull();
+
+      // Reactivate (OFF → ON): venture-scoped row (active=true) injected → VENTURE on ON row.
+      fireEvent.click(btn);
+      expect(screen.getByLabelText("Enabled by a venture-specific override").textContent).toBe("VENTURE");
       expect(screen.queryByLabelText("Enabled by a global rule")).toBeNull();
     });
 
-    it("header badge switches from GLOBAL to VENTURE when a global-only group is toggled OFF then ON in venture scope", () => {
+    it("badge switches from GLOBAL to VENTURE when toggled OFF in venture scope (venture row overwrites global)", () => {
       // Start: TARGET_GROUP ON with only a global row → GLOBAL badge.
       renderInRouter(
         React.createElement(TestHarness, {
@@ -723,17 +828,19 @@ describe("toggle in ReactivationPanel → header badge in ExtendedBacklogSection
 
       const btn = screen.getByTestId(`toggle-${TARGET_GROUP}`);
 
-      // Deactivate (ON → OFF): group becomes OFF, section stays open.
+      // Deactivate (ON → OFF): deactivate() injects a venture row (active=false).
+      // buildRowByGroup: global row is seeded, then venture row overwrites it →
+      // resolveModuleBadge returns "venture" → VENTURE badge on OFF locked row.
       fireEvent.click(btn);
+      expect(screen.getByLabelText("Enabled by a venture-specific override").textContent).toBe("VENTURE");
       expect(screen.queryByLabelText("Enabled by a global rule")).toBeNull();
 
-      // Reactivate (OFF → ON): venture-scoped synthetic row injected.
-      // The venture row overrides the global row → badge must read VENTURE.
+      // Reactivate (OFF → ON): venture row (active=true) injected → VENTURE on ON row.
       fireEvent.click(btn);
       expect(screen.getByLabelText("Enabled by a venture-specific override").textContent).toBe("VENTURE");
     });
 
-    it("header badge disappears when an ON group with a VENTURE row is toggled OFF", () => {
+    it("VENTURE badge stays visible on the locked OFF row when an ON group with a VENTURE row is toggled OFF", () => {
       renderInRouter(
         React.createElement(TestHarness, {
           ventureId:   VENTURE_ID,
@@ -743,12 +850,14 @@ describe("toggle in ReactivationPanel → header badge in ExtendedBacklogSection
 
       expect(screen.getByLabelText("Enabled by a venture-specific override").textContent).toBe("VENTURE");
 
+      // Deactivate — deactivate() re-injects a venture row (active=false).
+      // The OFF locked row keeps the VENTURE badge so admins see the override.
       fireEvent.click(screen.getByTestId(`toggle-${TARGET_GROUP}`));
 
-      // Group is OFF → locked row, no badge.
-      expect(screen.queryByLabelText("Enabled by a venture-specific override")).toBeNull();
+      // Only TARGET_GROUP has a venture row → exactly one VENTURE badge.
+      // Other OFF groups with no rows show DEFAULT — not asserted here.
+      expect(screen.getByLabelText("Enabled by a venture-specific override").textContent).toBe("VENTURE");
       expect(screen.queryByLabelText("Enabled by a global rule")).toBeNull();
-      expect(screen.queryByLabelText("No override set; system default applies")).toBeNull();
     });
   });
 
@@ -765,12 +874,16 @@ describe("toggle in ReactivationPanel → header badge in ExtendedBacklogSection
       // the in-memory optimistic row overlay — no server response needed.
       renderInRouter(React.createElement(TestHarness, { ventureId: null }));
 
-      // Confirm DEFAULT badge is present initially.
-      expect(screen.getByLabelText("No override set; system default applies").textContent).toBe("DEFAULT");
+      // Confirm DEFAULT badge is present initially.  Multiple DEFAULT badges
+      // exist (other OFF groups with no rows also show DEFAULT); verify at least one.
+      const initialBadges = screen.getAllByLabelText("No override set; system default applies");
+      expect(initialBadges.length).toBeGreaterThan(0);
+      expect(initialBadges[0].textContent).toBe("DEFAULT");
 
-      // Click 1 — deactivate (currently ON): section stays open, no badge.
+      // Click 1 — deactivate (currently ON): section stays open; deactivate()
+      // injects a global row (active=false) → GLOBAL badge on the OFF locked row.
       fireEvent.click(screen.getByTestId(`toggle-${TARGET_GROUP}`));
-      // Click 2 — reactivate: row injected synchronously → GLOBAL badge.
+      // Click 2 — reactivate: global row (active=true) injected synchronously → GLOBAL badge on ON row.
       fireEvent.click(screen.getByTestId(`toggle-${TARGET_GROUP}`));
 
       // Assertion is synchronous — no waitFor, no findBy*, no await.

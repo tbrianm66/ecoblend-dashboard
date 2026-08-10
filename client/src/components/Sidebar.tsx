@@ -1014,32 +1014,10 @@ export function ExtendedBacklogSection({
           {BACKLOG_GROUPS.map(group => {
             const activated = isActivated(group.id);
 
-            if (!activated) {
-              // Show locked/greyed entry for non-reactivated groups
-              return (
-                <div
-                  key={group.id}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg mb-0.5 opacity-35"
-                  style={{ cursor: "default" }}
-                >
-                  <Lock size={9} style={{ color: "rgba(255,255,255,0.3)", flexShrink: 0 }} />
-                  <span
-                    className="text-xs flex-1 truncate"
-                    style={{ fontFamily: "'Prompt', sans-serif", fontSize: "0.75rem", color: "rgba(255,255,255,0.3)" }}
-                  >
-                    {group.label}
-                  </span>
-                  <span
-                    className="text-xs px-1 py-0.5 rounded font-semibold shrink-0"
-                    style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.2)", fontSize: "0.55rem" }}
-                  >
-                    OFF
-                  </span>
-                </div>
-              );
-            }
-
-            // Compute source badge for active groups — same visual language as ReactivationPanel rows.
+            // Compute source badge for ALL groups (ON and OFF) — same visual language
+            // as ReactivationPanel rows.  Admins need to see the badge on OFF rows too
+            // so they can distinguish "never touched (DEFAULT)" from "explicitly disabled
+            // by a global/venture rule (GLOBAL / VENTURE)".
             const row = rowByGroup.get(group.id);
             const badgeState = resolveModuleBadge(isLoading, isError, row);
             let groupBadge: React.ReactNode = null;
@@ -1099,6 +1077,35 @@ export function ExtendedBacklogSection({
               );
             }
             // "loading" | "unknown" → groupBadge stays null (no badge while indeterminate)
+
+            if (!activated) {
+              // Show locked/greyed entry for non-reactivated groups.
+              // The source badge is rendered beside the OFF pill so admins can
+              // tell whether the group was never touched (DEFAULT) or was
+              // explicitly disabled via a global or venture-level override.
+              return (
+                <div
+                  key={group.id}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg mb-0.5 opacity-35"
+                  style={{ cursor: "default" }}
+                >
+                  <Lock size={9} style={{ color: "rgba(255,255,255,0.3)", flexShrink: 0 }} />
+                  <span
+                    className="text-xs flex-1 truncate"
+                    style={{ fontFamily: "'Prompt', sans-serif", fontSize: "0.75rem", color: "rgba(255,255,255,0.3)" }}
+                  >
+                    {group.label}
+                  </span>
+                  {groupBadge}
+                  <span
+                    className="text-xs px-1 py-0.5 rounded font-semibold shrink-0"
+                    style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.2)", fontSize: "0.55rem" }}
+                  >
+                    OFF
+                  </span>
+                </div>
+              );
+            }
 
             return (
               <NavGroupSection key={group.id} group={group} location={location} badge={groupBadge} />
