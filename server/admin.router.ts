@@ -1032,24 +1032,13 @@ export const adminRouter = router({
           upserted.push(written[0].groupId);
         }
 
-        // Integrity check INSIDE the transaction: if the DB confirmed fewer rows
-        // than we submitted, throw here so the transaction aborts and rolls back
-        // the entire batch.  A partial committed state would be worse than no
-        // change at all — the admin UI's optimistic state would diverge from what
-        // is actually durable.  In a healthy database this branch is never
-        // reached; it guards against future code paths that conditionally skip
-        // items without throwing (e.g. a DO-NOTHING conflict target, a partial
-        // index suppression, or a guard that returns early without writing).
-        if (upserted.length !== input.items.length) {
-          const requested = input.items.map(i => i.groupId);
-          const skipped   = requested.filter(id => !upserted.includes(id));
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message:
-              `Batch write incomplete: ${upserted.length} of ${input.items.length} group(s) confirmed by the DB. ` +
-              `Skipped group(s): ${skipped.join(", ")}`,
-          });
-        }
+        // NOTE: An aggregate count check (upserted.length !== input.items.length)
+        // was intentionally removed here.  The per-row check above (written.length !== 1)
+        // already throws — and therefore aborts the transaction — whenever any single
+        // item is silently skipped or produces an unexpected number of rows.  Because
+        // each loop iteration either pushes exactly one entry onto `upserted` or throws,
+        // `upserted.length` is always equal to `input.items.length` when this point is
+        // reached, making a separate aggregate guard permanently unreachable dead code.
       });
 
       return { success: true, count: upserted.length, upserted };
