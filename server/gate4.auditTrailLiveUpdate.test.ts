@@ -412,3 +412,197 @@ describe("audit trail live-update — fake-DB integration (toggle → write → 
     expect(state1.audit).not.toBe(state2.audit);
   });
 });
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SUITE 3 — Concurrent toggle scenarios (fake-DB layer)
+//
+// Two admins write to the same groupId+ventureId row concurrently via
+// Promise.all.  We do NOT assert "second wins" by call order — instead we
+// read back whatever the DB actually stored and assert that the row is
+// internally consistent: toggledBy and toggledAt always come from the SAME
+// write, never mixed across two concurrent calls.
+//
+// If the `onConflictDoUpdate` set clause were ever changed to update only
+// some fields (e.g. keeps the old toggledBy but takes the new toggledAt),
+// the fake DB's upsert would surface a mismatched row and the invariant
+// assertions below would fail.
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe("audit trail — concurrent toggle scenarios (last write wins, fake-DB layer)", () => {
+  let db: ReturnType<typeof makeFakeDb>;
+
+  beforeEach(() => { db = makeFakeDb(); });
+
+  // ── J: concurrent writes settle to one consistent row ─────────────────────
+  it("J: two admins writing the same group concurrently produce a single consistent row — toggledBy and toggledAt always from the same write", async () => {
+    const date1 = new Date("2026-07-01T10:00:00.000Z");
+    const date2 = new Date("2026-07-01T10:00:00.050Z");
+
+    // Both writes dispatched concurrently — not sequentially awaited
+    await Promise.all([
+      db.upsert({ groupId: GROUP, ventureId: VENTURE_A, active: true,  toggledBy: ADMIN_1, toggledAt: date1 }),
+      db.upsert({ groupId: GROUP, ventureId: VENTURE_A, active: false, toggledBy: ADMIN_2, toggledAt: date2 }),
+    ]);
+
+    const rows = await db.read();
+    const map  = buildRowByGroup(rows, VENTURE_A);
+    const row  = map.get(GROUP)!;
+
+    expect(row).toBeDefined();
+
+    // Core invariant: author and timestamp must be from the same write — never mixed
+    if (row.toggledBy === ADMIN_1) {
+      expect(row.toggledAt).toEqual(date1);
+    } else {
+      expect(row.toggledBy).toBe(ADMIN_2);
+      expect(row.toggledAt).toEqual(date2);
+    }
+
+    // Audit string must match the actual stored row — no cross-write contamination
+    const audit = formatToggleAudit(row.toggledBy, row.toggledAt);
+    expect(audit).toMatch(new RegExp(`^${row.toggledBy!}`));
+  });
+
+  // ── K: audit string derived from DB-reported row is never mixed ────────────
+  it("K: audit string reflects the DB-confirmed row — toggledBy and the timestamp it displays are always paired from the same write", async () => {
+    const date1 = new Date("2026-07-01T10:00:00.000Z");
+    const date2 = new Date("2026-07-01T10:00:00.075Z");
+
+    await Promise.all([
+      db.upsert({ groupId: GROUP, ventureId: VENTURE_A, active: true,  toggledBy: ADMIN_1, toggledAt: date1 }),
+      db.upsert({ groupId: GROUP, ventureId: VENTURE_A, active: false, toggledBy: ADMIN_2, toggledAt: date2 }),
+    ]);
+
+    const rows = await db.read();
+    const map  = buildRowByGroup(rows, VENTURE_A);
+    const row  = map.get(GROUP)!;
+
+    // Exactly one row for this (groupId, ventureId) — never two
+    const allForKey = rows.filter(r => r.groupId === GROUP && r.ventureId === VENTURE_A);
+    expect(allForKey.length).toBe(1);
+
+    // The audit string must contain the winner's name and none of the loser's name
+    const audit = formatToggleAudit(row.toggledBy, row.toggledAt)!;
+    const loser = row.toggledBy === ADMIN_1 ? ADMIN_2 : ADMIN_1;
+    expect(audit).toMatch(new RegExp(`^${row.toggledBy!}`));
+    expect(audit).not.toContain(loser);
+  });
+
+  // ── L: same admin re-toggles — single row, no duplication ────────────────
+  it("L: same admin toggling the same group twice concurrently produces exactly one row", async () => {
+    const date1 = new Date("2026-07-01T11:00:00.000Z");
+    const date2 = new Date("2026-07-01T11:00:00.030Z");
+
+    await Promise.all([
+      db.upsert({ groupId: GROUP, ventureId: VENTURE_A, active: true,  toggledBy: ADMIN_1, toggledAt: date1 }),
+      db.upsert({ groupId: GROUP, ventureId: VENTURE_A, active: false, toggledBy: ADMIN_1, toggledAt: date2 }),
+    ]);
+
+    const rows = await db.read();
+    const all  = rows.filter(r => r.groupId === GROUP && r.ventureId === VENTURE_A);
+
+    // Upsert semantics: one row, not two
+    expect(all.length).toBe(1);
+    // Author is the same admin regardless of which write won
+    expect(all[0].toggledBy).toBe(ADMIN_1);
+    // Audit string is non-null and shows ADMIN_1
+    const audit = formatToggleAudit(all[0].toggledBy, all[0].toggledAt);
+    expect(audit).toMatch(new RegExp(`^${ADMIN_1}`));
+  });
+
+  // ── M: concurrent global writes settle consistently ──────────────────────
+  it("M: concurrent writes to global scope also settle to a single internally consistent row", async () => {
+    const date1 = new Date("2026-07-02T08:00:00.000Z");
+    const date2 = new Date("2026-07-02T08:00:00.040Z");
+
+    await Promise.all([
+      db.upsert({ groupId: GROUP, ventureId: "__global__", active: true,  toggledBy: ADMIN_1, toggledAt: date1 }),
+      db.upsert({ groupId: GROUP, ventureId: "__global__", active: false, toggledBy: ADMIN_2, toggledAt: date2 }),
+    ]);
+
+    const rows = await db.read();
+    const map  = buildRowByGroup(rows, null);
+    const row  = map.get(GROUP)!;
+
+    expect(row).toBeDefined();
+
+    // Author and timestamp must be paired from the same write
+    if (row.toggledBy === ADMIN_1) {
+      expect(row.toggledAt).toEqual(date1);
+    } else {
+      expect(row.toggledBy).toBe(ADMIN_2);
+      expect(row.toggledAt).toEqual(date2);
+    }
+
+    const { badge } = auditAndBadgeFor(rows, null, GROUP);
+    expect(badge).toBe("global");
+  });
+
+  // ── N: venture and global writes are independent — no cross-key contamination
+  it("N: concurrent venture-scoped and global writes do not contaminate each other's audit data", async () => {
+    const ventureDate = new Date("2026-07-03T09:00:00.000Z");
+    const globalDate  = new Date("2026-07-03T09:00:00.010Z");
+
+    // One write targets the venture key; the other targets the global key — different DB rows
+    await Promise.all([
+      db.upsert({ groupId: GROUP, ventureId: VENTURE_A,   active: true, toggledBy: ADMIN_1, toggledAt: ventureDate }),
+      db.upsert({ groupId: GROUP, ventureId: "__global__", active: true, toggledBy: ADMIN_2, toggledAt: globalDate }),
+    ]);
+
+    const rows = await db.read();
+
+    // Two distinct rows must exist (different keys)
+    expect(rows.filter(r => r.groupId === GROUP).length).toBe(2);
+
+    // Venture scope — ADMIN_1's data, unchanged by the global write
+    const { audit: ventureAudit, badge: ventureBadge } = auditAndBadgeFor(rows, VENTURE_A, GROUP);
+    expect(ventureBadge).toBe("venture");
+    expect(ventureAudit).toMatch(new RegExp(`^${ADMIN_1}`));
+    expect(ventureAudit).not.toContain(ADMIN_2);
+
+    // Global scope — ADMIN_2's data, unchanged by the venture write
+    const { audit: globalAudit, badge: globalBadge } = auditAndBadgeFor(rows, null, GROUP);
+    expect(globalBadge).toBe("global");
+    expect(globalAudit).toMatch(new RegExp(`^${ADMIN_2}`));
+    expect(globalAudit).not.toContain(ADMIN_1);
+  });
+
+  // ── O: three concurrent writes — DB-reported winner's audit is consistent ──
+  it("O: after three concurrent writes the DB-reported row's audit is entirely from whichever write won", async () => {
+    const ADMIN_3 = "carol@example.com";
+    const date1 = new Date("2026-07-04T12:00:00.000Z");
+    const date2 = new Date("2026-07-04T12:00:00.020Z");
+    const date3 = new Date("2026-07-04T12:00:00.045Z");
+
+    await Promise.all([
+      db.upsert({ groupId: GROUP, ventureId: VENTURE_A, active: true,  toggledBy: ADMIN_1, toggledAt: date1 }),
+      db.upsert({ groupId: GROUP, ventureId: VENTURE_A, active: false, toggledBy: ADMIN_2, toggledAt: date2 }),
+      db.upsert({ groupId: GROUP, ventureId: VENTURE_A, active: true,  toggledBy: ADMIN_3, toggledAt: date3 }),
+    ]);
+
+    const rows = await db.read();
+    const map  = buildRowByGroup(rows, VENTURE_A);
+    const row  = map.get(GROUP)!;
+
+    // Exactly one row — no duplication
+    expect(rows.filter(r => r.groupId === GROUP && r.ventureId === VENTURE_A).length).toBe(1);
+
+    // The winner must be one of the three admins with their matching timestamp
+    const expectedPairs: Array<[string, Date]> = [
+      [ADMIN_1, date1],
+      [ADMIN_2, date2],
+      [ADMIN_3, date3],
+    ];
+    const winner = expectedPairs.find(([name]) => name === row.toggledBy);
+    expect(winner).toBeDefined();
+    expect(row.toggledAt).toEqual(winner![1]);  // timestamp matches the winning write
+
+    // Audit string reflects the winner wholly — no other admin's name appears
+    const audit = formatToggleAudit(row.toggledBy, row.toggledAt)!;
+    const losers = [ADMIN_1, ADMIN_2, ADMIN_3].filter(a => a !== row.toggledBy);
+    for (const loser of losers) {
+      expect(audit).not.toContain(loser);
+    }
+    expect(audit).toMatch(new RegExp(`^${row.toggledBy!}`));
+  });
+});
