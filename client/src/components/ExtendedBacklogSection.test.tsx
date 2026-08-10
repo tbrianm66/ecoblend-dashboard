@@ -351,6 +351,108 @@ describe("ExtendedBacklogSection — header source badge", () => {
     });
   });
 
+  // ── locked (OFF) groups — no badge ever ───────────────────────────────────
+  /**
+   * Task #97
+   *
+   * When isActivated(id) === false the component renders the locked/greyed OFF
+   * row directly — it never delegates to NavGroupSection and therefore never
+   * receives a badge prop.  Even when the DB has rows for that group, no badge
+   * element should appear beside the OFF row.
+   *
+   * We verify this with two groups in the same render:
+   *   - TARGET_GROUP (venture-intake)   → activated   → badge IS rendered
+   *   - LOCKED_GROUP (discovery)        → NOT activated → no badge, "OFF" shown
+   */
+  describe("locked (OFF) groups never render a source badge", () => {
+    const LOCKED_GROUP = "discovery";
+
+    /** isActivated: only TARGET_GROUP is active; LOCKED_GROUP stays OFF. */
+    const oneActiveOneLocked = (id: string) => id === TARGET_GROUP;
+
+    it("renders no badge aria-label on the locked OFF row even when a global DB row exists for it", () => {
+      renderInRouter(
+        React.createElement(ExtendedBacklogSection, {
+          location:    TARGET_LOCATION,
+          isActivated: oneActiveOneLocked,
+          // DB rows exist for BOTH groups; only TARGET_GROUP is activated
+          rows:        [globalRow(TARGET_GROUP), globalRow(LOCKED_GROUP)],
+          isLoading:   false,
+          isError:     false,
+          ventureId:   null,
+        }),
+      );
+
+      // The activated group should have a badge …
+      expect(screen.getByLabelText("Enabled by a global rule")).toBeDefined();
+
+      // … but the locked group must have NONE of the three badge aria-labels
+      // We can't query "by group" directly, so we assert none of the three
+      // labels appears more than once (only the active group owns it).
+      const globalBadges = screen.getAllByLabelText("Enabled by a global rule");
+      expect(globalBadges).toHaveLength(1);
+
+      expect(screen.queryByLabelText("No override set; system default applies")).toBeNull();
+      expect(screen.queryByLabelText("Enabled by a venture-specific override")).toBeNull();
+    });
+
+    it("renders no badge aria-label on the locked OFF row even when a venture DB row exists for it", () => {
+      renderInRouter(
+        React.createElement(ExtendedBacklogSection, {
+          location:    TARGET_LOCATION,
+          isActivated: oneActiveOneLocked,
+          rows:        [ventureRow(TARGET_GROUP, VENTURE_ID), ventureRow(LOCKED_GROUP, VENTURE_ID)],
+          isLoading:   false,
+          isError:     false,
+          ventureId:   VENTURE_ID,
+        }),
+      );
+
+      // One VENTURE badge for the active group only
+      const ventureBadges = screen.getAllByLabelText("Enabled by a venture-specific override");
+      expect(ventureBadges).toHaveLength(1);
+
+      expect(screen.queryByLabelText("No override set; system default applies")).toBeNull();
+      expect(screen.queryByLabelText("Enabled by a global rule")).toBeNull();
+    });
+
+    it("still shows the OFF text on the locked row", () => {
+      renderInRouter(
+        React.createElement(ExtendedBacklogSection, {
+          location:    TARGET_LOCATION,
+          isActivated: oneActiveOneLocked,
+          rows:        [globalRow(TARGET_GROUP), globalRow(LOCKED_GROUP)],
+          isLoading:   false,
+          isError:     false,
+          ventureId:   null,
+        }),
+      );
+
+      // The "OFF" label must be present on the locked row (multiple groups are
+      // locked in this render, so there are several OFF spans — just confirm ≥1)
+      const offLabels = screen.getAllByText("OFF");
+      expect(offLabels.length).toBeGreaterThan(0);
+    });
+
+    it("renders no badge on ANY non-activated group regardless of badge state (default/global/venture)", () => {
+      // All groups locked — none activated
+      renderInRouter(
+        React.createElement(ExtendedBacklogSection, {
+          location:    "/nowhere-matching",  // no active item → section may close but rows still evaluated
+          isActivated: () => false,           // nothing is activated
+          rows:        [globalRow(TARGET_GROUP), ventureRow(LOCKED_GROUP, VENTURE_ID)],
+          isLoading:   false,
+          isError:     false,
+          ventureId:   VENTURE_ID,
+        }),
+      );
+
+      expect(screen.queryByLabelText("No override set; system default applies")).toBeNull();
+      expect(screen.queryByLabelText("Enabled by a global rule")).toBeNull();
+      expect(screen.queryByLabelText("Enabled by a venture-specific override")).toBeNull();
+    });
+  });
+
   // ── cross-state: no badge for indeterminate states ────────────────────────
   describe("badge presence invariant across all non-settled states", () => {
     it("neither loading nor error ever produces any badge pill element", () => {
