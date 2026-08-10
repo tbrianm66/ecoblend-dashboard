@@ -45,6 +45,7 @@ import {
 } from "@/lib/gate4Config";
 import { resolveModuleBadge, buildRowByGroup, formatToggleAudit } from "@/lib/gate4Utils";
 import { showToggleToast, showBatchToast, showBatchErrorToast, showResetToast, showResetErrorToast } from "@/lib/gate4ToastUtils";
+import { ReactivationResetButton } from "@/components/ReactivationResetButton";
 
 type IconName = string;
 const iconMap: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
@@ -845,51 +846,30 @@ function ReactivationPanel({ onClose, ventureId, ventureName, ventureColor }: Re
       {/* Reset to global defaults — only shown when a specific venture is selected */}
       {ventureId && ventureName && (
         <div className="px-3 pb-2">
-          {(() => {
-            // Only treat "no overrides" as authoritative once the query has
-            // successfully loaded. While loading or on error, rows is [] which
-            // is indistinguishable from a venture with no overrides — so we
-            // must not disable the button in those states.
-            const querySettled = !isLoading && !isError;
-            const ventureOverrideCount = rows.filter(r => r.ventureId === ventureId).length;
-            const alreadyDefault = querySettled && ventureOverrideCount === 0;
-            return (
-              <button
-                onClick={() => {
-                  if (alreadyDefault) return;
-                  const snapshotVId   = ventureId;
-                  const snapshotVName = ventureName;
-                  resetToGlobalDefaults(
-                    () => {
-                      showResetToast(
-                        toast,
-                        ventureIdRef.current,
-                        ventureNameRef.current,
-                        snapshotVId,
-                        snapshotVName,
-                      );
-                    },
-                    (rawMessage) => {
-                      showResetErrorToast(toast, rawMessage);
-                    },
+          <ReactivationResetButton
+            ventureId={ventureId}
+            rows={rows}
+            isLoading={isLoading}
+            isError={isError}
+            onReset={() => {
+              const snapshotVId   = ventureId;
+              const snapshotVName = ventureName;
+              resetToGlobalDefaults(
+                () => {
+                  showResetToast(
+                    toast,
+                    ventureIdRef.current,
+                    ventureNameRef.current,
+                    snapshotVId,
+                    snapshotVName,
                   );
-                }}
-                disabled={alreadyDefault}
-                title={alreadyDefault ? "Already using global defaults" : undefined}
-                className="w-full py-1.5 rounded text-xs font-semibold flex items-center justify-center gap-1.5"
-                style={{
-                  background: alreadyDefault ? "rgba(255,255,255,0.03)" : "rgba(245,158,11,0.08)",
-                  color: alreadyDefault ? "rgba(255,255,255,0.2)" : "rgba(245,158,11,0.75)",
-                  border: alreadyDefault ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(245,158,11,0.25)",
-                  fontSize: "0.7rem",
-                  cursor: alreadyDefault ? "not-allowed" : "pointer",
-                }}
-              >
-                <RotateCcw size={10} />
-                {alreadyDefault ? "Already using global defaults" : "Reset to global defaults"}
-              </button>
-            );
-          })()}
+                },
+                (rawMessage) => {
+                  showResetErrorToast(toast, rawMessage);
+                },
+              );
+            }}
+          />
         </div>
       )}
     </div>

@@ -1,9 +1,16 @@
 import { defineConfig } from "vitest/config";
+import react from "@vitejs/plugin-react";
 import path from "path";
 
 const templateRoot = path.resolve(import.meta.dirname);
 
 export default defineConfig({
+  plugins: [
+    // Required so Vitest can transform JSX in .tsx files imported by client tests
+    // (e.g. ReactivationResetButton.tsx).  Without this, vite:import-analysis
+    // throws "invalid JS syntax" when encountering JSX syntax.
+    react(),
+  ],
   root: templateRoot,
   resolve: {
     alias: {

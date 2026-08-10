@@ -27,7 +27,8 @@
  */
 
 import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
-import { renderHook, act } from "@testing-library/react";
+import React from "react";
+import { renderHook, render, screen, fireEvent, waitFor, act, cleanup } from "@testing-library/react";
 
 // ── Mock tRPC before importing anything that depends on it ────────────────────
 // vi.mock is hoisted automatically by Vitest, so this takes effect before the
@@ -364,5 +365,270 @@ describe("useGate4Reactivation — live source-badge update after toggle", () =>
     });
 
     expect(receivedSkipped).toHaveLength(0);
+  });
+});
+
+// ── Import the real production reset button ───────────────────────────────────
+// ReactivationResetButton owns the disabled-state predicate in production.
+// Tests import it directly so any change to the real component's disabled logic
+// (adding an in-flight pending state, changing the predicate, etc.) will break
+// these tests — not a copy of the logic isolated in a test wrapper.
+import { ReactivationResetButton } from "@/components/ReactivationResetButton";
+
+// ── Prop-controlled reset-button tests ────────────────────────────────────────
+// Render the real ReactivationResetButton with explicit props so the
+// disabled-state predicate is exercised without needing tRPC mocks.
+describe("ReactivationResetButton — disabled-state predicate (prop-controlled)", () => {
+  afterEach(() => {
+    cleanup(); // prevent test-id accumulation across renders
+  });
+
+  it("button is enabled when venture-specific overrides exist", () => {
+    const rows: ReactivationRow[] = [
+      globalRow(GROUP),
+      ventureRow(GROUP, VENTURE),
+      ventureRow("proposition", VENTURE),
+    ];
+    render(React.createElement(ReactivationResetButton, {
+      ventureId: VENTURE,
+      rows,
+      isLoading: false,
+      isError: false,
+      onReset: () => {},
+    }));
+    expect((screen.getByTestId("reset-btn") as HTMLButtonElement).disabled).toBe(false);
+    expect(screen.getByTestId("reset-btn").textContent).toContain("Reset to global defaults");
+  });
+
+  it("button is disabled when no venture-specific rows exist (query settled, no overrides)", () => {
+    const rows: ReactivationRow[] = [globalRow(GROUP)]; // global row only
+    render(React.createElement(ReactivationResetButton, {
+      ventureId: VENTURE,
+      rows,
+      isLoading: false,
+      isError: false,
+      onReset: () => {},
+    }));
+    expect((screen.getByTestId("reset-btn") as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByTestId("reset-btn").textContent).toContain("Already using global defaults");
+  });
+
+  it("button stays enabled when isLoading=true and rows=[] (querySettled=false)", () => {
+    render(React.createElement(ReactivationResetButton, {
+      ventureId: VENTURE,
+      rows: [],
+      isLoading: true,
+      isError: false,
+      onReset: () => {},
+    }));
+    // querySettled=false → alreadyDefault=false even though rows is empty
+    expect((screen.getByTestId("reset-btn") as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("button stays enabled when isError=true and rows=[] (querySettled=false)", () => {
+    render(React.createElement(ReactivationResetButton, {
+      ventureId: VENTURE,
+      rows: [],
+      isLoading: false,
+      isError: true,
+      onReset: () => {},
+    }));
+    // querySettled=false → alreadyDefault=false even though rows is empty
+    expect((screen.getByTestId("reset-btn") as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("onReset callback is NOT called when button is already disabled", () => {
+    const onReset = vi.fn();
+    render(React.createElement(ReactivationResetButton, {
+      ventureId: VENTURE,
+      rows: [], // no overrides → alreadyDefault=true
+      isLoading: false,
+      isError: false,
+      onReset,
+    }));
+    fireEvent.click(screen.getByTestId("reset-btn"));
+    expect(onReset).not.toHaveBeenCalled();
+  });
+
+  it("onReset callback IS called when button is enabled and clicked", () => {
+    const onReset = vi.fn();
+    render(React.createElement(ReactivationResetButton, {
+      ventureId: VENTURE,
+      rows: [ventureRow(GROUP, VENTURE)], // override exists → enabled
+      isLoading: false,
+      isError: false,
+      onReset,
+    }));
+    fireEvent.click(screen.getByTestId("reset-btn"));
+    expect(onReset).toHaveBeenCalledOnce();
+  });
+});
+
+// ── Hook + ReactivationResetButton integration tests ─────────────────────────
+// A small driver component wires useGate4Reactivation → ReactivationResetButton
+// (exactly as ReactivationPanel does in production) so we exercise the full
+// mutation pipeline and assert the real button's disabled property.
+//
+// Driver wires hook → button without duplicating the disabled predicate.
+function HookDriverWithResetButton({ ventureId, onError }: {
+  ventureId: string;
+  onError?: (msg: string) => void;
+}) {
+  const { resetToGlobalDefaults, rows, isLoading, isError } = useGate4Reactivation(ventureId);
+  return React.createElement(ReactivationResetButton, {
+    ventureId,
+    rows,
+    isLoading,
+    isError,
+    onReset: () => resetToGlobalDefaults(undefined, onError),
+  });
+}
+
+describe("Reset button — re-enables correctly when reset fails mid-flight (hook integration)", () => {
+  let currentRows: ReactivationRow[];
+  let currentIsLoading: boolean;
+  let currentIsError: boolean;
+  let mockInvalidate: ReturnType<typeof vi.fn>;
+  let mockResetMutate: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    localStorage.clear();
+
+    // Baseline: venture has its own overrides → button should start enabled.
+    currentRows = [
+      globalRow(GROUP),
+      ventureRow(GROUP, VENTURE),
+      ventureRow("proposition", VENTURE),
+    ];
+    currentIsLoading = false;
+    currentIsError = false;
+
+    mockInvalidate = vi.fn();
+    mockResetMutate = vi.fn(); // no-op by default; overridden per test
+
+    vi.mocked(trpc.admin.getModuleReactivations.useQuery).mockImplementation(() => ({
+      data: currentRows,
+      isLoading: currentIsLoading,
+      isError: currentIsError,
+    }));
+    vi.mocked(trpc.admin.setModuleReactivation.useMutation).mockReturnValue(
+      { mutate: vi.fn() } as any,
+    );
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: vi.fn() } as any,
+    );
+    vi.mocked(trpc.admin.resetVentureModuleReactivations.useMutation).mockReturnValue(
+      { mutate: mockResetMutate } as any,
+    );
+    vi.mocked(trpc.useUtils).mockReturnValue({
+      admin: { getModuleReactivations: { invalidate: mockInvalidate } },
+    } as any);
+  });
+
+  afterEach(() => {
+    cleanup(); // unmount all renders so test-ids don't accumulate
+    vi.clearAllMocks();
+  });
+
+  // ── Core invariant: button re-enables after async reset failure ───────────
+  it("button is NOT disabled after the reset mutation rejects asynchronously (admin can retry)", async () => {
+    // Track when onError has actually fired — this is the event we must wait for,
+    // not just the synchronous call to mutate().
+    let onErrorFired = false;
+    mockResetMutate.mockImplementation(
+      (_input: unknown, options?: { onError?: (err: Error) => void }) => {
+        // Async failure: error arrives after a microtask, modelling a real network roundtrip.
+        Promise.resolve().then(() => {
+          options?.onError?.(new Error("DB write failed"));
+          onErrorFired = true;
+        });
+      },
+    );
+
+    render(React.createElement(HookDriverWithResetButton, { ventureId: VENTURE }));
+    const btn = screen.getByTestId("reset-btn") as HTMLButtonElement;
+
+    // Pre-click: overrides exist → button must be enabled.
+    expect(btn.disabled).toBe(false);
+
+    // Admin clicks "Reset to global defaults".
+    fireEvent.click(btn);
+
+    // Properly wait for the async onError path to have completed — not merely
+    // for mutate() to have been called (which happens synchronously on click).
+    await waitFor(() => expect(onErrorFired).toBe(true));
+
+    // Post-failure: the DB delete was rejected, so server rows are unchanged.
+    // The hook's `rows` still contains venture overrides → button must stay enabled.
+    expect((screen.getByTestId("reset-btn") as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  // ── onError callback receives the raw server error message ────────────────
+  it("onError fires with the raw server message after an async reset failure", async () => {
+    const errorMessage = "Permission denied: venture overrides cannot be reset";
+    mockResetMutate.mockImplementation(
+      (_input: unknown, options?: { onError?: (err: Error) => void }) => {
+        Promise.resolve().then(() => options?.onError?.(new Error(errorMessage)));
+      },
+    );
+
+    let capturedError = "";
+    render(React.createElement(HookDriverWithResetButton, {
+      ventureId: VENTURE,
+      onError: (msg) => { capturedError = msg; },
+    }));
+
+    fireEvent.click(screen.getByTestId("reset-btn"));
+
+    await waitFor(() => expect(capturedError).toBe(errorMessage));
+
+    // Button must remain enabled — error path does not clear overrides.
+    expect((screen.getByTestId("reset-btn") as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  // ── invalidate() must NOT fire on reset failure ───────────────────────────
+  it("invalidate() is NOT called when the reset mutation fails", async () => {
+    let onErrorFired = false;
+    mockResetMutate.mockImplementation(
+      (_input: unknown, options?: { onError?: (err: Error) => void }) => {
+        Promise.resolve().then(() => {
+          options?.onError?.(new Error("server error"));
+          onErrorFired = true;
+        });
+      },
+    );
+
+    render(React.createElement(HookDriverWithResetButton, { ventureId: VENTURE }));
+    fireEvent.click(screen.getByTestId("reset-btn"));
+
+    await waitFor(() => expect(onErrorFired).toBe(true));
+
+    // invalidate() must not fire on failure — a spurious refetch could momentarily
+    // return an empty rows list and incorrectly flip the button to disabled.
+    expect(mockInvalidate).not.toHaveBeenCalled();
+  });
+
+  // ── rows are not wiped optimistically on reset failure ────────────────────
+  it("hook rows still contain venture overrides after a failed reset (no optimistic wipe)", async () => {
+    // Async rejection mirrors a real server error path.
+    mockResetMutate.mockImplementation(
+      (_input: unknown, options?: { onError?: (err: Error) => void }) => {
+        Promise.resolve().then(() => options?.onError?.(new Error("DB write failed")));
+      },
+    );
+
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    // Await the async rejection so the hook has processed the error path.
+    await act(async () => {
+      result.current.resetToGlobalDefaults();
+      await Promise.resolve(); // flush microtask so onError fires inside act
+    });
+
+    // Venture-specific rows must still be present — the failed mutation must not
+    // wipe them optimistically.
+    expect(
+      result.current.rows.filter((r: ReactivationRow) => r.ventureId === VENTURE).length
+    ).toBeGreaterThan(0);
   });
 });
