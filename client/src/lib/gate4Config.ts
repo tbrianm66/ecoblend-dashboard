@@ -438,9 +438,15 @@ export function useGate4Reactivation(ventureId: string | null) {
    * ventureId so the venture inherits global defaults.  No-op when ventureId is null.
    *
    * @param onSuccess  Called after server confirms the delete, with the snapshotVentureId.
+   * @param onError    Called when the server rejects the reset, with the raw error message.
+   *                   Callers should show an error toast so the admin is not left with
+   *                   a silent no-op.
    */
   const resetToGlobalDefaults = useCallback(
-    (onSuccess?: (snapshotVentureId: string | null) => void) => {
+    (
+      onSuccess?: (snapshotVentureId: string | null) => void,
+      onError?: (rawMessage: string) => void,
+    ) => {
       const snapshotVentureId = ventureIdRef.current;
       if (!snapshotVentureId) return; // global scope has nothing to reset
 
@@ -451,6 +457,10 @@ export function useGate4Reactivation(ventureId: string | null) {
             // After deletion, invalidate so the query re-fetches the global defaults.
             utils.admin.getModuleReactivations.invalidate();
             onSuccess?.(snapshotVentureId);
+          },
+          onError: (err) => {
+            const rawMessage = err instanceof Error ? err.message : String(err);
+            onError?.(rawMessage);
           },
         },
       );

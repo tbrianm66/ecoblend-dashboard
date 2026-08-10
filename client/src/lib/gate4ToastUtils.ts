@@ -125,6 +125,22 @@ export function showBatchErrorToast(
 }
 
 /**
+ * Show an error toast when a "Reset to global defaults" write fails.
+ *
+ * Fired from the `onError` callback of the `resetVentureModuleReactivations`
+ * mutation so admins receive explicit feedback instead of a silent no-op.
+ *
+ * @param toast      The toast API to call (sonner in production, spy in tests).
+ * @param rawMessage The raw error message from the tRPC response.
+ */
+export function showResetErrorToast(
+  toast: ToastApi,
+  rawMessage: string,
+): void {
+  toast.error(`Reset failed: ${rawMessage}`, { duration: 6000 });
+}
+
+/**
  * Show a toast for a bulk Enable-All / Disable-All batch action.
  *
  * Same mismatch-detection logic as showToggleToast.

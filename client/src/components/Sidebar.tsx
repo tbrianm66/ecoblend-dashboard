@@ -44,7 +44,7 @@ import {
   type BacklogGroupId,
 } from "@/lib/gate4Config";
 import { resolveModuleBadge, buildRowByGroup, formatToggleAudit } from "@/lib/gate4Utils";
-import { showToggleToast, showBatchToast, showBatchErrorToast, showResetToast } from "@/lib/gate4ToastUtils";
+import { showToggleToast, showBatchToast, showBatchErrorToast, showResetToast, showResetErrorToast } from "@/lib/gate4ToastUtils";
 
 type IconName = string;
 const iconMap: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
@@ -859,15 +859,20 @@ function ReactivationPanel({ onClose, ventureId, ventureName, ventureColor }: Re
                   if (alreadyDefault) return;
                   const snapshotVId   = ventureId;
                   const snapshotVName = ventureName;
-                  resetToGlobalDefaults(() => {
-                    showResetToast(
-                      toast,
-                      ventureIdRef.current,
-                      ventureNameRef.current,
-                      snapshotVId,
-                      snapshotVName,
-                    );
-                  });
+                  resetToGlobalDefaults(
+                    () => {
+                      showResetToast(
+                        toast,
+                        ventureIdRef.current,
+                        ventureNameRef.current,
+                        snapshotVId,
+                        snapshotVName,
+                      );
+                    },
+                    (rawMessage) => {
+                      showResetErrorToast(toast, rawMessage);
+                    },
+                  );
                 }}
                 disabled={alreadyDefault}
                 title={alreadyDefault ? "Already using global defaults" : undefined}

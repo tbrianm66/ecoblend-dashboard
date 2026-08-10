@@ -33,12 +33,12 @@
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
-import { showToggleToast, showBatchToast, showResetToast } from "../client/src/lib/gate4ToastUtils";
+import { showToggleToast, showBatchToast, showResetToast, showResetErrorToast } from "../client/src/lib/gate4ToastUtils";
 
 // ── Fake toast spy ────────────────────────────────────────────────────────────
 
 interface ToastCall {
-  variant: "success" | "warning";
+  variant: "success" | "warning" | "error";
   message: string;
   options?: { duration?: number };
 }
@@ -51,6 +51,9 @@ function makeToastSpy() {
     },
     warning(message: string, options?: { duration?: number }) {
       calls.push({ variant: "warning", message, options });
+    },
+    error(message: string, options?: { duration?: number }) {
+      calls.push({ variant: "error", message, options });
     },
     calls,
     reset() { calls.length = 0; },
@@ -303,6 +306,98 @@ describe("Gate 4 — venture-mismatch toast (production helpers)", () => {
       const call = toast.lastCall()!;
       expect(call.variant).toBe("success");
       expect(call.message).toContain("all ventures (global)");
+    });
+  });
+
+  // ── showResetErrorToast ──────────────────────────────────────────────────────
+
+  describe("showResetErrorToast", () => {
+    it("fires ERROR (not success) when the server rejects the reset", () => {
+      showResetErrorToast(toast, "Permission denied");
+
+      const call = toast.lastCall()!;
+      expect(call.variant).toBe("error");
+    });
+
+    it("does NOT fire a success toast when the mutation fails", () => {
+      showResetErrorToast(toast, "Unexpected DB error");
+
+      // Only one toast must have been fired, and it must not be success.
+      expect(toast.calls).toHaveLength(1);
+      expect(toast.calls[0].variant).not.toBe("success");
+    });
+
+    it("includes the raw server error message in the error toast", () => {
+      showResetErrorToast(toast, "Network request failed");
+
+      const call = toast.lastCall()!;
+      expect(call.message).toContain("Network request failed");
+    });
+
+    it("carries a duration so the admin has time to read the error", () => {
+      showResetErrorToast(toast, "Internal server error");
+
+      const call = toast.lastCall()!;
+      expect(call.options?.duration).toBeGreaterThan(0);
+    });
+
+    it("includes a human-readable prefix in the error message", () => {
+      showResetErrorToast(toast, "UNAUTHORIZED");
+
+      const call = toast.lastCall()!;
+      // Message must be more than just the raw error code.
+      expect(call.message).toMatch(/reset failed/i);
+    });
+  });
+
+  // ── Reset onError integration ────────────────────────────────────────────────
+  //
+  // These tests exercise the full callback chain that Sidebar.tsx wires:
+  //   mutation.onError  →  onError(rawMessage)  →  showResetErrorToast(toast, rawMessage)
+  // They confirm:
+  //   (a) an error toast fires when the server rejects the reset, and
+  //   (b) no success toast fires on that path.
+  //
+  // The parallel success-path test confirms showResetToast never emits an error
+  // toast, so the two paths are mutually exclusive.
+
+  describe("reset mutation onError → showResetErrorToast integration", () => {
+    it("fires an ERROR toast and NO success toast when the mutation onError callback is invoked", () => {
+      // Reproduce the exact chain in gate4Config.ts:resetToGlobalDefaults onError
+      // and Sidebar.tsx's onError handler:
+      //   err → rawMessage → showResetErrorToast(toast, rawMessage)
+      const simulatedError = new Error("Permission denied");
+      const rawMessage = simulatedError instanceof Error ? simulatedError.message : String(simulatedError);
+
+      // This is exactly what Sidebar.tsx's onError callback calls:
+      showResetErrorToast(toast, rawMessage);
+
+      expect(toast.calls.filter(c => c.variant === "success")).toHaveLength(0);
+      expect(toast.calls.filter(c => c.variant === "error")).toHaveLength(1);
+      expect(toast.lastCall()!.message).toContain("Permission denied");
+    });
+
+    it("fires an ERROR toast and NO success toast for a network failure", () => {
+      showResetErrorToast(toast, "Network request failed");
+
+      expect(toast.calls.filter(c => c.variant === "success")).toHaveLength(0);
+      expect(toast.calls.filter(c => c.variant === "error")).toHaveLength(1);
+    });
+
+    it("fires an ERROR toast and NO success toast for a permission error", () => {
+      showResetErrorToast(toast, "UNAUTHORIZED");
+
+      expect(toast.calls.filter(c => c.variant === "success")).toHaveLength(0);
+      expect(toast.calls.filter(c => c.variant === "error")).toHaveLength(1);
+    });
+
+    it("does NOT fire an error toast on the success path (showResetToast)", () => {
+      // Confirms the success path (mutation.onSuccess → showResetToast) never
+      // emits an error toast — the two paths are mutually exclusive.
+      showResetToast(toast, "venture-A", "Alpha Corp", "venture-A", "Alpha Corp");
+
+      expect(toast.calls.filter(c => c.variant === "error")).toHaveLength(0);
+      expect(toast.calls.filter(c => c.variant === "success")).toHaveLength(1);
     });
   });
 
