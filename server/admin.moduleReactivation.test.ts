@@ -104,6 +104,39 @@ class ReactivationStore {
   }
 
   /**
+   * Mirrors setModuleReactivationBatch — normalises ventureId once, then
+   * upserts each item.  Uses the same normaliseSetVentureId helper the real
+   * router uses, so removing .trim() there will also break batch-path tests.
+   */
+  setBatch(
+    ctx: AdminCtx,
+    input: { ventureId?: string; items: Array<{ groupId: string; active: boolean }> },
+  ) {
+    adminProcedureGuard(ctx);
+    const ventureId = normaliseSetVentureId(input.ventureId);
+    const toggledBy = ctx.user.name ?? ctx.user.email ?? ctx.user.openId;
+    const now = new Date();
+
+    for (const item of input.items) {
+      const k = this.key(item.groupId, ventureId);
+      const existing = this.rows.get(k);
+      if (existing) {
+        this.rows.set(k, { ...existing, active: item.active, toggledBy, toggledAt: now });
+      } else {
+        this.rows.set(k, {
+          groupId:   item.groupId,
+          ventureId,
+          active:    item.active,
+          toggledBy,
+          toggledAt: now,
+        });
+      }
+    }
+
+    return { success: true, count: input.items.length };
+  }
+
+  /**
    * Mirrors resetVentureModuleReactivations — deletes all rows for the given ventureId.
    * Rejects "__global__" (mirrors the BAD_REQUEST guard in the router).
    */
@@ -831,6 +864,159 @@ describe("adminProcedureGuard — access control", () => {
   it("blocks scoring_integrity_reviewer with FORBIDDEN", () => {
     let err: TRPCError | undefined;
     try { adminProcedureGuard(makeNonAdminCtx("scoring_integrity_reviewer")); } catch (e) { err = e as TRPCError; }
+    expect(err).toBeInstanceOf(TRPCError);
+    expect(err?.code).toBe("FORBIDDEN");
+  });
+});
+
+// ── setModuleReactivationBatch — batch-path ventureId trimming ────────────────
+//
+// The batch mutation calls normaliseSetVentureId() once for the shared
+// ventureId and then upserts every item under that key.  These tests confirm:
+//
+//   1. A padded ventureId ("  BEBUS  ") passed to the batch endpoint is stored
+//      as the trimmed form ("BEBUS") for every item in the batch.
+//
+//   2. A batch write with a padded ventureId followed by a single write with
+//      the clean ID resolves to a single row (upsert), not two distinct rows.
+//      This is the primary regression guard: if the batch path ever loses its
+//      .trim() call the two writes would land under different keys and the
+//      second write would not overwrite the first.
+//
+//   3. The inverse order also upserts: single write (clean ID) then batch
+//      write (padded ID) → one row, last writer wins.
+//
+// The store.setBatch() method is a faithful mirror of setModuleReactivationBatch
+// — it delegates to the same normaliseSetVentureId import that the router uses,
+// so a regression in that helper breaks both the unit tests in the
+// "normaliseSetVentureId" describe block AND these higher-level behavioural tests.
+
+describe("setModuleReactivationBatch — batch-path ventureId trimming", () => {
+  let store: ReactivationStore;
+  const alice = makeAdminCtx("alice");
+  const bob   = makeAdminCtx("bob");
+
+  beforeEach(() => {
+    store = new ReactivationStore();
+  });
+
+  // ── 1. Padded batch input stores trimmed form for every item ──────────────
+  it("stores the trimmed ventureId for every item when the batch caller supplies padding", () => {
+    store.setBatch(alice, {
+      ventureId: "  BEBUS  ",
+      items: [
+        { groupId: "gtm",       active: true  },
+        { groupId: "discovery", active: false },
+        { groupId: "scoring",   active: true  },
+      ],
+    });
+
+    const rows = store.getAll();
+
+    // All three items must be stored under the trimmed key.
+    expect(rows.length).toBe(3);
+    for (const row of rows) {
+      // The stored ventureId must be "BEBUS", never "  BEBUS  ".
+      expect(row.ventureId).toBe("BEBUS");
+    }
+
+    // Spot-check individual items.
+    const gtm       = rows.find(r => r.groupId === "gtm");
+    const discovery = rows.find(r => r.groupId === "discovery");
+    const scoring   = rows.find(r => r.groupId === "scoring");
+
+    expect(gtm?.active).toBe(true);
+    expect(discovery?.active).toBe(false);
+    expect(scoring?.active).toBe(true);
+  });
+
+  // ── 2. Batch (padded) then single (clean) → upsert, not two rows ──────────
+  it("batch write with padded ventureId then single write with clean ID is an upsert, not two rows", () => {
+    // First: batch write using padded form — stored as "BEBUS".
+    store.setBatch(alice, {
+      ventureId: "  BEBUS  ",
+      items: [{ groupId: "gtm", active: true }],
+    });
+
+    // Second: single write using the clean form — must resolve to the same key.
+    store.set(bob, { groupId: "gtm", ventureId: "BEBUS", active: false });
+
+    const rows = store.getAll().filter(r => r.groupId === "gtm");
+
+    // Must be exactly one row — the second write must upsert the first.
+    expect(rows.length).toBe(1);
+    expect(rows[0].ventureId).toBe("BEBUS");
+    // Last-write-wins: bob's single write (active: false) is the final state.
+    expect(rows[0].active).toBe(false);
+    expect(rows[0].toggledBy).toBe("bob");
+  });
+
+  // ── 3. Single (clean) then batch (padded) → upsert, not two rows ──────────
+  it("single write with clean ventureId then batch write with padded ID is an upsert, not two rows", () => {
+    // First: single write using the unpadded form.
+    store.set(alice, { groupId: "gtm", ventureId: "BEBUS", active: true });
+
+    // Second: batch write using padded form — must resolve to the same key.
+    store.setBatch(bob, {
+      ventureId: "  BEBUS  ",
+      items: [{ groupId: "gtm", active: false }],
+    });
+
+    const rows = store.getAll().filter(r => r.groupId === "gtm");
+
+    // Must be exactly one row — the batch write must upsert the single write.
+    expect(rows.length).toBe(1);
+    expect(rows[0].ventureId).toBe("BEBUS");
+    // Last-write-wins: bob's batch write (active: false) is the final state.
+    expect(rows[0].active).toBe(false);
+    expect(rows[0].toggledBy).toBe("bob");
+  });
+
+  // ── 4. Multi-item batch: independent groups, same padded ventureId ─────────
+  it("a multi-item batch with a padded ventureId stores each group under the same trimmed key", () => {
+    store.setBatch(alice, {
+      ventureId: "\t BEBUS \n",
+      items: [
+        { groupId: "rnd",            active: true  },
+        { groupId: "sustainability", active: false },
+      ],
+    });
+
+    const rnd            = store.getAll().find(r => r.groupId === "rnd");
+    const sustainability = store.getAll().find(r => r.groupId === "sustainability");
+
+    expect(rnd?.ventureId).toBe("BEBUS");
+    expect(sustainability?.ventureId).toBe("BEBUS");
+  });
+
+  // ── 5. Batch with missing ventureId normalises to __global__ ──────────────
+  it("batch without ventureId stores all items under the __global__ sentinel", () => {
+    store.setBatch(alice, {
+      // ventureId omitted → global scope
+      items: [
+        { groupId: "operations", active: true },
+        { groupId: "investment", active: true },
+      ],
+    });
+
+    const rows = store.getAll();
+    for (const row of rows) {
+      expect(row.ventureId).toBe("__global__");
+    }
+  });
+
+  // ── 6. Non-admin is rejected by the adminProcedure guard ──────────────────
+  it("setBatch rejects a non-admin caller with FORBIDDEN", () => {
+    const ctx = makeNonAdminCtx("founder");
+    let err: TRPCError | undefined;
+    try {
+      store.setBatch(ctx, {
+        ventureId: "BEBUS",
+        items: [{ groupId: "gtm", active: true }],
+      });
+    } catch (e) {
+      err = e as TRPCError;
+    }
     expect(err).toBeInstanceOf(TRPCError);
     expect(err?.code).toBe("FORBIDDEN");
   });
