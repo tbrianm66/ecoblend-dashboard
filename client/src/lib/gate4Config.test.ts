@@ -903,6 +903,31 @@ describe("Reset button — re-enables correctly when reset fails mid-flight (hoo
       result.current.rows.filter((r: ReactivationRow) => r.ventureId === VENTURE).length
     ).toBeGreaterThan(0);
   });
+
+  // ── Global scope guard: mutation must never fire when ventureId is null ──────
+  //
+  // resetToGlobalDefaults() has an early-return guard: `if (!snapshotVentureId) return`.
+  // This test pins that guard so a future refactor cannot silently remove it.
+  // All four assertions run in a single renderHook call to keep memory overhead minimal.
+  it("resetToGlobalDefaults() is a complete no-op (mutation + callbacks never fire) when ventureId is null (global scope guard)", async () => {
+    const onSuccess = vi.fn();
+    const onError   = vi.fn();
+
+    // Reset mockResetMutate so it is a plain spy (no custom implementation).
+    mockResetMutate.mockReset();
+
+    const { result } = renderHook(() => useGate4Reactivation(null));
+
+    await act(async () => {
+      result.current.resetToGlobalDefaults(onSuccess, onError);
+    });
+
+    // The early-return guard fires before the mutation is called.
+    expect(mockResetMutate).not.toHaveBeenCalled();
+    // Neither callback fires — the function returned before reaching them.
+    expect(onSuccess).not.toHaveBeenCalled();
+    expect(onError).not.toHaveBeenCalled();
+  });
 });
 
 // ── Polling interval guarantee: reset button disables within 10 s ─────────────
