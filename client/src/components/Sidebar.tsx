@@ -1184,10 +1184,12 @@ export default function Sidebar() {
   // Single hook call — rows (including the optimistic overlay) is shared with
   // both ExtendedBacklogSection (header badges) and ReactivationPanel (row badges)
   // so both update simultaneously when a toggle fires.
+  // panelOpen is forwarded so polling only runs while the panel is visible,
+  // avoiding unnecessary DB queries when no admin is viewing the panel.
   const {
     isActivated, rows, isLoading, isError,
     reactivate, deactivate, reactivateAll, deactivateAll, resetToGlobalDefaults,
-  } = useGate4Reactivation(selectedVentureId);
+  } = useGate4Reactivation(selectedVentureId, reactivationOpen);
 
   return (
     <aside

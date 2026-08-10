@@ -156,29 +156,48 @@ import { trpc } from "@/lib/trpc";
  * Each toggle writes optimistically to local state, then persists to the server.
  *
  * @param ventureId  The currently selected venture ID (or null for global scope).
+ * @param panelOpen  Whether the ReactivationPanel overlay is currently visible.
+ *                   Polling (refetchInterval) only runs while the panel is open so
+ *                   background DB queries stop when no admin is viewing the panel.
+ *                   Opening the panel triggers an immediate refetch so data is fresh
+ *                   on first display.
  * @returns          { activatedGroups, isActivated, reactivate, deactivate,
  *                    reactivateAll, deactivateAll, rows, isLoading }
  *
  * GOVERNANCE RULE: Only admin users should be allowed to call reactivate/deactivate.
  * The sidebar enforces this by only rendering the reactivation panel for admin users.
  */
-export function useGate4Reactivation(ventureId: string | null) {
+export function useGate4Reactivation(ventureId: string | null, panelOpen = false) {
   // Seed from localStorage so there's no flash on first render.
   const [activated, setActivated] = useState<Set<string>>(readLsCache);
 
   // tRPC query — fetch all rows once, keep them up-to-date.
   //
-  // refetchInterval: 10_000 — poll every 10 s so that when a second admin
-  //   removes venture overrides in another session, the reset button's disabled
-  //   state corrects itself within 10 seconds even when both windows are focused.
-  //   refetchOnWindowFocus covers the "return from another tab" case quickly;
-  //   the interval covers the "both windows open simultaneously" case.
+  // refetchInterval: 10_000 (only while panelOpen) — poll every 10 s so that
+  //   when a second admin removes venture overrides in another session the reset
+  //   button's disabled state corrects itself within 10 s even when both windows
+  //   are focused.  When the panel is closed polling stops; the query falls back
+  //   to refetchOnWindowFocus-only behaviour to avoid unnecessary DB load.
   // staleTime: 10_000 — matched to the interval so a background refetch is
   //   triggered each cycle rather than being skipped because data looks fresh.
-  const { data: serverRows, isLoading, isError } = trpc.admin.getModuleReactivations.useQuery(
+  const { data: serverRows, isLoading, isError, refetch } = trpc.admin.getModuleReactivations.useQuery(
     undefined,
-    { staleTime: 10_000, refetchOnWindowFocus: true, refetchInterval: 10_000 },
+    {
+      staleTime: 10_000,
+      refetchOnWindowFocus: true,
+      refetchInterval: panelOpen ? 10_000 : false,
+    },
   );
+
+  // Trigger an immediate refetch whenever the panel is opened so the admin
+  // always sees fresh data on first display rather than stale cached rows.
+  const prevPanelOpenRef = useRef(panelOpen);
+  useEffect(() => {
+    if (panelOpen && !prevPanelOpenRef.current) {
+      refetch();
+    }
+    prevPanelOpenRef.current = panelOpen;
+  }, [panelOpen, refetch]);
 
   // Optimistic row overlay — keyed by "groupId:ventureId".
   // Entries are injected immediately when a toggle fires so the badge updates
