@@ -464,6 +464,113 @@ describe("ReactivationResetButton — disabled-state predicate (prop-controlled)
   });
 });
 
+// ── Mid-flight venture selector changes ──────────────────────────────────────
+// These tests cover the scenario where the admin switches the venture selector
+// while a toggle mutation is still in-flight, ensuring the optimistic overlay
+// keyed by "groupId:ventureId" cannot cause the badge to show the wrong scope.
+describe("useGate4Reactivation — mid-flight venture selector changes", () => {
+  const VENTURE_A = "ven-alpha";
+  const VENTURE_B = "ven-beta";
+
+  let currentRows: ReactivationRow[];
+  let mockInvalidate: ReturnType<typeof vi.fn>;
+  let mockMutate: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    localStorage.clear();
+    currentRows = [globalRow(GROUP)];
+    mockInvalidate = vi.fn();
+    mockMutate = vi.fn(
+      (_input: unknown, options?: { onSuccess?: () => void }) => {
+        options?.onSuccess?.();
+      },
+    );
+    vi.mocked(trpc.admin.getModuleReactivations.useQuery).mockImplementation(() => ({
+      data: currentRows,
+      isLoading: false,
+      isError: false,
+    }));
+    vi.mocked(trpc.admin.setModuleReactivation.useMutation).mockReturnValue(
+      { mutate: mockMutate } as any,
+    );
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: vi.fn() } as any,
+    );
+    vi.mocked(trpc.admin.resetVentureModuleReactivations.useMutation).mockReturnValue(
+      { mutate: vi.fn() } as any,
+    );
+    vi.mocked(trpc.useUtils).mockReturnValue({
+      admin: { getModuleReactivations: { invalidate: mockInvalidate } },
+    } as any);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // ── Test 1: stale optimistic entry for venture A must not leak into venture-B scope ──
+  it("stale optimistic entry for venture A does not appear in venture-B scope after the selector switches mid-flight", async () => {
+    const { result, rerender } = renderHook(
+      ({ ventureId }: { ventureId: string }) => useGate4Reactivation(ventureId),
+      { initialProps: { ventureId: VENTURE_A } },
+    );
+
+    // Toggle while viewing venture A → synthetic row keyed `GROUP:VENTURE_A` injected
+    await act(async () => {
+      result.current.reactivate(GROUP);
+    });
+
+    // Optimistic overlay is active: badge for venture A reads "venture"
+    expect(badgeFrom(result.current.rows, VENTURE_A, GROUP)).toBe("venture");
+
+    // Admin switches the venture selector to B before the server refetch arrives
+    await act(async () => {
+      rerender({ ventureId: VENTURE_B });
+    });
+
+    // The stale venture-A optimistic entry must NOT affect the venture-B badge.
+    // Venture B has no server overrides → badge must be "global" (from the global row),
+    // never "venture" (which would mean the wrong scope leaked through).
+    expect(badgeFrom(result.current.rows, VENTURE_B, GROUP)).toBe("global");
+  });
+
+  // ── Test 2: server refetch clears the overlay regardless of current venture ──
+  it("optimistic overlay is cleared when the server refetch lands, regardless of which venture is active", async () => {
+    const { result, rerender } = renderHook(
+      ({ ventureId }: { ventureId: string }) => useGate4Reactivation(ventureId),
+      { initialProps: { ventureId: VENTURE_A } },
+    );
+
+    // Toggle while viewing venture A → optimistic overlay active
+    await act(async () => {
+      result.current.reactivate(GROUP);
+    });
+
+    // Switch to venture B mid-flight (mutation for venture A is still in-flight)
+    await act(async () => {
+      rerender({ ventureId: VENTURE_B });
+    });
+
+    // Toggle again while viewing venture B → new optimistic entry keyed `GROUP:VENTURE_B`
+    await act(async () => {
+      result.current.reactivate(GROUP);
+    });
+
+    // Optimistic overlay now has a venture-B entry; badge shows "venture"
+    expect(badgeFrom(result.current.rows, VENTURE_B, GROUP)).toBe("venture");
+
+    // Server refetch lands — delivers only the global row (no venture overrides confirmed yet)
+    // This simulates React Query re-fetching and returning fresh authoritative server data.
+    currentRows = [globalRow(GROUP)];
+    await act(async () => { rerender({ ventureId: VENTURE_B }); });
+
+    // Overlay must be cleared: the server is authoritative, so the badge reverts to "global"
+    expect(badgeFrom(result.current.rows, VENTURE_B, GROUP)).toBe("global");
+    // No synthetic/optimistic rows remain — only the single server-confirmed global row
+    expect(result.current.rows).toHaveLength(1);
+  });
+});
+
 // ── Hook + ReactivationResetButton integration tests ─────────────────────────
 // A small driver component wires useGate4Reactivation → ReactivationResetButton
 // (exactly as ReactivationPanel does in production) so we exercise the full
