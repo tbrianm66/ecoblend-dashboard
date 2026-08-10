@@ -928,7 +928,7 @@ function ReactivationPanel({
 }
 
 // ── Extended Backlog Section ───────────────────────────────────────────────────
-function ExtendedBacklogSection({
+export function ExtendedBacklogSection({
   location,
   isActivated,
   rows,
