@@ -47,7 +47,7 @@ vi.mock("@/lib/trpc", () => ({
 
 // ── Production imports (resolved after mock is registered) ────────────────────
 import { trpc } from "@/lib/trpc";
-import { useGate4Reactivation } from "./gate4Config";
+import { useGate4Reactivation, GATE4_BACKLOG_GROUP_IDS } from "./gate4Config";
 import { buildRowByGroup, resolveModuleBadge, type ReactivationRow } from "./gate4Utils";
 
 // ── Row factories ─────────────────────────────────────────────────────────────
@@ -732,6 +732,232 @@ describe("useGate4Reactivation — mid-flight venture selector changes", () => {
     // Overlay must be cleared: the server is authoritative, so the badge reverts to "global"
     expect(badgeFrom(result.current.rows, VENTURE_B, GROUP)).toBe("global");
     // No synthetic/optimistic rows remain — only the single server-confirmed global row
+    expect(result.current.rows).toHaveLength(1);
+  });
+
+  // ── Batch tests: reactivateAll / deactivateAll scope isolation ──────────────
+  //
+  // The batch paths build a map over ALL 15 backlog group IDs at once, keyed by
+  // "groupId:ventureId".  The key invariant: optimistic rows injected for venture A
+  // must never resolve as "venture" badge when evaluated under venture-B scope —
+  // because buildRowByGroup(rows, VENTURE_B) filters for r.ventureId === VENTURE_B
+  // or r.ventureId === "__global__", and the ":ven-alpha" keys match neither.
+  //
+  // IMPORTANT — why we do NOT switch ventures in these scope-isolation tests:
+  // The hook's useEffect([serverRows, ventureId]) calls setOptimisticRows(new Map())
+  // whenever ventureId changes, clearing the entire overlay before any assertion.
+  // Scope isolation must therefore be verified while still on VENTURE_A by evaluating
+  // the live rows through VENTURE_B's buildRowByGroup filter — this keeps the overlay
+  // active and lets us confirm the ":ven-alpha" entries genuinely cannot reach VENTURE_B.
+  //
+  // The refetch test (overlay cleared by new serverRows) uses a same-venture rerender
+  // after updating currentRows so the effect fires because serverRows changed, not
+  // because ventureId changed — proving the two clearing paths are independent.
+
+  // ── Test 3: reactivateAll batch overlay is correctly scoped to venture A ────
+  it("reactivateAll(): batch-optimistic entries keyed to venture A do not resolve as 'venture' badge when evaluated under venture-B scope (overlay still live)", async () => {
+    // Batch mutation is no-op (never resolves) so the optimistic overlay stays alive
+    // for the duration of this test — we are probing the overlay while it is present.
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: vi.fn() } as any,
+    );
+
+    // Mount on VENTURE_A; server has only the global seed row.
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE_A));
+
+    // Batch-activate all groups while viewing venture A.
+    // reactivateAll() synchronously injects optimistic rows keyed `groupId:ven-alpha`.
+    await act(async () => {
+      result.current.reactivateAll();
+    });
+
+    // Sanity: the overlay IS live — venture-A badges show "venture".
+    expect(badgeFrom(result.current.rows, VENTURE_A, GROUP)).toBe("venture");
+
+    // Core assertion: evaluate the SAME live rows under VENTURE_B scope.
+    // buildRowByGroup(rows, VENTURE_B) only picks up rows where
+    // r.ventureId === VENTURE_B or r.ventureId === "__global__".
+    // The 15 optimistic entries (all keyed ":ven-alpha") match neither,
+    // so every group must resolve to "global" (from the global seed row) — never "venture".
+    expect(badgeFrom(result.current.rows, VENTURE_B, GROUP)).toBe("global");
+
+    // Verify all 15 backlog groups: none bleeds a "venture" badge under VENTURE_B scope.
+    for (const gid of GATE4_BACKLOG_GROUP_IDS) {
+      expect(badgeFrom(result.current.rows, VENTURE_B, gid)).not.toBe("venture");
+    }
+  });
+
+  // ── Test 4: reactivateAll overlay is cleared when server refetch lands ───────
+  // Distinct from Test 3: here we confirm that a new serverRows value (simulating
+  // a React Query poll delivering authoritative data) clears the batch overlay and
+  // badges revert — without any venture switch.
+  it("reactivateAll(): overlay is cleared and badges revert to server-authoritative state when a refetch lands on the same venture", async () => {
+    // Batch mutation stays no-op; overlay persists until server refetch clears it.
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: vi.fn() } as any,
+    );
+
+    // Mount on VENTURE_A; server has only the global seed row.
+    const { result, rerender } = renderHook(() => useGate4Reactivation(VENTURE_A));
+
+    // Batch-activate — overlay now contains 15 rows keyed ":ven-alpha", active:true.
+    await act(async () => {
+      result.current.reactivateAll();
+    });
+
+    // Intermediate assertion: overlay IS present — badge shows "venture" for A.
+    expect(badgeFrom(result.current.rows, VENTURE_A, GROUP)).toBe("venture");
+
+    // Simulate server refetch: React Query delivers a fresh (changed) rows reference.
+    // We replace currentRows with a new array (same logical data, new JS reference)
+    // so serverRows in the hook changes and the useEffect([serverRows, ventureId])
+    // fires, calling setOptimisticRows(new Map()) — the authoritative clearing path.
+    currentRows = [globalRow(GROUP)]; // new array reference → effect fires on rerender
+    await act(async () => { rerender(); });
+
+    // After the refetch, the overlay must be gone — server data is authoritative.
+    // Badge reverts from "venture" to "global" (only the global seed row exists).
+    expect(badgeFrom(result.current.rows, VENTURE_A, GROUP)).toBe("global");
+
+    // Only the single server-confirmed global row remains; no synthetic rows.
+    expect(result.current.rows).toHaveLength(1);
+  });
+
+  // ── Test 5: deactivateAll batch overlay is correctly scoped to venture A ─────
+  it("deactivateAll(): batch-optimistic entries keyed to venture A do not resolve as 'venture' badge when evaluated under venture-B scope (overlay still live)", async () => {
+    // Batch mutation is no-op so the overlay stays live for the duration.
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: vi.fn() } as any,
+    );
+
+    // Mount on VENTURE_A; server has only the global seed row.
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE_A));
+
+    // Batch-deactivate all groups while viewing venture A.
+    // deactivateAll() injects optimistic rows with active:false keyed `groupId:ven-alpha`.
+    await act(async () => {
+      result.current.deactivateAll();
+    });
+
+    // Sanity: the overlay IS live — venture-A badges show "venture" (row exists, active=false).
+    expect(badgeFrom(result.current.rows, VENTURE_A, GROUP)).toBe("venture");
+
+    // Core assertion: evaluate the same live rows under VENTURE_B scope.
+    // The deactivate overlay entries are keyed ":ven-alpha" and must not resolve
+    // as "venture" for VENTURE_B — they are invisible to the venture-B filter.
+    expect(badgeFrom(result.current.rows, VENTURE_B, GROUP)).toBe("global");
+
+    // Verify all 15 backlog groups: none shows "venture" under VENTURE_B scope.
+    for (const gid of GATE4_BACKLOG_GROUP_IDS) {
+      expect(badgeFrom(result.current.rows, VENTURE_B, gid)).not.toBe("venture");
+    }
+  });
+
+  // ── Test 6: reactivateAll — actual mid-flight venture switch ─────────────────
+  // Exercises the real user-visible scenario: admin triggers Enable All on venture A,
+  // then switches the selector to venture B before the server responds.
+  // The hook must deliver clean venture-B state (no stale A-scoped entries).
+  it("reactivateAll(): after switching from venture A to B while the batch is in-flight, venture-B scope shows only server-authoritative rows", async () => {
+    // Batch mutation never resolves — models a pending server round-trip.
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: vi.fn() } as any,
+    );
+
+    const { result, rerender } = renderHook(
+      ({ ventureId }: { ventureId: string }) => useGate4Reactivation(ventureId),
+      { initialProps: { ventureId: VENTURE_A } },
+    );
+
+    // Enable All on venture A — overlay now contains 15 rows keyed `:ven-alpha`.
+    await act(async () => {
+      result.current.reactivateAll();
+    });
+
+    // Sanity: overlay is active on A.
+    expect(badgeFrom(result.current.rows, VENTURE_A, GROUP)).toBe("venture");
+
+    // Admin switches the selector to venture B while the batch is still in-flight.
+    // The hook's useEffect([serverRows, ventureId]) fires on the ventureId change
+    // and calls setOptimisticRows(new Map()), clearing all stale A-scoped entries.
+    await act(async () => {
+      rerender({ ventureId: VENTURE_B });
+    });
+
+    // After the switch, venture B must show only server-authoritative data.
+    // The global seed row gives "global"; no "venture" badge should appear for any group.
+    expect(badgeFrom(result.current.rows, VENTURE_B, GROUP)).toBe("global");
+    for (const gid of GATE4_BACKLOG_GROUP_IDS) {
+      expect(badgeFrom(result.current.rows, VENTURE_B, gid)).not.toBe("venture");
+    }
+    // Only the server-confirmed global row remains — no synthetic overlay rows.
+    expect(result.current.rows).toHaveLength(1);
+  });
+
+  // ── Test 7: deactivateAll — actual mid-flight venture switch ─────────────────
+  it("deactivateAll(): after switching from venture A to B while the batch is in-flight, venture-B scope shows only server-authoritative rows", async () => {
+    // Batch mutation never resolves — models a pending server round-trip.
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: vi.fn() } as any,
+    );
+
+    const { result, rerender } = renderHook(
+      ({ ventureId }: { ventureId: string }) => useGate4Reactivation(ventureId),
+      { initialProps: { ventureId: VENTURE_A } },
+    );
+
+    // Disable All on venture A — overlay now contains 15 rows keyed `:ven-alpha`, active:false.
+    await act(async () => {
+      result.current.deactivateAll();
+    });
+
+    // Sanity: overlay is active on A (row exists with active:false → badge "venture").
+    expect(badgeFrom(result.current.rows, VENTURE_A, GROUP)).toBe("venture");
+
+    // Admin switches the selector to venture B while the batch is still in-flight.
+    await act(async () => {
+      rerender({ ventureId: VENTURE_B });
+    });
+
+    // After the switch, venture B must show only server-authoritative data.
+    // No "venture" badges should appear — the global seed row gives "global".
+    expect(badgeFrom(result.current.rows, VENTURE_B, GROUP)).toBe("global");
+    for (const gid of GATE4_BACKLOG_GROUP_IDS) {
+      expect(badgeFrom(result.current.rows, VENTURE_B, gid)).not.toBe("venture");
+    }
+    // Only the server-confirmed global row remains — no synthetic overlay rows.
+    expect(result.current.rows).toHaveLength(1);
+  });
+
+  // ── Test 8: deactivateAll same-venture refetch clears overlay ────────────────
+  // Complements Test 4 (reactivateAll refetch); both batch paths must clear the
+  // overlay when authoritative server data arrives, regardless of direction.
+  it("deactivateAll(): overlay is cleared and badges revert to server-authoritative state when a refetch lands on the same venture", async () => {
+    // Batch mutation stays no-op; overlay persists until server refetch clears it.
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: vi.fn() } as any,
+    );
+
+    // Mount on VENTURE_A; server has the global seed row.
+    const { result, rerender } = renderHook(() => useGate4Reactivation(VENTURE_A));
+
+    // Disable All — overlay contains 15 rows keyed `:ven-alpha`, active:false.
+    await act(async () => {
+      result.current.deactivateAll();
+    });
+
+    // Intermediate: overlay IS present — badge shows "venture" for A (row exists, active=false).
+    expect(badgeFrom(result.current.rows, VENTURE_A, GROUP)).toBe("venture");
+
+    // Simulate server refetch: replace currentRows with a new array reference so
+    // serverRows in the hook changes on the next render → useEffect fires → overlay cleared.
+    currentRows = [globalRow(GROUP)]; // new JS reference; same logical data
+    await act(async () => { rerender(); });
+
+    // After the refetch, overlay is gone — server data is authoritative.
+    // Badge reverts from "venture" to "global" (only the global seed row exists).
+    expect(badgeFrom(result.current.rows, VENTURE_A, GROUP)).toBe("global");
+
+    // Only the server-confirmed global row remains; no synthetic overlay rows.
     expect(result.current.rows).toHaveLength(1);
   });
 });
