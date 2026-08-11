@@ -603,6 +603,8 @@ export function useGate4Reactivation(ventureId: string | null, panelOpen = false
     reactivateAll,
     deactivateAll,
     resetToGlobalDefaults,
+    /** True while the resetVentureModuleReactivations mutation is in-flight. */
+    resetIsPending: resetMutation.isPending,
     rows,
     isLoading,
     isError,

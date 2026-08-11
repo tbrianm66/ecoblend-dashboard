@@ -541,12 +541,14 @@ export interface ReactivationPanelProps {
     onSuccess?: (snapshotVId: string | null) => void,
     onError?: (rawMessage: string) => void,
   ) => void;
+  /** True while the resetVentureModuleReactivations mutation is in-flight. */
+  resetIsPending?: boolean;
 }
 
 export function ReactivationPanel({
   onClose, ventureId, ventureName, ventureColor, venturesLoading = false,
   rows, isLoading, isError, isActivated, reactivate, deactivate,
-  reactivateAll, deactivateAll, resetToGlobalDefaults,
+  reactivateAll, deactivateAll, resetToGlobalDefaults, resetIsPending = false,
 }: ReactivationPanelProps) {
 
   // Disable all toggle / batch / reset actions when:
@@ -872,6 +874,7 @@ export function ReactivationPanel({
             rows={rows}
             isLoading={isLoading}
             isError={isError}
+            isPending={resetIsPending}
             onReset={() => {
               const snapshotVId   = ventureId;
               const snapshotVName = ventureName;
@@ -1166,6 +1169,7 @@ export default function Sidebar() {
   const {
     isActivated, rows, isLoading, isError,
     reactivate, deactivate, reactivateAll, deactivateAll, resetToGlobalDefaults,
+    resetIsPending,
   } = useGate4Reactivation(selectedVentureId, reactivationOpen);
 
   return (
@@ -1248,6 +1252,7 @@ export default function Sidebar() {
           reactivateAll={reactivateAll}
           deactivateAll={deactivateAll}
           resetToGlobalDefaults={resetToGlobalDefaults}
+          resetIsPending={resetIsPending}
         />
       )}
 

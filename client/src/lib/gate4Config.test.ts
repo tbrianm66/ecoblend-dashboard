@@ -627,6 +627,80 @@ describe("ReactivationResetButton — disabled-state predicate (prop-controlled)
     fireEvent.click(screen.getByTestId("reset-btn"));
     expect(onReset).not.toHaveBeenCalled();
   });
+
+  // ── isPending spinner tests (Task #121) ──────────────────────────────────────
+  //
+  // These tests confirm that the button surfaces a loading spinner while the
+  // resetVentureModuleReactivations mutation is in-flight so admins know the reset
+  // is being processed and cannot accidentally double-submit.
+  //
+  // The spinner is rendered as a Loader2 icon with data-testid="reset-spinner".
+  // The spinner is absent when isPending=false (the default).
+
+  it("shows a spinner and disables the button while isPending=true (overrides exist → button would otherwise be enabled)", () => {
+    render(React.createElement(ReactivationResetButton, {
+      ventureId: VENTURE,
+      rows: [ventureRow(GROUP, VENTURE)], // override exists → not alreadyDefault
+      isLoading: false,
+      isError: false,
+      isPending: true,
+      onReset: () => {},
+    }));
+    // Spinner must be present during the in-flight window
+    expect(screen.getByTestId("reset-spinner")).toBeTruthy();
+    // Button must be disabled — clicking would be ignored
+    expect((screen.getByTestId("reset-btn") as HTMLButtonElement).disabled).toBe(true);
+    // Label should indicate the operation is in progress
+    expect(screen.getByTestId("reset-btn").textContent).toContain("Resetting");
+  });
+
+  it("onReset is NOT called when isPending=true and the (disabled) button is clicked", () => {
+    const onReset = vi.fn();
+    render(React.createElement(ReactivationResetButton, {
+      ventureId: VENTURE,
+      rows: [ventureRow(GROUP, VENTURE)], // override exists
+      isLoading: false,
+      isError: false,
+      isPending: true,
+      onReset,
+    }));
+    fireEvent.click(screen.getByTestId("reset-btn"));
+    expect(onReset).not.toHaveBeenCalled();
+  });
+
+  it("spinner is absent and button is interactive again once isPending resolves to false", () => {
+    const onReset = vi.fn();
+    render(React.createElement(ReactivationResetButton, {
+      ventureId: VENTURE,
+      rows: [ventureRow(GROUP, VENTURE)], // override exists → enabled after resolve
+      isLoading: false,
+      isError: false,
+      isPending: false,
+      onReset,
+    }));
+    // No spinner after the mutation resolves
+    expect(screen.queryByTestId("reset-spinner")).toBeNull();
+    // Button is enabled and clickable
+    expect((screen.getByTestId("reset-btn") as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(screen.getByTestId("reset-btn"));
+    expect(onReset).toHaveBeenCalledOnce();
+  });
+
+  it("button remains disabled (not just pending-disabled) after isPending resolves when no overrides exist", () => {
+    // After a successful reset, venture overrides are deleted → alreadyDefault=true.
+    // The button should stay disabled even after isPending goes back to false.
+    render(React.createElement(ReactivationResetButton, {
+      ventureId: VENTURE,
+      rows: [], // no venture overrides after reset
+      isLoading: false,
+      isError: false,
+      isPending: false,
+      onReset: () => {},
+    }));
+    expect(screen.queryByTestId("reset-spinner")).toBeNull();
+    expect((screen.getByTestId("reset-btn") as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByTestId("reset-btn").textContent).toContain("Already using global defaults");
+  });
 });
 
 // ── Header badges share the same rows as panel badges ────────────────────────
