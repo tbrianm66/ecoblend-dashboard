@@ -2333,6 +2333,308 @@ describe("ReactivationPanel drift notice — mid-flight venture switch triggers 
   });
 });
 
+// ── Batch drift notice: Enable All / Disable All mid-flight venture switch ─────
+//
+// Mirrors the ReactivationPanel drift-notice suite above but for the two batch
+// paths: reactivateAll (Enable All) and deactivateAll (Disable All).  Both use
+// showBatchToast with the same mismatch-detection logic, but no prior test
+// confirmed the warning toast fires when the admin switches ventures while a
+// batch mutation is in-flight.
+//
+// Strategy
+// --------
+// A BatchDriver component wires useGate4Reactivation → reactivateAll() and
+// deactivateAll(), passing a custom onSuccess that calls showBatchToast with a
+// spy ToastApi.  The batch mutation mock is deferred: it captures the onSuccess
+// callback and exposes it so the test can:
+//   1. trigger Enable All / Disable All on venture A (snapshot taken)
+//   2. switch the hook to venture B via rerender()
+//   3. manually resolve the deferred onSuccess
+//   4. assert toast.warning was called naming both ventures, with no success toast
+
+describe("Batch drift notice — Enable All / Disable All mid-flight venture switch triggers warning toast", () => {
+  const VENTURE_A      = "ven-alpha";
+  const VENTURE_B      = "ven-beta";
+  const VENTURE_A_NAME = "Venture Alpha";
+  const VENTURE_B_NAME = "Venture Beta";
+
+  // Deferred onSuccess handle — set by the batch mutation mock so the test
+  // can resolve it after the venture selector has been switched.
+  let deferredBatchOnSuccess: (() => void) | null = null;
+
+  // BatchDriver: wires the real useGate4Reactivation hook's reactivateAll /
+  // deactivateAll to showBatchToast, exactly as Sidebar.tsx does in production.
+  // `toastRef` is stable across renders so the captured onSuccess closure always
+  // calls the same spy object.
+  function BatchDriver({
+    ventureId,
+    ventureName,
+    toastRef,
+  }: {
+    ventureId: string;
+    ventureName: string;
+    toastRef: React.MutableRefObject<ToastApi & { calls: Record<string, string[]> }>;
+  }) {
+    const { reactivateAll, deactivateAll } = useGate4Reactivation(ventureId);
+
+    // Track the current venture in refs so the onSuccess closure sees the
+    // live value at resolution time — mirrors Sidebar.tsx behaviour.
+    const ventureIdRef = React.useRef(ventureId);
+    React.useEffect(() => { ventureIdRef.current = ventureId; });
+    const ventureNameRef = React.useRef(ventureName);
+    React.useEffect(() => { ventureNameRef.current = ventureName; });
+
+    const handleEnableAll = () => {
+      const snapshotVName = ventureName;
+      reactivateAll((snapshotVId) => {
+        showBatchToast(
+          toastRef.current,
+          ventureIdRef.current,
+          ventureNameRef.current,
+          true,
+          snapshotVId,
+          snapshotVName,
+        );
+      });
+    };
+
+    const handleDisableAll = () => {
+      const snapshotVName = ventureName;
+      deactivateAll((snapshotVId) => {
+        showBatchToast(
+          toastRef.current,
+          ventureIdRef.current,
+          ventureNameRef.current,
+          false,
+          snapshotVId,
+          snapshotVName,
+        );
+      });
+    };
+
+    return React.createElement(
+      "div",
+      null,
+      React.createElement("button", { "data-testid": "enable-all-btn", onClick: handleEnableAll }, "Enable All"),
+      React.createElement("button", { "data-testid": "disable-all-btn", onClick: handleDisableAll }, "Disable All"),
+    );
+  }
+
+  // Toast spy factory — same as the one used in the per-row drift suite above.
+  function makeToast(): ToastApi & { calls: Record<string, string[]> } {
+    const calls: Record<string, string[]> = { success: [], warning: [], error: [] };
+    return {
+      calls,
+      success: (m) => calls.success.push(m),
+      warning: (m) => calls.warning.push(m),
+      error:   (m) => calls.error.push(m),
+    };
+  }
+
+  beforeEach(() => {
+    localStorage.clear();
+    deferredBatchOnSuccess = null;
+
+    // Batch mutation mock defers onSuccess so the test controls when it fires.
+    const deferredBatchMutate = vi.fn(
+      (_input: unknown, options?: { onSuccess?: (data: { upserted: unknown[] }) => void }) => {
+        if (options?.onSuccess) {
+          // Wrap so the test can call deferredBatchOnSuccess() with no args.
+          const captured = options.onSuccess;
+          deferredBatchOnSuccess = () => captured({ upserted: [] });
+        }
+      },
+    );
+
+    vi.mocked(trpc.admin.getModuleReactivations.useQuery).mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+    } as any);
+    // Per-row mutation — not used by the batch driver, but must be present.
+    vi.mocked(trpc.admin.setModuleReactivation.useMutation).mockReturnValue(
+      { mutate: vi.fn() } as any,
+    );
+    // Batch mutation — deferred so the test controls resolution timing.
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: deferredBatchMutate } as any,
+    );
+    vi.mocked(trpc.admin.resetVentureModuleReactivations.useMutation).mockReturnValue(
+      { mutate: vi.fn() } as any,
+    );
+    vi.mocked(trpc.useUtils).mockReturnValue({
+      admin: { getModuleReactivations: { invalidate: vi.fn() } },
+    } as any);
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.clearAllMocks();
+  });
+
+  // ── Enable All: drift warning fires ──────────────────────────────────────────
+
+  it("Enable All — fires toast.warning naming both ventures when the selector changes between click and server response", async () => {
+    const toast    = makeToast();
+    const toastRef = { current: toast } as React.MutableRefObject<typeof toast>;
+
+    const { rerender } = render(
+      React.createElement(BatchDriver, { ventureId: VENTURE_A, ventureName: VENTURE_A_NAME, toastRef }),
+    );
+
+    // Step 1 — admin clicks Enable All while viewing venture A.
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("enable-all-btn"));
+    });
+
+    // Step 2 — admin switches to venture B before the server responds.
+    await act(async () => {
+      rerender(React.createElement(BatchDriver, { ventureId: VENTURE_B, ventureName: VENTURE_B_NAME, toastRef }));
+    });
+
+    // Step 3 — server responds; onSuccess fires with snapshotVId = VENTURE_A
+    // but ventureIdRef.current is now VENTURE_B → drift detected.
+    await act(async () => {
+      deferredBatchOnSuccess?.();
+    });
+
+    // Must be a WARNING toast, never a plain success.
+    expect(toast.calls.warning).toHaveLength(1);
+    expect(toast.calls.success).toHaveLength(0);
+  });
+
+  it("Enable All — drift warning names the snapshot venture (where the write landed)", async () => {
+    const toast    = makeToast();
+    const toastRef = { current: toast } as React.MutableRefObject<typeof toast>;
+
+    const { rerender } = render(
+      React.createElement(BatchDriver, { ventureId: VENTURE_A, ventureName: VENTURE_A_NAME, toastRef }),
+    );
+
+    await act(async () => { fireEvent.click(screen.getByTestId("enable-all-btn")); });
+    await act(async () => {
+      rerender(React.createElement(BatchDriver, { ventureId: VENTURE_B, ventureName: VENTURE_B_NAME, toastRef }));
+    });
+    await act(async () => { deferredBatchOnSuccess?.(); });
+
+    expect(toast.calls.warning[0]).toContain(VENTURE_A_NAME);
+  });
+
+  it("Enable All — drift warning names the current venture (where the admin is now looking)", async () => {
+    const toast    = makeToast();
+    const toastRef = { current: toast } as React.MutableRefObject<typeof toast>;
+
+    const { rerender } = render(
+      React.createElement(BatchDriver, { ventureId: VENTURE_A, ventureName: VENTURE_A_NAME, toastRef }),
+    );
+
+    await act(async () => { fireEvent.click(screen.getByTestId("enable-all-btn")); });
+    await act(async () => {
+      rerender(React.createElement(BatchDriver, { ventureId: VENTURE_B, ventureName: VENTURE_B_NAME, toastRef }));
+    });
+    await act(async () => { deferredBatchOnSuccess?.(); });
+
+    expect(toast.calls.warning[0]).toContain(VENTURE_B_NAME);
+  });
+
+  it("Enable All — no plain success toast fires in the drift case", async () => {
+    const toast    = makeToast();
+    const toastRef = { current: toast } as React.MutableRefObject<typeof toast>;
+
+    const { rerender } = render(
+      React.createElement(BatchDriver, { ventureId: VENTURE_A, ventureName: VENTURE_A_NAME, toastRef }),
+    );
+
+    await act(async () => { fireEvent.click(screen.getByTestId("enable-all-btn")); });
+    await act(async () => {
+      rerender(React.createElement(BatchDriver, { ventureId: VENTURE_B, ventureName: VENTURE_B_NAME, toastRef }));
+    });
+    await act(async () => { deferredBatchOnSuccess?.(); });
+
+    expect(toast.calls.success).toHaveLength(0);
+  });
+
+  // ── Disable All: drift warning fires ─────────────────────────────────────────
+
+  it("Disable All — fires toast.warning naming both ventures when the selector changes between click and server response", async () => {
+    const toast    = makeToast();
+    const toastRef = { current: toast } as React.MutableRefObject<typeof toast>;
+
+    const { rerender } = render(
+      React.createElement(BatchDriver, { ventureId: VENTURE_A, ventureName: VENTURE_A_NAME, toastRef }),
+    );
+
+    // Step 1 — admin clicks Disable All while viewing venture A.
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("disable-all-btn"));
+    });
+
+    // Step 2 — admin switches to venture B before the server responds.
+    await act(async () => {
+      rerender(React.createElement(BatchDriver, { ventureId: VENTURE_B, ventureName: VENTURE_B_NAME, toastRef }));
+    });
+
+    // Step 3 — server responds; drift detected (snapshot=VENTURE_A, current=VENTURE_B).
+    await act(async () => {
+      deferredBatchOnSuccess?.();
+    });
+
+    expect(toast.calls.warning).toHaveLength(1);
+    expect(toast.calls.success).toHaveLength(0);
+  });
+
+  it("Disable All — drift warning names the snapshot venture (where the write landed)", async () => {
+    const toast    = makeToast();
+    const toastRef = { current: toast } as React.MutableRefObject<typeof toast>;
+
+    const { rerender } = render(
+      React.createElement(BatchDriver, { ventureId: VENTURE_A, ventureName: VENTURE_A_NAME, toastRef }),
+    );
+
+    await act(async () => { fireEvent.click(screen.getByTestId("disable-all-btn")); });
+    await act(async () => {
+      rerender(React.createElement(BatchDriver, { ventureId: VENTURE_B, ventureName: VENTURE_B_NAME, toastRef }));
+    });
+    await act(async () => { deferredBatchOnSuccess?.(); });
+
+    expect(toast.calls.warning[0]).toContain(VENTURE_A_NAME);
+  });
+
+  it("Disable All — drift warning names the current venture (where the admin is now looking)", async () => {
+    const toast    = makeToast();
+    const toastRef = { current: toast } as React.MutableRefObject<typeof toast>;
+
+    const { rerender } = render(
+      React.createElement(BatchDriver, { ventureId: VENTURE_A, ventureName: VENTURE_A_NAME, toastRef }),
+    );
+
+    await act(async () => { fireEvent.click(screen.getByTestId("disable-all-btn")); });
+    await act(async () => {
+      rerender(React.createElement(BatchDriver, { ventureId: VENTURE_B, ventureName: VENTURE_B_NAME, toastRef }));
+    });
+    await act(async () => { deferredBatchOnSuccess?.(); });
+
+    expect(toast.calls.warning[0]).toContain(VENTURE_B_NAME);
+  });
+
+  it("Disable All — no plain success toast fires in the drift case", async () => {
+    const toast    = makeToast();
+    const toastRef = { current: toast } as React.MutableRefObject<typeof toast>;
+
+    const { rerender } = render(
+      React.createElement(BatchDriver, { ventureId: VENTURE_A, ventureName: VENTURE_A_NAME, toastRef }),
+    );
+
+    await act(async () => { fireEvent.click(screen.getByTestId("disable-all-btn")); });
+    await act(async () => {
+      rerender(React.createElement(BatchDriver, { ventureId: VENTURE_B, ventureName: VENTURE_B_NAME, toastRef }));
+    });
+    await act(async () => { deferredBatchOnSuccess?.(); });
+
+    expect(toast.calls.success).toHaveLength(0);
+  });
+});
+
 // ── ReactivationPanel props-refactor: injected callbacks fire correctly ────────
 //
 // Task #74 refactored ReactivationPanel from owning its own useGate4Reactivation
