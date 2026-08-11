@@ -20,6 +20,7 @@ import {
   showToggleToast,
   showBatchToast,
   showToggleErrorToast,
+  buildResetOnSuccess,
   type ToastApi,
 } from "./gate4ToastUtils";
 
@@ -541,5 +542,188 @@ describe("showToggleErrorToast — overlapping rapid-click closure isolation", (
     expect(toast.calls.error[0]).toContain("error from first row");
     expect(toast.calls.error[1]).toContain("Risk Register");
     expect(toast.calls.error[1]).toContain("error from second row");
+  });
+});
+
+// ── buildResetOnSuccess — venture-drift detection via closure ─────────────────
+//
+// buildResetOnSuccess is called at click time and closes over the venture ID
+// and name at that moment (the "snapshot").  When the returned onSuccess
+// callback finally fires (after the server responds), it reads the CURRENT
+// venture via the supplied getters.  If the admin switched ventures while the
+// reset was in-flight, the callback must fire a WARNING toast naming both
+// the venture that was reset and the venture now shown in the selector.
+//
+// These tests exercise that deferred-mutation pattern without React or a
+// browser: two mutable ref objects stand in for ventureIdRef / ventureNameRef,
+// and the returned callback is invoked manually to simulate the server response
+// arriving.
+
+describe("buildResetOnSuccess — venture-drift detection", () => {
+  it("fires toast.success naming venture A when no drift occurs", () => {
+    const toast = makeToast();
+
+    // Simulate refs that hold the current venture.
+    let currentVId:   string | null      = "ven-alpha";
+    let currentVName: string | undefined = "Venture Alpha";
+
+    // Admin clicks Reset for venture A — snapshot captured at click time.
+    const onSuccess = buildResetOnSuccess(
+      toast,
+      "ven-alpha",        // ventureIdAtClick
+      "Venture Alpha",    // ventureNameAtClick
+      () => currentVId,   // getCurrentVId
+      () => currentVName, // getCurrentVName
+    );
+
+    // Venture selector has NOT changed while the mutation was in-flight.
+    // (refs still point to ven-alpha)
+
+    // Server responds — onSuccess fires.
+    onSuccess();
+
+    expect(toast.calls.success).toHaveLength(1);
+    expect(toast.calls.warning).toHaveLength(0);
+    expect(toast.calls.error).toHaveLength(0);
+    expect(toast.calls.success[0]).toContain("Venture Alpha");
+    expect(toast.calls.success[0]).toContain("global defaults");
+  });
+
+  it("fires toast.warning naming both ventures when admin switches mid-reset", () => {
+    const toast = makeToast();
+
+    // Simulate refs that start on venture A.
+    let currentVId:   string | null      = "ven-alpha";
+    let currentVName: string | undefined = "Venture Alpha";
+
+    // Admin clicks Reset for venture A — snapshot captured at click time.
+    const onSuccess = buildResetOnSuccess(
+      toast,
+      "ven-alpha",
+      "Venture Alpha",
+      () => currentVId,
+      () => currentVName,
+    );
+
+    // Admin switches to venture B while the reset mutation is in-flight.
+    currentVId   = "ven-beta";
+    currentVName = "Venture Beta";
+
+    // Server responds — onSuccess fires with drifted refs.
+    onSuccess();
+
+    expect(toast.calls.warning).toHaveLength(1);
+    expect(toast.calls.success).toHaveLength(0);
+    expect(toast.calls.error).toHaveLength(0);
+    // Warning must name the venture that was actually reset (snapshot).
+    expect(toast.calls.warning[0]).toContain("Venture Alpha");
+    // Warning must also name the venture the admin is now looking at.
+    expect(toast.calls.warning[0]).toContain("Venture Beta");
+  });
+
+  it("snapshot is frozen at click time — later mutation of refs does not change the named venture", () => {
+    const toast = makeToast();
+
+    let currentVId:   string | null      = "ven-alpha";
+    let currentVName: string | undefined = "Venture Alpha";
+
+    const onSuccess = buildResetOnSuccess(
+      toast,
+      currentVId,
+      currentVName,
+      () => currentVId,
+      () => currentVName,
+    );
+
+    // Refs change three times before the server responds — only the final
+    // value matters for "current", but the snapshot must still be ven-alpha.
+    currentVId   = "ven-gamma";
+    currentVName = "Venture Gamma";
+    currentVId   = "ven-delta";
+    currentVName = "Venture Delta";
+    currentVId   = "ven-beta";
+    currentVName = "Venture Beta";
+
+    onSuccess();
+
+    // Warning must name the original snapshot venture, not any intermediate one.
+    expect(toast.calls.warning[0]).toContain("Venture Alpha");
+    expect(toast.calls.warning[0]).toContain("Venture Beta");
+    expect(toast.calls.warning[0]).not.toContain("Venture Gamma");
+    expect(toast.calls.warning[0]).not.toContain("Venture Delta");
+  });
+
+  it("fires toast.success when both snapshot and current are null (global scope, no drift)", () => {
+    const toast = makeToast();
+
+    let currentVId:   string | null      = null;
+    let currentVName: string | undefined = undefined;
+
+    const onSuccess = buildResetOnSuccess(
+      toast,
+      null,       // global scope at click time
+      undefined,
+      () => currentVId,
+      () => currentVName,
+    );
+
+    // No drift — still on global scope.
+    onSuccess();
+
+    expect(toast.calls.success).toHaveLength(1);
+    expect(toast.calls.success[0]).toContain("all ventures (global)");
+    expect(toast.calls.warning).toHaveLength(0);
+  });
+
+  it("fires toast.warning when snapshot was a venture but admin is now on global scope", () => {
+    const toast = makeToast();
+
+    let currentVId:   string | null      = "ven-alpha";
+    let currentVName: string | undefined = "Venture Alpha";
+
+    const onSuccess = buildResetOnSuccess(
+      toast,
+      "ven-alpha",
+      "Venture Alpha",
+      () => currentVId,
+      () => currentVName,
+    );
+
+    // Admin navigates away to the global (no-venture) view while reset is in-flight.
+    currentVId   = null;
+    currentVName = undefined;
+
+    onSuccess();
+
+    expect(toast.calls.warning).toHaveLength(1);
+    expect(toast.calls.warning[0]).toContain("Venture Alpha");
+    expect(toast.calls.warning[0]).toContain("all ventures (global)");
+  });
+
+  it("falls back to raw snapshotVId in the warning when snapshotVName is undefined", () => {
+    const toast = makeToast();
+
+    let currentVId:   string | null      = "ven-alpha";
+    let currentVName: string | undefined = "Venture Alpha";
+
+    // Simulate the guard failing: name was unavailable at click time.
+    const onSuccess = buildResetOnSuccess(
+      toast,
+      "ven-alpha",
+      undefined,          // name not available at click
+      () => currentVId,
+      () => currentVName,
+    );
+
+    // Admin switches ventures while in-flight.
+    currentVId   = "ven-beta";
+    currentVName = "Venture Beta";
+
+    onSuccess();
+
+    expect(toast.calls.warning).toHaveLength(1);
+    // Raw ID must appear since no name was captured.
+    expect(toast.calls.warning[0]).toContain("ven-alpha");
+    expect(toast.calls.warning[0]).toContain("Venture Beta");
   });
 });
