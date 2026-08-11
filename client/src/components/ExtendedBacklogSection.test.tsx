@@ -549,6 +549,61 @@ describe("ExtendedBacklogSection — header source badge", () => {
       expect(screen.queryByLabelText("Enabled by a global rule")).toBeNull();
       expect(screen.queryByLabelText("Enabled by a venture-specific override")).toBeNull();
     });
+
+    /**
+     * Task #133 — structural guard: locked OFF row must NOT render via NavGroupSection.
+     *
+     * NavGroupSection always renders a collapsible <button> as its section header
+     * (the element users click to expand/collapse the group).  The locked OFF row
+     * is intentionally a plain <div> — no interactivity, no expansion, no badge
+     * prop passed through NavGroupSection.
+     *
+     * This test verifies that:
+     *   1. No <button> in the rendered tree contains the locked group's label text
+     *      ("Discovery & Market"), so a future refactor that accidentally delegates
+     *      the locked row to NavGroupSection is caught immediately.
+     *   2. The activated group (TARGET_GROUP / "Venture Intake") DOES render its
+     *      NavGroupSection header <button>, confirming that the control group is
+     *      working and that the assertion above is meaningful rather than vacuously
+     *      true because no buttons exist at all.
+     *
+     * The LOCKED_GROUP label ("Discovery & Market") comes from GATE4_BACKLOG_GROUPS;
+     * the TARGET_GROUP label ("Venture Intake") comes from the same source.
+     */
+    it("does not render a NavGroupSection header button for the locked OFF row, but does for the activated group", () => {
+      renderInRouter(
+        React.createElement(ExtendedBacklogSection, {
+          location:    TARGET_LOCATION,
+          isActivated: allExceptLocked,
+          rows:        [globalRow(LOCKED_GROUP)],
+          isLoading:   false,
+          isError:     false,
+          ventureId:   null,
+        }),
+      );
+
+      // All <button> elements in the tree come from NavGroupSection headers
+      // (one per activated group).  The locked OFF row is a plain <div>.
+      const allButtons = document.querySelectorAll("button");
+
+      // 1. No button should contain the locked group's label text.
+      //    If NavGroupSection were accidentally used for the locked row, a button
+      //    labelled "Discovery & Market" would appear here.
+      const lockedGroupLabel = "Discovery & Market";
+      const buttonWithLockedLabel = Array.from(allButtons).find(btn =>
+        btn.textContent?.includes(lockedGroupLabel),
+      );
+      expect(buttonWithLockedLabel).toBeUndefined();
+
+      // 2. The activated group (TARGET_GROUP) must have a NavGroupSection header
+      //    button, confirming the section renders normally for active groups and
+      //    that the absence above is meaningful (not just "no buttons exist at all").
+      const activatedGroupLabel = "Venture Intake";
+      const buttonWithActiveLabel = Array.from(allButtons).find(btn =>
+        btn.textContent?.includes(activatedGroupLabel),
+      );
+      expect(buttonWithActiveLabel).toBeDefined();
+    });
   });
 
   // ── cross-state: no badge for indeterminate states ────────────────────────
