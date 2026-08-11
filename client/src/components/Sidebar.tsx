@@ -996,8 +996,8 @@ export function ExtendedBacklogSection({
               groupBadge = (
                 <span
                   className="shrink-0 inline-block px-1 py-0 rounded font-bold uppercase"
-                  aria-label="Enabled by a global rule"
-                  title="Enabled by a global rule"
+                  aria-label={activated ? "Enabled by a global rule" : "Disabled by a global rule"}
+                  title={activated ? "Enabled by a global rule" : "Disabled by a global rule"}
                   style={{
                     fontFamily: "'Prompt', sans-serif",
                     fontSize: "0.5rem",
@@ -1014,8 +1014,8 @@ export function ExtendedBacklogSection({
               groupBadge = (
                 <span
                   className="shrink-0 inline-block px-1 py-0 rounded font-bold uppercase"
-                  aria-label="Enabled by a venture-specific override"
-                  title="Enabled by a venture-specific override"
+                  aria-label={activated ? "Enabled by a venture-specific override" : "Disabled by a venture-specific override"}
+                  title={activated ? "Enabled by a venture-specific override" : "Disabled by a venture-specific override"}
                   style={{
                     fontFamily: "'Prompt', sans-serif",
                     fontSize: "0.5rem",

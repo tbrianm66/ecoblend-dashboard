@@ -403,12 +403,12 @@ describe("ExtendedBacklogSection — header source badge", () => {
       );
 
       // Exactly one GLOBAL badge: LOCKED_GROUP's locked OFF row.
-      const globalBadge = screen.getByLabelText("Enabled by a global rule");
+      const globalBadge = screen.getByLabelText("Disabled by a global rule");
       expect(globalBadge).toBeDefined();
       expect(globalBadge.textContent).toBe("GLOBAL");
 
       // No VENTURE badge — only a global row was provided for LOCKED_GROUP.
-      expect(screen.queryByLabelText("Enabled by a venture-specific override")).toBeNull();
+      expect(screen.queryByLabelText("Disabled by a venture-specific override")).toBeNull();
     });
 
     it("shows a VENTURE badge on a locked OFF row when a venture DB row exists for it", () => {
@@ -425,12 +425,12 @@ describe("ExtendedBacklogSection — header source badge", () => {
       );
 
       // Exactly one VENTURE badge: LOCKED_GROUP's locked OFF row.
-      const ventureBadge = screen.getByLabelText("Enabled by a venture-specific override");
+      const ventureBadge = screen.getByLabelText("Disabled by a venture-specific override");
       expect(ventureBadge).toBeDefined();
       expect(ventureBadge.textContent).toBe("VENTURE");
 
       // No GLOBAL badge — the venture row is the only row provided.
-      expect(screen.queryByLabelText("Enabled by a global rule")).toBeNull();
+      expect(screen.queryByLabelText("Disabled by a global rule")).toBeNull();
     });
 
     it("shows a DEFAULT badge on a locked OFF row when no DB row exists for it", () => {
@@ -490,7 +490,7 @@ describe("ExtendedBacklogSection — header source badge", () => {
       // TARGET_GROUP (ON) → GLOBAL badge (from NavGroupSection, via global row)
       // LOCKED_GROUP (OFF) → venture row overwrites global → VENTURE badge on locked row
       expect(screen.getByLabelText("Enabled by a global rule").textContent).toBe("GLOBAL");
-      expect(screen.getByLabelText("Enabled by a venture-specific override").textContent).toBe("VENTURE");
+      expect(screen.getByLabelText("Disabled by a venture-specific override").textContent).toBe("VENTURE");
     });
 
     it("still shows the OFF text label on the locked row", () => {
@@ -791,7 +791,7 @@ describe("toggle in ReactivationPanel → header badge in ExtendedBacklogSection
       // deactivate() injects a synthetic global row (active=false) so TARGET_GROUP's
       // locked row now shows GLOBAL.  Other groups with no rows still show DEFAULT.
       fireEvent.click(toggleBtn);
-      expect(screen.getByLabelText("Enabled by a global rule").textContent).toBe("GLOBAL");
+      expect(screen.getByLabelText("Disabled by a global rule").textContent).toBe("GLOBAL");
       // (DEFAULT badges from other OFF groups are intentionally not asserted null here)
 
       // Second click — group is now OFF so the button shows "Off"; clicking calls
@@ -819,7 +819,7 @@ describe("toggle in ReactivationPanel → header badge in ExtendedBacklogSection
 
       // Only TARGET_GROUP has a global row → exactly one GLOBAL badge on its
       // locked row.  Other OFF groups with no rows show DEFAULT — not asserted.
-      expect(screen.getByLabelText("Enabled by a global rule").textContent).toBe("GLOBAL");
+      expect(screen.getByLabelText("Disabled by a global rule").textContent).toBe("GLOBAL");
       expect(screen.queryByLabelText("Enabled by a venture-specific override")).toBeNull();
     });
 
@@ -831,7 +831,7 @@ describe("toggle in ReactivationPanel → header badge in ExtendedBacklogSection
 
       // ON → OFF: deactivate() injects global row (active=false) → GLOBAL on OFF row.
       fireEvent.click(btn);
-      expect(screen.getByLabelText("Enabled by a global rule").textContent).toBe("GLOBAL");
+      expect(screen.getByLabelText("Disabled by a global rule").textContent).toBe("GLOBAL");
 
       // OFF → ON: reactivate() injects global row (active=true) → GLOBAL on ON row.
       fireEvent.click(btn);
@@ -839,7 +839,7 @@ describe("toggle in ReactivationPanel → header badge in ExtendedBacklogSection
 
       // ON → OFF again: GLOBAL persists on the OFF row.
       fireEvent.click(btn);
-      expect(screen.getByLabelText("Enabled by a global rule").textContent).toBe("GLOBAL");
+      expect(screen.getByLabelText("Disabled by a global rule").textContent).toBe("GLOBAL");
 
       // OFF → ON again: GLOBAL persists on the ON row.
       fireEvent.click(btn);
@@ -865,7 +865,7 @@ describe("toggle in ReactivationPanel → header badge in ExtendedBacklogSection
       // TARGET_GROUP's locked row now shows VENTURE.  Other OFF groups with no
       // rows still show DEFAULT — not asserted here since they're unrelated.
       fireEvent.click(btn);
-      expect(screen.getByLabelText("Enabled by a venture-specific override").textContent).toBe("VENTURE");
+      expect(screen.getByLabelText("Disabled by a venture-specific override").textContent).toBe("VENTURE");
       // Only TARGET_GROUP has a row, so no GLOBAL badge is present.
       expect(screen.queryByLabelText("Enabled by a global rule")).toBeNull();
 
@@ -893,7 +893,7 @@ describe("toggle in ReactivationPanel → header badge in ExtendedBacklogSection
       // buildRowByGroup: global row is seeded, then venture row overwrites it →
       // resolveModuleBadge returns "venture" → VENTURE badge on OFF locked row.
       fireEvent.click(btn);
-      expect(screen.getByLabelText("Enabled by a venture-specific override").textContent).toBe("VENTURE");
+      expect(screen.getByLabelText("Disabled by a venture-specific override").textContent).toBe("VENTURE");
       expect(screen.queryByLabelText("Enabled by a global rule")).toBeNull();
 
       // Reactivate (OFF → ON): venture row (active=true) injected → VENTURE on ON row.
@@ -917,7 +917,7 @@ describe("toggle in ReactivationPanel → header badge in ExtendedBacklogSection
 
       // Only TARGET_GROUP has a venture row → exactly one VENTURE badge.
       // Other OFF groups with no rows show DEFAULT — not asserted here.
-      expect(screen.getByLabelText("Enabled by a venture-specific override").textContent).toBe("VENTURE");
+      expect(screen.getByLabelText("Disabled by a venture-specific override").textContent).toBe("VENTURE");
       expect(screen.queryByLabelText("Enabled by a global rule")).toBeNull();
     });
   });
