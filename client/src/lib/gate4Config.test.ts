@@ -68,8 +68,20 @@ vi.mock("@/contexts/VentureContext", () => ({
 }));
 vi.mock("@/components/GlobalVentureSelector", () => ({ default: () => null }));
 
+// Sonner's `toast` is imported at the Sidebar.tsx module level and closed over
+// by the onError handler.  Mocking it here lets us assert toast.error calls
+// without needing a browser environment.
+vi.mock("sonner", () => ({
+  toast: {
+    success: vi.fn(),
+    warning: vi.fn(),
+    error:   vi.fn(),
+  },
+}));
+
 // ── Production imports (resolved after mock is registered) ────────────────────
 import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 import { useGate4Reactivation, GATE4_BACKLOG_GROUP_IDS } from "./gate4Config";
 import { buildRowByGroup, resolveModuleBadge, type ReactivationRow } from "./gate4Utils";
 import { showToggleToast, showBatchToast, type ToastApi } from "./gate4ToastUtils";
@@ -2900,6 +2912,89 @@ describe("ReactivationPanel props-refactor — injected callbacks fire correctly
     render(React.createElement(ReactivationPanel, props));
 
     expect(screen.queryByTestId("reset-btn")).not.toBeNull();
+  });
+
+  // ── 10. reactivate onError: showToggleErrorToast fires with group label + raw msg ──
+  //
+  // Production wiring (Sidebar.tsx toggle onClick):
+  //   const onError = (_gid: string, rawMessage: string) =>
+  //     showToggleErrorToast(toast, group.label, rawMessage);
+  //   reactivate(group.id, onSuccess, onError);
+  //
+  // If a future refactor drops the third argument or wires onError to the wrong
+  // closure, the admin will see a silent failure with no feedback.
+  // This test captures the onError function and calls it to confirm the chain
+  // reaches toast.error with the correct content.
+  it("onError closure passed to reactivate calls toast.error with the group label and raw message", () => {
+    const props = makeProps({ isActivated: vi.fn().mockReturnValue(false) });
+    render(React.createElement(ReactivationPanel, props));
+
+    // Click the OFF toggle for the first group
+    fireEvent.click(screen.getByTestId(`toggle-${FIRST_GROUP_ID}`));
+
+    // reactivate was called with (groupId, onSuccess, onError)
+    expect(props.reactivate).toHaveBeenCalledOnce();
+    const [, , onError] = (props.reactivate as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      string,
+      (svid: string | null) => void,
+      (gid: string, rawMessage: string) => void,
+    ];
+    expect(typeof onError).toBe("function");
+
+    // Simulate the mutation's onError callback firing with a server error
+    const rawMessage = "Connection timeout";
+    onError(FIRST_GROUP_ID, rawMessage);
+
+    // The onError closure must route through showToggleErrorToast → toast.error
+    const toastMock = vi.mocked(toast as { error: ReturnType<typeof vi.fn> });
+    expect(toastMock.error).toHaveBeenCalledOnce();
+    expect(toastMock.error).toHaveBeenCalledWith(
+      // showToggleErrorToast formats: `Failed to update "${label}": ${rawMessage}`
+      expect.stringContaining(rawMessage),
+      expect.objectContaining({ duration: 6000 }),
+    );
+    // Also confirm the group label ("Venture Intake") is present in the message
+    const [errorMessage] = toastMock.error.mock.calls[0] as [string];
+    expect(errorMessage).toContain("Venture Intake");
+  });
+
+  // ── 11. deactivate onError: showToggleErrorToast fires with group label + raw msg ──
+  //
+  // Symmetric test for the deactivate path: when a group is ON and the admin
+  // toggles it OFF, the onError closure must reach toast.error with the same
+  // format as the reactivate path.
+  it("onError closure passed to deactivate calls toast.error with the group label and raw message", () => {
+    // Make the first group active so the toggle button calls deactivate()
+    const isActivated = vi.fn((id: string) => id === FIRST_GROUP_ID);
+    const props = makeProps({ isActivated });
+    render(React.createElement(ReactivationPanel, props));
+
+    // Click the ON toggle for the first group → deactivate() is called
+    fireEvent.click(screen.getByTestId(`toggle-${FIRST_GROUP_ID}`));
+
+    // deactivate was called with (groupId, onSuccess, onError)
+    expect(props.deactivate).toHaveBeenCalledOnce();
+    const [, , onError] = (props.deactivate as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      string,
+      (svid: string | null) => void,
+      (gid: string, rawMessage: string) => void,
+    ];
+    expect(typeof onError).toBe("function");
+
+    // Simulate the mutation's onError callback firing with a server error
+    const rawMessage = "Optimistic lock violation";
+    onError(FIRST_GROUP_ID, rawMessage);
+
+    // The onError closure must route through showToggleErrorToast → toast.error
+    const toastMock = vi.mocked(toast as { error: ReturnType<typeof vi.fn> });
+    expect(toastMock.error).toHaveBeenCalledOnce();
+    expect(toastMock.error).toHaveBeenCalledWith(
+      expect.stringContaining(rawMessage),
+      expect.objectContaining({ duration: 6000 }),
+    );
+    // Also confirm the group label is in the message
+    const [errorMessage] = toastMock.error.mock.calls[0] as [string];
+    expect(errorMessage).toContain("Venture Intake");
   });
 });
 
