@@ -2140,5 +2140,43 @@ describe("useGate4Reactivation — polling stops when panelOpen transitions true
     expect(capturedOptions.length).toBeGreaterThan(0);
     expect(capturedOptions.at(-1)!.refetchInterval).toBe(10_000);
   });
+
+  // ── 5. Opening the panel triggers an immediate refetch ───────────────────────
+  //
+  // The hook calls refetch() in a useEffect whenever panelOpen transitions
+  // false → true (via prevPanelOpenRef).  This ensures the admin always sees
+  // fresh data on first display rather than stale cached rows.
+  //
+  // Without this test a regression that removed the refetch() call from the
+  // useEffect would go undetected — admins would silently view cached data
+  // when they open the panel.
+  it("calls refetch() exactly once when panelOpen transitions false → true", async () => {
+    const mockRefetch = vi.fn();
+
+    // Override the useQuery mock for this test to expose a captured refetch spy.
+    vi.mocked(trpc.admin.getModuleReactivations.useQuery).mockImplementation(
+      (_input: unknown, options?: { refetchInterval?: number | false; staleTime?: number; refetchOnWindowFocus?: boolean }) => {
+        capturedOptions.push({ refetchInterval: options?.refetchInterval ?? false });
+        return { data: undefined, isLoading: false, isError: false, refetch: mockRefetch } as any;
+      },
+    );
+
+    // Mount with panelOpen=false — refetch() must NOT be called on the initial render.
+    const { rerender } = renderHook(
+      ({ panelOpen }: { panelOpen: boolean }) => useGate4Reactivation("ven-alpha", panelOpen),
+      { initialProps: { panelOpen: false } },
+    );
+
+    // No refetch on mount (panel was not open and didn't open).
+    expect(mockRefetch).not.toHaveBeenCalled();
+
+    // Transition: false → true (admin opens the panel).
+    await act(async () => {
+      rerender({ panelOpen: true });
+    });
+
+    // The useEffect must have fired refetch() exactly once for this transition.
+    expect(mockRefetch).toHaveBeenCalledOnce();
+  });
 });
 
