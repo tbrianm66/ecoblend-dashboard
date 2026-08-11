@@ -15,6 +15,7 @@
 import { describe, it, expect } from "vitest";
 import {
   showResetErrorToast,
+  showResetToast,
   showBatchErrorToast,
   showToggleToast,
   showBatchToast,
@@ -315,6 +316,96 @@ describe("showBatchToast", () => {
     expect(toast.calls.warning).toHaveLength(1);
     expect(toast.calls.warning[0]).toContain("Venture Alpha");
     expect(toast.calls.warning[0]).toContain("Venture Beta");
+  });
+});
+
+// ── showResetToast ────────────────────────────────────────────────────────────
+// Confirms the "Reset to global defaults" success/warning toast correctly names
+// the venture that was reset (snapshot) and detects drift when the selector
+// changed between click and server response.
+
+describe("showResetToast", () => {
+  it("fires toast.success when snapshotVId matches currentVId (no drift)", () => {
+    const toast = makeToast();
+    showResetToast(toast, "ven-alpha", "Venture Alpha", "ven-alpha", "Venture Alpha");
+
+    expect(toast.calls.success).toHaveLength(1);
+    expect(toast.calls.warning).toHaveLength(0);
+    expect(toast.calls.error).toHaveLength(0);
+  });
+
+  it("success message names the snapshot venture", () => {
+    const toast = makeToast();
+    showResetToast(toast, "ven-alpha", "Venture Alpha", "ven-alpha", "Venture Alpha");
+
+    expect(toast.calls.success[0]).toContain("Venture Alpha");
+  });
+
+  it("success message mentions resetting to global defaults", () => {
+    const toast = makeToast();
+    showResetToast(toast, "ven-alpha", "Venture Alpha", "ven-alpha", "Venture Alpha");
+
+    expect(toast.calls.success[0]).toContain("global defaults");
+  });
+
+  it("fires toast.success with 'all ventures (global)' when both VIds are null (no drift)", () => {
+    const toast = makeToast();
+    showResetToast(toast, null, undefined, null, undefined);
+
+    expect(toast.calls.success).toHaveLength(1);
+    expect(toast.calls.success[0]).toContain("all ventures (global)");
+    expect(toast.calls.warning).toHaveLength(0);
+    expect(toast.calls.error).toHaveLength(0);
+  });
+
+  it("fires toast.warning when snapshotVId differs from currentVId (drift)", () => {
+    const toast = makeToast();
+    showResetToast(toast, "ven-beta", "Venture Beta", "ven-alpha", "Venture Alpha");
+
+    expect(toast.calls.warning).toHaveLength(1);
+    expect(toast.calls.success).toHaveLength(0);
+    expect(toast.calls.error).toHaveLength(0);
+  });
+
+  it("drift warning message names the snapshot venture (where reset landed)", () => {
+    const toast = makeToast();
+    showResetToast(toast, "ven-beta", "Venture Beta", "ven-alpha", "Venture Alpha");
+
+    expect(toast.calls.warning[0]).toContain("Venture Alpha");
+  });
+
+  it("drift warning message names the current venture (where admin is now looking)", () => {
+    const toast = makeToast();
+    showResetToast(toast, "ven-beta", "Venture Beta", "ven-alpha", "Venture Alpha");
+
+    expect(toast.calls.warning[0]).toContain("Venture Beta");
+  });
+
+  it("falls back to snapshotVId when snapshotVName is undefined (drift path)", () => {
+    const toast = makeToast();
+    showResetToast(toast, "ven-beta", "Venture Beta", "ven-alpha", undefined);
+
+    // The raw ID must appear in the warning since no name was available.
+    expect(toast.calls.warning[0]).toContain("ven-alpha");
+  });
+
+  it("fires toast.warning when snapshot was global but current is a venture (drift)", () => {
+    const toast = makeToast();
+    showResetToast(toast, "ven-beta", "Venture Beta", null, undefined);
+
+    expect(toast.calls.warning).toHaveLength(1);
+    expect(toast.calls.warning[0]).toContain("all ventures (global)");
+    expect(toast.calls.warning[0]).toContain("Venture Beta");
+  });
+
+  it("does not call toast.error in either the success or drift path", () => {
+    const toastSuccess = makeToast();
+    showResetToast(toastSuccess, "ven-alpha", "Venture Alpha", "ven-alpha", "Venture Alpha");
+    expect(toastSuccess.calls.error).toHaveLength(0);
+
+    const toastDrift = makeToast();
+    showResetToast(toastDrift, "ven-beta", "Venture Beta", "ven-alpha", "Venture Alpha");
+    expect(toastDrift.calls.error).toHaveLength(0);
   });
 });
 
