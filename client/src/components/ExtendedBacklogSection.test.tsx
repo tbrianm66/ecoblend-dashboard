@@ -951,4 +951,217 @@ describe("toggle in ReactivationPanel → header badge in ExtendedBacklogSection
       expect(screen.getByLabelText("Enabled by a global rule").textContent).toBe("GLOBAL");
     });
   });
+
+  // ── section stays open after a group is reactivated mid-session (Task #134) ─
+  /**
+   * Task #134
+   *
+   * ExtendedBacklogSection initialises its `open` flag once at mount from
+   * `hasActiveItem`.  The tests below verify that toggling groups in
+   * ReactivationPanel does NOT accidentally collapse an already-open section.
+   *
+   * The primary risk being guarded against:
+   *   A future refactor passes new props/state in a way that triggers a
+   *   component remount or resets the `open` local state, which would collapse
+   *   the section and force the admin to re-expand it to see the group they
+   *   just reactivated.
+   *
+   * TestHarness (defined above) already pre-seeds TARGET_GROUP as activated so
+   * `hasActiveItem` is true at mount and the section opens immediately.
+   */
+  describe("section stays open after a group is reactivated mid-session (Task #134)", () => {
+    it("section remains open after reactivating a second group that was previously OFF", () => {
+      // Start: TARGET_GROUP activated → hasActiveItem=true → section opens.
+      // All other groups are OFF and render their locked rows inside {open && ...}.
+      renderInRouter(React.createElement(TestHarness, { ventureId: null }));
+
+      // Section is open — OFF group rows are rendered.
+      const offRowsBefore = screen.getAllByLabelText("Module disabled");
+      const countBefore = offRowsBefore.length;
+      expect(countBefore).toBeGreaterThan(0);
+
+      // Reactivate a second group (currently OFF) via the panel.
+      // "discovery" is one of the OFF groups; its toggle fires reactivate().
+      const SECOND_GROUP = "discovery";
+      fireEvent.click(screen.getByTestId(`toggle-${SECOND_GROUP}`));
+
+      // The section must still be open — {open && ...} content is still rendered.
+      // SECOND_GROUP is now activated → it moves from a locked OFF row to a
+      // NavGroupSection header, so the OFF label count drops by exactly 1.
+      const offRowsAfter = screen.getAllByLabelText("Module disabled");
+      expect(offRowsAfter.length).toBe(countBefore - 1);
+
+      // The section header button is still present, confirming the section exists.
+      const allButtons = document.querySelectorAll("button");
+      const sectionHeader = Array.from(allButtons).find(btn =>
+        btn.textContent?.includes("Launch Phase"),
+      );
+      expect(sectionHeader).toBeDefined();
+    });
+
+    it("section remains open after TARGET_GROUP is deactivated then reactivated", () => {
+      // Start: TARGET_GROUP activated, section open.
+      renderInRouter(React.createElement(TestHarness, { ventureId: null }));
+
+      // Section is open — confirm by finding OFF group rows inside {open && ...}.
+      expect(screen.getAllByLabelText("Module disabled").length).toBeGreaterThan(0);
+
+      const btn = screen.getByTestId(`toggle-${TARGET_GROUP}`);
+
+      // Deactivate (ON → OFF): section must stay open.
+      fireEvent.click(btn);
+      // TARGET_GROUP is now a locked OFF row — one more "Module disabled" label exists.
+      expect(screen.getAllByLabelText("Module disabled").length).toBeGreaterThan(0);
+
+      // Reactivate (OFF → ON): section must still stay open.
+      fireEvent.click(btn);
+      // TARGET_GROUP is active again — OFF label count back to the pre-deactivation level.
+      expect(screen.getAllByLabelText("Module disabled").length).toBeGreaterThan(0);
+    });
+
+    it("section remains open across multiple rapid toggle cycles", () => {
+      // Stress-test: four full toggle round-trips on TARGET_GROUP.
+      // After every click the {open && ...} content must still be rendered.
+      renderInRouter(React.createElement(TestHarness, { ventureId: null }));
+
+      const btn = screen.getByTestId(`toggle-${TARGET_GROUP}`);
+
+      for (let i = 0; i < 4; i++) {
+        fireEvent.click(btn);
+        // Regardless of the current activation state, other OFF groups
+        // (or TARGET_GROUP itself when deactivated) always produce at least
+        // one "Module disabled" label, confirming the section is still open.
+        expect(screen.getAllByLabelText("Module disabled").length).toBeGreaterThan(0);
+      }
+    });
+  });
+
+  // ── supplementary: collapsed-start edge case ──────────────────────────────
+  /**
+   * Documents a known limitation that is separate from the above:
+   *
+   * If the section starts COLLAPSED at mount (all groups OFF, no active location)
+   * and an admin reactivates a group via the panel, the section does NOT
+   * auto-expand.  The admin must manually click the section header.
+   *
+   * This is distinct from Task #134's concern (open section staying open).
+   * It is captured here so the behaviour is locked in and a future fix
+   * (e.g. a useEffect that calls setOpen(true) on first activation) will
+   * cause a deliberate test update rather than a silent regression.
+   */
+  describe("supplementary: section stays collapsed when reactivation starts from a fully-closed state", () => {
+    /**
+     * A harness where ALL groups begin OFF so the section starts collapsed.
+     */
+    function AllOffHarness() {
+      const [rows, setRows]           = useState<ReactivationRow[]>([]);
+      const [activated, setActivated] = useState<Set<string>>(new Set());
+
+      const isActivated = useCallback((id: string) => activated.has(id), [activated]);
+
+      const reactivate = useCallback((groupId: string) => {
+        setActivated(prev => new Set([...prev, groupId]));
+        setRows(prev => {
+          const filtered = prev.filter(
+            r => !(r.groupId === groupId && r.ventureId === "__global__"),
+          );
+          return [
+            ...filtered,
+            { groupId, ventureId: "__global__", active: true, toggledBy: null, toggledAt: new Date() },
+          ];
+        });
+      }, []);
+
+      const deactivate = useCallback((groupId: string) => {
+        setActivated(prev => { const s = new Set(prev); s.delete(groupId); return s; });
+        setRows(prev => {
+          const filtered = prev.filter(
+            r => !(r.groupId === groupId && r.ventureId === "__global__"),
+          );
+          return [
+            ...filtered,
+            { groupId, ventureId: "__global__", active: false, toggledBy: null, toggledAt: new Date() },
+          ];
+        });
+      }, []);
+
+      const noop = useCallback(() => {}, []);
+
+      return React.createElement(
+        React.Fragment,
+        null,
+        React.createElement(ReactivationPanel, {
+          onClose:               noop,
+          ventureId:             null,
+          ventureName:           undefined,
+          ventureColor:          undefined,
+          venturesLoading:       false,
+          rows,
+          isLoading:             false,
+          isError:               false,
+          isActivated,
+          reactivate,
+          deactivate,
+          reactivateAll:         noop,
+          deactivateAll:         noop,
+          resetToGlobalDefaults: noop,
+        }),
+        React.createElement(ExtendedBacklogSection, {
+          // "/nonexistent" matches no item in any group → hasActiveItem=false at
+          // mount → open initialises to false regardless of future activations.
+          location:    "/nonexistent",
+          isActivated,
+          rows,
+          isLoading:   false,
+          isError:     false,
+          ventureId:   null,
+        }),
+      );
+    }
+
+    it("section content is not rendered when all groups start OFF", () => {
+      renderInRouter(React.createElement(AllOffHarness, null));
+
+      // All group rows are inside {open && ...}.  When open=false, nothing renders.
+      expect(screen.queryByLabelText("Module disabled")).toBeNull();
+
+      // Section header button is always rendered (outside the {open && ...} block).
+      const allButtons = document.querySelectorAll("button");
+      const sectionHeader = Array.from(allButtons).find(btn =>
+        btn.textContent?.includes("Launch Phase"),
+      );
+      expect(sectionHeader).toBeDefined();
+    });
+
+    it("section stays collapsed after reactivate() — admin must manually open it (known limitation)", () => {
+      // open is set via useState(hasActiveItem) — React evaluates the initial value
+      // only once.  reactivate() never calls setOpen, so open remains false.
+      //
+      // If this test starts FAILING it means a useEffect was added that calls
+      // setOpen(true) on first activation — that is an IMPROVEMENT.  Update the
+      // assertion to expect open=true and delete this known-limitation comment.
+      renderInRouter(React.createElement(AllOffHarness, null));
+
+      expect(screen.queryByLabelText("Module disabled")).toBeNull();
+
+      // Reactivate via the panel — all groups start OFF so this calls reactivate().
+      fireEvent.click(screen.getByTestId(`toggle-${TARGET_GROUP}`));
+
+      // Section body is still not rendered ({open && ...} guard is still false).
+      expect(screen.queryByLabelText("Module disabled")).toBeNull();
+
+      // Section header is still present — the section exists, merely collapsed.
+      const allButtons = document.querySelectorAll("button");
+      const sectionHeader = Array.from(allButtons).find(btn =>
+        btn.textContent?.includes("Launch Phase"),
+      );
+      expect(sectionHeader).toBeDefined();
+
+      // Workaround: after the admin manually clicks the header the content renders.
+      // The reactivated group appears via NavGroupSection with a GLOBAL badge,
+      // proving it IS active — the only issue is the section didn't auto-expand.
+      fireEvent.click(sectionHeader!);
+      expect(screen.getByLabelText("Enabled by a global rule").textContent).toBe("GLOBAL");
+    });
+  });
 });
