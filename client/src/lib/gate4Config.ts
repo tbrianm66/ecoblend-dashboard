@@ -414,6 +414,8 @@ export function useGate4Reactivation(ventureId: string | null, panelOpen = false
       onError?: (skippedGroups: string[], rawMessage: string) => void,
     ) => {
       const snapshotVentureId = ventureIdRef.current;
+      // Snapshot pre-batch state so we can roll back if the server rejects the write.
+      const previousActivated = new Set(activated);
       const all = new Set([...GATE4_BACKLOG_GROUP_IDS]);
       setActivated(all);
       writeLsCache(all);
@@ -461,6 +463,14 @@ export function useGate4Reactivation(ventureId: string | null, panelOpen = false
             onSuccess?.(snapshotVentureId);
           },
           onError: (err) => {
+            // Roll back optimistic activated state and clear the optimistic row
+            // overlay so badges revert to their pre-batch values immediately,
+            // without waiting for the next server refetch (which may be up to
+            // 10 s away if the admin does not close and re-open the panel).
+            setActivated(previousActivated);
+            writeLsCache(previousActivated);
+            setOptimisticRows(new Map());
+
             const rawMessage = err instanceof Error ? err.message : String(err);
             // Concurrent-modification rejection: surface it distinctly so the caller
             // can show a "another admin changed these settings — please refresh" toast
@@ -479,7 +489,7 @@ export function useGate4Reactivation(ventureId: string | null, panelOpen = false
         },
       );
     },
-    [setBatchMutation, utils, serverRows],
+    [activated, setBatchMutation, utils, serverRows],
   );
 
   const deactivateAll = useCallback(
@@ -488,6 +498,8 @@ export function useGate4Reactivation(ventureId: string | null, panelOpen = false
       onError?: (skippedGroups: string[], rawMessage: string) => void,
     ) => {
       const snapshotVentureId = ventureIdRef.current;
+      // Snapshot pre-batch state so we can roll back if the server rejects the write.
+      const previousActivated = new Set(activated);
       const empty = new Set<string>();
       setActivated(empty);
       writeLsCache(empty);
@@ -532,6 +544,14 @@ export function useGate4Reactivation(ventureId: string | null, panelOpen = false
             onSuccess?.(snapshotVentureId);
           },
           onError: (err) => {
+            // Roll back optimistic activated state and clear the optimistic row
+            // overlay so badges revert to their pre-batch values immediately,
+            // without waiting for the next server refetch (which may be up to
+            // 10 s away if the admin does not close and re-open the panel).
+            setActivated(previousActivated);
+            writeLsCache(previousActivated);
+            setOptimisticRows(new Map());
+
             const rawMessage = err instanceof Error ? err.message : String(err);
             // Concurrent-modification rejection — same pattern as reactivateAll.
             if (rawMessage.includes("Concurrent modification detected")) {
@@ -548,7 +568,7 @@ export function useGate4Reactivation(ventureId: string | null, panelOpen = false
         },
       );
     },
-    [setBatchMutation, utils, serverRows],
+    [activated, setBatchMutation, utils, serverRows],
   );
 
   // tRPC mutation for resetting venture-specific overrides.

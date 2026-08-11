@@ -479,6 +479,90 @@ describe("useGate4Reactivation — live source-badge update after toggle", () =>
 
     expect(receivedSkipped).toHaveLength(0);
   });
+
+  // ── mid-flight batch failures: activated set reverts ────────────────────────
+  describe("mid-flight batch failures — activated set and optimisticRows revert", () => {
+    // Helper: returns a batchMutate that immediately calls onError.
+    function makeBatchMutateError(message: string) {
+      return vi.fn(
+        (_input: unknown, options?: { onError?: (err: Error) => void }) => {
+          options?.onError?.(new Error(message));
+        },
+      );
+    }
+
+    it("reactivateAll() reverts activated set to pre-batch value when the server rejects the write", async () => {
+      // Start: only GROUP is active (seeded from the globalRow in beforeEach)
+      currentRows = [globalRow(GROUP, true)];
+
+      vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+        { mutate: makeBatchMutateError("DB unavailable") } as any,
+      );
+
+      const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+      // Confirm the hook seeded from server rows: GROUP should be activated
+      // (the effect runs synchronously in happy-dom renderHook).
+      // We do not assert the exact pre-batch set here because the seed depends on
+      // rowsToActivatedSet — instead we assert the revert restores it correctly.
+      const preActivated = new Set(result.current.activatedGroups);
+
+      await act(async () => {
+        result.current.reactivateAll();
+      });
+
+      // After error: activated set must equal the pre-batch snapshot.
+      expect(result.current.activatedGroups).toEqual(preActivated);
+    });
+
+    it("deactivateAll() reverts activated set to pre-batch value when the server rejects the write", async () => {
+      // Start: several groups active.
+      currentRows = [
+        globalRow(GROUP, true),
+        globalRow("proposition", true),
+        globalRow("rnd", true),
+      ];
+
+      vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+        { mutate: makeBatchMutateError("DB unavailable") } as any,
+      );
+
+      const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+      const preActivated = new Set(result.current.activatedGroups);
+
+      await act(async () => {
+        result.current.deactivateAll();
+      });
+
+      // After error: activated set must equal the pre-batch snapshot.
+      expect(result.current.activatedGroups).toEqual(preActivated);
+    });
+
+    it("reactivateAll() clears optimisticRows on error so rows reverts to the server snapshot without a refetch", async () => {
+      // Start: no rows at all — every group starts DEFAULT.
+      currentRows = [];
+
+      vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+        { mutate: makeBatchMutateError("DB unavailable") } as any,
+      );
+
+      const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+      // Before the batch: rows is empty (no server rows, no optimistic rows).
+      expect(result.current.rows).toHaveLength(0);
+
+      await act(async () => {
+        result.current.reactivateAll();
+      });
+
+      // After error: optimisticRows must be cleared so `rows` reverts to the
+      // server data (empty in this case) without requiring a server refetch.
+      // If optimisticRows were NOT cleared the synthetic batch rows would still
+      // be present, making rows.length === 15.
+      expect(result.current.rows).toHaveLength(0);
+    });
+  });
 });
 
 // ── Import the real production reset button ───────────────────────────────────
