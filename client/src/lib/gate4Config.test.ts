@@ -1392,6 +1392,75 @@ describe("Reset button — re-enables correctly when reset fails mid-flight (hoo
     ).toBeGreaterThan(0);
   });
 
+  // ── Zero-row delete: onSuccess must NOT fire when DB deletes nothing ─────────
+  //
+  // The server returns { deletedCount: 0 } when the ventureId matched no rows.
+  // The hook must treat this as a no-op: skip both invalidate() and onSuccess so
+  // the admin never sees a false "reset succeeded" toast for a non-existent venture.
+  it("onSuccess does NOT fire when the server returns deletedCount=0 (zero-row delete is a no-op)", async () => {
+    const onSuccess = vi.fn();
+
+    mockResetMutate.mockImplementation(
+      (_input: unknown, options?: { onSuccess?: (data: { deletedCount: number }) => void }) => {
+        options?.onSuccess?.({ deletedCount: 0 });
+      },
+    );
+
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    await act(async () => {
+      result.current.resetToGlobalDefaults(onSuccess);
+    });
+
+    // The hook must suppress the callback — zero rows deleted means nothing changed.
+    expect(onSuccess).not.toHaveBeenCalled();
+  });
+
+  // ── Zero-row delete: cache invalidation must NOT fire ─────────────────────────
+  //
+  // Calling invalidate() with no real change would cause a spurious refetch and
+  // could momentarily clear the admin's view of existing overrides.
+  it("invalidate() is NOT called when the server returns deletedCount=0 (zero-row delete is a no-op)", async () => {
+    mockResetMutate.mockImplementation(
+      (_input: unknown, options?: { onSuccess?: (data: { deletedCount: number }) => void }) => {
+        options?.onSuccess?.({ deletedCount: 0 });
+      },
+    );
+
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    await act(async () => {
+      result.current.resetToGlobalDefaults();
+    });
+
+    // A zero-row result is a no-op — invalidate() must never fire.
+    expect(mockInvalidate).not.toHaveBeenCalled();
+  });
+
+  // ── Positive regression: onSuccess and invalidate() DO fire when rows are deleted ─
+  //
+  // Guard against over-suppression: when deletedCount > 0 the normal success path
+  // must still execute — both invalidate() and onSuccess must be called.
+  it("onSuccess and invalidate() both fire normally when the server returns deletedCount > 0", async () => {
+    const onSuccess = vi.fn();
+
+    mockResetMutate.mockImplementation(
+      (_input: unknown, options?: { onSuccess?: (data: { deletedCount: number }) => void }) => {
+        options?.onSuccess?.({ deletedCount: 3 });
+      },
+    );
+
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    await act(async () => {
+      result.current.resetToGlobalDefaults(onSuccess);
+    });
+
+    // The normal success path fires — rows were actually deleted.
+    expect(onSuccess).toHaveBeenCalledOnce();
+    expect(mockInvalidate).toHaveBeenCalledOnce();
+  });
+
   // ── Global scope guard: mutation must never fire when ventureId is null ──────
   //
   // resetToGlobalDefaults() has an early-return guard: `if (!snapshotVentureId) return`.

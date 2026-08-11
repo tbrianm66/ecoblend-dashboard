@@ -574,7 +574,13 @@ export function useGate4Reactivation(ventureId: string | null, panelOpen = false
       resetMutation.mutate(
         { ventureId: snapshotVentureId },
         {
-          onSuccess: () => {
+          onSuccess: (data) => {
+            // Zero-row delete: the ventureId matched no rows in the DB.
+            // The delete succeeded without error but removed nothing — treat this as
+            // a no-op so the admin does not receive a false "reset succeeded" toast
+            // and the cache is not spuriously invalidated.
+            if ((data as { deletedCount?: number }).deletedCount === 0) return;
+
             // After deletion, invalidate so the query re-fetches the global defaults.
             utils.admin.getModuleReactivations.invalidate();
             onSuccess?.(snapshotVentureId);
