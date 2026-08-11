@@ -2208,3 +2208,311 @@ describe("useGate4Reactivation — polling stops when panelOpen transitions true
   });
 });
 
+// ── Task 112: per-row toggle badge rollback on server rejection ───────────────
+//
+// persist() in useGate4Reactivation performs two optimistic writes when the
+// admin clicks a toggle:
+//   1. setActivated(next)  — updates the activated Set so isActivated() flips
+//   2. setOptimisticRows() — injects a synthetic row so the badge flips from
+//      DEFAULT / GLOBAL / VENTURE to the target state immediately
+//
+// When the server rejects the write, the onError handler in persist() must:
+//   a. Roll back `activated` to the pre-click value (previous)
+//   b. Remove the synthetic row from optimisticRows
+//   c. Call the caller-supplied onError callback with the groupId + rawMessage
+//
+// These tests confirm all three invariants so a future refactor of persist()
+// cannot silently break the rollback without failing the suite.
+describe("useGate4Reactivation — optimistic rollback on server rejection", () => {
+  const GROUP   = "discovery";
+  const VENTURE = "ven-beta";
+
+  let currentRows: ReactivationRow[];
+  let mockInvalidate: ReturnType<typeof vi.fn>;
+
+  // Builds a useMutation mock whose mutate() immediately calls onError with the
+  // supplied Error, simulating a synchronous server rejection.
+  function makeErrorMutate(err: Error) {
+    return vi.fn(
+      (_input: unknown, options?: { onError?: (err: Error) => void }) => {
+        options?.onError?.(err);
+      },
+    );
+  }
+
+  beforeEach(() => {
+    localStorage.clear();
+    currentRows = [];
+
+    mockInvalidate = vi.fn();
+
+    vi.mocked(trpc.admin.getModuleReactivations.useQuery).mockImplementation(() => ({
+      data: currentRows,
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    }));
+
+    // Default batch/reset mocks — not exercised in this suite but the hook
+    // calls useMutation() for each on every render, so they must be provided.
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: vi.fn() } as any,
+    );
+    vi.mocked(trpc.admin.resetVentureModuleReactivations.useMutation).mockReturnValue(
+      { mutate: vi.fn() } as any,
+    );
+
+    vi.mocked(trpc.useUtils).mockReturnValue({
+      admin: { getModuleReactivations: { invalidate: mockInvalidate } },
+    } as any);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // ── 1. activated Set reverts after reactivate() is rejected ──────────────────
+  //
+  // Before the click: GROUP is absent from activated (server returned no rows).
+  // After the optimistic write:  activated = { GROUP }  →  isActivated = true.
+  // After the server rejection:  activated reverts to {} →  isActivated = false.
+  //
+  // This test FAILS if the setActivated(previous) call is removed from persist()'s
+  // onError handler.
+  it("reactivate(): activated Set reverts to empty when the server rejects the write", async () => {
+    vi.mocked(trpc.admin.setModuleReactivation.useMutation).mockReturnValue(
+      { mutate: makeErrorMutate(new Error("Permission denied")) } as any,
+    );
+
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    // Baseline: GROUP is not active (no server rows).
+    expect(result.current.isActivated(GROUP)).toBe(false);
+
+    await act(async () => {
+      result.current.reactivate(GROUP);
+    });
+
+    // After the synchronous onError rollback the activated Set must be empty again.
+    expect(result.current.isActivated(GROUP)).toBe(false);
+  });
+
+  // ── 2. activated Set reverts after deactivate() is rejected ──────────────────
+  //
+  // Before the click: GROUP is active (global row present, active=true).
+  // After the optimistic write:  activated = {}         →  isActivated = false.
+  // After the server rejection:  activated reverts to {GROUP} → isActivated = true.
+  //
+  // This test FAILS if the setActivated(previous) call is removed from persist()'s
+  // onError handler.
+  it("deactivate(): activated Set reverts to pre-click value when the server rejects the write", async () => {
+    // Seed a global row so GROUP starts active.
+    currentRows = [globalRow(GROUP)];
+
+    vi.mocked(trpc.admin.getModuleReactivations.useQuery).mockImplementation(() => ({
+      data: currentRows,
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    }));
+
+    vi.mocked(trpc.admin.setModuleReactivation.useMutation).mockReturnValue(
+      { mutate: makeErrorMutate(new Error("DB write failed")) } as any,
+    );
+
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    // Baseline: GROUP is active because the global row says so.
+    expect(result.current.isActivated(GROUP)).toBe(true);
+
+    await act(async () => {
+      result.current.deactivate(GROUP);
+    });
+
+    // After the synchronous onError rollback the group must still be active.
+    expect(result.current.isActivated(GROUP)).toBe(true);
+  });
+
+  // ── 3. optimisticRows overlay is cleared after reactivate() is rejected ───────
+  //
+  // persist() injects a synthetic row into optimisticRows so the badge flips
+  // immediately.  On error the row must be removed so the rendered `rows` array
+  // reverts to the server-authoritative set (no extra optimistic entry).
+  //
+  // This test FAILS if the setOptimisticRows(m.delete(...)) call is removed from
+  // persist()'s onError handler.
+  it("reactivate(): rows reverts to server rows only (no leftover optimistic entry) after rejection", async () => {
+    // Server has one unrelated row so we can distinguish it from an optimistic entry.
+    const OTHER_GROUP = "scoring";
+    currentRows = [globalRow(OTHER_GROUP)];
+
+    vi.mocked(trpc.admin.getModuleReactivations.useQuery).mockImplementation(() => ({
+      data: currentRows,
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    }));
+
+    vi.mocked(trpc.admin.setModuleReactivation.useMutation).mockReturnValue(
+      { mutate: makeErrorMutate(new Error("Rejected")) } as any,
+    );
+
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    // Baseline: only the server row for OTHER_GROUP.
+    expect(result.current.rows).toHaveLength(1);
+    expect(result.current.rows[0].groupId).toBe(OTHER_GROUP);
+
+    await act(async () => {
+      result.current.reactivate(GROUP);
+    });
+
+    // After rollback the optimistic row for GROUP must have been removed.
+    // Only the original server row should remain.
+    expect(result.current.rows).toHaveLength(1);
+    expect(result.current.rows.find(r => r.groupId === GROUP)).toBeUndefined();
+  });
+
+  // ── 4. optimisticRows overlay is cleared after deactivate() is rejected ───────
+  //
+  // Same invariant as test 3 but exercising the deactivate() code path, which
+  // calls persist() with active=false.
+  it("deactivate(): rows reverts to server rows only (no leftover optimistic entry) after rejection", async () => {
+    currentRows = [globalRow(GROUP)];
+
+    vi.mocked(trpc.admin.getModuleReactivations.useQuery).mockImplementation(() => ({
+      data: currentRows,
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    }));
+
+    vi.mocked(trpc.admin.setModuleReactivation.useMutation).mockReturnValue(
+      { mutate: makeErrorMutate(new Error("Rejected")) } as any,
+    );
+
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    // Baseline: one server row for GROUP.
+    expect(result.current.rows).toHaveLength(1);
+
+    await act(async () => {
+      result.current.deactivate(GROUP);
+    });
+
+    // After rollback only the original server row remains — no leftover row.
+    expect(result.current.rows).toHaveLength(1);
+    expect(result.current.rows[0].groupId).toBe(GROUP);
+    expect(result.current.rows[0].ventureId).toBe("__global__");
+  });
+
+  // ── 5. onError callback receives the correct groupId ─────────────────────────
+  //
+  // persist() calls onError?.(groupId, rawMessage).  The groupId must match the
+  // group the admin toggled — not some default or empty string.
+  //
+  // This test FAILS if the onError?.(groupId, ...) call is removed from persist().
+  it("reactivate(): onError callback receives the correct groupId", async () => {
+    vi.mocked(trpc.admin.setModuleReactivation.useMutation).mockReturnValue(
+      { mutate: makeErrorMutate(new Error("Network error")) } as any,
+    );
+
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    let capturedGroupId = "";
+
+    await act(async () => {
+      result.current.reactivate(GROUP, undefined, (gid, _msg) => {
+        capturedGroupId = gid;
+      });
+    });
+
+    expect(capturedGroupId).toBe(GROUP);
+  });
+
+  // ── 6. onError callback receives the raw server error message ─────────────────
+  //
+  // The raw message (err.message) is forwarded verbatim so that the caller's
+  // toast can display the exact server reason without transformation.
+  //
+  // This test FAILS if onError receives a transformed / truncated string instead
+  // of the original Error.message.
+  it("reactivate(): onError callback receives the raw server error message", async () => {
+    const serverErrorMessage = "Foreign key constraint violated: ventures.id";
+
+    vi.mocked(trpc.admin.setModuleReactivation.useMutation).mockReturnValue(
+      { mutate: makeErrorMutate(new Error(serverErrorMessage)) } as any,
+    );
+
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    let capturedMessage = "";
+
+    await act(async () => {
+      result.current.reactivate(GROUP, undefined, (_gid, rawMessage) => {
+        capturedMessage = rawMessage;
+      });
+    });
+
+    expect(capturedMessage).toBe(serverErrorMessage);
+  });
+
+  // ── 7. onError callback receives the correct groupId for deactivate() ─────────
+  it("deactivate(): onError callback receives the correct groupId", async () => {
+    currentRows = [globalRow(GROUP)];
+
+    vi.mocked(trpc.admin.getModuleReactivations.useQuery).mockImplementation(() => ({
+      data: currentRows,
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    }));
+
+    vi.mocked(trpc.admin.setModuleReactivation.useMutation).mockReturnValue(
+      { mutate: makeErrorMutate(new Error("Timeout")) } as any,
+    );
+
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    let capturedGroupId = "";
+
+    await act(async () => {
+      result.current.deactivate(GROUP, undefined, (gid, _msg) => {
+        capturedGroupId = gid;
+      });
+    });
+
+    expect(capturedGroupId).toBe(GROUP);
+  });
+
+  // ── 8. Non-Error rejection: rawMessage is stringified correctly ───────────────
+  //
+  // The onError handler uses `err instanceof Error ? err.message : String(err)`.
+  // This test confirms that non-Error throw values (plain objects, strings, etc.)
+  // are still surfaced as a string rather than "[object Object]" silently.
+  it("reactivate(): onError receives a non-empty string even when the rejection is a plain string", async () => {
+    const plainStringError = "UNAUTHORIZED";
+
+    vi.mocked(trpc.admin.setModuleReactivation.useMutation).mockReturnValue({
+      mutate: vi.fn(
+        (_input: unknown, options?: { onError?: (err: unknown) => void }) => {
+          // Throw a plain string — not an Error instance.
+          options?.onError?.(plainStringError);
+        },
+      ),
+    } as any);
+
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    let capturedMessage = "";
+
+    await act(async () => {
+      result.current.reactivate(GROUP, undefined, (_gid, rawMessage) => {
+        capturedMessage = rawMessage;
+      });
+    });
+
+    expect(capturedMessage).toBe(plainStringError);
+  });
+});
+
