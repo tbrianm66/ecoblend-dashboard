@@ -742,6 +742,108 @@ describe("Gate 4 — load-guarding (actionsDisabled guard) prevents raw-ID fallb
     expect(call.message).toContain("all ventures (global)");
   });
 
+  // ── Full loading → resolved sequence for null/global scope ──────────────────
+
+  it("global scope (null ventureId): blocked while loading, fires after load, showToggleToast shows 'all ventures (global)'", () => {
+    // Walks the full loading→resolved transition for the null/global path.
+    //
+    // Phase 1: venturesLoading=true, ventureId=null — guard blocks the click
+    //   even though ventureId is null (the loading flag alone is enough to block).
+    let fired = false;
+    let snapId: string | null = "SENTINEL" as any;
+    let snapName: string | undefined = "SENTINEL";
+
+    const blockedDuringLoad = simulateToggleClick(
+      true,       // venturesLoading — still in-flight
+      null,       // ventureId — global scope
+      undefined,  // ventureName — undefined for global scope
+      (id, name) => { fired = true; snapId = id; snapName = name; },
+    );
+    expect(blockedDuringLoad).toBe(false);
+    expect(fired).toBe(false);
+
+    // Phase 2: venturesLoading=false, ventureId=null — global scope is now
+    //   fully resolved. The guard must allow the click because null ventureId
+    //   means there is no raw ID that could leak into the toast.
+    const ranAfterLoad = simulateToggleClick(
+      false,      // venturesLoading — query complete
+      null,       // ventureId — global scope
+      undefined,  // ventureName — always undefined for global scope
+      (id, name) => { fired = true; snapId = id; snapName = name; },
+    );
+    expect(ranAfterLoad).toBe(true);
+    expect(fired).toBe(true);
+    expect(snapId).toBeNull();       // global scope
+    expect(snapName).toBeUndefined(); // no name for global scope — safe
+
+    // Phase 3: the captured snapshot (null, undefined) flows into showToggleToast.
+    //   Because snapshotVId is null the helper MUST produce "all ventures (global)"
+    //   and must NOT fall back to a raw ID (there is none).
+    showToggleToast(
+      toast,
+      /* currentVId   */ null,
+      /* currentVName */ undefined,
+      /* label        */ "Governance",
+      /* activated    */ true,
+      snapId,
+      snapName,
+    );
+
+    const call = toast.lastCall()!;
+    expect(call.variant).toBe("success");
+    expect(call.message).toContain("all ventures (global)");
+    // Confirm a raw ID string did not slip into the message.
+    expect(call.message).not.toMatch(/null/);
+    expect(call.message).not.toMatch(/undefined/);
+  });
+
+  it("global scope (null ventureId): blocked while loading, fires after load, showBatchToast shows 'all ventures (global)'", () => {
+    // Same full loading→resolved transition exercised for the batch action path.
+    //
+    // Phase 1: venturesLoading=true, ventureId=null — guard blocks the click.
+    let fired = false;
+    let snapId: string | null = "SENTINEL" as any;
+    let snapName: string | undefined = "SENTINEL";
+
+    const blockedDuringLoad = simulateBatchClick(
+      true,       // venturesLoading — still in-flight
+      null,       // ventureId — global scope
+      undefined,  // ventureName — undefined for global scope
+      (id, name) => { fired = true; snapId = id; snapName = name; },
+    );
+    expect(blockedDuringLoad).toBe(false);
+    expect(fired).toBe(false);
+
+    // Phase 2: venturesLoading=false, ventureId=null — guard allows the click.
+    const ranAfterLoad = simulateBatchClick(
+      false,      // venturesLoading — query complete
+      null,       // ventureId — global scope
+      undefined,  // ventureName — always undefined for global scope
+      (id, name) => { fired = true; snapId = id; snapName = name; },
+    );
+    expect(ranAfterLoad).toBe(true);
+    expect(fired).toBe(true);
+    expect(snapId).toBeNull();
+    expect(snapName).toBeUndefined();
+
+    // Phase 3: the captured snapshot (null, undefined) flows into showBatchToast.
+    //   snapshotVId=null → "all ventures (global)" must appear, never a raw ID.
+    showBatchToast(
+      toast,
+      /* currentVId   */ null,
+      /* currentVName */ undefined,
+      /* allActivated */ true,
+      snapId,
+      snapName,
+    );
+
+    const call = toast.lastCall()!;
+    expect(call.variant).toBe("success");
+    expect(call.message).toContain("all ventures (global)");
+    expect(call.message).not.toMatch(/null/);
+    expect(call.message).not.toMatch(/undefined/);
+  });
+
   // ── Reset button load-guard path (buildResetOnSuccess production factory) ────
   //
   // The "Reset to global defaults" button in ReactivationPanel uses a
