@@ -1051,6 +1051,7 @@ export function ExtendedBacklogSection({
                   </span>
                   {groupBadge}
                   <span
+                    aria-label="Module disabled"
                     className="text-xs px-1 py-0.5 rounded font-semibold shrink-0"
                     style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.2)", fontSize: "0.55rem" }}
                   >

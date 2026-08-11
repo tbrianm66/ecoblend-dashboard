@@ -506,8 +506,14 @@ describe("ExtendedBacklogSection — header source badge", () => {
       );
 
       // LOCKED_GROUP is the only OFF group → exactly one OFF label.
-      const offLabels = screen.getAllByText("OFF");
+      // Query by aria-label so the assertion survives visual refactors that
+      // move or hide the text (tooltip, icon replacement, etc.).
+      const offLabels = screen.getAllByLabelText("Module disabled");
       expect(offLabels).toHaveLength(1);
+      // Also confirm the visible "OFF" text is still rendered inside the badge
+      // element, so a refactor that replaces the text with an icon (leaving the
+      // aria-label on an empty element) is still caught.
+      expect(offLabels[0].textContent).toBe("OFF");
     });
 
     it("shows no badge on a locked OFF row while the query is loading (isLoading=true)", () => {
