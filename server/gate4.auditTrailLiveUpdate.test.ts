@@ -727,3 +727,414 @@ describe("audit trail — concurrent toggle scenarios (last write wins, fake-DB 
     expect(audit).toMatch(new RegExp(`^${row.toggledBy!}`));
   });
 });
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SUITE 4 — Mid-toggle venture switch (task #101)
+//
+// Scenario: an admin starts a toggle for venture A, then switches the venture
+// selector to venture B before the server response arrives.  The mutation always
+// completes for the ORIGINAL venture (A) because the ventureId was captured in
+// the mutation closure at dispatch time.  `invalidate()` fires after the write
+// resolves; React Query re-fetches ALL rows.  `buildRowByGroup` is then called
+// with the CURRENT ventureId (B) to build the panel — it must only see venture B
+// rows.  Venture A's audit row must remain accurate, and venture B must be
+// wholly unaffected by the venture-A write.
+//
+// All tests here use the fake-DB layer: the switch is modelled by calling
+// `buildRowByGroup` with different ventureIds after the same DB state, exactly
+// as the component does when the selector value changes between dispatch and
+// the invalidation re-fetch.
+// ══════════════════════════════════════════════════════════════════════════════
+
+const VENTURE_B = "ven-beta";
+
+describe("audit trail — mid-toggle venture switch (task #101)", () => {
+  let db: ReturnType<typeof makeFakeDb>;
+
+  beforeEach(() => { db = makeFakeDb(); });
+
+  // ── R: venture A write completes; panel has already switched to venture B ──
+  //
+  // The mutation closure captured VENTURE_A at dispatch time, so the DB write
+  // goes to the venture-A row.  By the time invalidate() fires, the panel is
+  // showing venture B.  buildRowByGroup(rows, VENTURE_B) must see no venture-A
+  // rows, so venture B's badge stays 'default' and its audit line stays null.
+  it("R: toggle write for venture A does not appear in venture B's audit after the selector switches", async () => {
+    // Precondition: venture B has no rows of its own
+    const toggledAt = new Date("2026-08-05T10:00:00.000Z");
+
+    // Mutation completes — writes to venture A (closure captured VENTURE_A)
+    await db.upsert({ groupId: GROUP, ventureId: VENTURE_A, active: true, toggledBy: ADMIN_1, toggledAt });
+
+    // invalidate() re-fetches all rows (both ventures see the same DB snapshot)
+    const rows = await db.read();
+
+    // Panel is now showing VENTURE_B — buildRowByGroup scopes to venture B
+    const ventureBMap = buildRowByGroup(rows, VENTURE_B);
+    expect(ventureBMap.get(GROUP)).toBeUndefined(); // no venture-B row, no global row
+
+    const { badge: badgeB, audit: auditB } = auditAndBadgeFor(rows, VENTURE_B, GROUP);
+    expect(badgeB).toBe("default");  // venture B is unaffected
+    expect(auditB).toBeNull();
+
+    // Venture A's audit row is still correct — no data was lost
+    const { badge: badgeA, audit: auditA } = auditAndBadgeFor(rows, VENTURE_A, GROUP);
+    expect(badgeA).toBe("venture");
+    expect(auditA).toMatch(new RegExp(`^${ADMIN_1}`));
+  });
+
+  // ── S: venture A write completes; venture B has its own pre-existing row ──
+  //
+  // Venture B already has a row authored by ADMIN_2.  After the mid-switch,
+  // venture B must still show ADMIN_2's audit — not ADMIN_1's — because
+  // buildRowByGroup resolves rows by ventureId key, not by insertion order.
+  it("S: venture B keeps its own audit row intact when venture A is toggled mid-switch", async () => {
+    const dateA = new Date("2026-08-06T09:00:00.000Z");
+    const dateB = new Date("2026-08-06T08:00:00.000Z"); // earlier — B was set before the switch
+
+    // Pre-existing venture-B row
+    await db.upsert({ groupId: GROUP, ventureId: VENTURE_B, active: true, toggledBy: ADMIN_2, toggledAt: dateB });
+
+    // Mutation for venture A completes mid-switch
+    await db.upsert({ groupId: GROUP, ventureId: VENTURE_A, active: true, toggledBy: ADMIN_1, toggledAt: dateA });
+
+    // invalidate() re-fetch
+    const rows = await db.read();
+
+    // Venture B's audit must still show ADMIN_2, not ADMIN_1
+    const { badge: badgeB, audit: auditB } = auditAndBadgeFor(rows, VENTURE_B, GROUP);
+    expect(badgeB).toBe("venture");
+    expect(auditB).toMatch(new RegExp(`^${ADMIN_2}`));
+    expect(auditB).not.toContain(ADMIN_1);
+
+    // Venture A's audit is correctly attributed to ADMIN_1
+    const { badge: badgeA, audit: auditA } = auditAndBadgeFor(rows, VENTURE_A, GROUP);
+    expect(badgeA).toBe("venture");
+    expect(auditA).toMatch(new RegExp(`^${ADMIN_1}`));
+    expect(auditA).not.toContain(ADMIN_2);
+  });
+
+  // ── T: global row exists; venture A write completes; panel switches to venture B ─
+  //
+  // A global default row is present.  The mid-toggle write goes to venture A.
+  // After the switch to venture B, buildRowByGroup(rows, VENTURE_B) sees the
+  // global row (no venture-B override) so badge is 'global' — not 'venture'.
+  // The audit line shows the global admin, NOT ADMIN_1 who toggled venture A.
+  it("T: venture B falls back to global audit after switch when no venture-B override exists", async () => {
+    const globalDate  = new Date("2026-08-07T07:00:00.000Z");
+    const ventureDate = new Date("2026-08-07T09:00:00.000Z");
+
+    // Global default row authored by ADMIN_2
+    await db.upsert({ groupId: GROUP, ventureId: "__global__", active: true, toggledBy: ADMIN_2, toggledAt: globalDate });
+
+    // Mutation for venture A completes
+    await db.upsert({ groupId: GROUP, ventureId: VENTURE_A, active: true, toggledBy: ADMIN_1, toggledAt: ventureDate });
+
+    // invalidate() re-fetch
+    const rows = await db.read();
+
+    // Venture B has no override → falls back to global → badge 'global', audit = ADMIN_2
+    const { badge: badgeB, audit: auditB } = auditAndBadgeFor(rows, VENTURE_B, GROUP);
+    expect(badgeB).toBe("global");
+    expect(auditB).toMatch(new RegExp(`^${ADMIN_2}`));
+    expect(auditB).not.toContain(ADMIN_1);
+
+    // Venture A's row is correct
+    const { badge: badgeA, audit: auditA } = auditAndBadgeFor(rows, VENTURE_A, GROUP);
+    expect(badgeA).toBe("venture");
+    expect(auditA).toMatch(new RegExp(`^${ADMIN_1}`));
+  });
+
+  // ── U: multiple groups — only the toggled group's audit changes in venture A ─
+  //
+  // The toggle fires for a single group (GROUP) in venture A while the panel is
+  // mid-switch.  After the switch to venture B, a SECOND group ("operations")
+  // must remain at 'default' / null audit for venture B, confirming the
+  // per-group scoping is not corrupted by the cross-venture write.
+  it("U: only the targeted group in venture A changes; other groups in venture B are unaffected", async () => {
+    const OTHER = "operations";
+    const toggledAt = new Date("2026-08-08T11:00:00.000Z");
+
+    // Toggle for GROUP in venture A only
+    await db.upsert({ groupId: GROUP, ventureId: VENTURE_A, active: true, toggledBy: ADMIN_1, toggledAt });
+
+    const rows = await db.read();
+
+    // Venture B — GROUP has no row (no global either) → default, no audit
+    const { badge: badgeGroupB, audit: auditGroupB } = auditAndBadgeFor(rows, VENTURE_B, GROUP);
+    expect(badgeGroupB).toBe("default");
+    expect(auditGroupB).toBeNull();
+
+    // Venture B — OTHER group also has no row → default, no audit
+    const { badge: badgeOtherB, audit: auditOtherB } = auditAndBadgeFor(rows, VENTURE_B, OTHER);
+    expect(badgeOtherB).toBe("default");
+    expect(auditOtherB).toBeNull();
+
+    // Venture A — GROUP correctly reflects the toggle
+    const { badge: badgeGroupA, audit: auditGroupA } = auditAndBadgeFor(rows, VENTURE_A, GROUP);
+    expect(badgeGroupA).toBe("venture");
+    expect(auditGroupA).toMatch(new RegExp(`^${ADMIN_1}`));
+
+    // Venture A — OTHER group is also unaffected
+    const { badge: badgeOtherA, audit: auditOtherA } = auditAndBadgeFor(rows, VENTURE_A, OTHER);
+    expect(badgeOtherA).toBe("default");
+    expect(auditOtherA).toBeNull();
+  });
+
+  // ── V: audit for venture A reflects the correct author even after a second
+  //       switch back from B to A ──────────────────────────────────────────────
+  //
+  // Admin: toggles venture A, switches to venture B, then switches back to
+  // venture A.  The re-fetch triggered by returning to venture A must still
+  // show ADMIN_1's audit on venture A — the row was never mutated by the
+  // temporary detour through venture B.
+  it("V: switching from A → B → A still shows the correct audit on venture A", async () => {
+    const toggledAt = new Date("2026-08-09T15:00:00.000Z");
+
+    // Step 1: toggle fires for venture A
+    await db.upsert({ groupId: GROUP, ventureId: VENTURE_A, active: true, toggledBy: ADMIN_1, toggledAt });
+
+    // Step 2: panel shows venture B (selector drift — no DB write for B)
+    const rowsAtB = await db.read();
+    const { badge: badgeBAtB, audit: auditBAtB } = auditAndBadgeFor(rowsAtB, VENTURE_B, GROUP);
+    expect(badgeBAtB).toBe("default");
+    expect(auditBAtB).toBeNull();
+
+    // Step 3: panel switches back to venture A
+    const rowsAtA = await db.read();  // same DB state — no writes happened during B
+    const { badge: badgeA, audit: auditA } = auditAndBadgeFor(rowsAtA, VENTURE_A, GROUP);
+    expect(badgeA).toBe("venture");
+    expect(auditA).toMatch(new RegExp(`^${ADMIN_1}`));
+    expect(auditA).not.toBeNull();
+  });
+
+  // ── W: no cross-venture audit contamination across all rows ─────────────────
+  //
+  // Three ventures each have their own rows.  A mid-toggle switch fires a write
+  // for venture A.  After invalidate() re-fetches, every venture sees only its
+  // own audit author — no row bleeds into another venture's view.
+  it("W: no cross-venture audit contamination — each venture sees only its own author", async () => {
+    const VENTURE_C = "ven-gamma";
+    const ADMIN_3   = "carol@example.com";
+
+    const dateA = new Date("2026-08-10T08:00:00.000Z");
+    const dateB = new Date("2026-08-10T08:01:00.000Z");
+    const dateC = new Date("2026-08-10T08:02:00.000Z");
+
+    // Each venture has its own row for GROUP
+    await db.upsert({ groupId: GROUP, ventureId: VENTURE_A, active: true, toggledBy: ADMIN_1, toggledAt: dateA });
+    await db.upsert({ groupId: GROUP, ventureId: VENTURE_B, active: true, toggledBy: ADMIN_2, toggledAt: dateB });
+    await db.upsert({ groupId: GROUP, ventureId: VENTURE_C, active: true, toggledBy: ADMIN_3, toggledAt: dateC });
+
+    // invalidate() re-fetch — all rows visible in one snapshot
+    const rows = await db.read();
+
+    // Each venture scopes correctly to its own row
+    const { audit: auditA } = auditAndBadgeFor(rows, VENTURE_A, GROUP);
+    const { audit: auditB } = auditAndBadgeFor(rows, VENTURE_B, GROUP);
+    const { audit: auditC } = auditAndBadgeFor(rows, VENTURE_C, GROUP);
+
+    expect(auditA).toMatch(new RegExp(`^${ADMIN_1}`));
+    expect(auditA).not.toContain(ADMIN_2);
+    expect(auditA).not.toContain(ADMIN_3);
+
+    expect(auditB).toMatch(new RegExp(`^${ADMIN_2}`));
+    expect(auditB).not.toContain(ADMIN_1);
+    expect(auditB).not.toContain(ADMIN_3);
+
+    expect(auditC).toMatch(new RegExp(`^${ADMIN_3}`));
+    expect(auditC).not.toContain(ADMIN_1);
+    expect(auditC).not.toContain(ADMIN_2);
+  });
+
+});
+
+// ── makeDeferredFakeDb ────────────────────────────────────────────────────────
+// A variant of makeFakeDb whose upsert is gated behind an explicit Promise
+// resolver.  This lets tests dispatch a write, confirm it is genuinely pending
+// (the row has not yet been committed to the store), change the "current
+// venture" selector, then release the gate and observe the post-commit state.
+//
+// Usage:
+//   const { db, releaseUpsert } = makeDeferredFakeDb();
+//   const pending = db.upsert({ … });         // dispatched — NOT committed yet
+//   /* confirm store is still empty */
+//   releaseUpsert();                          // gate opens — write commits
+//   await pending;                            // promise settles
+//   /* now read committed state */
+
+function makeDeferredFakeDb() {
+  const store = new Map<string, StoredRow>();
+  const key   = (g: string, v: string) => `${g}::${v}`;
+
+  // The gate starts closed.  Calling releaseUpsert() resolves the barrier so
+  // any pending upsert call can proceed to commit its row.
+  let _releaseGate: (() => void) | null = null;
+  let _gate: Promise<void> = new Promise<void>(resolve => { _releaseGate = resolve; });
+
+  function releaseUpsert() {
+    _releaseGate?.();
+    // Reset for the next upsert in case a test needs multiple gates.
+    _gate = Promise.resolve();
+    _releaseGate = null;
+  }
+
+  const db = {
+    async read(): Promise<ReactivationRow[]> {
+      return [...store.values()].sort((a, b) => a.groupId.localeCompare(b.groupId));
+    },
+    async upsert(row: Omit<StoredRow, "toggledAt"> & { toggledAt?: Date }): Promise<void> {
+      // Wait until the gate is opened — this is the suspension point that
+      // makes the write genuinely pending from the test's perspective.
+      await _gate;
+      const k        = key(row.groupId, row.ventureId);
+      const existing = store.get(k);
+      const full     = { ...row, toggledAt: row.toggledAt ?? new Date() };
+      store.set(
+        k,
+        existing
+          ? { ...existing, active: full.active, toggledBy: full.toggledBy, toggledAt: full.toggledAt }
+          : full,
+      );
+    },
+    async deleteVentureRows(ventureId: string): Promise<void> {
+      for (const [k, row] of store) {
+        if (row.ventureId === ventureId) store.delete(k);
+      }
+    },
+  };
+
+  return { db, releaseUpsert };
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SUITE 5 — Genuinely deferred mid-toggle venture-switch pipeline (task #101)
+//
+// Uses makeDeferredFakeDb so the upsert has a real suspension point.  Tests
+// dispatch for venture A, confirm the row is NOT yet committed (genuinely
+// pending), switch the selector to venture B, then release the gate and
+// let onSuccess fire the invalidate/refetch.  Assertions cover:
+//   • venture B's view during the pending window (no contamination)
+//   • venture B's view after commit + refetch (still uncontaminated)
+//   • venture A's audit on revisit (correctly attributed)
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe("audit trail — genuinely deferred mid-toggle venture switch (task #101)", () => {
+
+  // ── X: toggle dispatched for A, row NOT committed yet, selector switches to
+  //       B, gate released, onSuccess refetches — B unaffected, A correct ────
+  it("X: row is absent from the store while the mutation is pending; after release B is unaffected and A is correctly attributed", async () => {
+    const toggledAt = new Date("2026-08-11T12:00:00.000Z");
+
+    const { db: ddb, releaseUpsert } = makeDeferredFakeDb();
+
+    // ── Step 1: Dispatch mutation for venture A — write is pending (gated) ──
+    // The closure captures ventureId = VENTURE_A at call time.
+    const mutationForVentureA = ddb.upsert({
+      groupId:   GROUP,
+      ventureId: VENTURE_A,
+      active:    true,
+      toggledBy: ADMIN_1,
+      toggledAt,
+    });
+
+    // ── Step 2: Venture selector switches to B before the gate opens ────────
+    let currentVentureId: string = VENTURE_B;
+
+    // Confirm the write has NOT committed yet — store is empty.
+    const rowsDuringPending = await ddb.read();
+    expect(rowsDuringPending).toHaveLength(0);  // genuinely pending
+
+    // Panel renders venture B during the pending window → default/null
+    const midFlightB = auditAndBadgeFor(rowsDuringPending, currentVentureId, GROUP);
+    expect(midFlightB.badge).toBe("default");
+    expect(midFlightB.audit).toBeNull();
+
+    // ── Step 3: Gate opens — mutation completes (write commits for venture A) ─
+    releaseUpsert();
+    await mutationForVentureA;
+
+    // ── Step 4: onSuccess fires — simulate invalidate() → refetch ────────────
+    const rowsAfterCommit = await ddb.read();
+
+    // ── Step 5a: Panel is still showing venture B (currentVentureId = B) ────
+    // buildRowByGroup uses the current selector value — must NOT see venture A.
+    const postB = auditAndBadgeFor(rowsAfterCommit, currentVentureId, GROUP);
+    expect(postB.badge).toBe("default");
+    expect(postB.audit).toBeNull();
+
+    // ── Step 5b: Admin switches back to venture A — refetch scopes to A ─────
+    currentVentureId = VENTURE_A;
+    const rowsAtA = await ddb.read();
+    const postA = auditAndBadgeFor(rowsAtA, currentVentureId, GROUP);
+    expect(postA.badge).toBe("venture");
+    expect(postA.audit).toMatch(new RegExp(`^${ADMIN_1}`));
+    expect(postA.audit).not.toContain(ADMIN_2);
+
+    // Sanity: exactly one row committed
+    expect(rowsAtA.filter(r => r.groupId === GROUP).length).toBe(1);
+    expect(rowsAtA[0].ventureId).toBe(VENTURE_A);
+  });
+
+  // ── Y: venture B has a pre-existing row; deferred write for A releases;
+  //       B's own audit is not disturbed ───────────────────────────────────────
+  //
+  // Uses an inline store + explicit Promise gate (same pattern as X, but with
+  // a shared store that holds both rows: B committed immediately, A gated).
+  // This avoids the "re-arm" problem with makeDeferredFakeDb after release.
+  it("Y: venture B's pre-existing audit row survives the deferred write for venture A unchanged", async () => {
+    const dateBPre = new Date("2026-08-11T10:00:00.000Z");
+    const dateAMut = new Date("2026-08-11T12:00:00.000Z");
+
+    // ── Shared in-memory store ───────────────────────────────────────────────
+    const store = new Map<string, StoredRow>();
+    const storeKey = (g: string, v: string) => `${g}::${v}`;
+    function commitNow(row: StoredRow) { store.set(storeKey(row.groupId, row.ventureId), row); }
+    function readStore(): ReactivationRow[] {
+      return [...store.values()].sort((a, b) => a.groupId.localeCompare(b.groupId));
+    }
+
+    // ── Step 1: Commit venture B's row immediately (no gate needed) ──────────
+    commitNow({ groupId: GROUP, ventureId: VENTURE_B, active: true, toggledBy: ADMIN_2, toggledAt: dateBPre });
+
+    // ── Step 2: Dispatch gated write for venture A (write is pending) ────────
+    let _gateResolve: (() => void) | null = null;
+    const gate = new Promise<void>(resolve => { _gateResolve = resolve; });
+    const mutationForA = (async () => {
+      await gate; // suspended until test releases
+      commitNow({ groupId: GROUP, ventureId: VENTURE_A, active: true, toggledBy: ADMIN_1, toggledAt: dateAMut });
+    })();
+
+    // ── Step 3: Selector switches to B while A's write is still gated ────────
+    const currentVentureId = VENTURE_B;
+    const rowsDuringPending = readStore();
+    // Confirm A's row is genuinely absent — write has not committed yet
+    expect(rowsDuringPending.filter(r => r.ventureId === VENTURE_A).length).toBe(0);
+    // B's own row is already visible
+    const midFlightB = auditAndBadgeFor(rowsDuringPending, currentVentureId, GROUP);
+    expect(midFlightB.badge).toBe("venture");
+    expect(midFlightB.audit).toMatch(new RegExp(`^${ADMIN_2}`));
+
+    // ── Step 4: Release gate — A's write commits ─────────────────────────────
+    _gateResolve!();
+    await mutationForA;
+
+    // ── Step 5: onSuccess → invalidate → refetch ─────────────────────────────
+    const rowsAfterCommit = readStore();
+
+    // Venture B still shows ADMIN_2 — not contaminated by the A write
+    const stateB = auditAndBadgeFor(rowsAfterCommit, currentVentureId, GROUP);
+    expect(stateB.badge).toBe("venture");
+    expect(stateB.audit).toMatch(new RegExp(`^${ADMIN_2}`));
+    expect(stateB.audit).not.toContain(ADMIN_1);
+
+    // Venture A correctly shows ADMIN_1
+    const stateA = auditAndBadgeFor(rowsAfterCommit, VENTURE_A, GROUP);
+    expect(stateA.badge).toBe("venture");
+    expect(stateA.audit).toMatch(new RegExp(`^${ADMIN_1}`));
+    expect(stateA.audit).not.toContain(ADMIN_2);
+
+    // Two distinct rows — no cross-key collision
+    expect(rowsAfterCommit.filter(r => r.groupId === GROUP).length).toBe(2);
+  });
+});

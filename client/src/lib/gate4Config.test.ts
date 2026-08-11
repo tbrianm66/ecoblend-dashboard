@@ -985,6 +985,215 @@ describe("useGate4Reactivation — mid-flight venture selector changes", () => {
     // Only the server-confirmed global row remains; no synthetic overlay rows.
     expect(result.current.rows).toHaveLength(1);
   });
+
+  // ── Test 9: deferred-onSuccess single-toggle — audit accuracy mid-venture-switch ─
+  //
+  // This test exercises the actual production hook pipeline for the mid-toggle
+  // venture-switch race described in task #101:
+  //
+  //   1. reactivate() fires for VENTURE_A — mutation payload carries ventureId=A.
+  //   2. Admin switches the venture selector to VENTURE_B before onSuccess fires.
+  //   3. onSuccess is released — it calls utils.admin.getModuleReactivations.invalidate().
+  //   4. React Query delivers new rows (the confirmed venture-A row with toggledBy).
+  //   5. The hook re-renders with VENTURE_B still selected.
+  //
+  // Assertions:
+  //   • The mutation payload contained VENTURE_A (closure captured it at dispatch time).
+  //   • invalidate() was called exactly once — the onSuccess path is not skipped.
+  //   • Venture B's rows after refetch show no venture-A contamination.
+  //   • When the selector switches back to VENTURE_A, the audit row has the correct author.
+  it("reactivate(): deferred-onSuccess pipeline — mutation payload targets A, invalidate fires, B is uncontaminated, A's audit row is correct on revisit", async () => {
+    const ADMIN_AUTHOR = "alice@example.com";
+    const toggledAt    = new Date("2026-08-11T12:00:00.000Z");
+
+    // ── Wire a deferred mutate: capture onSuccess without calling it ──────────
+    let capturedOnSuccess: (() => void) | null = null;
+    let capturedPayload: { groupId: string; ventureId?: string; active: boolean } | null = null;
+    vi.mocked(trpc.admin.setModuleReactivation.useMutation).mockReturnValue({
+      mutate: vi.fn((payload, options?: { onSuccess?: () => void }) => {
+        capturedPayload  = payload as typeof capturedPayload;
+        capturedOnSuccess = options?.onSuccess ?? null;
+        // Do NOT call onSuccess — mutation is still in-flight.
+      }),
+    } as any);
+
+    // ── Mount on VENTURE_A ────────────────────────────────────────────────────
+    const { result, rerender } = renderHook(
+      ({ ventureId }: { ventureId: string }) => useGate4Reactivation(ventureId),
+      { initialProps: { ventureId: VENTURE_A } },
+    );
+
+    // ── Step 1: Toggle while viewing venture A ────────────────────────────────
+    await act(async () => {
+      result.current.reactivate(GROUP);
+    });
+
+    // Confirm the mutation was called and the payload targets VENTURE_A.
+    expect(capturedPayload).not.toBeNull();
+    expect(capturedPayload!.groupId).toBe(GROUP);
+    expect(capturedPayload!.ventureId).toBe(VENTURE_A);
+    expect(capturedPayload!.active).toBe(true);
+
+    // Optimistic overlay is active on VENTURE_A; badge shows "venture".
+    expect(badgeFrom(result.current.rows, VENTURE_A, GROUP)).toBe("venture");
+
+    // ── Step 2: Admin switches selector to VENTURE_B while mutation is pending ─
+    await act(async () => {
+      rerender({ ventureId: VENTURE_B });
+    });
+
+    // Venture B during the pending window: overlay was cleared by the ventureId
+    // change (useEffect fires setOptimisticRows(new Map())); badge falls back to
+    // the global seed row — "global", not "venture".
+    expect(badgeFrom(result.current.rows, VENTURE_B, GROUP)).toBe("global");
+
+    // ── Step 3: Release — onSuccess fires (mutation complete) ─────────────────
+    // The production code inside onSuccess calls:
+    //   utils.admin.getModuleReactivations.invalidate();
+    //   onSuccess?.(snapshotVentureId);   ← not used in this test
+    expect(capturedOnSuccess).not.toBeNull();
+    await act(async () => {
+      capturedOnSuccess!();
+    });
+
+    // invalidate() must have been called exactly once.
+    expect(mockInvalidate).toHaveBeenCalledTimes(1);
+
+    // ── Step 4: React Query refetch delivers the confirmed server row ──────────
+    // The real server writes { groupId, ventureId: VENTURE_A, toggledBy: ADMIN_AUTHOR }.
+    // We update currentRows so the hook's useQuery mock returns the new data.
+    currentRows = [
+      globalRow(GROUP),
+      // Confirmed venture-A row with author info from the server.
+      { groupId: GROUP, ventureId: VENTURE_A, active: true, toggledBy: ADMIN_AUTHOR, toggledAt },
+    ];
+    await act(async () => { rerender({ ventureId: VENTURE_B }); });
+
+    // ── Step 5a: Venture B is still selected — check for contamination ─────────
+    // buildRowByGroup(rows, VENTURE_B) must NOT resolve the venture-A row.
+    // Badge must be "global" (from the __global__ seed, not the VENTURE_A row).
+    expect(badgeFrom(result.current.rows, VENTURE_B, GROUP)).toBe("global");
+    // Directly confirm the venture-A row is invisible under venture-B scope.
+    const mapB = buildRowByGroup(result.current.rows, VENTURE_B);
+    expect(mapB.get(GROUP)?.ventureId).toBe("__global__");  // must be the global row
+
+    // ── Step 5b: Admin revisits venture A — refetch scopes to A ──────────────
+    await act(async () => { rerender({ ventureId: VENTURE_A }); });
+
+    // Badge for venture A must be "venture" (the confirmed server row).
+    expect(badgeFrom(result.current.rows, VENTURE_A, GROUP)).toBe("venture");
+
+    // The audit row for venture A must carry the author written by the mutation.
+    const mapA = buildRowByGroup(result.current.rows, VENTURE_A);
+    const rowA = mapA.get(GROUP)!;
+    expect(rowA).toBeDefined();
+    expect(rowA.ventureId).toBe(VENTURE_A);
+    expect(rowA.toggledBy).toBe(ADMIN_AUTHOR);  // audit attribution is correct
+
+    // Verify the audit string produced by formatToggleAudit uses the correct author.
+    const { formatToggleAudit } = await import("./gate4Utils");
+    const auditStr = formatToggleAudit(rowA.toggledBy, rowA.toggledAt);
+    expect(auditStr).not.toBeNull();
+    expect(auditStr).toMatch(new RegExp(`^${ADMIN_AUTHOR}`));
+  });
+
+  // ── Test 10: deferred-onSuccess deactivate — VENTURE_B not disturbed ─────────
+  //
+  // Same pipeline as Test 9, but using deactivate() on a venture that already
+  // had a pre-existing row for VENTURE_B.  After the mutation for VENTURE_A
+  // resolves, VENTURE_B's own row must survive the refetch unchanged.
+  it("deactivate(): deferred-onSuccess pipeline — VENTURE_B's pre-existing row is not disturbed by the mutation write for VENTURE_A", async () => {
+    const ADMIN_A = "alice@example.com";
+    const ADMIN_B = "bob@example.com";
+    const toggledAtA = new Date("2026-08-11T14:00:00.000Z");
+    const toggledAtB = new Date("2026-08-11T09:00:00.000Z");
+
+    // Pre-seed: VENTURE_B already has its own row (toggledBy ADMIN_B).
+    currentRows = [
+      globalRow(GROUP),
+      { groupId: GROUP, ventureId: VENTURE_A, active: true,  toggledBy: ADMIN_A,  toggledAt: toggledAtA },
+      { groupId: GROUP, ventureId: VENTURE_B, active: true,  toggledBy: ADMIN_B,  toggledAt: toggledAtB },
+    ];
+
+    // ── Wire a deferred mutate ────────────────────────────────────────────────
+    let capturedOnSuccess: (() => void) | null = null;
+    let capturedPayload: { groupId: string; ventureId?: string; active: boolean } | null = null;
+    vi.mocked(trpc.admin.setModuleReactivation.useMutation).mockReturnValue({
+      mutate: vi.fn((payload, options?: { onSuccess?: () => void }) => {
+        capturedPayload  = payload as typeof capturedPayload;
+        capturedOnSuccess = options?.onSuccess ?? null;
+      }),
+    } as any);
+
+    // ── Mount on VENTURE_A ────────────────────────────────────────────────────
+    const { result, rerender } = renderHook(
+      ({ ventureId }: { ventureId: string }) => useGate4Reactivation(ventureId),
+      { initialProps: { ventureId: VENTURE_A } },
+    );
+
+    // ── Step 1: Deactivate while viewing venture A ────────────────────────────
+    await act(async () => {
+      result.current.deactivate(GROUP);
+    });
+
+    // Payload must target VENTURE_A (not any other venture).
+    expect(capturedPayload!.groupId).toBe(GROUP);
+    expect(capturedPayload!.ventureId).toBe(VENTURE_A);
+    expect(capturedPayload!.active).toBe(false);
+
+    // ── Step 2: Selector switches to VENTURE_B while mutation is pending ──────
+    await act(async () => {
+      rerender({ ventureId: VENTURE_B });
+    });
+
+    // VENTURE_B's own pre-existing row is still visible (toggledBy ADMIN_B).
+    const mapBDuring = buildRowByGroup(result.current.rows, VENTURE_B);
+    const rowBDuring = mapBDuring.get(GROUP)!;
+    expect(rowBDuring.ventureId).toBe(VENTURE_B);
+    expect(rowBDuring.toggledBy).toBe(ADMIN_B);
+
+    // ── Step 3: Release — onSuccess fires ────────────────────────────────────
+    expect(capturedOnSuccess).not.toBeNull();
+    await act(async () => { capturedOnSuccess!(); });
+
+    // invalidate() must have been called.
+    expect(mockInvalidate).toHaveBeenCalledTimes(1);
+
+    // ── Step 4: Refetch delivers updated rows — VENTURE_A now deactivated ─────
+    const deactivatedAt = new Date("2026-08-11T14:05:00.000Z");
+    currentRows = [
+      globalRow(GROUP),
+      { groupId: GROUP, ventureId: VENTURE_A, active: false, toggledBy: ADMIN_A,  toggledAt: deactivatedAt },
+      { groupId: GROUP, ventureId: VENTURE_B, active: true,  toggledBy: ADMIN_B,  toggledAt: toggledAtB },
+    ];
+    await act(async () => { rerender({ ventureId: VENTURE_B }); });
+
+    // ── Step 5a: VENTURE_B's row must be unchanged ────────────────────────────
+    // The mutation wrote to VENTURE_A — VENTURE_B's row is untouched.
+    const mapBAfter = buildRowByGroup(result.current.rows, VENTURE_B);
+    const rowBAfter = mapBAfter.get(GROUP)!;
+    expect(rowBAfter.ventureId).toBe(VENTURE_B);
+    expect(rowBAfter.toggledBy).toBe(ADMIN_B);   // ADMIN_B's attribution survives
+
+    // Audit for B must show ADMIN_B, not ADMIN_A.
+    const { formatToggleAudit: fmt } = await import("./gate4Utils");
+    const auditB = fmt(rowBAfter.toggledBy, rowBAfter.toggledAt);
+    expect(auditB).toMatch(new RegExp(`^${ADMIN_B}`));
+    expect(auditB).not.toContain(ADMIN_A);
+
+    // ── Step 5b: Revisit VENTURE_A — deactivate audit is correct ─────────────
+    await act(async () => { rerender({ ventureId: VENTURE_A }); });
+
+    const mapAAfter = buildRowByGroup(result.current.rows, VENTURE_A);
+    const rowAAfter = mapAAfter.get(GROUP)!;
+    expect(rowAAfter.ventureId).toBe(VENTURE_A);
+    expect(rowAAfter.active).toBe(false);          // deactivated by the mutation
+    expect(rowAAfter.toggledBy).toBe(ADMIN_A);     // attributed to ADMIN_A
+
+    const auditA = fmt(rowAAfter.toggledBy, rowAAfter.toggledAt);
+    expect(auditA).toMatch(new RegExp(`^${ADMIN_A}`));
+    expect(auditA).not.toContain(ADMIN_B);
+  });
 });
 
 // ── Hook + ReactivationResetButton integration tests ─────────────────────────
