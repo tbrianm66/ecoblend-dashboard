@@ -162,6 +162,36 @@ describe("formatToggleAudit — pure unit tests", () => {
     // But the full strings differ because the date/time portion changed
     expect(before).not.toBe(after);
   });
+
+  // ── [anonymous admin] sentinel ────────────────────────────────────────────
+  // The server stores "[anonymous admin]" (not null) when all identity fields
+  // are missing.  The UI must surface this sentinel as-is so admins can
+  // recognise and investigate the auth misconfiguration — it must NOT be
+  // silently re-labelled "Unknown".
+
+  it("surfaces '[anonymous admin]' as-is when stored as the toggledBy sentinel (not re-labelled 'Unknown')", () => {
+    const SENTINEL = "[anonymous admin]";
+    const result = formatToggleAudit(SENTINEL, FIXED_DATE);
+    expect(result).not.toBeNull();
+    expect(result).toMatch(new RegExp(`^\\[anonymous admin\\] · `));
+    expect(result).not.toContain("Unknown");
+  });
+
+  it("returns 'by [anonymous admin]' when sentinel is present but toggledAt is null", () => {
+    const SENTINEL = "[anonymous admin]";
+    const result = formatToggleAudit(SENTINEL, null);
+    expect(result).toBe("by [anonymous admin]");
+    expect(result).not.toContain("Unknown");
+  });
+
+  it("sentinel '[anonymous admin]' produces a different string from a real admin email", () => {
+    const SENTINEL = "[anonymous admin]";
+    const sentinelResult = formatToggleAudit(SENTINEL, FIXED_DATE);
+    const realResult     = formatToggleAudit(ADMIN_1,   FIXED_DATE);
+    expect(sentinelResult).not.toBe(realResult);
+    expect(sentinelResult).toMatch(/^\[anonymous admin\]/);
+    expect(realResult).toMatch(new RegExp(`^${ADMIN_1}`));
+  });
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -380,6 +410,41 @@ describe("audit trail live-update — fake-DB integration (toggle → write → 
     expect(badge).toBe("venture");
     expect(audit).not.toBeNull();
     expect(audit).toMatch(/^Unknown · /);
+  });
+
+  // ── H2: [anonymous admin] sentinel stored in DB surfaces in the audit line ─
+  //
+  // When the server cannot identify the admin (all identity fields missing) it
+  // stores the string "[anonymous admin]" instead of null.  The UI must render
+  // this sentinel as-is — NOT silently translate it back to "Unknown" — so
+  // admins can spot and investigate auth misconfigurations.
+  it("H2: '[anonymous admin]' sentinel stored in DB surfaces in the audit line as-is, not re-labelled 'Unknown'", async () => {
+    const SENTINEL  = "[anonymous admin]";
+    const toggledAt = new Date("2026-05-20T11:00:00Z");
+    await db.upsert({ groupId: GROUP, ventureId: VENTURE_A, active: true, toggledBy: SENTINEL, toggledAt });
+
+    const rows = await db.read();
+    const { audit, badge } = auditAndBadgeFor(rows, VENTURE_A, GROUP);
+
+    expect(badge).toBe("venture");
+    expect(audit).not.toBeNull();
+    // Sentinel must appear verbatim — not silently replaced with "Unknown"
+    expect(audit).toMatch(/^\[anonymous admin\] · /);
+    expect(audit).not.toContain("Unknown");
+  });
+
+  it("H3: '[anonymous admin]' sentinel also surfaces correctly at global scope", async () => {
+    const SENTINEL  = "[anonymous admin]";
+    const toggledAt = new Date("2026-05-21T09:00:00Z");
+    await db.upsert({ groupId: GROUP, ventureId: "__global__", active: true, toggledBy: SENTINEL, toggledAt });
+
+    const rows = await db.read();
+    const { audit, badge } = auditAndBadgeFor(rows, null, GROUP);
+
+    expect(badge).toBe("global");
+    expect(audit).not.toBeNull();
+    expect(audit).toMatch(/^\[anonymous admin\] · /);
+    expect(audit).not.toContain("Unknown");
   });
 
   // ── I: badge and audit update together — they are never out of sync ────────
