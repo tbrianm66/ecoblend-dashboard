@@ -64,6 +64,52 @@ export function normaliseResetVentureId(raw: string): string {
  * @param ventureIdColumn - The ventureId column of the table.
  * @param vid             - The normalised venture ID to delete rows for.
  */
+/**
+ * Per-row integrity check for setModuleReactivationBatch.
+ *
+ * After each `.insert().onConflictDoUpdate().returning()` call the router
+ * passes the returned array here.  The function throws INTERNAL_SERVER_ERROR
+ * when the DB silently skips the write (empty array) or produces an unexpected
+ * number of rows (more than one), or when the confirmed groupId doesn't match
+ * the submitted item.
+ *
+ * Extracted from the router so the guard can be unit-tested without importing
+ * the full Drizzle schema (which crashes the Vitest transform).  The router
+ * simply calls `assertBatchRowResult(written, item.groupId)` in place of the
+ * inline if-blocks.
+ *
+ * Because the call happens INSIDE the Drizzle `db.transaction()` callback,
+ * throwing here causes Drizzle to roll back the entire batch — no partial
+ * state is ever committed.
+ *
+ * @param written         - The array returned by Drizzle's `.returning()`.
+ * @param expectedGroupId - The groupId of the item that was just upserted.
+ * @throws TRPCError (INTERNAL_SERVER_ERROR) on any integrity violation.
+ */
+export function assertBatchRowResult(
+  written: { groupId: string }[],
+  expectedGroupId: string,
+): void {
+  if (written.length !== 1) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message:
+        `Batch write integrity error: expected exactly 1 confirmed row from DB ` +
+        `for groupId "${expectedGroupId}", got ${written.length}. ` +
+        `This may indicate a DB trigger producing extra rows or a silent skip.`,
+    });
+  }
+
+  if (written[0].groupId !== expectedGroupId) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message:
+        `Batch write integrity error: DB confirmed groupId "${written[0].groupId}" ` +
+        `but expected "${expectedGroupId}". The returned row does not correspond to the submitted item.`,
+    });
+  }
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function execVentureReset(
   // Typed as `any` intentionally: the real Drizzle DB returns a proprietary

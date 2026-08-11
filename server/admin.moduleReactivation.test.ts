@@ -35,7 +35,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { TRPCError } from "@trpc/server";
 import { rowsToActivatedSet } from "../client/src/lib/gate4Utils";
-import { normaliseResetVentureId, normaliseSetVentureId, execVentureReset } from "./moduleReactivationUtils";
+import { normaliseResetVentureId, normaliseSetVentureId, execVentureReset, assertBatchRowResult } from "./moduleReactivationUtils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -1019,5 +1019,197 @@ describe("setModuleReactivationBatch — batch-path ventureId trimming", () => {
     }
     expect(err).toBeInstanceOf(TRPCError);
     expect(err?.code).toBe("FORBIDDEN");
+  });
+});
+
+// ── assertBatchRowResult — per-row integrity guard for setModuleReactivationBatch ─
+//
+// The production router calls assertBatchRowResult(written, item.groupId) inside
+// db.transaction() after every upsert.  When the function throws the Drizzle
+// transaction is aborted, so no rows from that batch are committed.
+//
+// Two angles tested here:
+//
+//   A. Guard trigger — assertBatchRowResult is called with an empty array (which
+//      is what .returning() hands back when the DB silently skips the upsert)
+//      and must throw TRPCError INTERNAL_SERVER_ERROR naming the affected groupId.
+//
+//   B. Rollback semantics — a simulated batch loop feeds a mock "DB" whose
+//      .returning() returns [] for one item mid-batch.  The test verifies that
+//      the exception aborts the loop so that no groupId is recorded as committed,
+//      mirroring how Drizzle's transaction callback rolls back on any thrown error.
+//
+// Because assertBatchRowResult is imported directly from moduleReactivationUtils,
+// removing or weakening the guard in that module will immediately break these
+// tests — giving a genuine regression guard without requiring a live database.
+
+describe("assertBatchRowResult — batch integrity guard (INTERNAL_SERVER_ERROR + rollback)", () => {
+
+  // ── A. Guard trigger: empty .returning() array ────────────────────────────
+
+  it("throws INTERNAL_SERVER_ERROR when .returning() yields an empty array (silent DB skip)", () => {
+    let err: TRPCError | undefined;
+    try {
+      assertBatchRowResult([], "discovery");
+    } catch (e) {
+      err = e as TRPCError;
+    }
+    expect(err).toBeInstanceOf(TRPCError);
+    expect(err?.code).toBe("INTERNAL_SERVER_ERROR");
+    // The message must name the groupId so admins can identify which row was skipped.
+    expect(err?.message).toContain("discovery");
+    expect(err?.message).toContain("got 0");
+  });
+
+  it("throws INTERNAL_SERVER_ERROR when .returning() yields more than one row (trigger producing extras)", () => {
+    let err: TRPCError | undefined;
+    try {
+      assertBatchRowResult(
+        [{ groupId: "scoring" }, { groupId: "scoring" }],
+        "scoring",
+      );
+    } catch (e) {
+      err = e as TRPCError;
+    }
+    expect(err).toBeInstanceOf(TRPCError);
+    expect(err?.code).toBe("INTERNAL_SERVER_ERROR");
+    expect(err?.message).toContain("scoring");
+    expect(err?.message).toContain("got 2");
+  });
+
+  it("throws INTERNAL_SERVER_ERROR when the confirmed groupId does not match the submitted item", () => {
+    let err: TRPCError | undefined;
+    try {
+      // DB confirmed "gtm" but we submitted "discovery" — indicates a mismatch.
+      assertBatchRowResult([{ groupId: "gtm" }], "discovery");
+    } catch (e) {
+      err = e as TRPCError;
+    }
+    expect(err).toBeInstanceOf(TRPCError);
+    expect(err?.code).toBe("INTERNAL_SERVER_ERROR");
+    expect(err?.message).toContain("gtm");
+    expect(err?.message).toContain("discovery");
+  });
+
+  it("does NOT throw when .returning() yields exactly one matching row", () => {
+    expect(() =>
+      assertBatchRowResult([{ groupId: "operations" }], "operations"),
+    ).not.toThrow();
+  });
+
+  // ── B. Rollback semantics: throwing mid-batch aborts the whole batch ────────
+  //
+  // This test simulates the production transaction callback:
+  //
+  //   await db.transaction(async tx => {
+  //     for (const item of input.items) {
+  //       const written = await tx.insert(...).returning(...);
+  //       assertBatchRowResult(written, item.groupId);   // throws for the bad item
+  //       upserted.push(written[0].groupId);
+  //     }
+  //   });
+  //
+  // In production Drizzle rolls back when an error escapes the callback.
+  // Here we replicate the same control flow: if assertBatchRowResult throws,
+  // the catch block clears `committed` before re-throwing, mirroring an abort.
+
+  it("no groupIds are committed when .returning() returns [] for one item mid-batch", async () => {
+    // Three items in the batch.  The second one will silently skip (empty array).
+    const batchItems = [
+      { groupId: "gtm",       active: true  },
+      { groupId: "discovery", active: false }, // ← DB returns [] for this one
+      { groupId: "scoring",   active: true  },
+    ];
+
+    // mockReturning simulates the DB's .returning() response.
+    const mockReturning = (groupId: string): { groupId: string }[] =>
+      groupId === "discovery" ? [] : [{ groupId }];
+
+    // Simulate the production transaction callback.
+    const committed: string[] = [];
+    let caughtErr: TRPCError | undefined;
+
+    try {
+      // This mirrors `await db.transaction(async tx => { for ... })`.
+      for (const item of batchItems) {
+        const written = mockReturning(item.groupId);
+        assertBatchRowResult(written, item.groupId); // throws for "discovery"
+        committed.push(item.groupId);
+      }
+    } catch (e) {
+      // Drizzle rolls back on any thrown error from the transaction callback.
+      // Mirror that by clearing committed before propagating.
+      committed.length = 0;
+      caughtErr = e as TRPCError;
+    }
+
+    // The error must be surfaced as INTERNAL_SERVER_ERROR naming the bad groupId.
+    expect(caughtErr).toBeInstanceOf(TRPCError);
+    expect(caughtErr?.code).toBe("INTERNAL_SERVER_ERROR");
+    expect(caughtErr?.message).toContain("discovery");
+
+    // No rows must be marked as committed — the batch is fully rolled back.
+    expect(committed).toHaveLength(0);
+  });
+
+  it("no groupIds are committed when .returning() returns [] for the first item in the batch", async () => {
+    const batchItems = [
+      { groupId: "rnd",  active: true }, // ← DB silently skips this one
+      { groupId: "risk", active: true },
+    ];
+
+    const mockReturning = (groupId: string): { groupId: string }[] =>
+      groupId === "rnd" ? [] : [{ groupId }];
+
+    const committed: string[] = [];
+    let caughtErr: TRPCError | undefined;
+
+    try {
+      for (const item of batchItems) {
+        const written = mockReturning(item.groupId);
+        assertBatchRowResult(written, item.groupId);
+        committed.push(item.groupId);
+      }
+    } catch (e) {
+      committed.length = 0;
+      caughtErr = e as TRPCError;
+    }
+
+    expect(caughtErr).toBeInstanceOf(TRPCError);
+    expect(caughtErr?.code).toBe("INTERNAL_SERVER_ERROR");
+    expect(caughtErr?.message).toContain("rnd");
+    // Even "risk" (which would have succeeded) must not appear — full rollback.
+    expect(committed).toHaveLength(0);
+  });
+
+  it("no groupIds are committed when .returning() returns [] for the last item in the batch", async () => {
+    const batchItems = [
+      { groupId: "operations",  active: true },
+      { groupId: "investment",  active: true },
+      { groupId: "governance",  active: false }, // ← DB silently skips the last one
+    ];
+
+    const mockReturning = (groupId: string): { groupId: string }[] =>
+      groupId === "governance" ? [] : [{ groupId }];
+
+    const committed: string[] = [];
+    let caughtErr: TRPCError | undefined;
+
+    try {
+      for (const item of batchItems) {
+        const written = mockReturning(item.groupId);
+        assertBatchRowResult(written, item.groupId);
+        committed.push(item.groupId);
+      }
+    } catch (e) {
+      committed.length = 0;
+      caughtErr = e as TRPCError;
+    }
+
+    expect(caughtErr).toBeInstanceOf(TRPCError);
+    expect(caughtErr?.code).toBe("INTERNAL_SERVER_ERROR");
+    expect(caughtErr?.message).toContain("governance");
+    // All three must be absent — the whole batch is rolled back.
+    expect(committed).toHaveLength(0);
   });
 });

@@ -11,7 +11,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure, publicProcedure, adminProcedure } from "./_core/trpc";
-import { normaliseResetVentureId, normaliseSetVentureId, execVentureReset } from "./moduleReactivationUtils";
+import { normaliseResetVentureId, normaliseSetVentureId, execVentureReset, assertBatchRowResult } from "./moduleReactivationUtils";
 import { getDb } from "./db";
 import {
   playbookLibrary, playbookVersions, adminTemplates, users,
@@ -1004,32 +1004,12 @@ export const adminRouter = router({
             })
             .returning({ groupId: moduleReactivations.groupId });
 
-          // Per-row integrity: .returning() must yield exactly ONE row per upsert.
-          // More than one row indicates a trigger or schema change producing extra
-          // rows; zero rows is a silent skip already caught by the length check
-          // below, but catching it here surfaces the specific groupId that failed.
-          if (written.length !== 1) {
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message:
-                `Batch write integrity error: expected exactly 1 confirmed row from DB ` +
-                `for groupId "${item.groupId}", got ${written.length}. ` +
-                `This may indicate a DB trigger producing extra rows or a silent skip.`,
-            });
-          }
-
-          // Per-row integrity: the DB-confirmed groupId must match what we submitted.
-          // A mismatch indicates the DB returned a row for a different record (e.g.
-          // due to a trigger rewrite or a future schema change that changes the
-          // conflict-resolution target).
-          if (written[0].groupId !== item.groupId) {
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message:
-                `Batch write integrity error: DB confirmed groupId "${written[0].groupId}" ` +
-                `but expected "${item.groupId}". The returned row does not correspond to the submitted item.`,
-            });
-          }
+          // Per-row integrity: assertBatchRowResult throws INTERNAL_SERVER_ERROR
+          // when .returning() yields zero rows (silent skip) or more than one
+          // row (trigger producing extras), or when the confirmed groupId doesn't
+          // match the submitted item.  Because this call is inside the transaction
+          // callback, any throw causes Drizzle to roll back the entire batch.
+          assertBatchRowResult(written, item.groupId);
 
           upserted.push(written[0].groupId);
         }
