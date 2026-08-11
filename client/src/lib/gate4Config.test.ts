@@ -575,6 +575,58 @@ describe("ReactivationResetButton — disabled-state predicate (prop-controlled)
     fireEvent.click(screen.getByTestId("reset-btn"));
     expect(onReset).toHaveBeenCalledOnce();
   });
+
+  // ── Global-scope guard: ventureId=null must disable the button ───────────────
+  // When ventureId is null (global scope), rows.filter(r => r.ventureId === null)
+  // always returns 0 entries — no DB row ever carries ventureId=null — so
+  // ventureOverrideCount is always 0.  With a settled query (isLoading=false,
+  // isError=false) that makes alreadyDefault=true and the button must be disabled.
+  //
+  // This guards against a future change that renders a clickable reset button in
+  // global scope: if the component stops checking the null case, the test breaks
+  // rather than silently swallowing admin clicks.
+  it("button is disabled when ventureId is null (global scope) and query is settled", () => {
+    render(React.createElement(ReactivationResetButton, {
+      ventureId: null as unknown as string,
+      rows: [],
+      isLoading: false,
+      isError: false,
+      onReset: () => {},
+    }));
+    const btn = screen.getByTestId("reset-btn") as HTMLButtonElement;
+    expect(btn.disabled).toBe(true);
+    expect(btn.textContent).toContain("Already using global defaults");
+  });
+
+  it("button stays disabled when ventureId is null even when rows contain venture-scoped overrides", () => {
+    // Venture rows exist in the DB, but none has ventureId===null,
+    // so the null-scoped override count is always 0 → button stays disabled.
+    const rows: ReactivationRow[] = [
+      ventureRow(GROUP, VENTURE),
+      ventureRow("proposition", VENTURE),
+    ];
+    render(React.createElement(ReactivationResetButton, {
+      ventureId: null as unknown as string,
+      rows,
+      isLoading: false,
+      isError: false,
+      onReset: () => {},
+    }));
+    expect((screen.getByTestId("reset-btn") as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("onReset is NOT called when ventureId is null and the (disabled) button is clicked", () => {
+    const onReset = vi.fn();
+    render(React.createElement(ReactivationResetButton, {
+      ventureId: null as unknown as string,
+      rows: [ventureRow(GROUP, VENTURE)], // has overrides, but not for null ventureId
+      isLoading: false,
+      isError: false,
+      onReset,
+    }));
+    fireEvent.click(screen.getByTestId("reset-btn"));
+    expect(onReset).not.toHaveBeenCalled();
+  });
 });
 
 // ── Header badges share the same rows as panel badges ────────────────────────
@@ -2125,6 +2177,72 @@ describe("ReactivationPanel props-refactor — injected callbacks fire correctly
     expect((screen.getByTestId(`toggle-${FIRST_GROUP_ID}`) as HTMLButtonElement).disabled).toBe(false);
     expect((screen.getByTestId("enable-all-btn")           as HTMLButtonElement).disabled).toBe(false);
     expect((screen.getByTestId("disable-all-btn")          as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  // ── 9. Global-scope guard: reset button absent when ventureId=null ──────────
+  //
+  // Production renders ReactivationResetButton only inside the guard:
+  //   {ventureId && ventureName && (<ReactivationResetButton .../>)}
+  //
+  // When ventureId is null (global scope), the button must be absent from the
+  // DOM entirely.  A future refactor that renders the button unconditionally —
+  // or moves the guard inside the button itself — will break this test rather
+  // than silently letting admins see a reset button in global scope.
+  //
+  // This is the integration-level counterpart to the hook-level null-guard in
+  // resetToGlobalDefaults (task #90): the hook blocks the mutation, the panel
+  // blocks the render.  Both layers must hold.
+  // ── 9. Global-scope guard: reset button absent when ventureId=null ──────────
+  //
+  // Production renders ReactivationResetButton only inside the guard:
+  //   {ventureId && ventureName && (<ReactivationResetButton .../>)}
+  //
+  // The discriminating case below supplies a non-empty ventureName alongside
+  // ventureId=null.  If the guard were changed to check only ventureName (and
+  // drop the ventureId check), the button would appear — and this test would
+  // catch that regression.  A passing test here proves it is specifically the
+  // null ventureId that hides the button, not the absent name.
+  it("reset button is absent when ventureId is null even when ventureName is provided (discriminates the ventureId check from the ventureName check)", () => {
+    const props = makeProps({
+      ventureId:   null,            // global scope — the critical condition
+      ventureName: "Alpha Ventures", // name IS present, so guard must rely on ventureId
+    });
+    render(React.createElement(ReactivationPanel, props));
+
+    // reset-btn must be absent because ventureId is null.
+    // If ventureName alone were the guard, the button would be present here.
+    expect(screen.queryByTestId("reset-btn")).toBeNull();
+  });
+
+  it("resetToGlobalDefaults callback is NOT reachable when ventureId is null (button absent, no click path)", () => {
+    // ventureName present — only ventureId=null is hiding the button.
+    const props = makeProps({ ventureId: null, ventureName: "Alpha Ventures" });
+    render(React.createElement(ReactivationPanel, props));
+
+    expect(screen.queryByTestId("reset-btn")).toBeNull();
+    expect(props.resetToGlobalDefaults).not.toHaveBeenCalled();
+  });
+
+  it("reset button is absent when both ventureId and ventureName are absent (pure global scope)", () => {
+    // Secondary null case: no name AND no ID — also global scope.
+    const props = makeProps(); // ventureId=null, ventureName=undefined
+    render(React.createElement(ReactivationPanel, props));
+
+    expect(screen.queryByTestId("reset-btn")).toBeNull();
+  });
+
+  it("reset button IS present when both ventureId and ventureName are provided", () => {
+    // Positive-case companion: with a real venture selected the button renders.
+    // This guards against over-restriction that hides the button in all cases.
+    const rows: ReactivationRow[] = [ventureRow(GROUP, "ven-alpha")];
+    const props = makeProps({
+      ventureId:   "ven-alpha",
+      ventureName: "Alpha Ventures",
+      rows,
+    });
+    render(React.createElement(ReactivationPanel, props));
+
+    expect(screen.queryByTestId("reset-btn")).not.toBeNull();
   });
 });
 
