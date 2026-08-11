@@ -32,7 +32,7 @@ import {
   UserCheck, Brain, GitBranch, Sliders, CheckSquare,
   ShieldCheck, Archive, Network, Star,
   Settings, Package2, RotateCcw, Crosshair, Eye, EyeOff,
-  Landmark, FolderKanban, Tag,
+  Landmark, FolderKanban, Tag, Loader2,
 } from "lucide-react";
 import { useVentures } from "@/contexts/VentureContext";
 import GlobalVentureSelector from "@/components/GlobalVentureSelector";
@@ -1289,7 +1289,10 @@ export default function Sidebar() {
               cursor: venturesLoading ? "not-allowed" : "pointer",
             }}
           >
-            <Settings size={12} />
+            {venturesLoading
+              ? <Loader2 size={12} className="animate-spin" />
+              : <Settings size={12} />
+            }
           </button>
         </div>
       </div>
