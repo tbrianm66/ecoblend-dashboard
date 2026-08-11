@@ -2514,5 +2514,128 @@ describe("useGate4Reactivation — optimistic rollback on server rejection", () 
 
     expect(capturedMessage).toBe(plainStringError);
   });
+
+  // ── 9. INTERNAL_SERVER_ERROR from setModuleReactivation: revert + callback ────
+  //
+  // setModuleReactivation throws TRPCError({ code: "INTERNAL_SERVER_ERROR" })
+  // when the DB integrity check fails (0 rows returned, wrong groupId, or wrong
+  // ventureId).  On the client the error arrives as a TRPCClientError whose
+  // `.message` carries the server's detail string.
+  //
+  // This test confirms the full path for that specific error shape:
+  //   a. The activated Set is reverted to the pre-click value (rollback).
+  //   b. The optimistic overlay row is removed (no stale badge entry).
+  //   c. The onError callback fires with (groupId, rawMessage) so the caller
+  //      (Sidebar.tsx) can invoke showToggleErrorToast with the correct label.
+  //
+  // Uses reactivate() so GROUP starts absent → optimistic add → server rejects
+  // with INTERNAL_SERVER_ERROR → GROUP must be absent again.
+  it("reactivate(): INTERNAL_SERVER_ERROR — activated reverts, optimistic row removed, onError fires with server message", async () => {
+    // Mirrors the exact message format thrown by setModuleReactivation in
+    // admin.router.ts when written.length !== 1 (zero-row silent skip case).
+    const serverErrorMessage =
+      `Single-toggle integrity error: expected 1 confirmed row from DB for ` +
+      `groupId "${GROUP}" / ventureId "${VENTURE}", got 0.`;
+
+    // Simulate a TRPCClientError-shaped Error: the runtime delivers the server's
+    // detail string in err.message.  The onError handler only reads err.message,
+    // so a plain Error with the right text faithfully models the client path.
+    const internalServerError = new Error(serverErrorMessage);
+
+    vi.mocked(trpc.admin.setModuleReactivation.useMutation).mockReturnValue({
+      mutate: vi.fn(
+        (_input: unknown, options?: { onError?: (err: Error) => void }) => {
+          options?.onError?.(internalServerError);
+        },
+      ),
+    } as any);
+
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    // Baseline: GROUP is inactive (no server rows seeded in this suite).
+    expect(result.current.isActivated(GROUP)).toBe(false);
+    // Baseline: no rows in the overlay before the click.
+    expect(result.current.rows).toHaveLength(0);
+
+    let capturedGroupId  = "";
+    let capturedMessage  = "";
+
+    await act(async () => {
+      result.current.reactivate(GROUP, undefined, (gid, rawMessage) => {
+        capturedGroupId = gid;
+        capturedMessage = rawMessage;
+      });
+    });
+
+    // ── a. activated Set must have reverted — GROUP is inactive again ────────
+    expect(result.current.isActivated(GROUP)).toBe(false);
+
+    // ── b. optimistic overlay must be cleared — no leftover row for GROUP ───
+    expect(result.current.rows.find((r: ReactivationRow) => r.groupId === GROUP))
+      .toBeUndefined();
+
+    // ── c. onError must have fired with groupId + exact server message ───────
+    //    In Sidebar.tsx the onError closure calls:
+    //      showToggleErrorToast(toast, group.label, rawMessage)
+    //    so capturedGroupId and capturedMessage are what the toast would receive.
+    expect(capturedGroupId).toBe(GROUP);
+    expect(capturedMessage).toBe(serverErrorMessage);
+  });
+
+  // ── 10. INTERNAL_SERVER_ERROR from deactivate(): revert + callback ────────────
+  //
+  // Same invariant as test 9 but for the deactivate() path.  GROUP starts active
+  // (global row seeded); optimistic remove flips it inactive; server rejects with
+  // INTERNAL_SERVER_ERROR; GROUP must return to active with overlay cleared.
+  it("deactivate(): INTERNAL_SERVER_ERROR — activated reverts to active, optimistic row removed, onError fires", async () => {
+    currentRows = [globalRow(GROUP)];
+
+    vi.mocked(trpc.admin.getModuleReactivations.useQuery).mockImplementation(() => ({
+      data: currentRows,
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    }));
+
+    const serverErrorMessage =
+      `Single-toggle integrity error: DB confirmed groupId "__wrong_sentinel__" ` +
+      `but expected "${GROUP}". The returned row does not correspond to the submitted item.`;
+
+    vi.mocked(trpc.admin.setModuleReactivation.useMutation).mockReturnValue({
+      mutate: vi.fn(
+        (_input: unknown, options?: { onError?: (err: Error) => void }) => {
+          options?.onError?.(new Error(serverErrorMessage));
+        },
+      ),
+    } as any);
+
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    // Baseline: GROUP is active because the global row says so.
+    expect(result.current.isActivated(GROUP)).toBe(true);
+
+    let capturedGroupId = "";
+    let capturedMessage = "";
+
+    await act(async () => {
+      result.current.deactivate(GROUP, undefined, (gid, rawMessage) => {
+        capturedGroupId = gid;
+        capturedMessage = rawMessage;
+      });
+    });
+
+    // ── a. activated Set must have reverted — GROUP is active again ──────────
+    expect(result.current.isActivated(GROUP)).toBe(true);
+
+    // ── b. optimistic overlay must be cleared ────────────────────────────────
+    // After rollback no leftover optimistic deactivation row should exist.
+    // The only row in `rows` is the original global server row.
+    expect(result.current.rows).toHaveLength(1);
+    expect(result.current.rows[0].ventureId).toBe("__global__");
+
+    // ── c. onError fires with the correct groupId + server error message ─────
+    expect(capturedGroupId).toBe(GROUP);
+    expect(capturedMessage).toBe(serverErrorMessage);
+  });
 });
 
