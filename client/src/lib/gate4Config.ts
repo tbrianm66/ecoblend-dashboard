@@ -124,7 +124,8 @@ export type BacklogGroupId = typeof GATE4_BACKLOG_GROUP_IDS[number];
 /**
  * Human-readable label for each backlog group ID.
  * Used to map raw groupId strings to display names in error toasts.
- * Kept in sync with the group definitions in Sidebar.tsx.
+ * This is the single canonical source of truth — Sidebar.tsx derives its
+ * group labels from this array instead of maintaining a separate copy.
  */
 export const GATE4_BACKLOG_GROUPS: ReadonlyArray<{ id: BacklogGroupId; label: string }> = [
   { id: "venture-intake",  label: "Venture Intake" },

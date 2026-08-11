@@ -39,6 +39,7 @@ import GlobalVentureSelector from "@/components/GlobalVentureSelector";
 import {
   GATE4_CORE_MODULES,
   GATE4_DEFERRED_MODULES,
+  GATE4_BACKLOG_GROUPS,
   GATE4_BACKLOG_GROUP_IDS,
   GATE4_BACKLOG_GROUP_LABEL_MAP,
   useGate4Reactivation,
@@ -134,176 +135,128 @@ const ADMIN_GROUP: NavGroup = {
   ],
 };
 
-// Backlog groups — require reactivationHypothesis to appear in active workflow
-const BACKLOG_GROUPS: NavGroup[] = [
-  {
-    id: "venture-intake",
-    label: "Venture Intake",
-    items: [
-      { id: "intake-hub",         label: "Intake Overview",        icon: "Rocket",       href: "/intake" },
-      { id: "intake-idea",        label: "Idea Capture",           icon: "Lightbulb",    href: "/intake/idea-capture" },
-      { id: "intake-assumptions", label: "Assumptions",            icon: "ShieldAlert",  href: "/intake/assumptions" },
-      { id: "intake-hypotheses",  label: "Hypotheses",             icon: "FlaskConical", href: "/intake/hypotheses" },
-      { id: "intake-riskiest",    label: "Riskiest Assumption",    icon: "AlertTriangle",href: "/intake/riskiest" },
-      { id: "intake-canvas",      label: "Initial Venture Canvas", icon: "LayoutTemplate",href: "/lean/canvas" },
-      { id: "intake-decision",    label: "Intake Decision",        icon: "CheckSquare",  href: "/intake/decision" },
-    ],
-  },
-  {
-    id: "discovery",
-    label: "Discovery & Market",
-    items: [
-      { id: "disc-interviews",  label: "Customer Discovery",  icon: "MessageSquare", href: "/discovery" },
-      { id: "disc-competitors", label: "Competitor Mapping",  icon: "Search",        href: "/discovery/competitors" },
-      { id: "disc-demand",      label: "Demand Signals",      icon: "TrendingUp",    href: "/discovery/demand" },
-      { id: "disc-wtp",         label: "WTP Assessment",      icon: "DollarSign",    href: "/discovery/wtp" },
-      { id: "disc-market-risk", label: "Market Risk Log",     icon: "ShieldAlert",   href: "/discovery/market-risk" },
-    ],
-  },
-  {
-    id: "proposition",
-    label: "Proposition & Model",
-    items: [
-      { id: "prop-overview",  label: "Overview",            icon: "Sparkles",     href: "/proposition" },
-      { id: "prop-vp",        label: "Value Proposition",   icon: "Target",       href: "/proposition/value-proposition" },
-      { id: "prop-jtbd",      label: "Jobs-to-be-Done",     icon: "Crosshair",    href: "/proposition/jtbd" },
-      { id: "prop-bm",        label: "Business Model",      icon: "Layers",       href: "/proposition/business-model" },
-      { id: "prop-revenue",   label: "Revenue Model Test",  icon: "BarChart2",    href: "/proposition/revenue-model" },
-      { id: "prop-economics", label: "Unit Economics",      icon: "PieChart",     href: "/proposition/unit-economics" },
-      { id: "prop-risks",     label: "Risk Log",            icon: "ShieldAlert",  href: "/proposition/risks" },
-      { id: "prop-pivots",    label: "Pivot History",       icon: "RotateCcw",    href: "/proposition/pivot-history" },
-      { id: "prop-decision",  label: "Model Decision",      icon: "CheckSquare",  href: "/proposition/decision" },
-    ],
-  },
-  {
-    id: "rnd",
-    label: "R&D Hub",
-    items: [
-      { id: "rnd-hub",         label: "R&D Hub",              icon: "FlaskConical", href: "/rnd" },
-      { id: "rnd-experiments", label: "Validation Experiments",icon: "TestTube2",    href: "/rnd/experiments" },
-      { id: "rnd-kpis",        label: "Technical KPIs",       icon: "BarChart3",    href: "/rnd/kpis" },
-      { id: "rnd-prototypes",  label: "Prototype Testing",    icon: "Cog",          href: "/rnd/prototypes" },
-      { id: "rnd-ip",          label: "IP Tracker",           icon: "Lock",         href: "/rnd/ip" },
-    ],
-  },
-  {
-    id: "operations",
-    label: "Operations & Mfg",
-    items: [
-      { id: "ops-model",      label: "Operating Model",      icon: "Building2",    href: "/operations" },
-      { id: "ops-suppliers",  label: "Supplier Assessment",  icon: "Truck",        href: "/operations/suppliers" },
-      { id: "ops-mfg",        label: "Manufacturing Plan",   icon: "Factory",      href: "/operations/manufacturing" },
-      { id: "ops-compliance", label: "Quality & Compliance", icon: "ClipboardList",href: "/operations/compliance" },
-      { id: "ops-mrl",        label: "MRL Evidence",         icon: "BarChart3",    href: "/operations/mrl" },
-    ],
-  },
-  {
-    id: "gtm",
-    label: "Brand & GTM",
-    items: [
-      { id: "gtm-brand",     label: "Brand Readiness",      icon: "Sparkles",     href: "/gtm" },
-      { id: "gtm-messaging", label: "Messaging Tests",      icon: "MessageSquare",href: "/gtm/messaging" },
-      { id: "gtm-marketing", label: "Marketing Strategy",   icon: "Megaphone",    href: "/gtm/strategy" },
-      { id: "gtm-campaigns", label: "Campaign Experiments", icon: "Newspaper",    href: "/gtm/campaigns" },
-      { id: "gtm-sales",     label: "Sales Pipeline",       icon: "HandCoins",    href: "/gtm/sales" },
-    ],
-  },
-  {
-    id: "sustainability",
-    label: "Sustainability & Impact",
-    items: [
-      { id: "sus-hub",         label: "Sustainability Hub",  icon: "Leaf",        href: "/sustainability" },
-      { id: "sus-impact",      label: "Impact Metrics (IRL)",icon: "Heart",       href: "/sustainability/impact" },
-      { id: "sus-lca",         label: "LCA / Carbon",        icon: "Globe",       href: "/sustainability/lca" },
-      { id: "sus-circularity", label: "Circularity",         icon: "GitBranch",   href: "/sustainability/circularity" },
-      { id: "sus-bcorp",       label: "B Corp & ESG",        icon: "Award",       href: "/sustainability/bcorp" },
-    ],
-  },
-  {
-    id: "risk",
-    label: "Risk Intelligence",
-    items: [
-      { id: "risk-register",   label: "Central Risk Register",icon: "ShieldAlert", href: "/risk" },
-      { id: "risk-heatmap",    label: "Risk Heatmap",         icon: "Map",         href: "/risk/heatmap" },
-      { id: "risk-mitigation", label: "Mitigation Plans",     icon: "Shield",      href: "/risk/mitigation" },
-    ],
-  },
-  {
-    id: "scoring",
-    label: "Readiness Scoring",
-    items: [
-      { id: "score-composite", label: "Composite Score",  icon: "PieChart",    href: "/scoring" },
-      { id: "score-vrl",       label: "VRL Analytics",    icon: "TrendingUp",  href: "/scoring/vrl" },
-      { id: "score-trl",       label: "TRL Analytics",    icon: "FlaskConical",href: "/scoring/trl" },
-      { id: "score-brl",       label: "BRL Analytics",    icon: "Briefcase",   href: "/scoring/brl" },
-      { id: "score-mrl",       label: "MRL Analytics",    icon: "Factory",     href: "/scoring/mrl" },
-      { id: "score-srl",       label: "SRL Analytics",    icon: "Leaf",        href: "/scoring/srl" },
-      { id: "score-irl",       label: "IRL Analytics",    icon: "Heart",       href: "/scoring/irl" },
-      { id: "score-prl",       label: "PRL Analytics",    icon: "Users",       href: "/scoring/prl" },
-    ],
-  },
-  {
-    id: "investment",
-    label: "Investment Readiness",
-    items: [
-      { id: "inv-hub",       label: "Investment Hub",     icon: "DollarSign",  href: "/investment" },
-      { id: "inv-thesis",    label: "Investment Thesis",  icon: "BookOpen",    href: "/investment/thesis" },
-      { id: "inv-financial", label: "Financial Model",    icon: "BarChart2",   href: "/investment/financial" },
-      { id: "inv-dataroom",  label: "Investor Data Room", icon: "FolderLock",  href: "/investment/dataroom" },
-      { id: "inv-pack",      label: "Investor Pack Export",icon: "FileText",   href: "/investment/pack" },
-    ],
-  },
-  {
-    id: "execution",
-    label: "Execution Planning",
-    items: [
-      { id: "exec-roadmap",    label: "Execution Roadmap", icon: "Map",      href: "/execution" },
-      { id: "exec-milestones", label: "Milestone Tracker", icon: "Target",   href: "/execution/milestones" },
-      { id: "exec-budget",     label: "Budget Plan",       icon: "DollarSign",href: "/execution/budget" },
-      { id: "exec-hiring",     label: "Hiring Plan",       icon: "Users",    href: "/execution/hiring" },
-    ],
-  },
-  {
-    id: "coaching",
-    label: "Coaching",
-    items: [
-      { id: "coach-founder", label: "Founder Dashboard",  icon: "UserCircle2",   href: "/coaching/founder" },
-      { id: "coach-studio",  label: "Studio Dashboard",   icon: "LayoutDashboard",href: "/coaching/studio" },
-      { id: "coach-manage",  label: "Coach Management",   icon: "UserCheck",     href: "/coaching/coach" },
-    ],
-  },
-  {
-    id: "collaboration",
-    label: "Collaboration",
-    items: [
-      { id: "collab-team",       label: "Team Workspace",    icon: "Users",       href: "/collaboration" },
-      { id: "collab-advisors",   label: "Advisor Directory", icon: "GraduationCap",href: "/collaboration/advisors" },
-      { id: "collab-academics",  label: "Academic Partners", icon: "BookOpen",    href: "/collaboration/academics" },
-      { id: "collab-specialists",label: "Specialist Services",icon: "Briefcase",  href: "/collaboration/specialists" },
-    ],
-  },
-  {
-    id: "governance",
-    label: "Governance",
-    items: [
-      { id: "gov-dashboard", label: "Governance Dashboard", icon: "Building2",  href: "/governance" },
-      { id: "gov-gates",     label: "Stage-Gate Approvals", icon: "Shield",     href: "/governance/gates" },
-      { id: "gov-board",     label: "Board Reporting",      icon: "FileText",   href: "/governance/board" },
-      { id: "gov-audit",     label: "Audit Trail",          icon: "ClipboardList",href: "/governance/audit" },
-      { id: "gov-ip",        label: "IP Register",          icon: "Lock",       href: "/governance/ip" },
-      { id: "gov-legal",     label: "Legal Repository",     icon: "FileText",   href: "/governance/legal" },
-      // FEDSILK removed from active governance — now in DEFERRED (Gate 4) section
-    ],
-  },
-  {
-    id: "people",
-    label: "People Intelligence",
-    items: [
-      { id: "people-intelligence", label: "People Intelligence", icon: "Users",   href: "/people-intelligence" },
-      { id: "people-esop",         label: "ESOP & Equity",       icon: "PieChart",href: "/people" },
-    ],
-  },
-];
+// ── Backlog group nav items ───────────────────────────────────────────────────
+// Labels are intentionally omitted here — they come from GATE4_BACKLOG_GROUPS
+// in gate4Config.ts so that the sidebar and the error toasts always display the
+// same human-readable name without any manual synchronisation.
+const BACKLOG_ITEMS: Record<string, NavItem[]> = {
+  "venture-intake": [
+    { id: "intake-hub",         label: "Intake Overview",        icon: "Rocket",        href: "/intake" },
+    { id: "intake-idea",        label: "Idea Capture",           icon: "Lightbulb",     href: "/intake/idea-capture" },
+    { id: "intake-assumptions", label: "Assumptions",            icon: "ShieldAlert",   href: "/intake/assumptions" },
+    { id: "intake-hypotheses",  label: "Hypotheses",             icon: "FlaskConical",  href: "/intake/hypotheses" },
+    { id: "intake-riskiest",    label: "Riskiest Assumption",    icon: "AlertTriangle", href: "/intake/riskiest" },
+    { id: "intake-canvas",      label: "Initial Venture Canvas", icon: "LayoutTemplate",href: "/lean/canvas" },
+    { id: "intake-decision",    label: "Intake Decision",        icon: "CheckSquare",   href: "/intake/decision" },
+  ],
+  "discovery": [
+    { id: "disc-interviews",  label: "Customer Discovery", icon: "MessageSquare", href: "/discovery" },
+    { id: "disc-competitors", label: "Competitor Mapping", icon: "Search",        href: "/discovery/competitors" },
+    { id: "disc-demand",      label: "Demand Signals",     icon: "TrendingUp",    href: "/discovery/demand" },
+    { id: "disc-wtp",         label: "WTP Assessment",     icon: "DollarSign",    href: "/discovery/wtp" },
+    { id: "disc-market-risk", label: "Market Risk Log",    icon: "ShieldAlert",   href: "/discovery/market-risk" },
+  ],
+  "proposition": [
+    { id: "prop-overview",  label: "Overview",           icon: "Sparkles",    href: "/proposition" },
+    { id: "prop-vp",        label: "Value Proposition",  icon: "Target",      href: "/proposition/value-proposition" },
+    { id: "prop-jtbd",      label: "Jobs-to-be-Done",    icon: "Crosshair",   href: "/proposition/jtbd" },
+    { id: "prop-bm",        label: "Business Model",     icon: "Layers",      href: "/proposition/business-model" },
+    { id: "prop-revenue",   label: "Revenue Model Test", icon: "BarChart2",   href: "/proposition/revenue-model" },
+    { id: "prop-economics", label: "Unit Economics",     icon: "PieChart",    href: "/proposition/unit-economics" },
+    { id: "prop-risks",     label: "Risk Log",           icon: "ShieldAlert", href: "/proposition/risks" },
+    { id: "prop-pivots",    label: "Pivot History",      icon: "RotateCcw",   href: "/proposition/pivot-history" },
+    { id: "prop-decision",  label: "Model Decision",     icon: "CheckSquare", href: "/proposition/decision" },
+  ],
+  "rnd": [
+    { id: "rnd-hub",         label: "R&D Hub",               icon: "FlaskConical", href: "/rnd" },
+    { id: "rnd-experiments", label: "Validation Experiments", icon: "TestTube2",    href: "/rnd/experiments" },
+    { id: "rnd-kpis",        label: "Technical KPIs",         icon: "BarChart3",    href: "/rnd/kpis" },
+    { id: "rnd-prototypes",  label: "Prototype Testing",      icon: "Cog",          href: "/rnd/prototypes" },
+    { id: "rnd-ip",          label: "IP Tracker",             icon: "Lock",         href: "/rnd/ip" },
+  ],
+  "operations": [
+    { id: "ops-model",      label: "Operating Model",      icon: "Building2",    href: "/operations" },
+    { id: "ops-suppliers",  label: "Supplier Assessment",  icon: "Truck",        href: "/operations/suppliers" },
+    { id: "ops-mfg",        label: "Manufacturing Plan",   icon: "Factory",      href: "/operations/manufacturing" },
+    { id: "ops-compliance", label: "Quality & Compliance", icon: "ClipboardList",href: "/operations/compliance" },
+    { id: "ops-mrl",        label: "MRL Evidence",         icon: "BarChart3",    href: "/operations/mrl" },
+  ],
+  "gtm": [
+    { id: "gtm-brand",     label: "Brand Readiness",      icon: "Sparkles",     href: "/gtm" },
+    { id: "gtm-messaging", label: "Messaging Tests",      icon: "MessageSquare",href: "/gtm/messaging" },
+    { id: "gtm-marketing", label: "Marketing Strategy",   icon: "Megaphone",    href: "/gtm/strategy" },
+    { id: "gtm-campaigns", label: "Campaign Experiments", icon: "Newspaper",    href: "/gtm/campaigns" },
+    { id: "gtm-sales",     label: "Sales Pipeline",       icon: "HandCoins",    href: "/gtm/sales" },
+  ],
+  "sustainability": [
+    { id: "sus-hub",         label: "Sustainability Hub",   icon: "Leaf",     href: "/sustainability" },
+    { id: "sus-impact",      label: "Impact Metrics (IRL)", icon: "Heart",    href: "/sustainability/impact" },
+    { id: "sus-lca",         label: "LCA / Carbon",         icon: "Globe",    href: "/sustainability/lca" },
+    { id: "sus-circularity", label: "Circularity",          icon: "GitBranch",href: "/sustainability/circularity" },
+    { id: "sus-bcorp",       label: "B Corp & ESG",         icon: "Award",    href: "/sustainability/bcorp" },
+  ],
+  "risk": [
+    { id: "risk-register",   label: "Central Risk Register", icon: "ShieldAlert", href: "/risk" },
+    { id: "risk-heatmap",    label: "Risk Heatmap",          icon: "Map",         href: "/risk/heatmap" },
+    { id: "risk-mitigation", label: "Mitigation Plans",      icon: "Shield",      href: "/risk/mitigation" },
+  ],
+  "scoring": [
+    { id: "score-composite", label: "Composite Score", icon: "PieChart",    href: "/scoring" },
+    { id: "score-vrl",       label: "VRL Analytics",   icon: "TrendingUp",  href: "/scoring/vrl" },
+    { id: "score-trl",       label: "TRL Analytics",   icon: "FlaskConical",href: "/scoring/trl" },
+    { id: "score-brl",       label: "BRL Analytics",   icon: "Briefcase",   href: "/scoring/brl" },
+    { id: "score-mrl",       label: "MRL Analytics",   icon: "Factory",     href: "/scoring/mrl" },
+    { id: "score-srl",       label: "SRL Analytics",   icon: "Leaf",        href: "/scoring/srl" },
+    { id: "score-irl",       label: "IRL Analytics",   icon: "Heart",       href: "/scoring/irl" },
+    { id: "score-prl",       label: "PRL Analytics",   icon: "Users",       href: "/scoring/prl" },
+  ],
+  "investment": [
+    { id: "inv-hub",       label: "Investment Hub",      icon: "DollarSign", href: "/investment" },
+    { id: "inv-thesis",    label: "Investment Thesis",   icon: "BookOpen",   href: "/investment/thesis" },
+    { id: "inv-financial", label: "Financial Model",     icon: "BarChart2",  href: "/investment/financial" },
+    { id: "inv-dataroom",  label: "Investor Data Room",  icon: "FolderLock", href: "/investment/dataroom" },
+    { id: "inv-pack",      label: "Investor Pack Export", icon: "FileText",  href: "/investment/pack" },
+  ],
+  "execution": [
+    { id: "exec-roadmap",    label: "Execution Roadmap", icon: "Map",       href: "/execution" },
+    { id: "exec-milestones", label: "Milestone Tracker", icon: "Target",    href: "/execution/milestones" },
+    { id: "exec-budget",     label: "Budget Plan",       icon: "DollarSign",href: "/execution/budget" },
+    { id: "exec-hiring",     label: "Hiring Plan",       icon: "Users",     href: "/execution/hiring" },
+  ],
+  "coaching": [
+    { id: "coach-founder", label: "Founder Dashboard", icon: "UserCircle2",    href: "/coaching/founder" },
+    { id: "coach-studio",  label: "Studio Dashboard",  icon: "LayoutDashboard",href: "/coaching/studio" },
+    { id: "coach-manage",  label: "Coach Management",  icon: "UserCheck",      href: "/coaching/coach" },
+  ],
+  "collaboration": [
+    { id: "collab-team",        label: "Team Workspace",     icon: "Users",       href: "/collaboration" },
+    { id: "collab-advisors",    label: "Advisor Directory",  icon: "GraduationCap",href: "/collaboration/advisors" },
+    { id: "collab-academics",   label: "Academic Partners",  icon: "BookOpen",    href: "/collaboration/academics" },
+    { id: "collab-specialists", label: "Specialist Services",icon: "Briefcase",   href: "/collaboration/specialists" },
+  ],
+  "governance": [
+    { id: "gov-dashboard", label: "Governance Dashboard", icon: "Building2",   href: "/governance" },
+    { id: "gov-gates",     label: "Stage-Gate Approvals", icon: "Shield",      href: "/governance/gates" },
+    { id: "gov-board",     label: "Board Reporting",      icon: "FileText",    href: "/governance/board" },
+    { id: "gov-audit",     label: "Audit Trail",          icon: "ClipboardList",href: "/governance/audit" },
+    { id: "gov-ip",        label: "IP Register",          icon: "Lock",        href: "/governance/ip" },
+    { id: "gov-legal",     label: "Legal Repository",     icon: "FileText",    href: "/governance/legal" },
+    // FEDSILK removed from active governance — now in DEFERRED (Gate 4) section
+  ],
+  "people": [
+    { id: "people-intelligence", label: "People Intelligence", icon: "Users",   href: "/people-intelligence" },
+    { id: "people-esop",         label: "ESOP & Equity",       icon: "PieChart",href: "/people" },
+  ],
+};
+
+// Derive the full NavGroup array from the canonical GATE4_BACKLOG_GROUPS list so
+// the sidebar group labels and the error-toast labels always come from one source.
+// Only the nav items are defined locally; the id→label mapping is owned by gate4Config.ts.
+const BACKLOG_GROUPS: NavGroup[] = GATE4_BACKLOG_GROUPS.map(({ id, label }) => ({
+  id,
+  label,
+  items: BACKLOG_ITEMS[id] ?? [],
+}));
 
 // ── Sync alerts hook ──────────────────────────────────────────────────────────
 interface SyncAlert {
