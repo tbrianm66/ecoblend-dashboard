@@ -1432,6 +1432,203 @@ describe("useGate4Reactivation — mid-flight venture selector changes", () => {
     expect(auditA).toMatch(new RegExp(`^${ADMIN_A}`));
     expect(auditA).not.toContain(ADMIN_B);
   });
+
+  // ── Test 11: reactivateAll() mutation payload reflects snapshotted venture ───
+  //
+  // Core regression guard for the snapshot mechanism: even when the admin
+  // switches the venture selector to VENTURE_B before the server responds,
+  // the `ventureId` field sent inside the batch mutation payload must equal
+  // VENTURE_A — the venture that was active when reactivateAll() was called.
+  //
+  // A regression in the snapshot capture (e.g. ventureId read from a stale
+  // closure rather than ventureIdRef.current) would silently send 15 writes
+  // to the wrong venture.  This test catches that.
+  it("reactivateAll(): batchMutate is called with ventureId=VENTURE_A even when the selector changes to VENTURE_B before the server responds", async () => {
+    // Capture the payload without resolving so the mutation stays in-flight.
+    let capturedBatchPayload: { ventureId?: string; items: { groupId: string; active: boolean }[] } | null = null;
+    const batchMutate = vi.fn((payload: unknown, _options?: unknown) => {
+      capturedBatchPayload = payload as typeof capturedBatchPayload;
+      // Do NOT call onSuccess — mutation remains in-flight for the test duration.
+    });
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: batchMutate } as any,
+    );
+
+    const { result, rerender } = renderHook(
+      ({ ventureId }: { ventureId: string }) => useGate4Reactivation(ventureId),
+      { initialProps: { ventureId: VENTURE_A } },
+    );
+
+    // Enable All while viewing venture A — ventureIdRef.current === VENTURE_A
+    // so the snapshot captured inside reactivateAll() must be VENTURE_A.
+    await act(async () => {
+      result.current.reactivateAll();
+    });
+
+    // Confirm batchMutate was called exactly once.
+    expect(batchMutate).toHaveBeenCalledOnce();
+
+    // The mutation payload must carry ventureId=VENTURE_A — NOT undefined or VENTURE_B.
+    expect(capturedBatchPayload).not.toBeNull();
+    expect(capturedBatchPayload!.ventureId).toBe(VENTURE_A);
+
+    // Also confirm every item in the batch targets active:true (Enable All direction).
+    expect(capturedBatchPayload!.items.every(item => item.active === true)).toBe(true);
+
+    // Now switch the selector to VENTURE_B while the mutation is still in-flight.
+    // This must NOT retroactively change the ventureId that was sent to the server.
+    await act(async () => {
+      rerender({ ventureId: VENTURE_B });
+    });
+
+    // batchMutate must still have been called exactly once — no duplicate dispatch.
+    expect(batchMutate).toHaveBeenCalledOnce();
+
+    // Re-check the captured payload: it must still show VENTURE_A, not VENTURE_B.
+    // If the snapshot closure was broken, ventureId would be undefined (or VENTURE_B
+    // from a re-render), which would route 15 writes to the wrong venture silently.
+    expect(capturedBatchPayload!.ventureId).toBe(VENTURE_A);
+  });
+
+  // ── Test 12: deactivateAll() mutation payload reflects snapshotted venture ───
+  //
+  // Mirrors Test 11 for the Disable All path.  The `ventureId` in the batch
+  // payload must be VENTURE_A regardless of a post-call selector change.
+  it("deactivateAll(): batchMutate is called with ventureId=VENTURE_A even when the selector changes to VENTURE_B before the server responds", async () => {
+    let capturedBatchPayload: { ventureId?: string; items: { groupId: string; active: boolean }[] } | null = null;
+    const batchMutate = vi.fn((payload: unknown, _options?: unknown) => {
+      capturedBatchPayload = payload as typeof capturedBatchPayload;
+    });
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: batchMutate } as any,
+    );
+
+    const { result, rerender } = renderHook(
+      ({ ventureId }: { ventureId: string }) => useGate4Reactivation(ventureId),
+      { initialProps: { ventureId: VENTURE_A } },
+    );
+
+    // Disable All while viewing venture A.
+    await act(async () => {
+      result.current.deactivateAll();
+    });
+
+    expect(batchMutate).toHaveBeenCalledOnce();
+    expect(capturedBatchPayload).not.toBeNull();
+
+    // Payload must carry VENTURE_A — the snapshotted venture, not VENTURE_B.
+    expect(capturedBatchPayload!.ventureId).toBe(VENTURE_A);
+
+    // All items must have active:false (Disable All direction).
+    expect(capturedBatchPayload!.items.every(item => item.active === false)).toBe(true);
+
+    // Switch selector to VENTURE_B while mutation is still in-flight.
+    await act(async () => {
+      rerender({ ventureId: VENTURE_B });
+    });
+
+    // Payload must remain VENTURE_A — a post-call selector change must not
+    // retroactively modify the already-dispatched mutation arguments.
+    expect(capturedBatchPayload!.ventureId).toBe(VENTURE_A);
+    expect(batchMutate).toHaveBeenCalledOnce();
+  });
+
+  // ── Test 13: reactivateAll() onSuccess receives snapshotted venture ID ───────
+  //
+  // Callers use the snapshotVentureId passed to onSuccess to detect selector
+  // drift and show a contextual toast ("applied to Venture A, but you are now
+  // viewing Venture B").  This test confirms the snapshot flows through
+  // correctly even when the selector has changed before onSuccess fires.
+  it("reactivateAll(): onSuccess callback receives the snapshotted VENTURE_A id even when the selector is already on VENTURE_B when it fires", async () => {
+    let capturedOnSuccess: ((data: { success: boolean; count: number; upserted: string[] }) => void) | null = null;
+    const batchMutate = vi.fn(
+      (
+        _payload: unknown,
+        options?: { onSuccess?: (data: { success: boolean; count: number; upserted: string[] }) => void },
+      ) => {
+        capturedOnSuccess = options?.onSuccess ?? null;
+        // Hold — do not call onSuccess yet.
+      },
+    );
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: batchMutate } as any,
+    );
+
+    const { result, rerender } = renderHook(
+      ({ ventureId }: { ventureId: string }) => useGate4Reactivation(ventureId),
+      { initialProps: { ventureId: VENTURE_A } },
+    );
+
+    // Track what snapshotVentureId the onSuccess callback receives.
+    let receivedSnapshot: string | null | undefined = "NOT_SET";
+    await act(async () => {
+      result.current.reactivateAll((snapshotVentureId) => {
+        receivedSnapshot = snapshotVentureId;
+      });
+    });
+
+    // Selector switches to VENTURE_B while the mutation is still in-flight.
+    await act(async () => {
+      rerender({ ventureId: VENTURE_B });
+    });
+
+    // Now release onSuccess — simulates the server responding after the switch.
+    expect(capturedOnSuccess).not.toBeNull();
+    await act(async () => {
+      capturedOnSuccess!({ success: true, count: GATE4_BACKLOG_GROUP_IDS.length, upserted: [...GATE4_BACKLOG_GROUP_IDS] });
+    });
+
+    // The onSuccess callback must receive VENTURE_A (the snapshot from call time),
+    // NOT VENTURE_B (the current selector value when onSuccess fired).
+    // This lets callers compare the snapshot against the current selector to detect drift.
+    expect(receivedSnapshot).toBe(VENTURE_A);
+    expect(receivedSnapshot).not.toBe(VENTURE_B);
+  });
+
+  // ── Test 14: deactivateAll() onSuccess receives snapshotted venture ID ───────
+  //
+  // Mirrors Test 13 for the Disable All path.
+  it("deactivateAll(): onSuccess callback receives the snapshotted VENTURE_A id even when the selector is already on VENTURE_B when it fires", async () => {
+    let capturedOnSuccess: ((data: { success: boolean; count: number; upserted: string[] }) => void) | null = null;
+    const batchMutate = vi.fn(
+      (
+        _payload: unknown,
+        options?: { onSuccess?: (data: { success: boolean; count: number; upserted: string[] }) => void },
+      ) => {
+        capturedOnSuccess = options?.onSuccess ?? null;
+      },
+    );
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: batchMutate } as any,
+    );
+
+    const { result, rerender } = renderHook(
+      ({ ventureId }: { ventureId: string }) => useGate4Reactivation(ventureId),
+      { initialProps: { ventureId: VENTURE_A } },
+    );
+
+    let receivedSnapshot: string | null | undefined = "NOT_SET";
+    await act(async () => {
+      result.current.deactivateAll((snapshotVentureId) => {
+        receivedSnapshot = snapshotVentureId;
+      });
+    });
+
+    // Selector switches to VENTURE_B while the mutation is still in-flight.
+    await act(async () => {
+      rerender({ ventureId: VENTURE_B });
+    });
+
+    // Release onSuccess — server responds after the switch.
+    expect(capturedOnSuccess).not.toBeNull();
+    await act(async () => {
+      capturedOnSuccess!({ success: true, count: GATE4_BACKLOG_GROUP_IDS.length, upserted: [...GATE4_BACKLOG_GROUP_IDS] });
+    });
+
+    // onSuccess must receive VENTURE_A — the snapshotted venture at call time.
+    expect(receivedSnapshot).toBe(VENTURE_A);
+    expect(receivedSnapshot).not.toBe(VENTURE_B);
+  });
 });
 
 // ── Hook + ReactivationResetButton integration tests ─────────────────────────
