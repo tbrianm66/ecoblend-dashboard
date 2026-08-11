@@ -1044,9 +1044,12 @@ export const adminRouter = router({
 
       // execVentureReset is extracted so the delete predicate (ventureId-only,
       // no per-writer filter) can be unit-tested without importing the schema.
-      await execVentureReset(db, moduleReactivations, eq, moduleReactivations.ventureId, vid);
+      // It now returns the number of rows the DB actually deleted so the caller
+      // can detect a zero-row result (unknown ventureId) instead of silently
+      // reporting success with no audit trace.
+      const deletedCount = await execVentureReset(db, moduleReactivations, eq, moduleReactivations.ventureId, vid);
 
-      return { success: true, ventureId: vid };
+      return { success: true, ventureId: vid, deletedCount };
     }),
 });
 

@@ -768,7 +768,9 @@ describe("execVentureReset — production delete predicate (no per-writer filter
 
     const noopDb = {
       delete: (_t: unknown) => ({
-        where: (_p: unknown) => Promise.resolve([] as unknown[]),
+        where: (_p: unknown) => ({
+          returning: () => Promise.resolve([] as unknown[]),
+        }),
       }),
     };
 
@@ -800,12 +802,14 @@ describe("execVentureReset — production delete predicate (no per-writer filter
     const rows: Row[] = [];
     const mockDb = {
       delete: (_t: unknown) => ({
-        where: (pred: (row: Row) => boolean) => {
-          // Delete every row where pred returns true (mirrors the SQL DELETE WHERE).
-          const toDelete = rows.filter(pred);
-          toDelete.forEach(r => rows.splice(rows.indexOf(r), 1));
-          return Promise.resolve([]);
-        },
+        where: (pred: (row: Row) => boolean) => ({
+          returning: () => {
+            // Delete every row where pred returns true (mirrors the SQL DELETE WHERE).
+            const toDelete = rows.filter(pred);
+            toDelete.forEach(r => rows.splice(rows.indexOf(r), 1));
+            return Promise.resolve(toDelete);
+          },
+        }),
       }),
     };
 
@@ -837,6 +841,94 @@ describe("execVentureReset — production delete predicate (no per-writer filter
     expect(rows.filter(r => r.ventureId === "__global__").length).toBe(2);
     expect(rows.some(r => r.groupId === "discovery"  && r.toggledBy === "alice")).toBe(true);
     expect(rows.some(r => r.groupId === "operations" && r.toggledBy === "bob")).toBe(true);
+  });
+
+  // ── C. deletedCount tests — zero rows vs. non-zero rows ──────────────────
+  //
+  // These tests verify the primary guard introduced by this task: the DELETE
+  // must return the actual number of rows removed so callers can detect the
+  // "unknown ventureId — zero rows matched" case instead of silently reporting
+  // success.
+  //
+  // Both use a self-contained mock DB with .returning() so they exercise the
+  // real execVentureReset without importing the Drizzle schema.
+
+  it("returns deletedCount: 0 when the ventureId matches no rows in the DB", async () => {
+    type Row = { ventureId: string; groupId: string };
+
+    const mockEqRow = (col: { __col: keyof Row }, val: string) =>
+      (row: Row) => row[col.__col] === val;
+
+    const rows: Row[] = [
+      { ventureId: "BEBUS",      groupId: "gtm"       },
+      { ventureId: "__global__", groupId: "discovery" },
+    ];
+
+    const countingDb = {
+      delete: (_t: unknown) => ({
+        where: (pred: (row: Row) => boolean) => ({
+          returning: () => {
+            const deleted = rows.filter(pred);
+            deleted.forEach(r => rows.splice(rows.indexOf(r), 1));
+            return Promise.resolve(deleted);
+          },
+        }),
+      }),
+    };
+
+    // "UNKNOWN-VENTURE" does not match any row — deletedCount must be 0.
+    const count = await execVentureReset(
+      countingDb,
+      mockTable,
+      mockEqRow as any,
+      mockTable.ventureId,
+      "UNKNOWN-VENTURE",
+    );
+
+    expect(count).toBe(0);
+    // All existing rows must be untouched.
+    expect(rows.length).toBe(2);
+  });
+
+  it("returns the correct non-zero deletedCount when the ventureId matches rows", async () => {
+    type Row = { ventureId: string; groupId: string };
+
+    const mockEqRow = (col: { __col: keyof Row }, val: string) =>
+      (row: Row) => row[col.__col] === val;
+
+    const rows: Row[] = [
+      { ventureId: "BEBUS",      groupId: "gtm"        },
+      { ventureId: "BEBUS",      groupId: "scoring"    },
+      { ventureId: "BEBUS",      groupId: "rnd"        },
+      { ventureId: "__global__", groupId: "discovery"  },
+      { ventureId: "__global__", groupId: "operations" },
+    ];
+
+    const countingDb = {
+      delete: (_t: unknown) => ({
+        where: (pred: (row: Row) => boolean) => ({
+          returning: () => {
+            const deleted = rows.filter(pred);
+            deleted.forEach(r => rows.splice(rows.indexOf(r), 1));
+            return Promise.resolve(deleted);
+          },
+        }),
+      }),
+    };
+
+    // 3 BEBUS rows exist — deletedCount must equal 3.
+    const count = await execVentureReset(
+      countingDb,
+      mockTable,
+      mockEqRow as any,
+      mockTable.ventureId,
+      "BEBUS",
+    );
+
+    expect(count).toBe(3);
+    // Only the two global rows should remain.
+    expect(rows.length).toBe(2);
+    expect(rows.every(r => r.ventureId === "__global__")).toBe(true);
   });
 });
 
