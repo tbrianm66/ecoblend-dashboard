@@ -332,6 +332,34 @@ describe("useGate4Reactivation — live source-badge update after toggle", () =>
     );
   });
 
+  // ── deactivateAll also triggers invalidate ───────────────────────────────────
+  it("deactivateAll() triggers invalidate() via the batch mutation onSuccess", async () => {
+    const batchMutate = vi.fn(
+      (_input: unknown, options?: { onSuccess?: (data: { success: boolean; count: number; upserted: string[] }) => void }) => {
+        options?.onSuccess?.({ success: true, count: 0, upserted: [] });
+      },
+    );
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: batchMutate } as any,
+    );
+
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    await act(async () => { result.current.deactivateAll(); });
+
+    expect(mockInvalidate).toHaveBeenCalledOnce();
+    expect(batchMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ventureId: VENTURE,
+        items: expect.arrayContaining([expect.objectContaining({ active: false })]),
+      }),
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    );
+    // Every item in the batch must have active: false
+    const [callArg] = batchMutate.mock.calls[0] as [{ items: { groupId: string; active: boolean }[] }];
+    expect(callArg.items.every((item) => item.active === false)).toBe(true);
+  });
+
   // ── reactivateAll onError: skipped group names passed to the callback ─────────
   it("reactivateAll() parses skipped group IDs from the error message and passes them to onError", async () => {
     const skippedIds = ["backlog-team-growth", "backlog-unit-economics"];
