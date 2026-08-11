@@ -669,6 +669,7 @@ export function ReactivationPanel({
 
   return (
     <div
+      data-testid="reactivation-panel"
       className="absolute bottom-14 left-2 right-2 rounded-xl overflow-hidden z-50"
       style={{ background: "#1a2332", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 8px 32px rgba(0,0,0,0.4)" }}
     >
@@ -1271,6 +1272,7 @@ export default function Sidebar() {
           </div>
           {/* Admin reactivation toggle — disabled while ventures are loading */}
           <button
+            data-testid="gear-button"
             onClick={() => !venturesLoading && setReactivationOpen(o => !o)}
             disabled={venturesLoading}
             className="p-1.5 rounded-md transition-all"
