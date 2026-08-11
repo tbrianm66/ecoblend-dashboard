@@ -883,6 +883,56 @@ describe("setModuleReactivationBatch — payload size validation (schema rejects
     // Zod rejects the whole input — the transaction is never entered.
     expect(committedFor(db, "VENTURE-A")).toHaveLength(0);
   });
+
+  it("rejects a single item with a whitespace-only groupId with BAD_REQUEST and writes zero rows", async () => {
+    // groupId: "   " passes z.string().min(1) (length 3) but must be rejected
+    // by the .refine(s => s.trim().length > 0) check.  A whitespace-only groupId
+    // stored as-is would create a DB row that can never be matched by a UI lookup
+    // while the audit trail would show it as a successful write.
+    const db = makeHarnessDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: [{ groupId: "   ", active: true }],
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("BAD_REQUEST");
+    // The handler must not have entered the transaction — no rows committed.
+    expect(committedFor(db, "VENTURE-A")).toHaveLength(0);
+  });
+
+  it("rejects a mixed batch where one item has a whitespace-only groupId — entire batch rejected, zero rows written", async () => {
+    // A whitespace-only groupId on ANY item must cause the entire input to be
+    // rejected (BAD_REQUEST) before the transaction is entered.
+    const db = makeHarnessDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: [
+          { groupId: "discovery",  active: true }, // valid
+          { groupId: "\t",         active: true }, // tab — whitespace-only, violates refine
+          { groupId: "validation", active: true }, // valid
+        ],
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("BAD_REQUEST");
+    // Zod rejects the whole input — the transaction is never entered.
+    expect(committedFor(db, "VENTURE-A")).toHaveLength(0);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

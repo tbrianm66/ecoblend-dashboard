@@ -953,7 +953,9 @@ export const adminRouter = router({
     .input(z.object({
       ventureId: z.string().optional(),   // omit or "" → global scope
       items: z.array(z.object({
-        groupId: z.string().min(1).max(64),
+        groupId: z.string().min(1).max(64).refine(s => s.trim().length > 0, {
+          message: "groupId must not be blank or whitespace-only",
+        }),
         active:  z.boolean(),
       })).min(1).max(50),
     }))
