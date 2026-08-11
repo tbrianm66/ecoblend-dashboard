@@ -33,7 +33,7 @@
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
-import { showToggleToast, showBatchToast, showResetToast, showResetErrorToast } from "../client/src/lib/gate4ToastUtils";
+import { showToggleToast, showBatchToast, showResetToast, showResetErrorToast, buildResetOnSuccess } from "../client/src/lib/gate4ToastUtils";
 import type { ToastApi } from "../client/src/lib/gate4ToastUtils";
 
 // ── Fake toast spy ────────────────────────────────────────────────────────────
@@ -740,5 +740,157 @@ describe("Gate 4 — load-guarding (actionsDisabled guard) prevents raw-ID fallb
     const call = toast.lastCall()!;
     expect(call.variant).toBe("success");
     expect(call.message).toContain("all ventures (global)");
+  });
+
+  // ── Reset button load-guard path (buildResetOnSuccess production factory) ────
+  //
+  // The "Reset to global defaults" button in ReactivationPanel uses a
+  // CONDITIONAL-RENDER guard:
+  //
+  //   {ventureId && ventureName && (
+  //     <ReactivationResetButton ... onReset={() => {
+  //       resetToGlobalDefaults(
+  //         buildResetOnSuccess(toast, ventureId, ventureName, ...),
+  //         ...
+  //       );
+  //     }} />
+  //   )}
+  //
+  // buildResetOnSuccess is the extracted production factory tested below.
+  // It accepts ventureNameAtClick as `string | undefined` — matching the
+  // production type — so these tests can exercise BOTH the safe path (guard
+  // passed, name is defined) AND the unsafe path (guard absent, name is
+  // undefined → raw-ID fallback fires), proving the guard is load-bearing.
+
+  // ── Raw-ID fallback fires when ventureName is undefined at click time ──────
+
+  it("buildResetOnSuccess: raw-ID fallback fires when ventureName is undefined at click time (guard absent)", () => {
+    // This proves the conditional-render guard is NECESSARY.
+    // If the button were clickable while ventureName=undefined, the toast
+    // would show the raw venture ID instead of a human-readable name.
+    const onSuccess = buildResetOnSuccess(
+      toast,
+      /* ventureIdAtClick   */ "venture-A",
+      /* ventureNameAtClick */ undefined,        // loading / unresolved — no name yet
+      () => "venture-A",
+      () => undefined,
+    );
+    onSuccess();
+
+    const call = toast.lastCall()!;
+    expect(call.variant).toBe("success");
+    // Raw ID appears because ventureName was undefined at click time.
+    expect(call.message).toContain("venture-A");
+    expect(call.message).not.toContain("Alpha Corp");
+  });
+
+  // ── Name is preserved when fully resolved at click time ───────────────────
+
+  it("buildResetOnSuccess: shows human-readable name (not raw ID) when ventureName is defined at click time", () => {
+    // Mirrors the normal production path: guard passes (ventureId && ventureName),
+    // so ventureName is a defined string when the factory is called.
+    const onSuccess = buildResetOnSuccess(
+      toast,
+      /* ventureIdAtClick   */ "venture-A",
+      /* ventureNameAtClick */ "Alpha Corp",     // fully resolved — guard has passed
+      () => "venture-A",
+      () => "Alpha Corp",
+    );
+    onSuccess();
+
+    const call = toast.lastCall()!;
+    expect(call.variant).toBe("success");
+    expect(call.message).toContain("Alpha Corp");
+    expect(call.message).not.toMatch(/venture-A[^:]/);
+  });
+
+  // ── Snapshot is captured at factory-call time, not callback-invocation time ─
+
+  it("buildResetOnSuccess: snapshot captured at click time survives a selector drift", () => {
+    // Admin clicks reset while venture-A is fully resolved (guard passes),
+    // then selector switches to venture-B before the mutation resolves.
+    // The onSuccess callback must still reference the snapshotted venture-A name.
+    let currentVId   = "venture-A";
+    let currentVName: string | undefined = "Alpha Corp";
+
+    const onSuccess = buildResetOnSuccess(
+      toast,
+      /* ventureIdAtClick   */ "venture-A",
+      /* ventureNameAtClick */ "Alpha Corp",
+      () => currentVId,
+      () => currentVName,
+    );
+
+    // Selector changes mid-flight.
+    currentVId   = "venture-B";
+    currentVName = "Beta Ltd";
+
+    onSuccess();
+
+    const call = toast.lastCall()!;
+    expect(call.variant).toBe("warning");
+    expect(call.message).toContain("Alpha Corp"); // snapshot name — not raw ID
+    expect(call.message).toContain("Beta Ltd");   // current venture name
+    expect(call.message).not.toMatch(/venture-A[^:]/);
+    expect(call.message).toMatch(/reset to global defaults/i);
+  });
+
+  // ── Full loading → error → resolved sequence ─────────────────────────────
+
+  it("buildResetOnSuccess: snapshot from resolved state always uses name; snapshot from unresolved state uses raw ID", () => {
+    // Phase 1: factory called while ventures still loading — ventureName undefined.
+    //          The onSuccess closure captures undefined as the snapshot name.
+    const callbackUnresolved = buildResetOnSuccess(
+      toast,
+      "venture-A",
+      undefined,       // loading — name not yet available
+      () => "venture-A",
+      () => "Alpha Corp",
+    );
+    callbackUnresolved();
+    const unresolved = toast.lastCall()!;
+    expect(unresolved.variant).toBe("success");
+    expect(unresolved.message).toContain("venture-A"); // raw ID (fallback)
+    expect(unresolved.message).not.toContain("Alpha Corp");
+
+    toast.reset();
+
+    // Phase 2: factory called after full resolution — ventureName is defined.
+    //          The onSuccess closure captures "Alpha Corp" as the snapshot name.
+    const callbackResolved = buildResetOnSuccess(
+      toast,
+      "venture-A",
+      "Alpha Corp",    // fully resolved — guard has passed
+      () => "venture-A",
+      () => "Alpha Corp",
+    );
+    callbackResolved();
+    const resolved = toast.lastCall()!;
+    expect(resolved.variant).toBe("success");
+    expect(resolved.message).toContain("Alpha Corp"); // human-readable name
+    expect(resolved.message).not.toMatch(/venture-A[^:]/);
+  });
+
+  it("buildResetOnSuccess: message contains 'reset to global defaults' on both success and warning paths", () => {
+    // ── Success path ──────────────────────────────────────────────────────────
+    buildResetOnSuccess(
+      toast,
+      "venture-A", "Alpha Corp",
+      () => "venture-A", () => "Alpha Corp",
+    )();
+    const successCall = toast.lastCall()!;
+    expect(successCall.variant).toBe("success");
+    expect(successCall.message).toMatch(/reset to global defaults/i);
+
+    // ── Warning (drift) path ──────────────────────────────────────────────────
+    toast.reset();
+    buildResetOnSuccess(
+      toast,
+      "venture-A", "Alpha Corp",
+      () => "venture-B", () => "Beta Ltd",
+    )();
+    const warnCall = toast.lastCall()!;
+    expect(warnCall.variant).toBe("warning");
+    expect(warnCall.message).toMatch(/reset to global defaults/i);
   });
 });

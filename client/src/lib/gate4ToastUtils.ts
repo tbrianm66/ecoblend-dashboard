@@ -98,6 +98,54 @@ export function showResetToast(
 }
 
 /**
+ * Build the onSuccess callback for the "Reset to global defaults" mutation.
+ *
+ * Extracted from Sidebar.tsx:ReactivationPanel so the closure-capture logic
+ * can be exercised in a Node.js / Vitest context without React or a browser.
+ *
+ * Call this at the moment the user clicks the reset button — it captures
+ * `ventureIdAtClick` / `ventureNameAtClick` as a snapshot — and pass the
+ * returned function as the mutation's `onSuccess` handler.  When the server
+ * responds, the returned function reads the CURRENT venture via `getCurrentVId`
+ * / `getCurrentVName` and calls showResetToast to display the correct variant.
+ *
+ * IMPORTANT: `ventureNameAtClick` is `string | undefined` because this function
+ * trusts the caller (Sidebar's conditional-render guard `{ventureId && ventureName && ...}`)
+ * to ensure it is defined before the reset button is clickable.  Passing
+ * `undefined` here replicates the raw-ID-fallback scenario that the guard must
+ * prevent.
+ *
+ * @param toast              The toast API (sonner in production, spy in tests).
+ * @param ventureIdAtClick   ventureId captured at click time.
+ * @param ventureNameAtClick ventureName captured at click time (must be defined in production).
+ * @param getCurrentVId      Returns ventureIdRef.current at callback invocation time.
+ * @param getCurrentVName    Returns ventureNameRef.current at callback invocation time.
+ */
+export function buildResetOnSuccess(
+  toast: ToastApi,
+  ventureIdAtClick: string | null,
+  ventureNameAtClick: string | undefined,
+  getCurrentVId: () => string | null,
+  getCurrentVName: () => string | undefined,
+): () => void {
+  // Snapshot captured at click time — mirrors:
+  //   const snapshotVId   = ventureId;
+  //   const snapshotVName = ventureName;
+  const snapshotVId   = ventureIdAtClick;
+  const snapshotVName = ventureNameAtClick;
+
+  return () => {
+    showResetToast(
+      toast,
+      getCurrentVId(),
+      getCurrentVName(),
+      snapshotVId,
+      snapshotVName,
+    );
+  };
+}
+
+/**
  * Show an error toast when a single-group toggle write fails.
  *
  * Fired from the `onError` callback of `persist()` in `useGate4Reactivation`

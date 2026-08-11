@@ -46,7 +46,7 @@ import {
   type BacklogGroupId,
 } from "@/lib/gate4Config";
 import { resolveModuleBadge, buildRowByGroup, formatToggleAudit } from "@/lib/gate4Utils";
-import { showToggleToast, showToggleErrorToast, showBatchToast, showBatchErrorToast, showResetToast, showResetErrorToast } from "@/lib/gate4ToastUtils";
+import { showToggleToast, showToggleErrorToast, showBatchToast, showBatchErrorToast, showResetToast, showResetErrorToast, buildResetOnSuccess } from "@/lib/gate4ToastUtils";
 import { ReactivationResetButton } from "@/components/ReactivationResetButton";
 
 type IconName = string;
@@ -876,18 +876,14 @@ export function ReactivationPanel({
             isError={isError}
             isPending={resetIsPending}
             onReset={() => {
-              const snapshotVId   = ventureId;
-              const snapshotVName = ventureName;
               resetToGlobalDefaults(
-                () => {
-                  showResetToast(
-                    toast,
-                    ventureIdRef.current,
-                    ventureNameRef.current,
-                    snapshotVId,
-                    snapshotVName,
-                  );
-                },
+                buildResetOnSuccess(
+                  toast,
+                  ventureId,
+                  ventureName,
+                  () => ventureIdRef.current,
+                  () => ventureNameRef.current,
+                ),
                 (rawMessage) => {
                   showResetErrorToast(toast, rawMessage);
                 },
