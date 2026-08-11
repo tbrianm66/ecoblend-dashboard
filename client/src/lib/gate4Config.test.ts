@@ -575,6 +575,62 @@ describe("useGate4Reactivation — live source-badge update after toggle", () =>
       expect(result.current.rows).toHaveLength(0);
     });
   });
+
+  // ── Batch success toast — no venture drift (Task #131) ──────────────────────
+  //
+  // Both batch paths (reactivateAll / deactivateAll) pass an onSuccess closure
+  // into the mutation.  When the venture has not changed between click and server
+  // response (snapshotVId === currentVId), that closure calls showBatchToast
+  // which must fire toast.success — NOT toast.warning.
+  //
+  // Each test creates its own batchMutate spy that calls onSuccess synchronously
+  // so we can assert on the toast spy immediately after act().
+  it("reactivateAll fires toast.success (not toast.warning) and names the venture when no drift occurs", async () => {
+    const batchMutate = vi.fn(
+      (_input: unknown, options?: { onSuccess?: (data: { success: boolean; count: number; upserted: string[] }) => void }) => {
+        options?.onSuccess?.({ success: true, count: 15, upserted: [] });
+      },
+    );
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: batchMutate } as any,
+    );
+    const VNAME = "Alpha Ventures";
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+    await act(async () => {
+      // Mirror Sidebar.tsx onSuccess: svid (snapshotVId) equals VENTURE (no drift).
+      result.current.reactivateAll(
+        (svid) => showBatchToast(toast, svid, VNAME, true, svid, VNAME),
+      );
+    });
+    expect(toast.success).toHaveBeenCalledOnce();
+    const [msg] = (toast.success as ReturnType<typeof vi.fn>).mock.calls[0] as [string];
+    expect(msg).toContain("All modules enabled");
+    expect(msg).toContain(VNAME);
+    expect(toast.warning).not.toHaveBeenCalled();
+  });
+
+  it("deactivateAll fires toast.success (not toast.warning) and names the venture when no drift occurs", async () => {
+    const batchMutate = vi.fn(
+      (_input: unknown, options?: { onSuccess?: (data: { success: boolean; count: number; upserted: string[] }) => void }) => {
+        options?.onSuccess?.({ success: true, count: 15, upserted: [] });
+      },
+    );
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: batchMutate } as any,
+    );
+    const VNAME = "Alpha Ventures";
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+    await act(async () => {
+      result.current.deactivateAll(
+        (svid) => showBatchToast(toast, svid, VNAME, false, svid, VNAME),
+      );
+    });
+    expect(toast.success).toHaveBeenCalledOnce();
+    const [msg] = (toast.success as ReturnType<typeof vi.fn>).mock.calls[0] as [string];
+    expect(msg).toContain("All modules disabled");
+    expect(msg).toContain(VNAME);
+    expect(toast.warning).not.toHaveBeenCalled();
+  });
 });
 
 // ── Import the real production reset button ───────────────────────────────────

@@ -20,6 +20,11 @@ export default defineConfig({
     },
   },
   test: {
+    // Use the threads pool: large client test suites (gate4Config.test.ts loads
+    // Sidebar + the full gate4 module graph) exhaust the default 2 GB heap in
+    // the forks pool's child processes.  The threads pool keeps all workers in
+    // the same process heap and is well within the available 4–8 GB.
+    pool: "threads",
     environment: "node",
     environmentMatchGlobs: [
       // Client hook/component tests need a browser-like DOM environment.
