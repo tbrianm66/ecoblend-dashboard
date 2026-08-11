@@ -1533,6 +1533,61 @@ describe("useGate4Reactivation — reset button disables within 10 s after anoth
     expect((getByTestId("reset-btn") as HTMLButtonElement).disabled).toBe(true);
     expect(getByTestId("reset-btn").textContent).toContain("Already using global defaults");
   });
+
+  // ── 4. Panel open transition fires an immediate refetch (Task #106) ────────
+  // When the admin opens the reactivation panel the hook must call refetch()
+  // immediately so the first view always shows server-fresh data — not cached
+  // rows from a previous session.  The prevPanelOpenRef guard in the hook
+  // ensures refetch() fires on the false→true edge only, not on every render.
+  it("calls refetch() immediately when panelOpen transitions from false to true", async () => {
+    // Override the shared mock to capture the refetch spy.
+    const mockRefetch = vi.fn();
+    vi.mocked(trpc.admin.getModuleReactivations.useQuery).mockImplementation(() => ({
+      data: currentRows,
+      isLoading: false,
+      isError: false,
+      refetch: mockRefetch,
+    }));
+
+    const { rerender } = renderHook(
+      ({ open }: { open: boolean }) => useGate4Reactivation(VENTURE, open),
+      { initialProps: { open: false } },
+    );
+
+    // No refetch on the initial closed render.
+    expect(mockRefetch).not.toHaveBeenCalled();
+
+    // Admin opens the panel.
+    await act(async () => { rerender({ open: true }); });
+
+    // The useEffect guarded by prevPanelOpenRef must call refetch() exactly once.
+    expect(mockRefetch).toHaveBeenCalledOnce();
+  });
+
+  // ── 5. Panel closed → refetch() is never called by the hook ────────────────
+  // While the panel stays closed only window-focus refetches are allowed;
+  // the hook's own immediate-refetch effect must not fire.
+  it("does not call refetch() when panelOpen stays false across rerenders", async () => {
+    const mockRefetch = vi.fn();
+    vi.mocked(trpc.admin.getModuleReactivations.useQuery).mockImplementation(() => ({
+      data: currentRows,
+      isLoading: false,
+      isError: false,
+      refetch: mockRefetch,
+    }));
+
+    const { rerender } = renderHook(
+      ({ open }: { open: boolean }) => useGate4Reactivation(VENTURE, open),
+      { initialProps: { open: false } },
+    );
+
+    await act(async () => {
+      rerender({ open: false });
+      rerender({ open: false });
+    });
+
+    expect(mockRefetch).not.toHaveBeenCalled();
+  });
 });
 
 // ── Drift notice: toggle landed on a different venture ────────────────────────
@@ -1975,3 +2030,4 @@ describe("ReactivationPanel props-refactor — injected callbacks fire correctly
     expect((screen.getByTestId("disable-all-btn")          as HTMLButtonElement).disabled).toBe(false);
   });
 });
+
