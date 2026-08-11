@@ -2031,3 +2031,114 @@ describe("ReactivationPanel props-refactor — injected callbacks fire correctly
   });
 });
 
+// ── Polling interval: panelOpen=true → 10_000, panelOpen=false → false ────────
+//
+// The hook passes `refetchInterval: panelOpen ? 10_000 : false` to useQuery.
+// This suite verifies that transitioning panelOpen true→false actually halts
+// background polling by passing refetchInterval=false to useQuery in the new
+// render cycle.  A regression that removed the guard would not be caught by
+// any other test in this file.
+describe("useGate4Reactivation — polling stops when panelOpen transitions true → false", () => {
+  // Capture every set of options passed to useQuery across all renders.
+  // We use an array so we can assert on the specific render-cycle order.
+  let capturedOptions: Array<{ refetchInterval: number | false }>;
+
+  beforeEach(() => {
+    localStorage.clear();
+    capturedOptions = [];
+
+    // useQuery mock: record the options it receives on every call, then return
+    // a stable empty payload so the hook can render without errors.
+    vi.mocked(trpc.admin.getModuleReactivations.useQuery).mockImplementation(
+      (_input: unknown, options?: { refetchInterval?: number | false; staleTime?: number; refetchOnWindowFocus?: boolean }) => {
+        capturedOptions.push({ refetchInterval: options?.refetchInterval ?? false });
+        return { data: undefined, isLoading: false, isError: false, refetch: vi.fn() } as any;
+      },
+    );
+
+    vi.mocked(trpc.admin.setModuleReactivation.useMutation).mockReturnValue(
+      { mutate: vi.fn() } as any,
+    );
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: vi.fn() } as any,
+    );
+    vi.mocked(trpc.admin.resetVentureModuleReactivations.useMutation).mockReturnValue(
+      { mutate: vi.fn() } as any,
+    );
+    vi.mocked(trpc.useUtils).mockReturnValue({
+      admin: { getModuleReactivations: { invalidate: vi.fn() } },
+    } as any);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // ── 1. panelOpen=true → refetchInterval=10_000 ─────────────────────────────
+  it("passes refetchInterval=10_000 to useQuery when panelOpen=true", () => {
+    renderHook(() => useGate4Reactivation("ven-alpha", true));
+
+    // At least one render must have occurred with refetchInterval=10_000.
+    expect(capturedOptions.length).toBeGreaterThan(0);
+    expect(capturedOptions.at(-1)!.refetchInterval).toBe(10_000);
+  });
+
+  // ── 2. panelOpen=false → refetchInterval=false ──────────────────────────────
+  it("passes refetchInterval=false to useQuery when panelOpen=false", () => {
+    renderHook(() => useGate4Reactivation("ven-alpha", false));
+
+    expect(capturedOptions.length).toBeGreaterThan(0);
+    expect(capturedOptions.at(-1)!.refetchInterval).toBe(false);
+  });
+
+  // ── 3. Transition: true → false halts polling in the new render cycle ────────
+  //
+  // This is the key regression guard: starting with panelOpen=true confirms
+  // polling is active (refetchInterval=10_000), then flipping to panelOpen=false
+  // must produce a render where refetchInterval=false is passed to useQuery,
+  // proving the hook re-evaluates the conditional on every render cycle.
+  it("refetchInterval transitions from 10_000 to false when panelOpen flips true → false", async () => {
+    const { rerender } = renderHook(
+      ({ panelOpen }: { panelOpen: boolean }) => useGate4Reactivation("ven-alpha", panelOpen),
+      { initialProps: { panelOpen: true } },
+    );
+
+    // After initial render with panelOpen=true, the last captured option must be 10_000.
+    expect(capturedOptions.at(-1)!.refetchInterval).toBe(10_000);
+
+    // Clear captured state so we can isolate the re-render assertions.
+    capturedOptions = [];
+
+    // Flip panelOpen to false — hook must pass refetchInterval=false to useQuery.
+    await act(async () => {
+      rerender({ panelOpen: false });
+    });
+
+    // At least one render must have occurred after the flip.
+    expect(capturedOptions.length).toBeGreaterThan(0);
+    // The new render cycle must pass false — polling is halted.
+    expect(capturedOptions.at(-1)!.refetchInterval).toBe(false);
+  });
+
+  // ── 4. Transition: false → true resumes polling ──────────────────────────────
+  // Complementary guard: confirms that opening the panel re-enables polling so
+  // the round-trip works in both directions.
+  it("refetchInterval transitions from false to 10_000 when panelOpen flips false → true", async () => {
+    const { rerender } = renderHook(
+      ({ panelOpen }: { panelOpen: boolean }) => useGate4Reactivation("ven-alpha", panelOpen),
+      { initialProps: { panelOpen: false } },
+    );
+
+    expect(capturedOptions.at(-1)!.refetchInterval).toBe(false);
+
+    capturedOptions = [];
+
+    await act(async () => {
+      rerender({ panelOpen: true });
+    });
+
+    expect(capturedOptions.length).toBeGreaterThan(0);
+    expect(capturedOptions.at(-1)!.refetchInterval).toBe(10_000);
+  });
+});
+
