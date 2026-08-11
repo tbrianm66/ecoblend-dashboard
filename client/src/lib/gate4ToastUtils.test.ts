@@ -346,3 +346,109 @@ describe("showToggleErrorToast", () => {
     expect(toast.calls.warning).toHaveLength(0);
   });
 });
+
+// ── showToggleErrorToast — overlapping rapid-click closure isolation ──────────
+//
+// When an admin clicks two different rows before the first server response
+// arrives, each row's onClick handler captures its own `group.label` in a
+// separate onError closure.  The two onError callbacks must each call
+// showToggleErrorToast with their own label — not whichever label happens to
+// be in scope when the response finally arrives.
+//
+// These tests simulate that scenario by building two independent onError
+// closures (each closing over a different label string) and then resolving
+// both "server responses" in sequence, verifying the toasts are scoped
+// correctly.
+
+describe("showToggleErrorToast — overlapping rapid-click closure isolation", () => {
+  it("each closure names its own group when both resolve with errors", () => {
+    const toast = makeToast();
+
+    // Simulate Sidebar.tsx per-row onError closures:
+    // The label is captured at click time, before any server response arrives.
+    const labelA = "Discovery & Market";
+    const labelB = "Operations & Manufacturing";
+
+    // Both click handlers fire before either server response arrives.
+    // Build the closures now (label captured at click time).
+    const onErrorA = (rawMessage: string) =>
+      showToggleErrorToast(toast, labelA, rawMessage);
+    const onErrorB = (rawMessage: string) =>
+      showToggleErrorToast(toast, labelB, rawMessage);
+
+    // Server rejects both in sequence (simulating two overlapping in-flight mutations).
+    onErrorA("DB timeout: write rejected");
+    onErrorB("Integrity check failed: row count mismatch");
+
+    expect(toast.calls.error).toHaveLength(2);
+
+    // First error must name the first group, not the second.
+    expect(toast.calls.error[0]).toContain(labelA);
+    expect(toast.calls.error[0]).not.toContain(labelB);
+
+    // Second error must name the second group, not the first.
+    expect(toast.calls.error[1]).toContain(labelB);
+    expect(toast.calls.error[1]).not.toContain(labelA);
+  });
+
+  it("each toast also carries the correct raw server message for its own request", () => {
+    const toast = makeToast();
+
+    const onErrorA = (msg: string) => showToggleErrorToast(toast, "R&D Hub", msg);
+    const onErrorB = (msg: string) => showToggleErrorToast(toast, "Coaching", msg);
+
+    onErrorA("Permission denied for venture ven-alpha");
+    onErrorB("Permission denied for venture ven-beta");
+
+    expect(toast.calls.error[0]).toContain("ven-alpha");
+    expect(toast.calls.error[0]).not.toContain("ven-beta");
+
+    expect(toast.calls.error[1]).toContain("ven-beta");
+    expect(toast.calls.error[1]).not.toContain("ven-alpha");
+  });
+
+  it("closure label does not bleed across when second click happens before first response", () => {
+    const toast = makeToast();
+
+    // Simulate: admin clicks "Sustainability" row, then immediately clicks
+    // "Governance" row.  Both requests are in-flight simultaneously.
+    // The label each closure captured must survive until its own onError fires.
+    let onErrorFirstClick!: (msg: string) => void;
+    let onErrorSecondClick!: (msg: string) => void;
+
+    // Closures built at click time (label frozen in closure scope).
+    const buildOnError = (label: string) => (msg: string) =>
+      showToggleErrorToast(toast, label, msg);
+
+    onErrorFirstClick  = buildOnError("Sustainability");
+    // Second click happens before first response arrives.
+    onErrorSecondClick = buildOnError("Governance");
+
+    // Responses arrive; second one resolves first (out-of-order is fine).
+    onErrorSecondClick("Server error 500");
+    onErrorFirstClick("Server error 503");
+
+    // Two distinct toasts regardless of resolution order.
+    expect(toast.calls.error).toHaveLength(2);
+    expect(toast.calls.error[0]).toContain("Governance");
+    expect(toast.calls.error[1]).toContain("Sustainability");
+  });
+
+  it("handles the same group label on both closures independently (no cross-contamination)", () => {
+    // Edge case: same label on two rows (hypothetically duplicated config).
+    const toast = makeToast();
+
+    const onErrorA = (msg: string) => showToggleErrorToast(toast, "Risk Register", msg);
+    const onErrorB = (msg: string) => showToggleErrorToast(toast, "Risk Register", msg);
+
+    onErrorA("error from first row");
+    onErrorB("error from second row");
+
+    expect(toast.calls.error).toHaveLength(2);
+    // Both toasts must carry the label; each carries its own server message.
+    expect(toast.calls.error[0]).toContain("Risk Register");
+    expect(toast.calls.error[0]).toContain("error from first row");
+    expect(toast.calls.error[1]).toContain("Risk Register");
+    expect(toast.calls.error[1]).toContain("error from second row");
+  });
+});
