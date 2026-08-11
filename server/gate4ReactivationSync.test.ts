@@ -14,8 +14,9 @@
  * 1. `rowsToActivatedSet` converts server rows into the correct activated Set,
  *    representing the "server wins" outcome regardless of what was in localStorage.
  * 2. Global scope (ventureId === null) reads __global__ rows only.
- * 3. Venture scope reads ONLY that venture's own rows — global rows are NOT inherited.
- * 4. Two ventures' activation state for the same group is fully independent.
+ * 3. Venture scope: global rows serve as a fallback when no venture-specific row
+ *    exists; venture-specific rows always take precedence over global.
+ * 4. Two ventures with explicit rows for the same group resolve independently.
  * 5. Empty/null ventureId defaults to global scope resolution.
  * 6. localStorage helpers (`readLsCache` / `writeLsCache`) round-trip correctly
  *    and silently recover from corrupt cache entries.
@@ -108,12 +109,12 @@ describe("rowsToActivatedSet — server state overrides stale localStorage", () 
     expect(result.has("risk")).toBe(false);
   });
 
-  it("global rows are NOT inherited by a specific venture (isolation model)", () => {
-    // A globally-active row must not appear in a venture's activated set.
-    // Each venture starts with a clean slate; only its own rows count.
+  it("global rows act as a fallback for a venture that has no own row", () => {
+    // When a venture has no venture-specific row for a group, the global row
+    // serves as the default.  Venture-specific rows always override this fallback.
     const rows = [makeRow("coaching", true)]; // __global__ row
     const result = rowsToActivatedSet(rows, "venture-abc");
-    expect(result.has("coaching")).toBe(false);
+    expect(result.has("coaching")).toBe(true);
   });
 
   it("a venture-specific active row adds the group even if no global row exists", () => {
@@ -156,13 +157,15 @@ describe("rowsToActivatedSet — server state overrides stale localStorage", () 
     expect(forB.has("gtm")).toBe(false);
   });
 
-  it("enabling a group globally does not activate it for any venture", () => {
-    // Global and venture scopes are fully isolated: global ON ≠ venture ON.
+  it("enabling a group globally makes it active in a venture that has no own row (global fallback)", () => {
+    // Global rows serve as the default fallback for ventures with no own row.
+    // This is the model that makes "reset to global defaults" work: after deleting
+    // all venture-specific rows, the venture inherits the global state.
     const rows = [makeRow("scoring", true, "__global__")];
     const globalResult  = rowsToActivatedSet(rows, null);
     const ventureResult = rowsToActivatedSet(rows, "venture-x");
-    expect(globalResult.has("scoring")).toBe(true);   // visible in global view
-    expect(ventureResult.has("scoring")).toBe(false); // not visible in venture view
+    expect(globalResult.has("scoring")).toBe(true);  // visible in global view
+    expect(ventureResult.has("scoring")).toBe(true); // also active via global fallback
   });
 
   it("venture-specific rows for a different venture do not affect the result", () => {

@@ -431,10 +431,22 @@ export function useGate4Reactivation(ventureId: string | null, panelOpen = false
       // Single atomic batch mutation — all 15 groups written in one DB transaction.
       const vId = snapshotVentureId ?? undefined;
       const requested = GATE4_BACKLOG_GROUP_IDS.length;
+
+      // Compute the most recent toggledAt among all rows currently known to the
+      // client.  Sent as lastKnownMaxToggledAt so the server can detect when
+      // another admin modified rows between this client's last fetch and now,
+      // surfacing the divergence as a CONFLICT error instead of a silent overwrite.
+      const maxToggled = (serverRows ?? []).reduce((max, r) => {
+        const t = new Date(r.toggledAt as string | Date).getTime();
+        return t > max ? t : max;
+      }, 0);
+      const lastKnownMaxToggledAt = maxToggled > 0 ? new Date(maxToggled).toISOString() : undefined;
+
       setBatchMutation.mutate(
         {
           ventureId: vId,
           items: GATE4_BACKLOG_GROUP_IDS.map(groupId => ({ groupId, active: true })),
+          lastKnownMaxToggledAt,
         },
         {
           onSuccess: (data) => {
@@ -449,6 +461,13 @@ export function useGate4Reactivation(ventureId: string | null, panelOpen = false
           },
           onError: (err) => {
             const rawMessage = err instanceof Error ? err.message : String(err);
+            // Concurrent-modification rejection: surface it distinctly so the caller
+            // can show a "another admin changed these settings — please refresh" toast
+            // instead of a generic "skipped groups" message.
+            if (rawMessage.includes("Concurrent modification detected")) {
+              onError?.([], rawMessage);
+              return;
+            }
             // Parse "Skipped group(s): X, Y, Z" from the server error message.
             const match = rawMessage.match(/Skipped group\(s\):\s*(.+)$/);
             const skippedGroups = match
@@ -459,7 +478,7 @@ export function useGate4Reactivation(ventureId: string | null, panelOpen = false
         },
       );
     },
-    [setBatchMutation, utils],
+    [setBatchMutation, utils, serverRows],
   );
 
   const deactivateAll = useCallback(
@@ -485,10 +504,20 @@ export function useGate4Reactivation(ventureId: string | null, panelOpen = false
 
       const vId = snapshotVentureId ?? undefined;
       const requested = GATE4_BACKLOG_GROUP_IDS.length;
+
+      // Same optimistic-locking timestamp as reactivateAll — prevents silent
+      // overwrite of a concurrent admin's work during Disable All.
+      const maxToggled = (serverRows ?? []).reduce((max, r) => {
+        const t = new Date(r.toggledAt as string | Date).getTime();
+        return t > max ? t : max;
+      }, 0);
+      const lastKnownMaxToggledAt = maxToggled > 0 ? new Date(maxToggled).toISOString() : undefined;
+
       setBatchMutation.mutate(
         {
           ventureId: vId,
           items: GATE4_BACKLOG_GROUP_IDS.map(groupId => ({ groupId, active: false })),
+          lastKnownMaxToggledAt,
         },
         {
           onSuccess: (data) => {
@@ -503,6 +532,11 @@ export function useGate4Reactivation(ventureId: string | null, panelOpen = false
           },
           onError: (err) => {
             const rawMessage = err instanceof Error ? err.message : String(err);
+            // Concurrent-modification rejection — same pattern as reactivateAll.
+            if (rawMessage.includes("Concurrent modification detected")) {
+              onError?.([], rawMessage);
+              return;
+            }
             // Parse "Skipped group(s): X, Y, Z" from the server error message.
             const match = rawMessage.match(/Skipped group\(s\):\s*(.+)$/);
             const skippedGroups = match
@@ -513,7 +547,7 @@ export function useGate4Reactivation(ventureId: string | null, panelOpen = false
         },
       );
     },
-    [setBatchMutation, utils],
+    [setBatchMutation, utils, serverRows],
   );
 
   // tRPC mutation for resetting venture-specific overrides.

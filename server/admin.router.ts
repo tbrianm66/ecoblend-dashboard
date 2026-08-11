@@ -20,7 +20,7 @@ import {
   systemWidgetAnalytics, systemIntegrations, systemApiKeys,
   moduleReactivations,
 } from "../drizzle/schema";
-import { eq, and, desc, asc, ilike, or } from "drizzle-orm";
+import { eq, and, desc, asc, ilike, or, gt, ne } from "drizzle-orm";
 
 // ── Helper: admin guard ───────────────────────────────────────────────────────
 function requireAdmin(role: string) {
@@ -958,6 +958,12 @@ export const adminRouter = router({
         }),
         active:  z.boolean(),
       })).min(1).max(50),
+      // Optimistic-locking field: ISO timestamp of the most recent server row
+      // the client saw before issuing this batch.  When provided, the endpoint
+      // checks whether any existing row for this venture was modified by a
+      // different admin after that timestamp.  If so, the batch is rejected with
+      // a CONFLICT error so the divergence is surfaced rather than silent.
+      lastKnownMaxToggledAt: z.string().datetime().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const db = await getDb();
@@ -969,6 +975,41 @@ export const adminRouter = router({
       // Normalise: empty / missing / whitespace-only → "__global__" sentinel
       const ventureId = normaliseSetVentureId(input.ventureId);
       const now = new Date();
+
+      // ── Concurrent-edit detection ─────────────────────────────────────────
+      // If the client supplied lastKnownMaxToggledAt, check whether any existing
+      // row for this venture was modified by a DIFFERENT admin after that timestamp.
+      // This implements optimistic locking: the batch is rejected when a concurrent
+      // write would be silently overwritten, giving the requesting admin a chance to
+      // re-fetch the current state before retrying.
+      if (input.lastKnownMaxToggledAt) {
+        const cutoff = new Date(input.lastKnownMaxToggledAt);
+        const conflictRows = await db
+          .select({
+            groupId:    moduleReactivations.groupId,
+            modifiedBy: moduleReactivations.toggledBy,
+          })
+          .from(moduleReactivations)
+          .where(
+            and(
+              eq(moduleReactivations.ventureId, ventureId),
+              gt(moduleReactivations.toggledAt, cutoff),
+              ne(moduleReactivations.toggledBy, toggledBy),
+            ),
+          );
+
+        if (conflictRows.length > 0) {
+          const groups  = conflictRows.map(r => r.groupId).join(", ");
+          const editors = [...new Set(conflictRows.map(r => r.modifiedBy).filter(Boolean))].join(", ");
+          throw new TRPCError({
+            code: "CONFLICT",
+            message:
+              `Concurrent modification detected: ${conflictRows.length} group(s) were ` +
+              `modified by another admin (${editors || "unknown"}) after your last refresh. ` +
+              `Re-fetch the current state and retry. Affected groups: ${groups}`,
+          });
+        }
+      }
 
       // Collect the groupId of every row the DB confirms it wrote.
       // Using .returning() means we get back the actual DB-confirmed record,
