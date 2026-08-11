@@ -1195,6 +1195,368 @@ function makeSingleToggleDb(opts: {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ── Cross-path harness — READ COMMITTED model ─────────────────────────────────
+//
+// Both the single-toggle and batch-toggle paths write directly to `committed`
+// (no staging snapshot).  This mirrors PostgreSQL's READ COMMITTED isolation
+// level where each INSERT...ON CONFLICT DO UPDATE statement sees the latest
+// committed state of the row it is updating, regardless of whether a sibling
+// statement in the same connection has already committed.
+//
+// Key structural differences the harness preserves:
+//   • setModuleReactivation  — calls db.insert() directly (auto-committed),
+//     with toggledAt: new Date() constructed inline inside the set clause.
+//   • setModuleReactivationBatch — wraps calls in db.transaction(fn);
+//     computes `const now = new Date()` once before the loop and reuses it.
+//
+// The `returning()` method is where the actual write occurs; this lets barrier
+// tests defer the write by awaiting a promise inside `returning()`.
+//
+// A regression that removes a field from either onConflictDoUpdate.set clause
+// will leave the wrong admin's data in the committed row — these tests catch it.
+
+interface CrossPathRow {
+  groupId:   string;
+  ventureId: string;
+  active:    boolean;
+  toggledBy: string | null;
+  toggledAt: Date;
+}
+
+/** Apply an upsert to `store` and return the confirmed composite key. */
+function applyUpsert(
+  store: Map<string, CrossPathRow>,
+  row:   Record<string, unknown>,
+  set:   Record<string, unknown>,
+): { groupId: string; ventureId: string } {
+  const k = `${row.groupId}:${row.ventureId}`;
+  const existing = store.get(k);
+  store.set(
+    k,
+    existing
+      ? {
+          ...existing,
+          active:    set.active    as boolean,
+          toggledBy: set.toggledBy as string | null,
+          toggledAt: set.toggledAt as Date,
+        }
+      : {
+          groupId:   row.groupId   as string,
+          ventureId: row.ventureId as string,
+          active:    row.active    as boolean,
+          toggledBy: row.toggledBy as string | null,
+          toggledAt: row.toggledAt as Date,
+        },
+  );
+  return { groupId: row.groupId as string, ventureId: row.ventureId as string };
+}
+
+type InsertChain = ReturnType<typeof buildDirectInsertChain>;
+type TxFn = (tx: { insert: InsertChain }) => Promise<void>;
+
+/** Insert chain that writes immediately when returning() is called. */
+function buildDirectInsertChain(target: Map<string, CrossPathRow>): InsertChain {
+  return (_table: unknown) => ({
+    values: (row: Record<string, unknown>) => ({
+      onConflictDoUpdate: ({ set }: { target: unknown; set: Record<string, unknown> }) => ({
+        returning: (_shape: unknown) => {
+          const confirmed = applyUpsert(target, row, set);
+          return Promise.resolve([confirmed]);
+        },
+      }),
+    }),
+  });
+}
+
+/** Insert chain that awaits `barrier` before writing — models a write waiting for a DB lock. */
+function buildDeferredInsertChain(
+  target:  Map<string, CrossPathRow>,
+  barrier: Promise<void>,
+): InsertChain {
+  return (_table: unknown) => ({
+    values: (row: Record<string, unknown>) => ({
+      onConflictDoUpdate: ({ set }: { target: unknown; set: Record<string, unknown> }) => ({
+        returning: async (_shape: unknown) => {
+          await barrier;                                    // wait (lock held elsewhere)
+          const confirmed = applyUpsert(target, row, set); // write after lock acquired
+          return [confirmed];
+        },
+      }),
+    }),
+  });
+}
+
+/**
+ * Baseline cross-path DB: both single-toggle (direct insert) and batch
+ * (transaction wrapping direct inserts) write immediately to `committed`.
+ * Used for serial P / Q tests and the uncontrolled Promise.all S3 test.
+ */
+function makeCrossPathDb() {
+  const committed = new Map<string, CrossPathRow>();
+  return {
+    committed,
+    insert: buildDirectInsertChain(committed),
+    async transaction(fn: TxFn) {
+      await fn({ insert: buildDirectInsertChain(committed) });
+    },
+  };
+}
+
+/**
+ * Single-deferred DB (models "single waits for batch lock"):
+ *   • Single-toggle's write is gated on `singleBarrier`.
+ *   • Batch writes immediately.
+ * Interleaving: batch commits → barrier released → single writes last → SINGLE wins.
+ */
+function makeDbSingleDeferred(singleBarrier: Promise<void>) {
+  const committed = new Map<string, CrossPathRow>();
+  return {
+    committed,
+    insert: buildDeferredInsertChain(committed, singleBarrier),
+    async transaction(fn: TxFn) {
+      await fn({ insert: buildDirectInsertChain(committed) });
+    },
+  };
+}
+
+/**
+ * Batch-deferred DB (models "batch waits for single lock"):
+ *   • Batch transaction does not begin running items until `batchBarrier` resolves.
+ *   • Single-toggle writes immediately.
+ * Interleaving: single commits → barrier released → batch runs and writes last → BATCH wins.
+ */
+function makeDbBatchDeferred(batchBarrier: Promise<void>) {
+  const committed = new Map<string, CrossPathRow>();
+  return {
+    committed,
+    insert: buildDirectInsertChain(committed),
+    async transaction(fn: TxFn) {
+      await batchBarrier;                                    // wait for lock
+      await fn({ insert: buildDirectInsertChain(committed) }); // batch runs after
+    },
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("Cross-path audit consistency — single-toggle vs batch-toggle race (real router)", () => {
+  // ── S1: batch commits first; single waits for lock; single commits last → SINGLE wins ──
+  //
+  // In PostgreSQL READ COMMITTED, when the batch transaction holds the unique-index
+  // lock for (groupId, ventureId), a concurrent single-toggle's INSERT ON CONFLICT
+  // DO UPDATE will block until the batch releases the lock.  After the batch commits,
+  // the single acquires the lock, sees the batch's committed data, and applies its
+  // own set clause — single wins because it is the LAST writer.
+  //
+  // The barrier defers the single's write until AFTER the batch completes, forcing
+  // this ordering explicitly.  If the single's onConflictDoUpdate.set clause were
+  // missing toggledBy or toggledAt, the final row would retain the batch's fields
+  // for those columns while the single's active flag wins — audit contamination.
+  // This test catches that regression.
+  it("S1: batch (bob) commits first — single (alice) acquires lock after and overwrites; final row is wholly alice's", async () => {
+    let releaseSingle!: () => void;
+    const singleBarrier = new Promise<void>(resolve => { releaseSingle = resolve; });
+
+    const db = makeDbSingleDeferred(singleBarrier);
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    // Both dispatched concurrently — single is paused internally by singleBarrier
+    const singleDone = appRouter.createCaller(makeAdminCtx("alice")).admin.setModuleReactivation({
+      groupId:   "discovery",
+      ventureId: "VENTURE-A",
+      active:    true,
+    });
+    const batchDone = appRouter.createCaller(makeAdminCtx("bob")).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [{ groupId: "discovery", active: false }],
+    });
+
+    // Batch has no barrier — it completes first
+    await batchDone;
+
+    // Bob's batch data is in committed before alice's single writes
+    const interim = db.committed.get("discovery:VENTURE-A");
+    expect(interim?.toggledBy).toBe("bob");
+    expect(interim?.active).toBe(false);
+
+    // Release alice's single-toggle — it now writes over bob's committed data
+    releaseSingle();
+    await singleDone;
+
+    // Alice (single) committed last → her data must fully replace bob's
+    const row = db.committed.get("discovery:VENTURE-A")!;
+    expect(row).toBeDefined();
+
+    // All three mutable fields from alice's single write — no bob contamination
+    expect(row.toggledBy).toBe("alice");
+    expect(row.active).toBe(true);
+    expect(row.toggledAt).toBeInstanceOf(Date);
+
+    // Exactly one row — upsert semantics must hold across path boundaries
+    expect(
+      [...db.committed.values()].filter(r => r.groupId === "discovery" && r.ventureId === "VENTURE-A").length,
+    ).toBe(1);
+
+    // Audit string from the winning row names alice and no other admin
+    const audit = `${row.toggledBy} · ${row.toggledAt.toISOString()}`;
+    expect(audit).toMatch(/^alice · /);
+    expect(audit).not.toContain("bob");
+  });
+
+  // ── S2 (inverse): single commits first; batch waits for lock; batch commits last → BATCH wins ──
+  //
+  // The inverse interleaving: the single-toggle holds the lock first and commits.
+  // The batch transaction then acquires the lock, sees the single's committed data
+  // via READ COMMITTED, and applies its own set clause — batch wins as the last writer.
+  //
+  // The barrier defers the batch's execution until AFTER the single completes, forcing
+  // this ordering.  If the batch's onConflictDoUpdate.set clause were missing
+  // toggledBy or toggledAt, the final row would retain alice's single-toggle
+  // identity while the batch's active flag wins — audit contamination.
+  it("S2 (inverse): single (alice) commits first — batch (bob) acquires lock after and overwrites; final row is wholly bob's", async () => {
+    let releaseBatch!: () => void;
+    const batchBarrier = new Promise<void>(resolve => { releaseBatch = resolve; });
+
+    const db = makeDbBatchDeferred(batchBarrier);
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    // Both dispatched concurrently — batch is paused before running its items
+    const singleDone = appRouter.createCaller(makeAdminCtx("alice")).admin.setModuleReactivation({
+      groupId:   "discovery",
+      ventureId: "VENTURE-A",
+      active:    true,
+    });
+    const batchDone = appRouter.createCaller(makeAdminCtx("bob")).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [{ groupId: "discovery", active: false }],
+    });
+
+    // Single has no barrier — it completes first
+    await singleDone;
+
+    // Alice's single data is committed before bob's batch runs any items
+    const interim = db.committed.get("discovery:VENTURE-A");
+    expect(interim?.toggledBy).toBe("alice");
+    expect(interim?.active).toBe(true);
+
+    // Release the batch barrier — bob's batch now runs and sees alice's committed row
+    releaseBatch();
+    await batchDone;
+
+    // Bob (batch) committed last → his data must fully replace alice's
+    const row = db.committed.get("discovery:VENTURE-A")!;
+    expect(row).toBeDefined();
+
+    // All three mutable fields from bob's batch write — no alice contamination
+    expect(row.toggledBy).toBe("bob");
+    expect(row.active).toBe(false);
+    expect(row.toggledAt).toBeInstanceOf(Date);
+
+    // Exactly one row
+    expect(
+      [...db.committed.values()].filter(r => r.groupId === "discovery" && r.ventureId === "VENTURE-A").length,
+    ).toBe(1);
+
+    // Audit string from the winning row names bob and no other admin
+    const audit = `${row.toggledBy} · ${row.toggledAt.toISOString()}`;
+    expect(audit).toMatch(/^bob · /);
+    expect(audit).not.toContain("alice");
+  });
+
+  // ── S3: uncontrolled Promise.all — coherence without ordering guarantee ──────
+  //
+  // Both mutations are dispatched concurrently with no explicit barrier.  Because
+  // JavaScript is single-threaded and the harness uses resolved promises, one
+  // will commit before the other — but we cannot predict which from outside the
+  // engine.  The invariant: exactly one row, and all three mutable fields
+  // (active, toggledBy, toggledAt) belong to the SAME write.
+  //
+  // A blend (e.g. alice's toggledBy but bob's toggledAt) would indicate that one
+  // path's onConflictDoUpdate.set clause is missing a field — this test catches it.
+  it("S3: concurrent Promise.all — final row has exactly one coherent write; no cross-field bleed", async () => {
+    const db = makeCrossPathDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    await Promise.all([
+      appRouter.createCaller(makeAdminCtx("alice")).admin.setModuleReactivation({
+        groupId:   "discovery",
+        ventureId: "VENTURE-A",
+        active:    true,
+      }),
+      appRouter.createCaller(makeAdminCtx("bob")).admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: [{ groupId: "discovery", active: false }],
+      }),
+    ]);
+
+    // Exactly one row
+    const allForKey = [...db.committed.values()].filter(
+      r => r.groupId === "discovery" && r.ventureId === "VENTURE-A",
+    );
+    expect(allForKey.length).toBe(1);
+
+    const row = allForKey[0];
+    expect(["alice", "bob"]).toContain(row.toggledBy);
+    expect(row.toggledAt).toBeInstanceOf(Date);
+    expect(typeof row.active).toBe("boolean");
+
+    // Coherence: the loser's name must not appear in the audit string
+    const loser = row.toggledBy === "alice" ? "bob" : "alice";
+    const audit = `${row.toggledBy} · ${row.toggledAt.toISOString()}`;
+    expect(audit).not.toContain(loser);
+
+    // Field coherence: active must match the writer's intent
+    // alice (single) activates (true); bob (batch) deactivates (false)
+    if (row.toggledBy === "alice") {
+      expect(row.active).toBe(true);
+    } else {
+      expect(row.active).toBe(false);
+    }
+  });
+
+  // ── P (serial): single then batch — batch wins ──────────────────────────────
+  it("P (serial): single-toggle (alice) then batch-toggle (bob) — final row reflects bob's fields", async () => {
+    const db = makeCrossPathDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    await appRouter.createCaller(makeAdminCtx("alice")).admin.setModuleReactivation({
+      groupId: "discovery", ventureId: "VENTURE-A", active: true,
+    });
+    await appRouter.createCaller(makeAdminCtx("bob")).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [{ groupId: "discovery", active: false }],
+    });
+
+    const row = db.committed.get("discovery:VENTURE-A")!;
+    expect(row.toggledBy).toBe("bob");
+    expect(row.active).toBe(false);
+    expect(row.toggledAt).toBeInstanceOf(Date);
+    expect([...db.committed.values()].filter(r => r.groupId === "discovery" && r.ventureId === "VENTURE-A").length).toBe(1);
+  });
+
+  // ── Q (serial): batch then single — single wins ─────────────────────────────
+  it("Q (serial): batch-toggle (alice) then single-toggle (bob) — final row reflects bob's fields", async () => {
+    const db = makeCrossPathDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    await appRouter.createCaller(makeAdminCtx("alice")).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [{ groupId: "discovery", active: false }],
+    });
+    await appRouter.createCaller(makeAdminCtx("bob")).admin.setModuleReactivation({
+      groupId: "discovery", ventureId: "VENTURE-A", active: true,
+    });
+
+    const row = db.committed.get("discovery:VENTURE-A")!;
+    expect(row.toggledBy).toBe("bob");
+    expect(row.active).toBe(true);
+    expect(row.toggledAt).toBeInstanceOf(Date);
+    expect([...db.committed.values()].filter(r => r.groupId === "discovery" && r.ventureId === "VENTURE-A").length).toBe(1);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 describe("setModuleReactivation — DB row integrity checks", () => {
   // These tests exercise the per-row validation added to the single-item toggle.
   // The handler must throw INTERNAL_SERVER_ERROR (not silently succeed) when:

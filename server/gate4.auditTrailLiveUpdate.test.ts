@@ -567,6 +567,127 @@ describe("audit trail — concurrent toggle scenarios (last write wins, fake-DB 
     expect(globalAudit).not.toContain(ADMIN_1);
   });
 
+  // ── P: single-toggle write then batch-toggle write — batch path wins ─────────
+  //
+  // The real server's single toggle (setModuleReactivation) calls `new Date()`
+  // inline inside the onConflictDoUpdate set clause, while the batch path
+  // (setModuleReactivationBatch) computes `now` once before the loop and reuses
+  // it for every item.  This test confirms that when both paths write to the
+  // SAME (groupId, ventureId) row sequentially, the second write (batch) fully
+  // overwrites all three mutable fields — active, toggledBy, toggledAt — so the
+  // audit line always reflects the batch admin's identity, not a mix.
+  it("P: single-toggle write followed by a batch-toggle write on the same row — final audit reflects the batch writer", async () => {
+    // Step 1: single-toggle path writes ADMIN_1's data
+    const singleDate = new Date("2026-08-01T10:00:00.000Z");
+    await db.upsert({
+      groupId:   GROUP,
+      ventureId: VENTURE_A,
+      active:    true,
+      toggledBy: ADMIN_1,
+      toggledAt: singleDate,
+    });
+
+    // Verify ADMIN_1's data is stored before the batch arrives
+    const rowsMid = await db.read();
+    const midState = auditAndBadgeFor(rowsMid, VENTURE_A, GROUP);
+    expect(midState.audit).toMatch(new RegExp(`^${ADMIN_1}`));
+    expect(midState.badge).toBe("venture");
+
+    // Step 2: batch path writes ADMIN_2's data with a shared `now`
+    // (models the real batch: `const now = new Date()` computed once for the whole batch)
+    const batchNow = new Date("2026-08-01T10:00:00.050Z");
+    await db.upsert({
+      groupId:   GROUP,
+      ventureId: VENTURE_A,
+      active:    false,
+      toggledBy: ADMIN_2,
+      toggledAt: batchNow,
+    });
+
+    const rowsAfter = await db.read();
+
+    // Exactly one row — the batch upsert must not duplicate the row
+    const allForKey = rowsAfter.filter(r => r.groupId === GROUP && r.ventureId === VENTURE_A);
+    expect(allForKey.length).toBe(1);
+
+    const map  = buildRowByGroup(rowsAfter, VENTURE_A);
+    const row  = map.get(GROUP)!;
+    expect(row).toBeDefined();
+
+    // The batch write is the last writer, so its data must win entirely —
+    // toggledBy, toggledAt, and active must all come from the batch call.
+    expect(row.toggledBy).toBe(ADMIN_2);
+    expect(row.toggledAt).toEqual(batchNow);
+    expect(row.active).toBe(false);
+
+    // Audit string must show ADMIN_2, not ADMIN_1 (no cross-write contamination)
+    const audit = formatToggleAudit(row.toggledBy, row.toggledAt)!;
+    expect(audit).toMatch(new RegExp(`^${ADMIN_2}`));
+    expect(audit).not.toContain(ADMIN_1);
+
+    // Badge still 'venture' — presence of the row is what matters, not active flag
+    const { badge } = auditAndBadgeFor(rowsAfter, VENTURE_A, GROUP);
+    expect(badge).toBe("venture");
+  });
+
+  // ── Q: batch-toggle write then single-toggle write — single path wins ─────
+  //
+  // The inverse of P: the batch write lands first (with its shared `now`), then
+  // the single-toggle write arrives and overwrites the same row.  Confirms the
+  // single-toggle path's onConflictDoUpdate clause also updates all three
+  // mutable fields atomically, so the audit line shows the single-toggle admin.
+  it("Q: batch-toggle write followed by a single-toggle write on the same row — final audit reflects the single-toggle writer", async () => {
+    // Step 1: batch path writes ADMIN_2's data
+    const batchNow = new Date("2026-08-02T14:00:00.000Z");
+    await db.upsert({
+      groupId:   GROUP,
+      ventureId: VENTURE_A,
+      active:    false,
+      toggledBy: ADMIN_2,
+      toggledAt: batchNow,
+    });
+
+    // Verify ADMIN_2's data is stored before the single toggle arrives
+    const rowsMid = await db.read();
+    const midState = auditAndBadgeFor(rowsMid, VENTURE_A, GROUP);
+    expect(midState.audit).toMatch(new RegExp(`^${ADMIN_2}`));
+    expect(midState.badge).toBe("venture");
+
+    // Step 2: single-toggle path writes ADMIN_1's data with its own inline `new Date()`
+    const singleDate = new Date("2026-08-02T14:00:00.075Z");
+    await db.upsert({
+      groupId:   GROUP,
+      ventureId: VENTURE_A,
+      active:    true,
+      toggledBy: ADMIN_1,
+      toggledAt: singleDate,
+    });
+
+    const rowsAfter = await db.read();
+
+    // Still exactly one row
+    const allForKey = rowsAfter.filter(r => r.groupId === GROUP && r.ventureId === VENTURE_A);
+    expect(allForKey.length).toBe(1);
+
+    const map  = buildRowByGroup(rowsAfter, VENTURE_A);
+    const row  = map.get(GROUP)!;
+    expect(row).toBeDefined();
+
+    // Single-toggle write is the last writer; all three fields must come from it
+    expect(row.toggledBy).toBe(ADMIN_1);
+    expect(row.toggledAt).toEqual(singleDate);
+    expect(row.active).toBe(true);
+
+    // Audit string shows ADMIN_1 only — ADMIN_2's name must not appear
+    const audit = formatToggleAudit(row.toggledBy, row.toggledAt)!;
+    expect(audit).toMatch(new RegExp(`^${ADMIN_1}`));
+    expect(audit).not.toContain(ADMIN_2);
+
+    // Badge is 'venture'
+    const { badge } = auditAndBadgeFor(rowsAfter, VENTURE_A, GROUP);
+    expect(badge).toBe("venture");
+  });
+
   // ── O: three concurrent writes — DB-reported winner's audit is consistent ──
   it("O: after three concurrent writes the DB-reported row's audit is entirely from whichever write won", async () => {
     const ADMIN_3 = "carol@example.com";
