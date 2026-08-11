@@ -933,6 +933,59 @@ describe("setModuleReactivationBatch — payload size validation (schema rejects
     // Zod rejects the whole input — the transaction is never entered.
     expect(committedFor(db, "VENTURE-A")).toHaveLength(0);
   });
+
+  it("rejects a mixed batch where one item has a null groupId — entire batch rejected, zero rows written", async () => {
+    // groupId: null is not a string — z.string() rejects it with BAD_REQUEST.
+    // This test guards against a schema drift where z.string().optional() or
+    // z.string().nullable() is used by mistake, which would let null slip through.
+    const db = makeHarnessDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: [
+          { groupId: "discovery", active: true }, // valid
+          { groupId: null,        active: true }, // null — not a string, violates z.string()
+        ] as any,
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("BAD_REQUEST");
+    // Zod rejects the whole input — the transaction is never entered.
+    expect(committedFor(db, "VENTURE-A")).toHaveLength(0);
+  });
+
+  it("rejects a mixed batch where one item has an undefined groupId — entire batch rejected, zero rows written", async () => {
+    // groupId: undefined is absent — z.string().min(1) requires the field to be
+    // a non-empty string; an undefined groupId must also be rejected with BAD_REQUEST.
+    // This closes the gap where z.string().optional() could coerce an absent key
+    // into undefined and silently pass it through.
+    const db = makeHarnessDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: [
+          { groupId: "discovery",  active: true }, // valid
+          { groupId: undefined,    active: true }, // undefined — violates z.string()
+        ] as any,
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("BAD_REQUEST");
+    // Zod rejects the whole input — the transaction is never entered.
+    expect(committedFor(db, "VENTURE-A")).toHaveLength(0);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
