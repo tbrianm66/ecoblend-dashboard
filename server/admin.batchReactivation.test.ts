@@ -1850,4 +1850,34 @@ describe("setModuleReactivation — DB row integrity checks", () => {
     expect(result.groupId).toBe("scoring");
     expect(result.active).toBe(false);
   });
+
+  it("throws INTERNAL_SERVER_ERROR when .returning() yields 2 rows for the same groupId", async () => {
+    // Simulates a DB trigger (or schema change) that produces an additional row
+    // from a single INSERT ... ON CONFLICT ... RETURNING, so written.length === 2.
+    // The handler's `written.length !== 1` guard must catch this and throw rather
+    // than silently treating the extra row as a successful single-row write.
+    const db = makeSingleToggleDb({
+      returningRows: [
+        { groupId: "discovery", ventureId: "__global__" },
+        { groupId: "discovery", ventureId: "__global__" }, // duplicate — simulates a trigger
+      ],
+    });
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivation({
+        groupId: "discovery",
+        active:  true,
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("INTERNAL_SERVER_ERROR");
+    // The error message must name the offending groupId and the unexpected row count.
+    expect((err as TRPCError).message).toContain("discovery");
+    expect((err as TRPCError).message).toContain("2");
+  });
 });
