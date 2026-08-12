@@ -1031,11 +1031,21 @@ export function ExtendedBacklogSection({
             }
             // "loading" | "unknown" → groupBadge stays null (no badge while indeterminate)
 
+            // Compact audit hint: only shown on OFF rows when a real DB row
+            // exists (GLOBAL or VENTURE state) and the row carries audit data.
+            // Loading / error / DEFAULT states show no hint.
+            const auditHint =
+              !activated && (badgeState === "global" || badgeState === "venture") && row
+                ? formatToggleAudit(row.toggledBy, row.toggledAt)
+                : null;
+
             if (!activated) {
               // Show locked/greyed entry for non-reactivated groups.
               // The source badge is rendered beside the OFF pill so admins can
               // tell whether the group was never touched (DEFAULT) or was
               // explicitly disabled via a global or venture-level override.
+              // The audit hint (who · when) is shown below the group label so
+              // admins can see the change without opening the Reactivation Panel.
               return (
                 <div
                   key={group.id}
@@ -1043,12 +1053,29 @@ export function ExtendedBacklogSection({
                   style={{ cursor: "default" }}
                 >
                   <Lock size={9} style={{ color: "rgba(255,255,255,0.3)", flexShrink: 0 }} />
-                  <span
-                    className="text-xs flex-1 truncate"
-                    style={{ fontFamily: "'Prompt', sans-serif", fontSize: "0.75rem", color: "rgba(255,255,255,0.3)" }}
-                  >
-                    {group.label}
-                  </span>
+                  <div className="flex-1 min-w-0">
+                    <span
+                      className="text-xs truncate block"
+                      style={{ fontFamily: "'Prompt', sans-serif", fontSize: "0.75rem", color: "rgba(255,255,255,0.3)" }}
+                    >
+                      {group.label}
+                    </span>
+                    {auditHint && (
+                      <span
+                        aria-label={auditHint}
+                        title={auditHint}
+                        className="text-xs block"
+                        style={{
+                          fontFamily: "'Prompt', sans-serif",
+                          fontSize: "0.6rem",
+                          color: "rgba(255,255,255,0.22)",
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        {auditHint}
+                      </span>
+                    )}
+                  </div>
                   {groupBadge}
                   <span
                     aria-label="Module disabled"

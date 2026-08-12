@@ -604,6 +604,267 @@ describe("ExtendedBacklogSection — header source badge", () => {
       );
       expect(buttonWithActiveLabel).toBeDefined();
     });
+
+    // ── audit hint on locked OFF rows (Task #137) ─────────────────────────
+    /**
+     * When a locked OFF row has a GLOBAL or VENTURE badge, a compact audit
+     * hint ("who · date time") is shown below the group label so admins can
+     * see who disabled the group without opening the Reactivation Panel.
+     *
+     * The hint is surfaced via aria-label="Toggle audit hint" so the assertion
+     * survives visual refactors and is accessible to screen readers.
+     *
+     * Rules:
+     *   – GLOBAL or VENTURE row with toggledBy/toggledAt → hint shown
+     *   – Row present but both audit fields null → no hint (formatToggleAudit returns null)
+     *   – DEFAULT state (no row) → no hint
+     *   – Loading state → no hint
+     *   – Error state → no hint
+     */
+    describe("audit hint on locked OFF rows", () => {
+      const LOCKED_GROUP = "discovery";
+      const allExceptLocked = (id: string) => id !== LOCKED_GROUP;
+
+      // Fixed audit timestamps so we can assert formatted output deterministically.
+      const GLOBAL_TOGGLED_AT  = new Date("2026-01-05T10:30:00Z");
+      const VENTURE_TOGGLED_AT = new Date("2026-03-12T14:00:00Z");
+
+      /** Row factories with explicit audit data. */
+      function globalRowWithAudit(groupId: string, toggledBy = "admin@example.com"): ReactivationRow {
+        return {
+          groupId,
+          ventureId: "__global__",
+          active: false,
+          toggledBy,
+          toggledAt: GLOBAL_TOGGLED_AT,
+        };
+      }
+      function ventureRowWithAudit(groupId: string, ventureId: string, toggledBy = "ops@example.com"): ReactivationRow {
+        return {
+          groupId,
+          ventureId,
+          active: false,
+          toggledBy,
+          toggledAt: VENTURE_TOGGLED_AT,
+        };
+      }
+
+      /**
+       * The aria-label on the hint span IS the audit string (e.g.
+       * "admin@example.com · Jan 5 10:30 AM"), so we can locate the element
+       * by testing for the presence of a label that contains the email.
+       * We use getAllByRole + filter to avoid coupling to the exact formatted
+       * date-time string, which is locale-dependent.
+       */
+      function getHintSpan(): HTMLElement | null {
+        // Any element whose aria-label contains "·" (the separator formatToggleAudit uses)
+        // is the hint span.  This is locale-independent and won't match the OFF pill or badges.
+        const all = document.querySelectorAll("[aria-label]");
+        for (const el of all) {
+          if ((el.getAttribute("aria-label") ?? "").includes("·")) {
+            return el as HTMLElement;
+          }
+        }
+        return null;
+      }
+
+      it("shows the audit hint when a global row has toggledBy and toggledAt", () => {
+        renderInRouter(
+          React.createElement(ExtendedBacklogSection, {
+            location:    TARGET_LOCATION,
+            isActivated: allExceptLocked,
+            rows:        [globalRowWithAudit(LOCKED_GROUP)],
+            isLoading:   false,
+            isError:     false,
+            ventureId:   null,
+          }),
+        );
+
+        const hint = getHintSpan();
+        expect(hint).not.toBeNull();
+        // textContent must include both the identity and the separator "·"
+        expect(hint!.textContent).toContain("admin@example.com");
+        expect(hint!.textContent).toContain("·");
+        // The aria-label (= the full audit string) also carries identity + separator
+        const label = hint!.getAttribute("aria-label") ?? "";
+        expect(label).toContain("admin@example.com");
+        expect(label).toContain("·");
+      });
+
+      it("aria-label on the hint span IS the full audit string — not a generic placeholder", () => {
+        // Verifies that AT rejects the prior "Toggle audit hint" generic label
+        // and that the label includes the actual actor + timestamp separator.
+        renderInRouter(
+          React.createElement(ExtendedBacklogSection, {
+            location:    TARGET_LOCATION,
+            isActivated: allExceptLocked,
+            rows:        [globalRowWithAudit(LOCKED_GROUP)],
+            isLoading:   false,
+            isError:     false,
+            ventureId:   null,
+          }),
+        );
+
+        const hint = getHintSpan();
+        expect(hint).not.toBeNull();
+        const label = hint!.getAttribute("aria-label") ?? "";
+        // Must NOT be the generic placeholder that was previously rejected.
+        expect(label).not.toBe("Toggle audit hint");
+        // Must contain the actor identity so AT can announce who disabled the group.
+        expect(label).toContain("admin@example.com");
+      });
+
+      it("title attribute on the hint span equals the full audit string (tooltip fallback for truncation)", () => {
+        renderInRouter(
+          React.createElement(ExtendedBacklogSection, {
+            location:    TARGET_LOCATION,
+            isActivated: allExceptLocked,
+            rows:        [globalRowWithAudit(LOCKED_GROUP)],
+            isLoading:   false,
+            isError:     false,
+            ventureId:   null,
+          }),
+        );
+
+        const hint = getHintSpan();
+        expect(hint).not.toBeNull();
+        const title = hint!.getAttribute("title") ?? "";
+        expect(title).toContain("admin@example.com");
+        expect(title).toContain("·");
+      });
+
+      it("shows the audit hint when a venture row has toggledBy and toggledAt", () => {
+        renderInRouter(
+          React.createElement(ExtendedBacklogSection, {
+            location:    TARGET_LOCATION,
+            isActivated: allExceptLocked,
+            rows:        [ventureRowWithAudit(LOCKED_GROUP, VENTURE_ID)],
+            isLoading:   false,
+            isError:     false,
+            ventureId:   VENTURE_ID,
+          }),
+        );
+
+        const hint = getHintSpan();
+        expect(hint).not.toBeNull();
+        expect(hint!.textContent).toContain("ops@example.com");
+        expect(hint!.textContent).toContain("·");
+      });
+
+      it("long email addresses are not silently clipped — textContent and aria-label contain the full string", () => {
+        // A 60-char email that would be ellipsized by CSS truncation.
+        const longEmail = "very-long-admin-account@very-long-domain-example.org";
+        renderInRouter(
+          React.createElement(ExtendedBacklogSection, {
+            location:    TARGET_LOCATION,
+            isActivated: allExceptLocked,
+            rows:        [globalRowWithAudit(LOCKED_GROUP, longEmail)],
+            isLoading:   false,
+            isError:     false,
+            ventureId:   null,
+          }),
+        );
+
+        const hint = getHintSpan();
+        expect(hint).not.toBeNull();
+        // textContent must carry the full string (no JS truncation applied).
+        expect(hint!.textContent).toContain(longEmail);
+        // aria-label must also carry the full string for AT.
+        expect(hint!.getAttribute("aria-label")).toContain(longEmail);
+        // title tooltip must carry the full string as a disclosure fallback.
+        expect(hint!.getAttribute("title")).toContain(longEmail);
+      });
+
+      it("shows no audit hint when the row has no audit data (toggledBy and toggledAt both null)", () => {
+        // Craft a row where both fields are null so formatToggleAudit returns null.
+        const noAuditRow: ReactivationRow = {
+          groupId: LOCKED_GROUP,
+          ventureId: "__global__",
+          active: false,
+          toggledBy: null,
+          toggledAt: null as unknown as Date,
+        };
+
+        renderInRouter(
+          React.createElement(ExtendedBacklogSection, {
+            location:    TARGET_LOCATION,
+            isActivated: allExceptLocked,
+            rows:        [noAuditRow],
+            isLoading:   false,
+            isError:     false,
+            ventureId:   null,
+          }),
+        );
+
+        expect(getHintSpan()).toBeNull();
+      });
+
+      it("shows no audit hint on a DEFAULT locked OFF row (no DB row exists)", () => {
+        renderInRouter(
+          React.createElement(ExtendedBacklogSection, {
+            location:    TARGET_LOCATION,
+            isActivated: allExceptLocked,
+            rows:        [],   // no row → DEFAULT badge state → no hint
+            isLoading:   false,
+            isError:     false,
+            ventureId:   null,
+          }),
+        );
+
+        expect(getHintSpan()).toBeNull();
+      });
+
+      it("shows no audit hint while the query is loading (isLoading=true)", () => {
+        renderInRouter(
+          React.createElement(ExtendedBacklogSection, {
+            location:    TARGET_LOCATION,
+            isActivated: allExceptLocked,
+            rows:        [globalRowWithAudit(LOCKED_GROUP)],
+            isLoading:   true,
+            isError:     false,
+            ventureId:   null,
+          }),
+        );
+
+        expect(getHintSpan()).toBeNull();
+      });
+
+      it("shows no audit hint when the query errored (isError=true)", () => {
+        renderInRouter(
+          React.createElement(ExtendedBacklogSection, {
+            location:    TARGET_LOCATION,
+            isActivated: allExceptLocked,
+            rows:        [globalRowWithAudit(LOCKED_GROUP)],
+            isLoading:   false,
+            isError:     true,
+            ventureId:   null,
+          }),
+        );
+
+        expect(getHintSpan()).toBeNull();
+      });
+
+      it("audit hint is absent on activated (ON) groups — only shown on locked OFF rows", () => {
+        // TARGET_GROUP is ON; LOCKED_GROUP is OFF with audit data.
+        // The hint must appear only on the OFF row, not on any ON group.
+        renderInRouter(
+          React.createElement(ExtendedBacklogSection, {
+            location:    TARGET_LOCATION,
+            isActivated: allExceptLocked,
+            rows:        [globalRowWithAudit(LOCKED_GROUP), globalRowWithAudit(TARGET_GROUP)],
+            isLoading:   false,
+            isError:     false,
+            ventureId:   null,
+          }),
+        );
+
+        // Exactly one audit hint: LOCKED_GROUP's locked OFF row.
+        const allWithSeparator = Array.from(document.querySelectorAll("[aria-label]"))
+          .filter(el => (el.getAttribute("aria-label") ?? "").includes("·"));
+        expect(allWithSeparator).toHaveLength(1);
+        expect(allWithSeparator[0].textContent).toContain("admin@example.com");
+      });
+    });
   });
 
   // ── cross-state: no badge for indeterminate states ────────────────────────
