@@ -38,7 +38,7 @@
  * across tests.
  */
 
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { TRPCError } from "@trpc/server";
 
 // vi.mock is hoisted — this mock intercepts all getDb() calls made by the
@@ -1657,6 +1657,252 @@ describe("Cross-path audit consistency — single-toggle vs batch-toggle race (r
     expect(row.active).toBe(true);
     expect(row.toggledAt).toBeInstanceOf(Date);
     expect([...db.committed.values()].filter(r => r.groupId === "discovery" && r.ventureId === "VENTURE-A").length).toBe(1);
+  });
+
+  // ── S4: reverse dispatch order — batch first in Promise.all, single second (#204) ──
+  //
+  // S3 dispatches [single, batch].  S4 dispatches [batch, single] — the inverse
+  // declaration order.  In JavaScript's event loop, microtasks from the first
+  // element of Promise.all start executing before those from later elements, so
+  // the declaration order can influence which write reaches the DB first.
+  //
+  // This test confirms the coherence invariant holds regardless of dispatch order:
+  // the final committed row must contain all three mutable fields (active,
+  // toggledBy, toggledAt) from exactly ONE write.  A cross-field blend — e.g.
+  // alice's toggledBy but bob's toggledAt — signals that one path's
+  // onConflictDoUpdate.set clause is missing a field.
+  //
+  // #204: Confirm the concurrent single+batch race produces a consistent row
+  //       even when the fake DB resolves writes in reverse dispatch order.
+  it("S4 (#204): reverse dispatch [batch first, single second] — final row has exactly one coherent write; no cross-field bleed", async () => {
+    const db = makeCrossPathDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    // Batch dispatched FIRST in the array (reverse of S3).
+    await Promise.all([
+      appRouter.createCaller(makeAdminCtx("bob")).admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: [{ groupId: "discovery", active: false }],
+      }),
+      appRouter.createCaller(makeAdminCtx("alice")).admin.setModuleReactivation({
+        groupId:   "discovery",
+        ventureId: "VENTURE-A",
+        active:    true,
+      }),
+    ]);
+
+    // Exactly one row — upsert semantics hold across dispatch order.
+    const allForKey = [...db.committed.values()].filter(
+      r => r.groupId === "discovery" && r.ventureId === "VENTURE-A",
+    );
+    expect(allForKey.length).toBe(1);
+
+    const row = allForKey[0];
+    expect(["alice", "bob"]).toContain(row.toggledBy);
+    expect(row.toggledAt).toBeInstanceOf(Date);
+    expect(typeof row.active).toBe("boolean");
+
+    // Coherence: the loser's name must not bleed into the audit string.
+    const loser = row.toggledBy === "alice" ? "bob" : "alice";
+    const audit = `${row.toggledBy} · ${row.toggledAt.toISOString()}`;
+    expect(audit).not.toContain(loser);
+
+    // Field coherence: active must match the winning write's intent.
+    // alice (single) activates → true; bob (batch) deactivates → false.
+    if (row.toggledBy === "alice") {
+      expect(row.active).toBe(true);
+    } else {
+      expect(row.active).toBe(false);
+    }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Batch set-clause completeness spy (#205) ──────────────────────────────────
+//
+// The cross-path race tests (S1–S4) verify that the COMMITTED ROW is coherent.
+// They do not directly inspect what fields were supplied to the batch path's
+// `onConflictDoUpdate.set` object.  A regression that removes `toggledBy` or
+// `toggledAt` from the set clause would cause the batch to silently retain the
+// previous write's audit identity for those fields — the INSERT arm (first-time
+// write) would still be correct, but any subsequent conflict update would be
+// contaminated.
+//
+// This suite closes that gap by capturing the exact `set` payload passed to
+// `onConflictDoUpdate` for every batch item and asserting all three mutable
+// fields are present and non-null.
+//
+// #205: Prevent the batch from silently mixing audit fields if only some columns
+//       are updated on conflict.
+
+interface BatchSetCapture {
+  set: Record<string, unknown>;
+  row: Record<string, unknown>;
+}
+
+function makeBatchSetClauseSpy() {
+  const captures: BatchSetCapture[] = [];
+
+  /** DB mock that records every (row, set) pair the batch sends to onConflictDoUpdate.
+   *  The transaction() callback receives the SAME committed Map as the outer db,
+   *  so writes from both the direct insert path and the transaction path are visible
+   *  on db.committed after each mutation. */
+  function makeDb() {
+    const committed = new Map<string, { groupId: string; ventureId: string; active: boolean; toggledBy: string | null; toggledAt: Date }>();
+
+    /** Build an insert chain that writes to the shared `committed` Map. */
+    function buildInsert() {
+      return (_table: unknown) => ({
+        values: (row: Record<string, unknown>) => ({
+          onConflictDoUpdate: ({ set }: { target: unknown; set: Record<string, unknown> }) => {
+            captures.push({ set, row });
+            const k = `${row.groupId}:${row.ventureId}`;
+            const existing = committed.get(k);
+            if (existing) {
+              committed.set(k, {
+                ...existing,
+                active:    set.active    as boolean,
+                toggledBy: set.toggledBy as string | null,
+                toggledAt: set.toggledAt as Date,
+              });
+            } else {
+              committed.set(k, {
+                groupId:   row.groupId   as string,
+                ventureId: row.ventureId as string,
+                active:    row.active    as boolean,
+                toggledBy: row.toggledBy as string | null,
+                toggledAt: row.toggledAt as Date,
+              });
+            }
+            return {
+              returning: (_shape: unknown) =>
+                Promise.resolve([{ groupId: row.groupId as string, ventureId: row.ventureId as string }]),
+            };
+          },
+        }),
+      });
+    }
+
+    return {
+      committed,
+      select: () => ({ from: () => ({ where: () => Promise.resolve([]) }) }),
+      insert: buildInsert(),
+      async transaction(fn: (tx: { insert: ReturnType<typeof buildInsert> }) => Promise<void>) {
+        // Pass buildInsert() pointing at the SAME committed Map — not a fresh one.
+        await fn({ insert: buildInsert() });
+      },
+    };
+  }
+
+  return { captures, makeDb };
+}
+
+describe("setModuleReactivationBatch — onConflictDoUpdate set-clause completeness (#205)", () => {
+  // These tests verify that ALL three audit fields are present in the batch
+  // conflict-update set clause.  A missing field would cause silent data bleed
+  // when the same row is updated more than once.
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("#205: batch set clause includes active, toggledBy, AND toggledAt for every item", async () => {
+    const spy = makeBatchSetClauseSpy();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(spy.makeDb());
+
+    await appRouter.createCaller(makeAdminCtx("alice")).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [
+        { groupId: "discovery", active: true  },
+        { groupId: "scoring",   active: false },
+        { groupId: "gtm",       active: true  },
+      ],
+    });
+
+    // Three items → three set-clause captures.
+    expect(spy.captures.length).toBe(3);
+
+    for (const { set, row } of spy.captures) {
+      // `active` — the primary toggle field.
+      expect(set).toHaveProperty("active");
+      expect(typeof set.active).toBe("boolean");
+
+      // `toggledBy` — audit author; must be present so a conflict update does not
+      // silently retain the previous writer's name.
+      expect(set).toHaveProperty("toggledBy");
+      expect(typeof set.toggledBy).toBe("string");
+      expect((set.toggledBy as string).length).toBeGreaterThan(0);
+
+      // `toggledAt` — audit timestamp; must be present so a conflict update does
+      // not silently retain the previous write's timestamp.
+      expect(set).toHaveProperty("toggledAt");
+      expect(set.toggledAt).toBeInstanceOf(Date);
+
+      // Sanity: the author in the set clause must match the context used.
+      expect(set.toggledBy).toBe("alice");
+
+      // The groupId in the row is one of the submitted items.
+      expect(["discovery", "scoring", "gtm"]).toContain(row.groupId);
+    }
+  });
+
+  it("#205: batch conflict set toggledBy matches ctx.user.name (not a stale previous writer)", async () => {
+    const spy = makeBatchSetClauseSpy();
+    const db  = spy.makeDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    // First write — alice.
+    await appRouter.createCaller(makeAdminCtx("alice")).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [{ groupId: "discovery", active: false }],
+    });
+
+    // Second write on same row — bob.  The conflict-update set clause must carry
+    // bob's identity, not alice's retained from the first INSERT values.
+    await appRouter.createCaller(makeAdminCtx("bob")).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [{ groupId: "discovery", active: true }],
+    });
+
+    // Two captures (one per write).
+    expect(spy.captures.length).toBe(2);
+
+    const [aliceCapture, bobCapture] = spy.captures;
+    expect(aliceCapture.set.toggledBy).toBe("alice");
+    expect(bobCapture.set.toggledBy).toBe("bob");
+
+    // The committed row must reflect bob's write — no alice bleed.
+    const row = db.committed.get("discovery:VENTURE-A")!;
+    expect(row.toggledBy).toBe("bob");
+    expect(row.active).toBe(true);
+  });
+
+  it("#205: batch conflict set includes toggledAt as a Date instance for every item", async () => {
+    const spy = makeBatchSetClauseSpy();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(spy.makeDb());
+
+    await appRouter.createCaller(makeAdminCtx("carol")).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-B",
+      items: [
+        { groupId: "coaching",  active: true },
+        { groupId: "narrative", active: true },
+      ],
+    });
+
+    expect(spy.captures.length).toBe(2);
+
+    // All items in a batch share the SAME `now` timestamp (computed once before
+    // the transaction loop).  Each set clause must carry a Date instance.
+    const timestamps = spy.captures.map(c => c.set.toggledAt as Date);
+    for (const ts of timestamps) {
+      expect(ts).toBeInstanceOf(Date);
+      expect(isNaN(ts.getTime())).toBe(false);
+    }
+
+    // Because `now` is computed once before the loop, all items share the same
+    // timestamp reference — this is a documented contract verified by #140.
+    expect(timestamps[0].getTime()).toBe(timestamps[1].getTime());
   });
 });
 
