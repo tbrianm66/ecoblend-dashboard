@@ -310,7 +310,8 @@ describe("showBatchToast", () => {
     expect(toast.calls.warning[0]).toContain("Venture Beta");   // where admin is now
   });
 
-  it("drift warning for allActivated=false also names both ventures", () => {
+  // #191: batch warning toast names both ventures correctly when Enable All lands on the wrong venture
+  it("drift warning for allActivated=false also names both ventures (#191)", () => {
     const toast = makeToast();
     showBatchToast(toast, "ven-beta", "Venture Beta", false, "ven-alpha", "Venture Alpha");
 

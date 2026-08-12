@@ -493,7 +493,8 @@ describe("ExtendedBacklogSection — header source badge", () => {
       expect(screen.getByLabelText("Disabled by a venture-specific override").textContent).toBe("VENTURE");
     });
 
-    it("still shows the OFF text label on the locked row", () => {
+    // #193: aria-label on the OFF badge is read correctly by screen readers on the locked row
+    it("still shows the OFF text label on the locked row (#193)", () => {
       renderInRouter(
         React.createElement(ExtendedBacklogSection, {
           location:    TARGET_LOCATION,

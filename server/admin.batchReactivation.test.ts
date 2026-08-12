@@ -829,7 +829,8 @@ describe("setModuleReactivationBatch — payload size validation (schema rejects
     expect(committedFor(db, "VENTURE-A")).toHaveLength(0);
   });
 
-  it("rejects a mixed batch where one item has a blank groupId — entire batch rejected, zero rows written", async () => {
+  // #147: batch rejects an item whose groupId is blank or whitespace-only before it reaches the DB
+  it("rejects a mixed batch where one item has a blank groupId — entire batch rejected, zero rows written (#147)", async () => {
     // Zod validates each item in the array.  A blank groupId on ANY item
     // must cause the entire input to be rejected (BAD_REQUEST) before the
     // transaction is entered — no partial writes from the valid item.
@@ -1116,7 +1117,8 @@ describe("setModuleReactivationBatch — mismatch detection (DB confirms fewer r
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("setModuleReactivationBatch — per-row shape validation (extra rows and wrong groupId)", () => {
+// #146: groupId-mismatch guard also rolls back when a DB trigger rewrites the returned row
+describe("setModuleReactivationBatch — per-row shape validation (extra rows and wrong groupId) (#146)", () => {
   // This suite exercises the two per-item invariants introduced alongside the
   // broader mismatch check:
   //

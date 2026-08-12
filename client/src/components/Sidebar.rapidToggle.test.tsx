@@ -101,6 +101,8 @@ const GROUP_B = GATE4_BACKLOG_GROUPS[1]; // { id: "discovery",      label: "Disc
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
+// #162: closure built inside the per-row callback — group label cannot leak between rows
+// #165: error toast names the correct group when two toggles fail in rapid succession
 describe("ReactivationPanel — rapid overlapping toggle error toast closure isolation", () => {
   it("first click produces an onError closure that names the first group", () => {
     const capturedCalls: CapturedCall[] = [];
