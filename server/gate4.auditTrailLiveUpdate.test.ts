@@ -39,13 +39,22 @@
  *   string would both stay stale — these tests catch that regression.
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
   resolveModuleBadge,
   buildRowByGroup,
   formatToggleAudit,
   type ReactivationRow,
 } from "../client/src/lib/gate4Utils";
+
+// ── Router-level mock (used only by Suite 5) ──────────────────────────────────
+// vi.mock is hoisted to the top of the module by Vitest regardless of where it
+// physically appears.  Suites 1-4 never call getDb so the mock is inert for them.
+vi.mock("./db", () => ({ getDb: vi.fn() }));
+
+import { getDb }      from "./db";
+import { appRouter }  from "./routers";
+import type { TrpcContext } from "./_core/context";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -1475,5 +1484,386 @@ describe("audit trail — genuinely deferred mid-toggle venture switch (task #10
 
     // Two distinct rows — no cross-key collision
     expect(rowsAfterCommit.filter(r => r.groupId === GROUP).length).toBe(2);
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SUITE 5 — Batch shared-timestamp invariant (real router, procedure-level)
+//
+// Calls the ACTUAL setModuleReactivationBatch router procedure via
+// appRouter.createCaller against a lightweight timestamp-capturing DB harness.
+// A counter-based Date spy ensures the test RELIABLY FAILS when new Date() is
+// called per item inside the loop (each call returns BASE_MS + N*1000ms).
+//
+// If the router correctly captures `const now = new Date()` once before the
+// loop, every row receives BASE_MS — the spy counter only advances once — and
+// all timestamp assertions pass.  If the router moves new Date() inside the
+// loop, the rows receive BASE_MS, BASE_MS+1000, BASE_MS+2000, causing the
+// `new Set(timestamps).size === 1` assertion to fail deterministically.
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe("setModuleReactivationBatch — shared-timestamp invariant (real router, procedure-level)", () => {
+  // Capture the original Date constructor BEFORE any spy is installed.
+  // Referenced inside spy implementations so new OriginalDate(...) never recurses.
+  const OriginalDate = globalThis.Date;
+
+  afterEach(() => { vi.restoreAllMocks(); });
+
+  // ── Timestamp-capturing DB harness ───────────────────────────────────────
+  // Minimal Drizzle-API-faithful mock that records the (groupId, toggledAt)
+  // pair the real router passes for every insert/upsert.  Implements only the
+  // subset of the Drizzle API used by setModuleReactivationBatch:
+  //   db.transaction(fn)
+  //   tx.insert(table).values(row).onConflictDoUpdate({ set }).returning(shape)
+  function makeTimestampCapturingDb() {
+    const written: Array<{ groupId: string; toggledAt: Date }> = [];
+    const committed = new Map<string, {
+      groupId: string; ventureId: string; active: boolean;
+      toggledBy: string | null; toggledAt: Date;
+    }>();
+
+    return {
+      written,
+      committed,
+      async transaction(fn: (tx: unknown) => Promise<void>) {
+        const staging = new Map(committed);
+        const tx = {
+          insert: (_table: unknown) => ({
+            values: (row: Record<string, unknown>) => ({
+              onConflictDoUpdate: ({ set }: { set: Record<string, unknown> }) => {
+                // Record the toggledAt the router actually passed in.
+                // On insert path: comes from row.toggledAt (= now from the router).
+                // On conflict path: comes from set.toggledAt (= now from the router).
+                // Both are always `now` in the real implementation.
+                const toggledAt = (set.toggledAt ?? row.toggledAt) as Date;
+                written.push({ groupId: row.groupId as string, toggledAt });
+
+                const k = `${row.groupId}:${row.ventureId}`;
+                const existing = staging.get(k);
+                if (existing) {
+                  staging.set(k, {
+                    ...existing,
+                    active:    set.active    as boolean,
+                    toggledBy: set.toggledBy as string | null,
+                    toggledAt,
+                  });
+                } else {
+                  staging.set(k, {
+                    groupId:   row.groupId   as string,
+                    ventureId: row.ventureId as string,
+                    active:    row.active    as boolean,
+                    toggledBy: row.toggledBy as string | null,
+                    toggledAt,
+                  });
+                }
+
+                const resolved = Promise.resolve([{ groupId: row.groupId as string }]);
+                const voidP    = Promise.resolve(undefined);
+                return {
+                  returning: () => resolved,
+                  then:    voidP.then.bind(voidP),
+                  catch:   voidP.catch.bind(voidP),
+                  finally: voidP.finally.bind(voidP),
+                };
+              },
+            }),
+          }),
+        };
+        await fn(tx);
+        for (const [k, row] of staging) committed.set(k, row);
+      },
+    };
+  }
+
+  // Admin context factory — uses OriginalDate so date fields bypass the spy.
+  function makeRouterAdminCtx(name = "alice"): TrpcContext {
+    return {
+      user: {
+        id: 1, openId: `oid-${name}`, email: `${name}@test.example`,
+        name, loginMethod: "test", role: "admin",
+        createdAt:    new OriginalDate(),
+        updatedAt:    new OriginalDate(),
+        lastSignedIn: new OriginalDate(),
+      },
+      req: { protocol: "https", headers: {} } as TrpcContext["req"],
+      res: { clearCookie: () => {} } as unknown as TrpcContext["res"],
+    };
+  }
+
+  // ── S-ROUTER-1: three-group batch — all rows share the same toggledAt ────
+  it("S-ROUTER-1: all groups in a batch receive the same toggledAt (real router — counter-based spy detects per-item new Date() calls)", async () => {
+    // Counter-based Date spy: each no-arg new Date() call returns a timestamp
+    // 1 second further into the future.
+    // Real router:    calls new Date() once before the loop → all rows share BASE_MS.
+    // Broken router:  calls new Date() per item              → rows get BASE_MS,
+    //                 BASE_MS+1000, BASE_MS+2000 — three distinct values.
+    let dateCallCount = 0;
+    const BASE_MS = new OriginalDate("2026-04-15T09:30:00.000Z").getTime();
+    vi.spyOn(globalThis, "Date").mockImplementation(function (...args: unknown[]) {
+      if (args.length === 0) {
+        return new OriginalDate(BASE_MS + dateCallCount++ * 1_000) as unknown as Date;
+      }
+      return new OriginalDate(args[0] as ConstructorParameters<typeof Date>[0]) as unknown as Date;
+    } as unknown as typeof Date);
+
+    const db = makeTimestampCapturingDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    const caller = appRouter.createCaller(makeRouterAdminCtx());
+    await caller.admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-TS",
+      items: [
+        { groupId: "discovery",  active: true },
+        { groupId: "operations", active: true },
+        { groupId: "validation", active: true },
+      ],
+    });
+
+    expect(db.written).toHaveLength(3);
+    const timestamps = db.written.map(r => r.toggledAt.getTime());
+
+    // Core invariant: all three rows share the identical timestamp.
+    // If new Date() were moved inside the batch loop, the spy would return
+    // three distinct values and new Set(timestamps).size would be 3, not 1.
+    expect(new Set(timestamps).size).toBe(1);
+    expect(timestamps[0]).toBe(timestamps[1]);
+    expect(timestamps[1]).toBe(timestamps[2]);
+  });
+
+  // ── S-ROUTER-2: upsert path — pre-existing rows also get the shared now ─
+  it("S-ROUTER-2: groups that already have rows are updated to the shared batch timestamp (upsert path)", async () => {
+    let dateCallCount = 0;
+    const BASE_MS = new OriginalDate("2026-06-01T08:00:00.000Z").getTime();
+    vi.spyOn(globalThis, "Date").mockImplementation(function (...args: unknown[]) {
+      if (args.length === 0) {
+        return new OriginalDate(BASE_MS + dateCallCount++ * 1_000) as unknown as Date;
+      }
+      return new OriginalDate(args[0] as ConstructorParameters<typeof Date>[0]) as unknown as Date;
+    } as unknown as typeof Date);
+
+    const db = makeTimestampCapturingDb();
+    // Pre-seed so the router hits the onConflictDoUpdate (update) branch for both groups.
+    const OLDER = new OriginalDate("2026-01-01T00:00:00.000Z");
+    db.committed.set("discovery:__global__",  { groupId: "discovery",  ventureId: "__global__", active: false, toggledBy: "prev@test.example", toggledAt: OLDER });
+    db.committed.set("operations:__global__", { groupId: "operations", ventureId: "__global__", active: false, toggledBy: "prev@test.example", toggledAt: OLDER });
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    await appRouter.createCaller(makeRouterAdminCtx()).admin.setModuleReactivationBatch({
+      // No ventureId → normalised to "__global__" by the router
+      items: [
+        { groupId: "discovery",  active: true },
+        { groupId: "operations", active: true },
+      ],
+    });
+
+    expect(db.written).toHaveLength(2);
+    const [ts0, ts1] = db.written.map(r => r.toggledAt.getTime());
+
+    // Both updated rows carry the same batch timestamp
+    expect(ts0).toBe(ts1);
+    // And the timestamp was advanced past the pre-seeded older value
+    expect(ts0).toBeGreaterThan(OLDER.getTime());
+  });
+
+  // ── S-ROUTER-3: negative control — spy returns distinct values per call ──
+  //
+  // Does NOT call the real router.  Confirms the counter-based spy actually
+  // returns distinct timestamps for sequential no-arg new Date() calls, proving
+  // that S-ROUTER-1/2 are meaningful guards and would fail under the broken
+  // per-item pattern.
+  it("S-ROUTER-3: negative control — counter-based spy produces distinct timestamps per call (confirms S-ROUTER-1/2 are meaningful guards)", () => {
+    let count = 0;
+    const BASE = new OriginalDate("2026-07-01T10:00:00.000Z").getTime();
+    vi.spyOn(globalThis, "Date").mockImplementation(function (...args: unknown[]) {
+      if (args.length === 0) {
+        return new OriginalDate(BASE + count++ * 1_000) as unknown as Date;
+      }
+      return new OriginalDate(args[0] as ConstructorParameters<typeof Date>[0]) as unknown as Date;
+    } as unknown as typeof Date);
+
+    // Simulate the broken pattern: new Date() called per item
+    const t1 = new Date(); // count=0 → BASE
+    const t2 = new Date(); // count=1 → BASE + 1 000 ms
+    const t3 = new Date(); // count=2 → BASE + 2 000 ms
+
+    // The spy returns distinct values — confirming S-ROUTER-1 would catch this
+    expect(t1.getTime()).not.toBe(t2.getTime());
+    expect(t2.getTime()).not.toBe(t3.getTime());
+    expect(new Set([t1.getTime(), t2.getTime(), t3.getTime()]).size).toBe(3);
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SUITE 4 — Batch shared-timestamp invariant
+//
+// The real server's setModuleReactivationBatch computes `const now = new Date()`
+// ONCE before the loop and stamps every item with the same toggledAt.  This
+// means all groups changed in the same Enable All / Disable All action share an
+// identical timestamp in the audit trail, letting admins correlate which groups
+// were toggled together.
+//
+// If a future refactor moves `new Date()` inside the loop each row would receive
+// a slightly different timestamp, silently breaking the "toggled together" signal.
+// These tests pin that invariant so such a change can't land undetected.
+// ══════════════════════════════════════════════════════════════════════════════
+
+const GROUP_A = "discovery";
+const GROUP_B = "operations";
+const GROUP_C = "validation";
+const BATCH_VENTURE = "ven-batch";
+const BATCH_ADMIN   = "carol@example.com";
+
+/**
+ * Simulates the real server's batch path:
+ *   const now = new Date()   ← computed once
+ *   for (item of items) upsert({ …, toggledAt: now })
+ *
+ * Returns the shared timestamp so tests can compare against it.
+ */
+async function batchUpsert(
+  db: ReturnType<typeof makeFakeDb>,
+  groupIds: string[],
+  ventureId: string,
+  toggledBy: string,
+  sharedNow: Date,
+): Promise<void> {
+  // Deliberate: `sharedNow` is passed in once and reused for every item,
+  // exactly mirroring `const now = new Date()` before the real batch loop.
+  for (const groupId of groupIds) {
+    await db.upsert({ groupId, ventureId, active: true, toggledBy, toggledAt: sharedNow });
+  }
+}
+
+describe("batch shared-timestamp invariant — all groups in one batch share the same toggledAt", () => {
+  let db: ReturnType<typeof makeFakeDb>;
+
+  beforeEach(() => { db = makeFakeDb(); });
+
+  // ── S1: all rows written in a batch share the exact same toggledAt ─────────
+  it("S1: all groups upserted with a shared `now` have identical toggledAt values after a refetch", async () => {
+    const sharedNow = new Date("2026-04-15T09:30:00.000Z");
+
+    await batchUpsert(db, [GROUP_A, GROUP_B, GROUP_C], BATCH_VENTURE, BATCH_ADMIN, sharedNow);
+
+    const rows = await db.read();
+    const map  = buildRowByGroup(rows, BATCH_VENTURE);
+
+    const rowA = map.get(GROUP_A)!;
+    const rowB = map.get(GROUP_B)!;
+    const rowC = map.get(GROUP_C)!;
+
+    expect(rowA).toBeDefined();
+    expect(rowB).toBeDefined();
+    expect(rowC).toBeDefined();
+
+    // All three rows must share the identical timestamp
+    expect(rowA.toggledAt).toEqual(sharedNow);
+    expect(rowB.toggledAt).toEqual(sharedNow);
+    expect(rowC.toggledAt).toEqual(sharedNow);
+
+    // Cross-check: each pair is exactly equal (not just structurally equal)
+    expect(rowA.toggledAt.getTime()).toBe(rowB.toggledAt.getTime());
+    expect(rowB.toggledAt.getTime()).toBe(rowC.toggledAt.getTime());
+  });
+
+  // ── S2: audit strings for all groups in the batch show the same date/time ──
+  it("S2: audit strings for all batch groups show the same date/time portion — confirming visual grouping in the UI", async () => {
+    const sharedNow = new Date("2026-05-20T14:00:00.000Z");
+
+    await batchUpsert(db, [GROUP_A, GROUP_B, GROUP_C], BATCH_VENTURE, BATCH_ADMIN, sharedNow);
+
+    const rows = await db.read();
+
+    const auditA = auditAndBadgeFor(rows, BATCH_VENTURE, GROUP_A).audit!;
+    const auditB = auditAndBadgeFor(rows, BATCH_VENTURE, GROUP_B).audit!;
+    const auditC = auditAndBadgeFor(rows, BATCH_VENTURE, GROUP_C).audit!;
+
+    // All audit strings must be non-null
+    expect(auditA).not.toBeNull();
+    expect(auditB).not.toBeNull();
+    expect(auditC).not.toBeNull();
+
+    // All show the same admin
+    expect(auditA).toMatch(new RegExp(`^${BATCH_ADMIN}`));
+    expect(auditB).toMatch(new RegExp(`^${BATCH_ADMIN}`));
+    expect(auditC).toMatch(new RegExp(`^${BATCH_ADMIN}`));
+
+    // Because toggledAt is identical across all rows, the full audit strings
+    // are identical — the date/time portion is the same for every group.
+    expect(auditA).toBe(auditB);
+    expect(auditB).toBe(auditC);
+  });
+
+  // ── S3: a per-row `new Date()` would break the invariant (negative control) ─
+  it("S3: negative control — rows written with per-item timestamps do NOT share the same toggledAt (confirms S1/S2 are meaningful)", async () => {
+    // Simulate the broken pattern: `new Date()` called separately for each item.
+    // In practice a tight loop makes timestamps equal on fast hardware, so we
+    // use explicitly different timestamps to model the logical difference.
+    const dateA = new Date("2026-06-01T10:00:00.000Z");
+    const dateB = new Date("2026-06-01T10:00:00.001Z"); // 1 ms later
+    const dateC = new Date("2026-06-01T10:00:00.002Z"); // 2 ms later
+
+    await db.upsert({ groupId: GROUP_A, ventureId: BATCH_VENTURE, active: true, toggledBy: BATCH_ADMIN, toggledAt: dateA });
+    await db.upsert({ groupId: GROUP_B, ventureId: BATCH_VENTURE, active: true, toggledBy: BATCH_ADMIN, toggledAt: dateB });
+    await db.upsert({ groupId: GROUP_C, ventureId: BATCH_VENTURE, active: true, toggledBy: BATCH_ADMIN, toggledAt: dateC });
+
+    const rows = await db.read();
+    const map  = buildRowByGroup(rows, BATCH_VENTURE);
+
+    const rowA = map.get(GROUP_A)!;
+    const rowB = map.get(GROUP_B)!;
+    const rowC = map.get(GROUP_C)!;
+
+    // Per-item timestamps are NOT equal — this is what we are preventing
+    expect(rowA.toggledAt.getTime()).not.toBe(rowB.toggledAt.getTime());
+    expect(rowB.toggledAt.getTime()).not.toBe(rowC.toggledAt.getTime());
+  });
+
+  // ── S4: shared timestamp survives when some rows already exist (upsert path) ─
+  it("S4: groups that already have older rows are updated to the shared batch timestamp — no group is left with a stale toggledAt", async () => {
+    // Pre-seed GROUP_A and GROUP_B with an earlier timestamp
+    const olderDate = new Date("2026-03-01T08:00:00.000Z");
+    await db.upsert({ groupId: GROUP_A, ventureId: BATCH_VENTURE, active: false, toggledBy: ADMIN_1, toggledAt: olderDate });
+    await db.upsert({ groupId: GROUP_B, ventureId: BATCH_VENTURE, active: false, toggledBy: ADMIN_1, toggledAt: olderDate });
+    // GROUP_C has no pre-existing row (insert path)
+
+    // Batch arrives with a shared timestamp
+    const sharedNow = new Date("2026-06-10T12:00:00.000Z");
+    await batchUpsert(db, [GROUP_A, GROUP_B, GROUP_C], BATCH_VENTURE, BATCH_ADMIN, sharedNow);
+
+    const rows = await db.read();
+    const map  = buildRowByGroup(rows, BATCH_VENTURE);
+
+    const rowA = map.get(GROUP_A)!;
+    const rowB = map.get(GROUP_B)!;
+    const rowC = map.get(GROUP_C)!;
+
+    // All three must carry the shared batch timestamp — no group left stale
+    expect(rowA.toggledAt).toEqual(sharedNow);
+    expect(rowB.toggledAt).toEqual(sharedNow);
+    expect(rowC.toggledAt).toEqual(sharedNow);
+
+    // And the author was updated to the batch admin in all rows
+    expect(rowA.toggledBy).toBe(BATCH_ADMIN);
+    expect(rowB.toggledBy).toBe(BATCH_ADMIN);
+    expect(rowC.toggledBy).toBe(BATCH_ADMIN);
+  });
+
+  // ── S5: two-item batch — audit strings are identical (minimal case) ────────
+  it("S5: a two-group batch produces identical audit strings for both groups", async () => {
+    const sharedNow = new Date("2026-07-04T16:30:00.000Z");
+    await batchUpsert(db, [GROUP_A, GROUP_B], BATCH_VENTURE, BATCH_ADMIN, sharedNow);
+
+    const rows  = await db.read();
+    const map   = buildRowByGroup(rows, BATCH_VENTURE);
+    const rowA  = map.get(GROUP_A)!;
+    const rowB  = map.get(GROUP_B)!;
+
+    const auditA = formatToggleAudit(rowA.toggledBy, rowA.toggledAt);
+    const auditB = formatToggleAudit(rowB.toggledBy, rowB.toggledAt);
+
+    expect(auditA).not.toBeNull();
+    expect(auditB).not.toBeNull();
+    expect(auditA).toBe(auditB);
   });
 });

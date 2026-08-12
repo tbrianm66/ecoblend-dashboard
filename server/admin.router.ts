@@ -974,6 +974,16 @@ export const adminRouter = router({
         ctx.user.name ?? ctx.user.email ?? ctx.user.openId ?? "[anonymous admin]";
       // Normalise: empty / missing / whitespace-only → "__global__" sentinel
       const ventureId = normaliseSetVentureId(input.ventureId);
+      // ── Shared-timestamp invariant ────────────────────────────────────────
+      // `now` is intentionally computed ONCE here, outside the loop below,
+      // and reused for every item in the batch.  This means all groups toggled
+      // in the same Enable All / Disable All action share an identical
+      // toggledAt value in the audit trail, which lets admins correlate which
+      // groups changed together in a single action.
+      //
+      // Do NOT move `new Date()` inside the loop — doing so would give every
+      // row a slightly different timestamp, breaking the "toggled together"
+      // signal and making the audit trail harder to reason about.
       const now = new Date();
 
       // ── Concurrent-edit detection ─────────────────────────────────────────
