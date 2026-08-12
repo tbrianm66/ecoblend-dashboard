@@ -12,12 +12,12 @@ Client reads this and shows `showConcurrentModificationToast`.
 All four procedures (`getModuleReactivations`, `setModuleReactivation`, `setModuleReactivationBatch`, `resetVentureModuleReactivations`) call `getDb()` and check for null/undefined.  
 - `getModuleReactivations` returns `[]` gracefully (no throw).  
 - All three mutations throw `INTERNAL_SERVER_ERROR` with message containing "DB unavailable".  
-These guard paths are now explicitly covered by tests in `admin.batchReactivation.test.ts` (four `describe` blocks at the bottom of the file).
+These guard paths are explicitly covered in `admin.batchReactivation.test.ts`.
 
 ## Test helpers in admin.batchReactivation.test.ts
-- `makeConflictOnlyMock(conflictRows)` — DB stub that returns conflict rows on the guard query, prevents any writes.
-- `makeConflictAwareHarnessDb(conflictRows)` — full transaction harness with conflict detection; supports `.insert`, `.onConflictDoUpdate`, `.set`, `.returning`, `.select`, `.from`, `.where`, `.orderBy`.  Has no `.delete` method.
-- `makeResetDb(deletedRows)` — minimal DB stub that satisfies `execVentureReset` (has `.delete`). Use this for positive-control reset tests, NOT `makeConflictAwareHarnessDb`.
+- `makeConflictOnlyMock(conflictRows)` — DB stub returning conflict rows on the guard query; no writes; **no `.delete` method**.
+- `makeConflictAwareHarnessDb(conflictRows)` — full transaction harness with conflict detection; **no `.delete` method**.
+- `makeResetDb(deletedRows)` — minimal DB stub with `.delete`; use for reset positive-control tests, NOT `makeConflictAwareHarnessDb`.
 - `committedFor(db, ventureId)` — returns `HarnessRow[]` (array, NOT a Map) — use `.find(r => r.groupId === x)` not `.get(x)`.
 - `activateAllItems(db, ventureId)` — pre-loads all 15 backlog groups as active.
 - `makeHarnessDb(opts)` — basic harness without conflict detection.
@@ -27,43 +27,31 @@ These guard paths are now explicitly covered by tests in `admin.batchReactivatio
 ## Pre-existing failing test files (do not touch)
 `server/contextual.phase3c.test.ts`, `server/contextual.phase3d.test.ts`, `server/discoveryMarket.router.test.ts`, `server/financialModel.test.ts`, `server/investmentModule.test.ts`, `server/mrl.canonical.test.ts`, `server/sse.test.ts`
 
-## Single-toggle integrity checks (admin.batchReactivation.test.ts)
-- `setModuleReactivation` — `written.length !== 1` (silent skip), `groupId` mismatch, `ventureId` mismatch, global scope confirmed under different ventureId, 2-row return — all throw `INTERNAL_SERVER_ERROR` and confirmed covered at lines 1665–1930.
+## Single-toggle integrity checks
+- `setModuleReactivation` — `written.length !== 1` (silent skip), `groupId` mismatch, `ventureId` mismatch, global scope, 2-row return — all throw `INTERNAL_SERVER_ERROR`.
 
-## execVentureReset null-guard (moduleReactivationUtils.ts)
-Production code now guards against null/undefined/non-array from `.returning()` with a controlled diagnostic Error (not a silent TypeError). Tests at `admin.moduleReactivation.test.ts` in the `execVentureReset` describe block.
+## execVentureReset null-guard
+Production code guards against null/undefined/non-array from `.returning()` with a controlled diagnostic Error (not a silent TypeError). Covered in `admin.moduleReactivation.test.ts`.
 
-## showConcurrentModificationToast count=0 behaviour
-`count = parseInt("0", 10) = 0` is falsy → falls to generic "Another admin changed module settings" copy. Documented in `gate4ToastUtils.test.ts` as intentional behaviour.
+## Key behavioral invariants (all tested)
+- `showConcurrentModificationToast` count=0 is falsy → generic fallback message.
+- Duplicate groupId in batch: last write wins (upsert semantics); only 1 row per key.
+- `formatToggleAudit` with invalid date: does not throw; returns non-null string.
+- `rowsToActivatedSet("")`: enters venture-fallback branch, returns same result as null when no venture rows exist.
+- `getModuleReactivations`: returns rows in ascending groupId order.
+- `ventureId: null` in batch: rejected by `z.string().optional()` with BAD_REQUEST.
+- `[anonymous admin]` fallback in batch: stored when all ctx.user identity fields are null.
+- `normaliseResetVentureId("")`, `"   "`, `"\t\t"`: throws BAD_REQUEST "blank or whitespace-only".
+- `normaliseSetVentureId("__global__")`: passes through unchanged (truthy, non-blank).
+- `showToggleToast`/`showBatchToast`/`showResetToast` drift with `currentVName=undefined`: nowScope falls back to raw `currentVId`.
+- `!serverRows` early-return (gate4Config.ts:275): no localStorage write, activatedGroups stays empty, rows stays [].
 
-## duplicate groupId in batch
-Zod schema does NOT reject duplicate groupIds. The second write overwrites the first (upsert semantics). `committedFor` shows only 1 row (the last write wins). `result.upserted` will contain the groupId twice. Documented in `admin.batchReactivation.test.ts`.
-
-## formatToggleAudit with invalid date
-`formatToggleAudit(who, "not-a-date")` does not throw — `new Date("not-a-date")` produces an Invalid Date; `toLocaleDateString`/`toLocaleTimeString` return "Invalid Date" strings. Returns non-null string. Documented in `gate4.auditTrailLiveUpdate.test.ts`.
-
-## rowsToActivatedSet empty-string ventureId
-`""` is not null → enters venture-fallback branch; no rows match `ventureId=""` → returns only global rows. Same final set as `null` when no venture rows exist, but different code path. Documented in `gate4.persistRoundTrip.test.ts`.
-
-## GlobalVentureSelector branch coverage
-All branches covered by two test files:
-- `GlobalVentureSelector.disabled.test.tsx` (9 tests): disabled prop, dropdown open/close.
-- `GlobalVentureSelector.states.test.tsx` (20 tests): loading spinner, empty-list, status badge, hover mouseenter/leave, outside-click close, colour fallback chain, statusColor fallback.
-
-## Sidebar wiring coverage
-`Sidebar.wiring.test.tsx` (18 tests) covers:
-- `isBatchPending` → `GlobalVentureSelector disabled` prop (#142)
-- global scope (null venture): renders, gear button works, panel opens
-- `ReactivationPanel` panel lifecycle: open/close, selector stays mounted
-- X close button at line 701 fires `onClose` and closes the panel
-- Global scope panel shows "global defaults" copy, not venture-name copy
-
-## All targeted test suites — final pass counts (all clean, 3126 total passing)
-- `admin.batchReactivation.test.ts`: 98 tests (+ duplicate-groupId tests)
-- `admin.moduleReactivation.test.ts`: 73 tests (+ null-returning guard)
-- `gate4.auditTrailLiveUpdate.test.ts`: 47 tests (+ invalid-date tests)
+## All targeted test suites — final pass counts (3143 total passing)
+- `admin.batchReactivation.test.ts`: 101 tests
+- `admin.moduleReactivation.test.ts`: 78 tests
+- `gate4.auditTrailLiveUpdate.test.ts`: 47 tests
 - `gate4.moduleBadge.test.ts`: 16 tests
-- `gate4.persistRoundTrip.test.ts`: 21 tests (+ empty-string ventureId)
+- `gate4.persistRoundTrip.test.ts`: 23 tests (+ ordering + empty-string ventureId)
 - `gate4ReactivationSync.test.ts`: 20 tests
 - `gate4.singleToggleConflict.test.ts`: 11 tests
 - `gate4.sourceBadgeLiveUpdate.test.ts`: 31 tests
@@ -71,19 +59,19 @@ All branches covered by two test files:
 - `gate4.toggledByFallback.test.ts`: 32 tests
 - `gate4.ventureSwitch.test.ts`: 8 tests
 - `schema.export.integrity.test.ts`: 8 tests
-- `gate4Config.test.ts` (client): 143 tests
-- `gate4ToastUtils.test.ts` (client): 63 tests (+ zero-count test)
+- `gate4Config.test.ts` (client): 146 tests
+- `gate4ToastUtils.test.ts` (client): 67 tests
 - `ExtendedBacklogSection.test.tsx` (client): 61 tests
 - `EnableAll.batch.test.tsx` (client): 6 tests
 - `Sidebar.rapidToggle.test.tsx` (client): 6 tests
 - `Sidebar.gearButton.test.tsx` (client): 6 tests
-- `Sidebar.wiring.test.tsx` (client): 18 tests (NEW)
+- `Sidebar.wiring.test.tsx` (client): 18 tests (NEW — isBatchPending wiring, X close, global scope)
 - `GlobalVentureSelector.disabled.test.tsx` (client): 9 tests
-- `GlobalVentureSelector.states.test.tsx` (client): 20 tests (NEW)
-Total targeted: ~749 tests, all passing.
+- `GlobalVentureSelector.states.test.tsx` (client): 20 tests (NEW — loading, empty, hover, fallbacks)
+Total targeted: ~766 tests, all passing.
 
 ## Explicit task numbers confirmed covered
 #40, #53, #62, #74, #75, #78, #90, #98, #99, #101, #106, #121, #131, #133, #134, #135, #137, #138, #140, #142, #146, #147, #148, #150, #151, #152, #153, #155, #156, #162, #165, #166, #171, #174, #181, #188, #191, #193, #195, #198, #200
 
-## Remaining untested branches (intentionally left)
-NavGroupSection collapse/expand, nested-path active matching, root-route special case — all general sidebar navigation, NOT Gate 4 reactivation. Out of scope.
+## Comprehensive final sweep verdict
+**No truly uncovered user-observable branch remains** in Gate 4 production code. Remaining untested branches are general sidebar navigation (NavGroupSection collapse/expand, active styling) — out of scope.
