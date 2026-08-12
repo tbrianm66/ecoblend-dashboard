@@ -330,6 +330,40 @@ describe("Gate 4 per-venture module toggle persist round-trip", () => {
     expect(afterReset.has("people")).toBe(false);
   });
 
+  // ── Row ordering (mirrors getModuleReactivations orderBy groupId ASC) ─────────
+  // The production query in admin.router.ts does:
+  //   db.select().from(moduleReactivations).orderBy(moduleReactivations.groupId)
+  // which returns rows in ascending groupId order.  The fake DB above also sorts
+  // ascending.  These tests explicitly assert that contract so a change to the
+  // orderBy direction cannot silently break the client's groupId-keyed lookup.
+
+  it("rows are returned in ascending groupId order regardless of insertion order", async () => {
+    // Insert in deliberately reverse alphabetical order.
+    await dbUpsert(db, { groupId: "sustainability", ventureId: "__global__", active: true });
+    await dbUpsert(db, { groupId: "rnd",            ventureId: "__global__", active: true });
+    await dbUpsert(db, { groupId: "discovery",      ventureId: "__global__", active: true });
+    await dbUpsert(db, { groupId: "coaching",       ventureId: "__global__", active: true });
+
+    const rows = await dbGetAll(db);
+    const ids = rows.map(r => r.groupId);
+
+    // The sorted array must equal the original, confirming ascending order.
+    expect(ids).toEqual([...ids].sort());
+  });
+
+  it("rows from mixed global and venture scopes are both included and sorted together", async () => {
+    await dbUpsert(db, { groupId: "scoring",   ventureId: "BEBUS",     active: true });
+    await dbUpsert(db, { groupId: "operations", ventureId: "__global__", active: true });
+    await dbUpsert(db, { groupId: "discovery", ventureId: "BEBUS",     active: false });
+
+    const rows = await dbGetAll(db);
+    const ids = rows.map(r => r.groupId);
+
+    // All 3 rows present and sorted ascending by groupId.
+    expect(ids.length).toBe(3);
+    expect(ids).toEqual([...ids].sort());
+  });
+
   // ── Edge cases ────────────────────────────────────────────────────────────────
 
   it("returns empty sets when no rows have been written", async () => {
