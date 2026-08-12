@@ -4394,3 +4394,133 @@ describe("useGate4Reactivation — resetIsPending reflects resetMutation.isPendi
     expect(result.current.resetIsPending).toBe(false);
   });
 });
+
+// ── OFF-row source badge reflects fresh server data after panel closes (#138) ─
+//
+// Scenario: the reactivation panel is open and shows a group as OFF (locked).
+// The source badge on the OFF row (GLOBAL / VENTURE / DEFAULT) is derived from
+// the server rows returned by React Query.  When the panel closes the polling
+// stops (refetchInterval=false), but the hook must still accept fresh rows when
+// React Query delivers a window-focus refetch.  After the fresh data arrives,
+// the OFF-row badge must reflect the updated server state — not stale values.
+//
+// This describe block verifies the invariant at the hook level.  It simulates:
+//   1. Panel open: server delivers a venture-scoped OFF row → badge is 'venture'
+//   2. Panel closed (panelOpen=false).
+//   3. Server (via React Query window-focus refetch) delivers fresh rows that
+//      no longer include the venture override → badge reverts to 'global'.
+//
+// Strategy mirrors the overlay-clearing tests above: reassign `serverRows`
+// inside the mock before calling rerender() so the hook processes fresh data.
+describe("useGate4Reactivation — OFF-row badge reflects fresh server data after panel closes (#138)", () => {
+  const VENTURE   = "ven-alpha";
+  const GROUP_ID  = "discovery";
+
+  let serverRows: ReactivationRow[];
+
+  function badgeForGroup(rows: ReactivationRow[], vid: string, gid: string): string {
+    return resolveModuleBadge(false, false, buildRowByGroup(rows, vid).get(gid)) ?? "none";
+  }
+
+  beforeEach(() => {
+    localStorage.clear();
+    // Start with both a global row and a venture-scoped OFF row.
+    serverRows = [
+      globalRow(GROUP_ID),                           // global ON row
+      ventureRow(GROUP_ID, VENTURE, /* active= */ false), // venture OFF row
+    ];
+
+    vi.mocked(trpc.admin.getModuleReactivations.useQuery).mockImplementation(() => ({
+      data: serverRows,
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    }));
+
+    vi.mocked(trpc.admin.setModuleReactivation.useMutation).mockReturnValue(
+      { mutate: vi.fn() } as any,
+    );
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: vi.fn(), isPending: false } as any,
+    );
+    vi.mocked(trpc.admin.resetVentureModuleReactivations.useMutation).mockReturnValue(
+      { mutate: vi.fn(), isPending: false } as any,
+    );
+    vi.mocked(trpc.useUtils).mockReturnValue({
+      admin: { getModuleReactivations: { invalidate: vi.fn() } },
+    } as any);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // ── Baseline: panel open, venture OFF row → badge is 'venture' ────────────
+  it("OFF-row badge is 'venture' while panel is open and venture-scoped row exists", () => {
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE, /* panelOpen */ true));
+    // The most-specific row is the venture row (active=false), so the badge must be 'venture'.
+    expect(badgeForGroup(result.current.rows, VENTURE, GROUP_ID)).toBe("venture");
+  });
+
+  // ── After panel close + fresh data: badge reverts to 'global' ────────────
+  // When the venture override is deleted server-side and a window-focus refetch
+  // delivers rows without it, the OFF-row badge must update to 'global'
+  // (inheriting from the global row).  This confirms the hook re-derives the
+  // badge from fresh server data even after the panel is closed.
+  it("OFF-row badge reverts to 'global' when fresh server data removes the venture row", async () => {
+    const { result, rerender } = renderHook(
+      ({ open }: { open: boolean }) => useGate4Reactivation(VENTURE, open),
+      { initialProps: { open: true } },
+    );
+
+    // Sanity: venture row present → badge is 'venture'.
+    expect(badgeForGroup(result.current.rows, VENTURE, GROUP_ID)).toBe("venture");
+
+    // Close the panel.
+    await act(async () => { rerender({ open: false }); });
+
+    // Simulate window-focus refetch delivering fresh rows (venture override deleted).
+    serverRows = [globalRow(GROUP_ID)]; // only global row remains
+    await act(async () => { rerender({ open: false }); });
+
+    // Badge must now reflect the authoritative server state: 'global'.
+    expect(badgeForGroup(result.current.rows, VENTURE, GROUP_ID)).toBe("global");
+  });
+
+  // ── After panel close + fresh data: badge reverts to 'default' when no rows ─
+  // If both the global and the venture row are removed, the badge must revert to
+  // 'default' — proving the hook doesn't retain stale row data after panel close.
+  it("OFF-row badge reverts to 'default' when fresh server data delivers no rows for the group", async () => {
+    const { result, rerender } = renderHook(
+      ({ open }: { open: boolean }) => useGate4Reactivation(VENTURE, open),
+      { initialProps: { open: true } },
+    );
+
+    // Sanity: venture row present → badge is 'venture'.
+    expect(badgeForGroup(result.current.rows, VENTURE, GROUP_ID)).toBe("venture");
+
+    // Simulate a full reset: server delivers no rows at all.
+    serverRows = [];
+    await act(async () => { rerender({ open: false }); });
+
+    // Badge must revert to 'default' — no DB row means factory default.
+    expect(badgeForGroup(result.current.rows, VENTURE, GROUP_ID)).toBe("default");
+  });
+
+  // ── Positive case: badge stays 'venture' if server data is unchanged ──────
+  it("OFF-row badge stays 'venture' when fresh server data still includes the venture row", async () => {
+    const { result, rerender } = renderHook(
+      ({ open }: { open: boolean }) => useGate4Reactivation(VENTURE, open),
+      { initialProps: { open: true } },
+    );
+
+    // Close the panel — but do NOT change serverRows (no mutation happened).
+    await act(async () => { rerender({ open: false }); });
+
+    // Re-render once more to simulate React Query polling on re-focus with unchanged data.
+    await act(async () => { rerender({ open: false }); });
+
+    // Badge must remain 'venture' — fresh data is the same, no regression.
+    expect(badgeForGroup(result.current.rows, VENTURE, GROUP_ID)).toBe("venture");
+  });
+});
