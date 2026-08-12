@@ -84,7 +84,7 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useGate4Reactivation, GATE4_BACKLOG_GROUP_IDS } from "./gate4Config";
 import { buildRowByGroup, resolveModuleBadge, type ReactivationRow } from "./gate4Utils";
-import { showToggleToast, showBatchToast, type ToastApi } from "./gate4ToastUtils";
+import { showToggleToast, showBatchToast, buildResetOnSuccess, type ToastApi } from "./gate4ToastUtils";
 import { ReactivationPanel } from "@/components/Sidebar";
 
 // ── Row factories ─────────────────────────────────────────────────────────────
@@ -490,6 +490,212 @@ describe("useGate4Reactivation — live source-badge update after toggle", () =>
     });
 
     expect(receivedSkipped).toHaveLength(0);
+  });
+
+  // ── CONFLICT routing: reactivateAll / deactivateAll (#40 / #153) ─────────────
+  // When the server rejects the batch with a CONFLICT error the hook must route
+  // to onError with an EMPTY skippedGroups array (so the caller can distinguish
+  // a concurrent-modification rejection from a partial-write failure) and pass
+  // the raw server message as the second argument.
+  //
+  // This exercises the branch:
+  //   if (rawMessage.includes("Concurrent modification detected")) {
+  //     onError?.([], rawMessage);
+  //     return;
+  //   }
+
+  it("reactivateAll() — CONFLICT error passes empty skippedGroups and full raw message to onError (#40/#153)", async () => {
+    const conflictMessage =
+      "Concurrent modification detected: 2 group(s) were modified by another admin (carol) " +
+      "after your last refresh. Re-fetch the current state and retry. Affected groups: discovery, validation";
+
+    const batchMutate = vi.fn(
+      (_input: unknown, options?: { onError?: (err: Error) => void }) => {
+        options?.onError?.(new Error(conflictMessage));
+      },
+    );
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: batchMutate } as any,
+    );
+
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    const receivedSkipped: string[] = [];
+    let receivedRaw = "";
+
+    await act(async () => {
+      result.current.reactivateAll(
+        undefined,
+        (skippedGroups, rawMessage) => {
+          receivedSkipped.push(...skippedGroups);
+          receivedRaw = rawMessage;
+        },
+      );
+    });
+
+    // CONFLICT → empty skippedGroups (not a partial-write) + full raw message
+    expect(receivedSkipped).toHaveLength(0);
+    expect(receivedRaw).toContain("Concurrent modification detected");
+  });
+
+  it("deactivateAll() — CONFLICT error passes empty skippedGroups and full raw message to onError (#40/#153)", async () => {
+    const conflictMessage =
+      "Concurrent modification detected: 1 group(s) were modified by another admin (dave) " +
+      "after your last refresh. Re-fetch the current state and retry. Affected groups: discovery";
+
+    const batchMutate = vi.fn(
+      (_input: unknown, options?: { onError?: (err: Error) => void }) => {
+        options?.onError?.(new Error(conflictMessage));
+      },
+    );
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: batchMutate } as any,
+    );
+
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    const receivedSkipped: string[] = [];
+    let receivedRaw = "";
+
+    await act(async () => {
+      result.current.deactivateAll(
+        undefined,
+        (skippedGroups, rawMessage) => {
+          receivedSkipped.push(...skippedGroups);
+          receivedRaw = rawMessage;
+        },
+      );
+    });
+
+    expect(receivedSkipped).toHaveLength(0);
+    expect(receivedRaw).toContain("Concurrent modification detected");
+  });
+
+  it("reactivateAll() — non-CONFLICT error still passes parsed skippedGroups to onError", async () => {
+    // Negative: a message that does NOT contain "Concurrent modification detected"
+    // should go through the normal parse path, not the CONFLICT branch.
+    const skippedIds = ["discovery", "validation"];
+    const nonConflictMessage =
+      `Batch write incomplete: 13 of 15 group(s) confirmed. Skipped group(s): ${skippedIds.join(", ")}`;
+
+    const batchMutate = vi.fn(
+      (_input: unknown, options?: { onError?: (err: Error) => void }) => {
+        options?.onError?.(new Error(nonConflictMessage));
+      },
+    );
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: batchMutate } as any,
+    );
+
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    const receivedSkipped: string[] = [];
+
+    await act(async () => {
+      result.current.reactivateAll(
+        undefined,
+        (skippedGroups) => { receivedSkipped.push(...skippedGroups); },
+      );
+    });
+
+    // Normal parse path: skippedGroups is populated (not empty)
+    expect(receivedSkipped).toEqual(skippedIds);
+  });
+
+  // ── lastKnownMaxToggledAt: computed from serverRows before batch call ──────────
+  // The hook must derive lastKnownMaxToggledAt from the max toggledAt in the
+  // current serverRows and pass it to setBatchMutation.mutate so the server can
+  // reject concurrent-modification attempts.  When serverRows is empty (or all
+  // toggledAt values are 0 / falsy) the field must be omitted (undefined) so the
+  // server guard is opt-in and backward-compatible.
+
+  it("reactivateAll() — passes lastKnownMaxToggledAt derived from the most recent serverRow (#40)", async () => {
+    const olderDate  = "2026-01-01T10:00:00.000Z";
+    const newerDate  = "2026-08-12T09:00:00.000Z";
+
+    currentRows = [
+      { groupId: "discovery",  ventureId: "__global__", active: true,  toggledBy: "alice", toggledAt: olderDate },
+      { groupId: "validation", ventureId: "__global__", active: false, toggledBy: "bob",   toggledAt: newerDate },
+    ];
+
+    vi.mocked(trpc.admin.getModuleReactivations.useQuery).mockImplementation(() => ({
+      data: currentRows,
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    }));
+
+    const capturedInput: { lastKnownMaxToggledAt?: string }[] = [];
+    const batchMutate = vi.fn((input: unknown) => {
+      capturedInput.push(input as { lastKnownMaxToggledAt?: string });
+    });
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: batchMutate } as any,
+    );
+
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    await act(async () => { result.current.reactivateAll(); });
+
+    // The hook must pass the MOST RECENT toggledAt (newerDate), not the oldest.
+    expect(capturedInput[0].lastKnownMaxToggledAt).toBe(newerDate);
+  });
+
+  it("reactivateAll() — omits lastKnownMaxToggledAt when serverRows is empty (#40)", async () => {
+    currentRows = [];
+
+    vi.mocked(trpc.admin.getModuleReactivations.useQuery).mockImplementation(() => ({
+      data: currentRows,
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    }));
+
+    const capturedInput: { lastKnownMaxToggledAt?: string }[] = [];
+    const batchMutate = vi.fn((input: unknown) => {
+      capturedInput.push(input as { lastKnownMaxToggledAt?: string });
+    });
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: batchMutate } as any,
+    );
+
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    await act(async () => { result.current.reactivateAll(); });
+
+    // No rows → no timestamp to report → field must be absent (undefined).
+    expect(capturedInput[0].lastKnownMaxToggledAt).toBeUndefined();
+  });
+
+  it("deactivateAll() — passes lastKnownMaxToggledAt derived from the most recent serverRow (#40)", async () => {
+    const olderDate  = "2026-02-01T08:00:00.000Z";
+    const newerDate  = "2026-08-01T14:30:00.000Z";
+
+    currentRows = [
+      { groupId: "discovery",  ventureId: "__global__", active: true, toggledBy: "alice", toggledAt: olderDate },
+      { groupId: "validation", ventureId: "__global__", active: true, toggledBy: "bob",   toggledAt: newerDate },
+    ];
+
+    vi.mocked(trpc.admin.getModuleReactivations.useQuery).mockImplementation(() => ({
+      data: currentRows,
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    }));
+
+    const capturedInput: { lastKnownMaxToggledAt?: string }[] = [];
+    const batchMutate = vi.fn((input: unknown) => {
+      capturedInput.push(input as { lastKnownMaxToggledAt?: string });
+    });
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: batchMutate } as any,
+    );
+
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    await act(async () => { result.current.deactivateAll(); });
+
+    expect(capturedInput[0].lastKnownMaxToggledAt).toBe(newerDate);
   });
 
   // ── mid-flight batch failures: activated set reverts ────────────────────────
@@ -1960,6 +2166,71 @@ describe("Reset button — re-enables correctly when reset fails mid-flight (hoo
     expect(onSuccess).not.toHaveBeenCalled();
     expect(onError).not.toHaveBeenCalled();
   });
+
+  // ── onZeroRows: called when deletedCount===0 (#148) ──────────────────────────
+
+  it("calls onZeroRows when the server returns deletedCount=0 (no venture rows existed)", async () => {
+    const onSuccessSpy  = vi.fn();
+    const onErrorSpy    = vi.fn();
+    const onZeroRowsSpy = vi.fn();
+
+    mockResetMutate.mockImplementation(
+      (_input: unknown, options?: { onSuccess?: (data: { deletedCount: number }) => void }) => {
+        options?.onSuccess?.({ deletedCount: 0 });
+      },
+    );
+
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    await act(async () => {
+      result.current.resetToGlobalDefaults(onSuccessSpy, onErrorSpy, onZeroRowsSpy);
+    });
+
+    // onZeroRows must fire — the venture already uses global defaults.
+    expect(onZeroRowsSpy).toHaveBeenCalledOnce();
+    // onSuccess and onError must NOT fire — zero-row delete is neither a real
+    // success nor an error.
+    expect(onSuccessSpy).not.toHaveBeenCalled();
+    expect(onErrorSpy).not.toHaveBeenCalled();
+    // invalidate() must not fire — no rows were deleted so no refetch is needed.
+    expect(mockInvalidate).not.toHaveBeenCalled();
+  });
+
+  it("does NOT call onZeroRows when deletedCount > 0 (rows were actually deleted)", async () => {
+    const onZeroRowsSpy = vi.fn();
+
+    mockResetMutate.mockImplementation(
+      (_input: unknown, options?: { onSuccess?: (data: { deletedCount: number }) => void }) => {
+        options?.onSuccess?.({ deletedCount: 3 });
+      },
+    );
+
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    await act(async () => {
+      result.current.resetToGlobalDefaults(undefined, undefined, onZeroRowsSpy);
+    });
+
+    // Normal success path — onZeroRows must not fire.
+    expect(onZeroRowsSpy).not.toHaveBeenCalled();
+    // invalidate() should have fired — rows were deleted.
+    expect(mockInvalidate).toHaveBeenCalledOnce();
+  });
+
+  it("onZeroRows is safely omitted (no crash when deletedCount===0 but no callback provided)", async () => {
+    mockResetMutate.mockImplementation(
+      (_input: unknown, options?: { onSuccess?: (data: { deletedCount: number }) => void }) => {
+        options?.onSuccess?.({ deletedCount: 0 });
+      },
+    );
+
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    // No onZeroRows arg — must not throw even with deletedCount===0.
+    await act(async () => {
+      expect(() => result.current.resetToGlobalDefaults()).not.toThrow();
+    });
+  });
 });
 
 // ── Polling interval guarantee: reset button disables within 10 s ─────────────
@@ -2703,6 +2974,179 @@ describe("Batch drift notice — Enable All / Disable All mid-flight venture swi
   });
 });
 
+// ── Reset drift notice: buildResetOnSuccess refs capture (#188) ───────────────
+//
+// buildResetOnSuccess captures ventureId and ventureName AT CLICK TIME and reads
+// getCurrentVId() / getCurrentVName() AT SERVER RESPONSE TIME.  When the venture
+// selector changes between click and server response the toast must name BOTH the
+// venture where the reset landed AND the venture the admin is now viewing.
+//
+// Strategy: ResetDriver component uses the real useGate4Reactivation hook and
+// mirrors the Sidebar.tsx wiring exactly — ventureIdRef + ventureNameRef updated
+// on every render, buildResetOnSuccess called with () => ref.current getters.
+// A deferred resetMutate mock lets the test switch the venture before the
+// "server" responds.
+
+describe("Reset drift notice — buildResetOnSuccess venture-ref capture (#188)", () => {
+  const VENTURE_A      = "ven-alpha";
+  const VENTURE_B      = "ven-beta";
+  const VENTURE_A_NAME = "Venture Alpha";
+  const VENTURE_B_NAME = "Venture Beta";
+
+  let deferredResetOnSuccess: ((data: { deletedCount: number }) => void) | null = null;
+
+  function makeResetToast() {
+    const calls: Record<string, string[]> = { success: [], warning: [], error: [] };
+    return {
+      calls,
+      success: (m: string) => calls.success.push(m),
+      warning: (m: string) => calls.warning.push(m),
+      error:   (m: string) => calls.error.push(m),
+    } as ToastApi & { calls: Record<string, string[]> };
+  }
+
+  function ResetDriver({
+    ventureId,
+    ventureName,
+    toastRef,
+  }: {
+    ventureId: string;
+    ventureName: string;
+    toastRef: React.MutableRefObject<ToastApi & { calls: Record<string, string[]> }>;
+  }) {
+    const { resetToGlobalDefaults } = useGate4Reactivation(ventureId);
+
+    // Mirrors Sidebar.tsx: refs always hold the latest values.
+    const ventureIdRef   = React.useRef(ventureId);
+    const ventureNameRef = React.useRef(ventureName);
+    React.useEffect(() => { ventureIdRef.current   = ventureId;   });
+    React.useEffect(() => { ventureNameRef.current = ventureName; });
+
+    const handleReset = () => {
+      resetToGlobalDefaults(
+        // buildResetOnSuccess captures snapshotVId/Name at click time;
+        // reads () => ref.current at server-response time.  This is the exact
+        // Sidebar.tsx wiring that #188 confirms is correct.
+        buildResetOnSuccess(
+          toastRef.current,
+          ventureId,
+          ventureName,
+          () => ventureIdRef.current,
+          () => ventureNameRef.current,
+        ),
+      );
+    };
+
+    return React.createElement("button", { "data-testid": "reset-btn", onClick: handleReset }, "Reset");
+  }
+
+  beforeEach(() => {
+    deferredResetOnSuccess = null;
+    // Mock the reset mutation to defer resolution — lets us switch the venture
+    // before the "server" responds.
+    vi.mocked(trpc.admin.resetVentureModuleReactivations.useMutation).mockReturnValue({
+      mutate: vi.fn(
+        (_input: unknown, options?: { onSuccess?: (data: { deletedCount: number }) => void }) => {
+          deferredResetOnSuccess = options?.onSuccess ?? null;
+        },
+      ),
+      isPending: false,
+    } as any);
+    vi.mocked(trpc.admin.setModuleReactivation.useMutation).mockReturnValue({ mutate: vi.fn() } as any);
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue({ mutate: vi.fn() } as any);
+    vi.mocked(trpc.admin.getModuleReactivations.useQuery).mockReturnValue({
+      data: [], isLoading: false, isError: false, refetch: vi.fn(),
+    } as any);
+    vi.mocked(trpc.useUtils).mockReturnValue({
+      admin: { getModuleReactivations: { invalidate: vi.fn() } },
+    } as any);
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.clearAllMocks();
+  });
+
+  it("fires toast.warning naming both ventures when the venture selector changes between click and server response (#188)", async () => {
+    const toast    = makeResetToast();
+    const toastRef = { current: toast } as React.MutableRefObject<typeof toast>;
+
+    const { rerender } = render(
+      React.createElement(ResetDriver, { ventureId: VENTURE_A, ventureName: VENTURE_A_NAME, toastRef }),
+    );
+
+    // Step 1: admin clicks "Reset" while viewing venture A (snapshot = A).
+    await act(async () => { fireEvent.click(screen.getByTestId("reset-btn")); });
+
+    // Step 2: admin switches to venture B before the server responds.
+    await act(async () => {
+      rerender(React.createElement(ResetDriver, { ventureId: VENTURE_B, ventureName: VENTURE_B_NAME, toastRef }));
+    });
+
+    // Step 3: server responds — deletedCount > 0 means onSuccess fires.
+    await act(async () => { deferredResetOnSuccess?.({ deletedCount: 2 }); });
+
+    // Drift detected: snapshotVId (A) !== currentVId (B) → warning, not success.
+    expect(toast.calls.warning).toHaveLength(1);
+    expect(toast.calls.success).toHaveLength(0);
+  });
+
+  it("drift warning names the snapshot venture (where the reset landed) (#188)", async () => {
+    const toast    = makeResetToast();
+    const toastRef = { current: toast } as React.MutableRefObject<typeof toast>;
+
+    const { rerender } = render(
+      React.createElement(ResetDriver, { ventureId: VENTURE_A, ventureName: VENTURE_A_NAME, toastRef }),
+    );
+
+    await act(async () => { fireEvent.click(screen.getByTestId("reset-btn")); });
+    await act(async () => {
+      rerender(React.createElement(ResetDriver, { ventureId: VENTURE_B, ventureName: VENTURE_B_NAME, toastRef }));
+    });
+    await act(async () => { deferredResetOnSuccess?.({ deletedCount: 1 }); });
+
+    // Venture Alpha (the snapshot) must appear — it is where the reset landed.
+    expect(toast.calls.warning[0]).toContain(VENTURE_A_NAME);
+  });
+
+  it("drift warning names the current venture (where the admin is now looking) (#188)", async () => {
+    const toast    = makeResetToast();
+    const toastRef = { current: toast } as React.MutableRefObject<typeof toast>;
+
+    const { rerender } = render(
+      React.createElement(ResetDriver, { ventureId: VENTURE_A, ventureName: VENTURE_A_NAME, toastRef }),
+    );
+
+    await act(async () => { fireEvent.click(screen.getByTestId("reset-btn")); });
+    await act(async () => {
+      rerender(React.createElement(ResetDriver, { ventureId: VENTURE_B, ventureName: VENTURE_B_NAME, toastRef }));
+    });
+    await act(async () => { deferredResetOnSuccess?.({ deletedCount: 1 }); });
+
+    // Venture Beta (the current) must also appear — so the admin can identify
+    // which venture they are now viewing vs where the reset was applied.
+    expect(toast.calls.warning[0]).toContain(VENTURE_B_NAME);
+  });
+
+  it("fires toast.success (no warning) when the venture does not change before the server responds (#188 positive)", async () => {
+    const toast    = makeResetToast();
+    const toastRef = { current: toast } as React.MutableRefObject<typeof toast>;
+
+    render(
+      React.createElement(ResetDriver, { ventureId: VENTURE_A, ventureName: VENTURE_A_NAME, toastRef }),
+    );
+
+    // Click then immediately resolve — no venture switch.
+    await act(async () => { fireEvent.click(screen.getByTestId("reset-btn")); });
+    await act(async () => { deferredResetOnSuccess?.({ deletedCount: 3 }); });
+
+    // No drift: snapshotVId === currentVId → success toast, no warning.
+    expect(toast.calls.success).toHaveLength(1);
+    expect(toast.calls.warning).toHaveLength(0);
+    expect(toast.calls.success[0]).toContain(VENTURE_A_NAME);
+  });
+});
+
 // ── ReactivationPanel props-refactor: injected callbacks fire correctly ────────
 //
 // Task #74 refactored ReactivationPanel from owning its own useGate4Reactivation
@@ -3051,6 +3495,187 @@ describe("ReactivationPanel props-refactor — injected callbacks fire correctly
     // Also confirm the group label is in the message
     const [errorMessage] = toastMock.error.mock.calls[0] as [string];
     expect(errorMessage).toContain("Venture Intake");
+  });
+
+  // ── #174: reset button hidden when venturesLoading=true ─────────────────────
+  //
+  // The guard `{ventureId && ventureName && !venturesLoading && ...}` in
+  // Sidebar.tsx prevents the reset button from appearing while venture data is
+  // being refreshed — even when ventureId and ventureName survive from a prior
+  // selection.  Without this guard, the button could appear in a transient
+  // window where the selected venture might change, leading to a reset targeted
+  // at the wrong venture.
+
+  it("reset button is absent when venturesLoading=true even though ventureId and ventureName are both present (#174)", () => {
+    const rows: ReactivationRow[] = [ventureRow(GROUP, "ven-alpha")];
+    const props = makeProps({ ventureId: "ven-alpha", ventureName: "Alpha Ventures", venturesLoading: true, rows });
+    render(React.createElement(ReactivationPanel, props));
+
+    // Button must not appear — venture data is still refreshing.
+    expect(screen.queryByTestId("reset-btn")).toBeNull();
+  });
+
+  it("reset button IS present when venturesLoading=false with ventureId + ventureName (#174 positive)", () => {
+    // Positive-case companion: after ventures finish loading the button renders.
+    const rows: ReactivationRow[] = [ventureRow(GROUP, "ven-alpha")];
+    const props = makeProps({ ventureId: "ven-alpha", ventureName: "Alpha Ventures", venturesLoading: false, rows });
+    render(React.createElement(ReactivationPanel, props));
+
+    expect(screen.queryByTestId("reset-btn")).not.toBeNull();
+  });
+
+  it("reset button appears after venturesLoading transitions from true → false (#174 transition)", () => {
+    const rows: ReactivationRow[] = [ventureRow(GROUP, "ven-alpha")];
+    const baseProps = makeProps({ ventureId: "ven-alpha", ventureName: "Alpha Ventures", rows });
+
+    const { rerender } = render(React.createElement(ReactivationPanel, { ...baseProps, venturesLoading: true }));
+
+    // Initially hidden.
+    expect(screen.queryByTestId("reset-btn")).toBeNull();
+
+    // Ventures data arrives — loading finishes.
+    rerender(React.createElement(ReactivationPanel, { ...baseProps, venturesLoading: false }));
+
+    // Button now visible.
+    expect(screen.queryByTestId("reset-btn")).not.toBeNull();
+  });
+
+  // ── handleBatchErrorToast: CONFLICT message → toast.warning (not toast.error) ─
+  //
+  // When the server rejects Enable All / Disable All with a CONFLICT error
+  // (another admin modified rows between the read and write), handleBatchErrorToast
+  // must:
+  //   • route to showConcurrentModificationToast → toast.warning
+  //   • NOT fall through to showBatchErrorToast  → toast.error
+  //
+  // Strategy: spy on reactivateAll / deactivateAll, click the button, extract
+  // the captured onError closure, invoke it with a CONFLICT message, and assert
+  // on the sonner mock.
+
+  it("Enable All onError — CONFLICT message routes to toast.warning, not toast.error (#153)", () => {
+    const props = makeProps();
+    render(React.createElement(ReactivationPanel, props));
+
+    fireEvent.click(screen.getByTestId("enable-all-btn"));
+
+    const [[, onError]] = (props.reactivateAll as ReturnType<typeof vi.fn>).mock.calls as [
+      [onSuccess: unknown, onError: (skipped: string[], raw: string) => void],
+    ];
+
+    vi.mocked(toast.warning).mockClear();
+    vi.mocked(toast.error).mockClear();
+
+    // Simulate CONFLICT rejection: empty skippedGroups + CONFLICT prefix.
+    onError([], "Concurrent modification detected: 2 group(s) modified by another admin");
+
+    expect(toast.warning).toHaveBeenCalledOnce();
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  it("Disable All onError — CONFLICT message routes to toast.warning, not toast.error (#153)", () => {
+    const props = makeProps();
+    render(React.createElement(ReactivationPanel, props));
+
+    fireEvent.click(screen.getByTestId("disable-all-btn"));
+
+    const [[, onError]] = (props.deactivateAll as ReturnType<typeof vi.fn>).mock.calls as [
+      [onSuccess: unknown, onError: (skipped: string[], raw: string) => void],
+    ];
+
+    vi.mocked(toast.warning).mockClear();
+    vi.mocked(toast.error).mockClear();
+
+    onError([], "Concurrent modification detected: 1 group(s) modified by another admin");
+
+    expect(toast.warning).toHaveBeenCalledOnce();
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  it("Enable All onError — non-CONFLICT message routes to toast.error, not toast.warning", () => {
+    // Negative case: a generic skipped-groups error must NOT use the CONFLICT path.
+    const props = makeProps();
+    render(React.createElement(ReactivationPanel, props));
+
+    fireEvent.click(screen.getByTestId("enable-all-btn"));
+
+    const [[, onError]] = (props.reactivateAll as ReturnType<typeof vi.fn>).mock.calls as [
+      [onSuccess: unknown, onError: (skipped: string[], raw: string) => void],
+    ];
+
+    vi.mocked(toast.warning).mockClear();
+    vi.mocked(toast.error).mockClear();
+
+    // Generic error with one skipped group → showBatchErrorToast → toast.error.
+    onError(["venture-intake"], "Some groups could not be updated");
+
+    expect(toast.error).toHaveBeenCalledOnce();
+    expect(toast.warning).not.toHaveBeenCalled();
+  });
+
+  // ── onZeroRows callback-chain: reset with zero deleted rows → toast.warning ──
+  //
+  // When the reset call returns deletedCount=0 (the venture was already using
+  // global defaults so nothing existed to delete), the panel must call
+  // showResetZeroRowsToast → toast.warning.  No success or error toast must fire.
+  //
+  // Strategy: spy on resetToGlobalDefaults, click the reset button, extract the
+  // onZeroRows closure (3rd argument), invoke it, and assert on the sonner mock.
+
+  it("reset onZeroRows closure — calls toast.warning, not toast.success or toast.error (#148)", () => {
+    // Make the reset button visible: ventureId + ventureName + venture-scoped row.
+    const rows: ReactivationRow[] = [ventureRow(GROUP, "ven-alpha")];
+    const props = makeProps({
+      ventureId:     "ven-alpha",
+      ventureName:   "Alpha Ventures",
+      venturesLoading: false,
+      rows,
+    });
+    render(React.createElement(ReactivationPanel, props));
+
+    fireEvent.click(screen.getByTestId("reset-btn"));
+
+    // resetToGlobalDefaults must be called once with three callbacks.
+    expect(props.resetToGlobalDefaults).toHaveBeenCalledOnce();
+    const [,, onZeroRows] = (props.resetToGlobalDefaults as ReturnType<typeof vi.fn>).mock
+      .calls[0] as [onSuccess: unknown, onError: unknown, onZeroRows: () => void];
+
+    vi.mocked(toast.warning).mockClear();
+    vi.mocked(toast.success).mockClear();
+    vi.mocked(toast.error).mockClear();
+
+    // Invoke the captured onZeroRows callback.
+    onZeroRows();
+
+    // showResetZeroRowsToast fires toast.warning — no success, no error.
+    expect(toast.warning).toHaveBeenCalledOnce();
+    expect(toast.success).not.toHaveBeenCalled();
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  it("reset onError closure — calls toast.error, not toast.warning (#148 negative)", () => {
+    const rows: ReactivationRow[] = [ventureRow(GROUP, "ven-alpha")];
+    const props = makeProps({
+      ventureId:     "ven-alpha",
+      ventureName:   "Alpha Ventures",
+      venturesLoading: false,
+      rows,
+    });
+    render(React.createElement(ReactivationPanel, props));
+
+    fireEvent.click(screen.getByTestId("reset-btn"));
+
+    expect(props.resetToGlobalDefaults).toHaveBeenCalledOnce();
+    const [, onError] = (props.resetToGlobalDefaults as ReturnType<typeof vi.fn>).mock
+      .calls[0] as [onSuccess: unknown, onError: (msg: string) => void, onZeroRows: unknown];
+
+    vi.mocked(toast.warning).mockClear();
+    vi.mocked(toast.error).mockClear();
+
+    onError("Reset failed: server returned 500");
+
+    // showResetErrorToast fires toast.error.
+    expect(toast.error).toHaveBeenCalledOnce();
+    expect(toast.warning).not.toHaveBeenCalled();
   });
 });
 
@@ -3634,3 +4259,138 @@ describe("useGate4Reactivation — optimistic rollback on server rejection", () 
   });
 });
 
+
+// ── isBatchPending: reflected from setBatchMutation.isPending (#142) ──────────
+//
+// The hook exposes `isBatchPending` so the venture selector can be disabled
+// during an in-flight Enable All / Disable All write.  This describe block
+// verifies the hook returns the live `isPending` value from the mutation mock —
+// confirming the field is wired through and not hard-coded.
+describe("useGate4Reactivation — isBatchPending reflects setBatchMutation.isPending (#142)", () => {
+  const VENTURE = "ven-alpha";
+
+  beforeEach(() => {
+    localStorage.clear();
+    vi.mocked(trpc.admin.getModuleReactivations.useQuery).mockReturnValue({
+      data: [], isLoading: false, isError: false, refetch: vi.fn(),
+    } as any);
+    vi.mocked(trpc.admin.setModuleReactivation.useMutation).mockReturnValue(
+      { mutate: vi.fn() } as any,
+    );
+    vi.mocked(trpc.admin.resetVentureModuleReactivations.useMutation).mockReturnValue(
+      { mutate: vi.fn(), isPending: false } as any,
+    );
+    vi.mocked(trpc.useUtils).mockReturnValue({
+      admin: { getModuleReactivations: { invalidate: vi.fn() } },
+    } as any);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("isBatchPending is false when the batch mutation reports isPending=false", () => {
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: vi.fn(), isPending: false } as any,
+    );
+
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    expect(result.current.isBatchPending).toBe(false);
+  });
+
+  it("isBatchPending is true when the batch mutation reports isPending=true", () => {
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: vi.fn(), isPending: true } as any,
+    );
+
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    expect(result.current.isBatchPending).toBe(true);
+  });
+
+  it("isBatchPending transitions from true to false when a new render delivers isPending=false", async () => {
+    // Simulate the mutation lifecycle: isPending starts true, then resolves to false.
+    let isPending = true;
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockImplementation(() => ({
+      mutate: vi.fn(),
+      isPending,
+    } as any));
+
+    const { result, rerender } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    expect(result.current.isBatchPending).toBe(true);
+
+    // Simulate the mutation completing — isPending drops to false on the next render.
+    isPending = false;
+    await act(async () => { rerender(); });
+
+    expect(result.current.isBatchPending).toBe(false);
+  });
+});
+
+// ── resetIsPending: reflected from resetMutation.isPending ────────────────────
+//
+// The hook exposes `resetIsPending` so the reset button can show a spinner
+// and block repeated clicks while the resetVentureModuleReactivations write
+// is in-flight.  These tests verify the field is wired through correctly.
+describe("useGate4Reactivation — resetIsPending reflects resetMutation.isPending", () => {
+  const VENTURE = "ven-alpha";
+
+  beforeEach(() => {
+    localStorage.clear();
+    vi.mocked(trpc.admin.getModuleReactivations.useQuery).mockReturnValue({
+      data: [], isLoading: false, isError: false, refetch: vi.fn(),
+    } as any);
+    vi.mocked(trpc.admin.setModuleReactivation.useMutation).mockReturnValue(
+      { mutate: vi.fn() } as any,
+    );
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+      { mutate: vi.fn(), isPending: false } as any,
+    );
+    vi.mocked(trpc.useUtils).mockReturnValue({
+      admin: { getModuleReactivations: { invalidate: vi.fn() } },
+    } as any);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("resetIsPending is false when the reset mutation reports isPending=false", () => {
+    vi.mocked(trpc.admin.resetVentureModuleReactivations.useMutation).mockReturnValue(
+      { mutate: vi.fn(), isPending: false } as any,
+    );
+
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    expect(result.current.resetIsPending).toBe(false);
+  });
+
+  it("resetIsPending is true when the reset mutation reports isPending=true", () => {
+    vi.mocked(trpc.admin.resetVentureModuleReactivations.useMutation).mockReturnValue(
+      { mutate: vi.fn(), isPending: true } as any,
+    );
+
+    const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    expect(result.current.resetIsPending).toBe(true);
+  });
+
+  it("resetIsPending transitions from true to false on a new render", async () => {
+    let isPending = true;
+    vi.mocked(trpc.admin.resetVentureModuleReactivations.useMutation).mockImplementation(() => ({
+      mutate: vi.fn(),
+      isPending,
+    } as any));
+
+    const { result, rerender } = renderHook(() => useGate4Reactivation(VENTURE));
+
+    expect(result.current.resetIsPending).toBe(true);
+
+    isPending = false;
+    await act(async () => { rerender(); });
+
+    expect(result.current.resetIsPending).toBe(false);
+  });
+});

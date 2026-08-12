@@ -727,3 +727,104 @@ describe("buildResetOnSuccess — venture-drift detection", () => {
     expect(toast.calls.warning[0]).toContain("Venture Beta");
   });
 });
+
+// ── showConcurrentModificationToast ──────────────────────────────────────────
+// Added with #40/#153 — surfaced when another admin modified module settings
+// between this client's last refresh and the Enable All / Disable All batch.
+// Must show a WARNING toast with clear "reload and retry" guidance.
+
+import { showConcurrentModificationToast, showResetZeroRowsToast } from "./gate4ToastUtils";
+
+describe("showConcurrentModificationToast", () => {
+  it("fires toast.warning (not error) when a concurrent-modification conflict is detected", () => {
+    const toast = makeToast();
+    showConcurrentModificationToast(
+      toast,
+      "Concurrent modification detected: 2 group(s) were modified by another admin (bob) after your last refresh. Re-fetch the current state and retry. Affected groups: discovery, validation",
+    );
+
+    expect(toast.calls.warning).toHaveLength(1);
+    expect(toast.calls.error).toHaveLength(0);
+    expect(toast.calls.success).toHaveLength(0);
+  });
+
+  it("message tells the admin to reload the panel and retry", () => {
+    const toast = makeToast();
+    showConcurrentModificationToast(toast, "Concurrent modification detected: 1 group(s) were modified by another admin (alice).");
+
+    expect(toast.calls.warning[0]).toContain("Reload");
+    expect(toast.calls.warning[0]).toContain("try again");
+  });
+
+  it("message states changes were not applied", () => {
+    const toast = makeToast();
+    showConcurrentModificationToast(toast, "Concurrent modification detected: 3 group(s) were modified.");
+
+    expect(toast.calls.warning[0]).toContain("not applied");
+  });
+
+  it("extracts count 1 from the server message and uses singular phrasing", () => {
+    const toast = makeToast();
+    showConcurrentModificationToast(toast, "Concurrent modification detected: 1 group(s) were modified by another admin (dave).");
+
+    // Singular: "1 module setting was changed"
+    expect(toast.calls.warning[0]).toMatch(/1 module setting was/);
+  });
+
+  it("extracts count 3 from the server message and uses plural phrasing", () => {
+    const toast = makeToast();
+    showConcurrentModificationToast(toast, "Concurrent modification detected: 3 group(s) were modified.");
+
+    // Plural: "3 module settings were changed"
+    expect(toast.calls.warning[0]).toMatch(/3 module settings were/);
+  });
+
+  it("handles a message with no count gracefully (generic fallback copy)", () => {
+    const toast = makeToast();
+    showConcurrentModificationToast(toast, "Concurrent modification detected: unknown error.");
+
+    // No crash; still fires a warning
+    expect(toast.calls.warning).toHaveLength(1);
+    expect(toast.calls.warning[0]).toContain("not applied");
+  });
+});
+
+// ── showResetZeroRowsToast ────────────────────────────────────────────────────
+// Added with #148 — surfaced when "Reset to global defaults" completes but
+// deletes zero rows (the venture already uses global defaults).
+// Must show a WARNING toast distinguishing the no-op from a true error.
+
+describe("showResetZeroRowsToast", () => {
+  it("fires toast.warning (not error or success) for the zero-row reset case", () => {
+    const toast = makeToast();
+    showResetZeroRowsToast(toast);
+
+    expect(toast.calls.warning).toHaveLength(1);
+    expect(toast.calls.error).toHaveLength(0);
+    expect(toast.calls.success).toHaveLength(0);
+  });
+
+  it("message mentions global defaults so the admin understands why nothing changed", () => {
+    const toast = makeToast();
+    showResetZeroRowsToast(toast);
+
+    expect(toast.calls.warning[0]).toContain("global defaults");
+  });
+
+  it("message conveys that nothing was reset (not a generic failure)", () => {
+    const toast = makeToast();
+    showResetZeroRowsToast(toast);
+
+    // Should not say "failed" or "error" — it is a successful no-op, not a failure.
+    expect(toast.calls.warning[0]).not.toMatch(/fail/i);
+    expect(toast.calls.warning[0]).not.toMatch(/error/i);
+  });
+
+  it("message explains the reason (no venture-specific settings found)", () => {
+    const toast = makeToast();
+    showResetZeroRowsToast(toast);
+
+    // The message should make it clear the venture already uses global defaults.
+    expect(toast.calls.warning[0]).toMatch(/already uses global defaults|no venture-specific/i);
+  });
+});

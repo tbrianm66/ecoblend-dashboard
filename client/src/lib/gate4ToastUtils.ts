@@ -225,6 +225,53 @@ export function showResetErrorToast(
  *
  * Mirrors the inline logic of `showBatchToast` in Sidebar.tsx:ReactivationPanel.
  */
+/**
+ * Show a warning toast when a batch Enable-All / Disable-All is rejected because
+ * another admin modified module settings after the client's last refresh.
+ *
+ * Distinct from showBatchErrorToast (which handles partial-write failures) so
+ * the copy can give the admin the correct next action ("refresh and retry")
+ * rather than a generic failure message.
+ *
+ * @param toast      The toast API to call.
+ * @param rawMessage The raw server error message (used to extract the group count).
+ */
+export function showConcurrentModificationToast(
+  toast: ToastApi,
+  rawMessage: string,
+): void {
+  // Extract count from "Concurrent modification detected: N group(s) were modified..."
+  const countMatch = rawMessage.match(/(\d+)\s+group\(s\)/);
+  const count = countMatch ? parseInt(countMatch[1], 10) : null;
+
+  const detail = count
+    ? `${count} module setting${count !== 1 ? "s were" : " was"} changed by another admin since your last refresh.`
+    : "Another admin changed module settings since your last refresh.";
+
+  toast.warning(
+    `Changes not applied — ${detail} Reload the panel and try again.`,
+    { duration: 8000 },
+  );
+}
+
+/**
+ * Show a warning toast when "Reset to global defaults" completes but deleted
+ * zero rows — the venture already uses global defaults, so no rows existed
+ * to delete.
+ *
+ * Distinct from showResetErrorToast: the endpoint did not fail; it just had
+ * nothing to do. The warning prevents the admin from assuming silence means
+ * the reset succeeded when there was in fact nothing to reset.
+ *
+ * @param toast The toast API to call.
+ */
+export function showResetZeroRowsToast(toast: ToastApi): void {
+  toast.warning(
+    "Nothing to reset — this venture already uses global defaults (no venture-specific settings were found).",
+    { duration: 5000 },
+  );
+}
+
 export function showBatchToast(
   toast: ToastApi,
   currentVId: string | null,

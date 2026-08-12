@@ -1881,3 +1881,445 @@ describe("setModuleReactivation — DB row integrity checks", () => {
     expect((err as TRPCError).message).toContain("2");
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// #152 — lastKnownMaxToggledAt conflict detection
+// Tests the optimistic-locking guard added to setModuleReactivationBatch.
+// When provided, the endpoint checks whether another admin modified any row
+// for the same venture after lastKnownMaxToggledAt and rejects with CONFLICT
+// rather than silently overwriting.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Minimal DB mock that satisfies the SELECT chain used by the conflict-detection
+ * block (db.select({...}).from(table).where(condition)).
+ * Returns the supplied conflictRows regardless of which conditions are passed.
+ * The transaction path is intentionally omitted: tests that verify CONFLICT is
+ * thrown reach it before the transaction begins.
+ */
+function makeConflictOnlyMock(
+  conflictRows: Array<{ groupId: string; modifiedBy: string | null }>,
+): unknown {
+  return {
+    select: (_shape: unknown) => ({
+      from: (_table: unknown) => ({
+        where: (_condition: unknown) => Promise.resolve(conflictRows),
+      }),
+    }),
+    // transaction is never called when CONFLICT is thrown, so it is not needed here.
+  };
+}
+
+/**
+ * Wraps makeHarnessDb to also satisfy the SELECT chain.
+ * Used for tests where the conflict check finds NO conflict and the batch
+ * proceeds normally into the transaction.
+ */
+function makeConflictAwareHarnessDb(
+  conflictRows: Array<{ groupId: string; modifiedBy: string | null }>,
+  harnessOpts?: Parameters<typeof makeHarnessDb>[0],
+): HarnessDb {
+  const base = makeHarnessDb(harnessOpts);
+  return Object.assign(base, {
+    select: (_shape: unknown) => ({
+      from: (_table: unknown) => ({
+        where: (_cond: unknown) => Promise.resolve(conflictRows),
+      }),
+    }),
+  }) as HarnessDb;
+}
+
+describe("setModuleReactivationBatch — lastKnownMaxToggledAt conflict detection (#152)", () => {
+  const pastCutoff = new Date(Date.now() - 60_000).toISOString(); // 1 minute ago
+
+  it("rejects with CONFLICT when another admin modified a row after lastKnownMaxToggledAt", async () => {
+    // The mock returns one row modified by "bob" — representing a row that exists
+    // in the DB with toggledAt > cutoff and toggledBy !== "alice".
+    const db = makeConflictOnlyMock([
+      { groupId: "discovery", modifiedBy: "bob" },
+    ]);
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx("alice")).admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: [{ groupId: "discovery", active: true }],
+        lastKnownMaxToggledAt: pastCutoff,
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("CONFLICT");
+    expect((err as TRPCError).message).toContain("Concurrent modification detected");
+    expect((err as TRPCError).message).toContain("discovery");
+    expect((err as TRPCError).message).toContain("bob");
+  });
+
+  it("names every conflicting group and editor in the error message", async () => {
+    const db = makeConflictOnlyMock([
+      { groupId: "discovery",  modifiedBy: "bob" },
+      { groupId: "validation", modifiedBy: "carol" },
+    ]);
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx("alice")).admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: [
+          { groupId: "discovery",  active: true },
+          { groupId: "validation", active: true },
+        ],
+        lastKnownMaxToggledAt: pastCutoff,
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("CONFLICT");
+    // All affected groups and editors must appear in the message.
+    expect((err as TRPCError).message).toContain("2 group");
+    expect((err as TRPCError).message).toContain("discovery");
+    expect((err as TRPCError).message).toContain("validation");
+    expect((err as TRPCError).message).toContain("bob");
+    expect((err as TRPCError).message).toContain("carol");
+    // The caller is told to re-fetch and retry.
+    expect((err as TRPCError).message).toContain("Re-fetch");
+  });
+
+  it("allows the batch when lastKnownMaxToggledAt is omitted entirely (opt-in guard)", async () => {
+    // Without lastKnownMaxToggledAt the server skips the conflict check entirely.
+    // Even if another admin's rows exist in the DB the batch succeeds — the guard
+    // is opt-in so older clients that don't send the field continue to work.
+    const db = makeConflictAwareHarnessDb([]);
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    const result = await appRouter.createCaller(makeAdminCtx("alice")).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [{ groupId: "discovery", active: true }],
+      // lastKnownMaxToggledAt deliberately omitted
+    });
+
+    expect(result.success).toBe(true);
+    expect(committedFor(db as HarnessDb, "VENTURE-A")).toHaveLength(1);
+  });
+
+  it("allows the batch when the conflict query returns zero rows (no conflict found)", async () => {
+    // The ne(toggledBy, currentAdmin) and gt(toggledAt, cutoff) conditions
+    // collectively return nothing — i.e. no OTHER admin modified rows after cutoff.
+    const db = makeConflictAwareHarnessDb([]); // mock returns empty = no conflict
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    const result = await appRouter.createCaller(makeAdminCtx("alice")).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [{ groupId: "discovery", active: true }],
+      lastKnownMaxToggledAt: pastCutoff,
+    });
+
+    expect(result.success).toBe(true);
+    expect(committedFor(db as HarnessDb, "VENTURE-A")).toHaveLength(1);
+  });
+
+  it("allows a full 15-group batch when no conflict is detected", async () => {
+    const db = makeConflictAwareHarnessDb([]);
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    const result = await appRouter.createCaller(makeAdminCtx("alice")).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: activateAllItems(true),
+      lastKnownMaxToggledAt: pastCutoff,
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.count).toBe(15);
+    expect(committedFor(db as HarnessDb, "VENTURE-A")).toHaveLength(15);
+  });
+
+  it("CONFLICT error instructs the admin to re-fetch and retry", async () => {
+    const db = makeConflictOnlyMock([{ groupId: "scoring", modifiedBy: "dave" }]);
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx("alice")).admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: [{ groupId: "scoring", active: false }],
+        lastKnownMaxToggledAt: pastCutoff,
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect((err as TRPCError).message).toContain("retry");
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// #171 — resetVentureModuleReactivations: ventureId validation
+// The endpoint must reject a whitespace-only ventureId and the __global__
+// sentinel before touching the database.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Minimal DB mock that satisfies the delete chain used by execVentureReset:
+ *   db.delete(table).where(eqFn(col, vid)).returning()
+ *
+ * Pass `deletedRows` to control how many rows the DB reports as deleted.
+ * The mock does not actually store or inspect rows — it just resolves with
+ * whatever the test specifies.
+ */
+function makeResetDb(deletedRows: unknown[] = []): unknown {
+  return {
+    delete: (_table: unknown) => ({
+      where: (_condition: unknown) => ({
+        returning: () => Promise.resolve(deletedRows),
+      }),
+    }),
+  };
+}
+
+describe("resetVentureModuleReactivations — ventureId validation (#171)", () => {
+  it("rejects __global__ ventureId with BAD_REQUEST before touching the DB", async () => {
+    const db = makeResetDb([{ id: 1 }]); // would succeed if reached
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.resetVentureModuleReactivations({
+        ventureId: "__global__",
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("BAD_REQUEST");
+    expect((err as TRPCError).message).toContain("global");
+  });
+
+  it("rejects a whitespace-only ventureId with BAD_REQUEST before touching the DB", async () => {
+    // "   " has length 3 so it passes the Zod .min(1) check on the schema.
+    // normaliseResetVentureId must catch it after trim() produces "".
+    const db = makeResetDb([{ id: 1 }]); // would succeed if reached
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.resetVentureModuleReactivations({
+        ventureId: "   ",
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("BAD_REQUEST");
+  });
+
+  it("rejects a tab-only ventureId with BAD_REQUEST", async () => {
+    // Tabs also produce an empty string after trim.
+    const db = makeResetDb([]);
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.resetVentureModuleReactivations({
+        ventureId: "\t",
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("BAD_REQUEST");
+  });
+
+  it("succeeds for a valid venture ID and returns the deleted count", async () => {
+    // Two rows deleted — simulates a venture with two module overrides.
+    const db = makeResetDb([{ id: 1 }, { id: 2 }]);
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    const result = await appRouter.createCaller(makeAdminCtx()).admin.resetVentureModuleReactivations({
+      ventureId: "VENTURE-A",
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.ventureId).toBe("VENTURE-A");
+    expect(result.deletedCount).toBe(2);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// #148 — resetVentureModuleReactivations: zero-row result
+// When the venture has no rows to delete the endpoint must still return
+// { success: true, deletedCount: 0 } so the caller can distinguish a genuine
+// no-op from a silent error.
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("resetVentureModuleReactivations — zero-row result (#148)", () => {
+  it("returns deletedCount: 0 when no rows exist for the venture", async () => {
+    // The venture has never had module overrides — the DELETE WHERE matches nothing.
+    const db = makeResetDb([]); // returning() → [] → zero deleted
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    const result = await appRouter.createCaller(makeAdminCtx()).admin.resetVentureModuleReactivations({
+      ventureId: "VENTURE-EMPTY",
+    });
+
+    // The server must report the zero-row result explicitly.
+    // The client (gate4Config.ts:resetToGlobalDefaults) reads deletedCount to
+    // decide whether to call onSuccess or onZeroRows, so the value must be
+    // present and accurate.
+    expect(result.success).toBe(true);
+    expect(result.deletedCount).toBe(0);
+    expect(result.ventureId).toBe("VENTURE-EMPTY");
+  });
+
+  it("does NOT return deletedCount: 0 when rows exist and are deleted", async () => {
+    // Baseline: confirm the above assertion is discriminating (not always 0).
+    const db = makeResetDb([{ id: 10 }, { id: 11 }, { id: 12 }]);
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    const result = await appRouter.createCaller(makeAdminCtx()).admin.resetVentureModuleReactivations({
+      ventureId: "VENTURE-B",
+    });
+
+    expect(result.deletedCount).toBe(3);
+    expect(result.deletedCount).not.toBe(0);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// #156 — setModuleReactivationBatch: non-boolean active field rejection
+// z.boolean() must reject null, string "true" / "false", and numeric 1 / 0.
+// These are type-level schema guards: any relaxation of the schema (e.g. to
+// z.boolean() → z.coerce.boolean()) would silently accept them instead of
+// returning BAD_REQUEST.
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("setModuleReactivationBatch — non-boolean active field rejection (#156)", () => {
+  it("rejects an item with active: null with BAD_REQUEST and writes zero rows", async () => {
+    const db = makeHarnessDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: [{ groupId: "discovery", active: null }] as any,
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("BAD_REQUEST");
+    expect(committedFor(db, "VENTURE-A")).toHaveLength(0);
+  });
+
+  it("rejects an item with active: 'true' (string) with BAD_REQUEST and writes zero rows", async () => {
+    // String "true" is falsy-equivalent in some coercion paths (e.g. z.coerce.boolean).
+    // The schema must not coerce it — z.boolean() must reject non-boolean values.
+    const db = makeHarnessDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: [{ groupId: "discovery", active: "true" }] as any,
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("BAD_REQUEST");
+    expect(committedFor(db, "VENTURE-A")).toHaveLength(0);
+  });
+
+  it("rejects an item with active: 'false' (string) with BAD_REQUEST and writes zero rows", async () => {
+    const db = makeHarnessDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: [{ groupId: "discovery", active: "false" }] as any,
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("BAD_REQUEST");
+    expect(committedFor(db, "VENTURE-A")).toHaveLength(0);
+  });
+
+  it("rejects an item with active: 1 (number) with BAD_REQUEST and writes zero rows", async () => {
+    // Numeric 1 would be truthy but must not be accepted as a boolean.
+    const db = makeHarnessDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: [{ groupId: "discovery", active: 1 }] as any,
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("BAD_REQUEST");
+    expect(committedFor(db, "VENTURE-A")).toHaveLength(0);
+  });
+
+  it("rejects a mixed batch where one item has active: null — entire batch rejected, zero rows written", async () => {
+    // Schema validation is holistic: one invalid item rejects the whole payload.
+    const db = makeHarnessDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: [
+          { groupId: "discovery",  active: true  }, // valid
+          { groupId: "validation", active: null  }, // invalid — null not a boolean
+          { groupId: "gtm",        active: false }, // valid
+        ] as any,
+      });
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("BAD_REQUEST");
+    // No rows must be written — Zod rejects before the transaction is entered.
+    expect(committedFor(db, "VENTURE-A")).toHaveLength(0);
+  });
+
+  it("accepts valid boolean true and false without rejecting", async () => {
+    // Baseline: confirm the rejection tests are discriminating.
+    const db = makeConflictAwareHarnessDb([]);
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    const result = await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [
+        { groupId: "discovery",  active: true  },
+        { groupId: "validation", active: false },
+      ],
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.count).toBe(2);
+  });
+});

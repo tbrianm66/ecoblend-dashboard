@@ -1297,20 +1297,20 @@ describe("toggle in ReactivationPanel → header badge in ExtendedBacklogSection
     });
   });
 
-  // ── supplementary: collapsed-start edge case ──────────────────────────────
+  // ── supplementary: auto-expand on first activation (#195) ────────────────
   /**
-   * Documents a known limitation that is separate from the above:
+   * Previously documented as a "known limitation": when all groups started OFF
+   * and the section was collapsed, reactivating a group via the panel would NOT
+   * auto-expand the section.  Task #195 removes this limitation by adding a
+   * useEffect in ExtendedBacklogSection that watches `activeCount` and calls
+   * setOpen(true) whenever it increases.
    *
-   * If the section starts COLLAPSED at mount (all groups OFF, no active location)
-   * and an admin reactivates a group via the panel, the section does NOT
-   * auto-expand.  The admin must manually click the section header.
-   *
-   * This is distinct from Task #134's concern (open section staying open).
-   * It is captured here so the behaviour is locked in and a future fix
-   * (e.g. a useEffect that calls setOpen(true) on first activation) will
-   * cause a deliberate test update rather than a silent regression.
+   * These tests now verify the IMPROVED behaviour:
+   *   - Section starts collapsed when all groups are OFF.
+   *   - After reactivate() is called the section auto-expands so the activated
+   *     item is immediately visible without requiring a manual header click.
    */
-  describe("supplementary: section stays collapsed when reactivation starts from a fully-closed state", () => {
+  describe("supplementary: auto-expand when activeCount increases after reactivation (#195)", () => {
     /**
      * A harness where ALL groups begin OFF so the section starts collapsed.
      */
@@ -1394,35 +1394,35 @@ describe("toggle in ReactivationPanel → header badge in ExtendedBacklogSection
       expect(sectionHeader).toBeDefined();
     });
 
-    it("section stays collapsed after reactivate() — admin must manually open it (known limitation)", () => {
-      // open is set via useState(hasActiveItem) — React evaluates the initial value
-      // only once.  reactivate() never calls setOpen, so open remains false.
-      //
-      // If this test starts FAILING it means a useEffect was added that calls
-      // setOpen(true) on first activation — that is an IMPROVEMENT.  Update the
-      // assertion to expect open=true and delete this known-limitation comment.
+    it("section auto-expands after reactivate() — admin no longer needs to click the header manually (#195)", () => {
+      // Previously this was a known limitation: open was initialised once by
+      // useState(hasActiveItem) and never updated.  Task #195 adds a useEffect
+      // that calls setOpen(true) whenever activeCount increases, so the section
+      // automatically expands when the first group is activated from the panel.
       renderInRouter(React.createElement(AllOffHarness, null));
 
+      // Initially collapsed — no OFF badges visible inside the section body.
       expect(screen.queryByLabelText("Module disabled")).toBeNull();
 
-      // Reactivate via the panel — all groups start OFF so this calls reactivate().
+      // Reactivate via the panel — activeCount goes from 0 → 1.
       fireEvent.click(screen.getByTestId(`toggle-${TARGET_GROUP}`));
 
-      // Section body is still not rendered ({open && ...} guard is still false).
-      expect(screen.queryByLabelText("Module disabled")).toBeNull();
+      // The useEffect fires synchronously in happy-dom, so the section is now
+      // expanded and the reactivated group should show a GLOBAL badge.
+      // Previously this assertion required a manual fireEvent.click(sectionHeader).
+      expect(screen.getByLabelText("Enabled by a global rule").textContent).toBe("GLOBAL");
+    });
 
-      // Section header is still present — the section exists, merely collapsed.
+    it("section header is still present after reactivation (not replaced by the auto-expand effect)", () => {
+      // Regression guard: setOpen(true) must not destroy the header button.
+      renderInRouter(React.createElement(AllOffHarness, null));
+      fireEvent.click(screen.getByTestId(`toggle-${TARGET_GROUP}`));
+
       const allButtons = document.querySelectorAll("button");
       const sectionHeader = Array.from(allButtons).find(btn =>
         btn.textContent?.includes("Launch Phase"),
       );
       expect(sectionHeader).toBeDefined();
-
-      // Workaround: after the admin manually clicks the header the content renders.
-      // The reactivated group appears via NavGroupSection with a GLOBAL badge,
-      // proving it IS active — the only issue is the section didn't auto-expand.
-      fireEvent.click(sectionHeader!);
-      expect(screen.getByLabelText("Enabled by a global rule").textContent).toBe("GLOBAL");
     });
   });
 });

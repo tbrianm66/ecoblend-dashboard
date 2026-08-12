@@ -587,6 +587,7 @@ export function useGate4Reactivation(ventureId: string | null, panelOpen = false
     (
       onSuccess?: (snapshotVentureId: string | null) => void,
       onError?: (rawMessage: string) => void,
+      onZeroRows?: () => void,
     ) => {
       const snapshotVentureId = ventureIdRef.current;
       if (!snapshotVentureId) return; // global scope has nothing to reset
@@ -596,10 +597,14 @@ export function useGate4Reactivation(ventureId: string | null, panelOpen = false
         {
           onSuccess: (data) => {
             // Zero-row delete: the ventureId matched no rows in the DB.
-            // The delete succeeded without error but removed nothing — treat this as
-            // a no-op so the admin does not receive a false "reset succeeded" toast
-            // and the cache is not spuriously invalidated.
-            if ((data as { deletedCount?: number }).deletedCount === 0) return;
+            // The delete succeeded without error but removed nothing — surface
+            // this to the caller (so they can show a warning toast) rather than
+            // silently succeeding, which would mislead admins into thinking
+            // venture-specific rows were cleared when none existed.
+            if ((data as { deletedCount?: number }).deletedCount === 0) {
+              onZeroRows?.();
+              return;
+            }
 
             // After deletion, invalidate so the query re-fetches the global defaults.
             utils.admin.getModuleReactivations.invalidate();
@@ -624,7 +629,11 @@ export function useGate4Reactivation(ventureId: string | null, panelOpen = false
     deactivateAll,
     resetToGlobalDefaults,
     /** True while the resetVentureModuleReactivations mutation is in-flight. */
-    resetIsPending: resetMutation.isPending,
+    resetIsPending:  resetMutation.isPending,
+    /** True while an Enable All / Disable All batch mutation is in-flight.
+     *  Exposed so the venture selector can be disabled during the write to
+     *  prevent the admin from switching ventures mid-batch. */
+    isBatchPending:  setBatchMutation.isPending,
     rows,
     isLoading,
     isError,

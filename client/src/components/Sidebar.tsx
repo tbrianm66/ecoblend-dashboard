@@ -46,7 +46,7 @@ import {
   type BacklogGroupId,
 } from "@/lib/gate4Config";
 import { resolveModuleBadge, buildRowByGroup, formatToggleAudit } from "@/lib/gate4Utils";
-import { showToggleToast, showToggleErrorToast, showBatchToast, showBatchErrorToast, showResetToast, showResetErrorToast, buildResetOnSuccess } from "@/lib/gate4ToastUtils";
+import { showToggleToast, showToggleErrorToast, showBatchToast, showBatchErrorToast, showResetToast, showResetErrorToast, showResetZeroRowsToast, showConcurrentModificationToast, buildResetOnSuccess } from "@/lib/gate4ToastUtils";
 import { ReactivationResetButton } from "@/components/ReactivationResetButton";
 
 type IconName = string;
@@ -615,7 +615,14 @@ export function ReactivationPanel({
    */
   const handleBatchErrorToast = useCallback(
     (skippedGroups: string[], rawMessage: string) => {
-      showBatchErrorToast(toast, skippedGroups, rawMessage, GATE4_BACKLOG_GROUP_LABEL_MAP);
+      // Concurrent-modification rejection: show a specific "another admin changed
+      // settings — reload and retry" warning rather than the generic skipped-groups
+      // error, which would be confusing when skippedGroups is empty (#153).
+      if (skippedGroups.length === 0 && rawMessage.includes("Concurrent modification detected")) {
+        showConcurrentModificationToast(toast, rawMessage);
+      } else {
+        showBatchErrorToast(toast, skippedGroups, rawMessage, GATE4_BACKLOG_GROUP_LABEL_MAP);
+      }
     },
     [],
   );
@@ -867,8 +874,9 @@ export function ReactivationPanel({
         </button>
       </div>
 
-      {/* Reset to global defaults — only shown when a specific venture is selected */}
-      {ventureId && ventureName && (
+      {/* Reset to global defaults — only shown when a specific venture is selected
+          AND venture data has fully loaded (#174: guard against loading window). */}
+      {ventureId && ventureName && !venturesLoading && (
         <div className="px-3 pb-2">
           <ReactivationResetButton
             ventureId={ventureId}
@@ -887,6 +895,11 @@ export function ReactivationPanel({
                 ),
                 (rawMessage) => {
                   showResetErrorToast(toast, rawMessage);
+                },
+                // #148: zero-row result — venture already uses global defaults;
+                // show a warning so the admin isn't left with a silent no-op.
+                () => {
+                  showResetZeroRowsToast(toast);
                 },
               );
             }}
@@ -922,6 +935,17 @@ export function ExtendedBacklogSection({
     g.items.some(item => location === item.href || (item.href !== "/" && location.startsWith(item.href)))
   );
   const [open, setOpen] = useState(hasActiveItem);
+
+  // #195: Auto-expand when the active count increases (e.g. an admin reactivates
+  // a group from the panel). This ensures the newly activated item is visible in
+  // the sidebar without requiring a manual click to expand.
+  const prevActiveCount = useRef(activeCount);
+  useEffect(() => {
+    if (activeCount > prevActiveCount.current) {
+      setOpen(true);
+    }
+    prevActiveCount.current = activeCount;
+  }, [activeCount]);
 
   // Build the most-specific row for each group (mirrors ReactivationPanel logic).
   const rowByGroup = buildRowByGroup(rows, ventureId);
@@ -1194,7 +1218,7 @@ export default function Sidebar() {
   const {
     isActivated, rows, isLoading, isError,
     reactivate, deactivate, reactivateAll, deactivateAll, resetToGlobalDefaults,
-    resetIsPending,
+    resetIsPending, isBatchPending,
   } = useGate4Reactivation(selectedVentureId, reactivationOpen);
 
   return (
@@ -1223,8 +1247,8 @@ export default function Sidebar() {
       {/* Sync alert */}
       <SyncAlertBanner />
 
-      {/* Global Venture Selector */}
-      <GlobalVentureSelector />
+      {/* Global Venture Selector — disabled while a batch write is in-flight (#142) */}
+      <GlobalVentureSelector disabled={isBatchPending} />
 
       {/* Scrollable navigation */}
       <nav className="flex-1 px-2 py-3 overflow-y-auto">

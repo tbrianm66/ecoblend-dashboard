@@ -38,6 +38,15 @@ export function normaliseSetVentureId(raw?: string): string {
  */
 export function normaliseResetVentureId(raw: string): string {
   const vid = raw.trim();
+  // Reject blank/whitespace-only BEFORE the __global__ check so the caller
+  // cannot bypass the guard by passing "  __global__  " (trim would produce
+  // "__global__"), and also surfaces a clearer error for the pure-whitespace case.
+  if (!vid) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "ventureId must not be blank or whitespace-only",
+    });
+  }
   if (vid === "__global__") {
     throw new TRPCError({
       code: "BAD_REQUEST",

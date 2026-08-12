@@ -16,7 +16,12 @@ const STATUS_COLORS: Record<string, string> = {
   Archived: "#374151",
 };
 
-export default function GlobalVentureSelector() {
+export default function GlobalVentureSelector({
+  /** When true the trigger is non-interactive (e.g. a batch write is in-flight). */
+  disabled = false,
+}: {
+  disabled?: boolean;
+}) {
   const { selectedVenture, availableVentures, setSelectedVentureId, loading } =
     useSelectedVenture();
   const [open, setOpen] = useState(false);
@@ -51,13 +56,16 @@ export default function GlobalVentureSelector() {
     <div ref={ref} className="relative mx-3 my-2">
       {/* Trigger button */}
       <button
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => !disabled && setOpen((o) => !o)}
+        disabled={disabled}
         className="w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-150"
         style={{
           background: open ? "rgba(86, 168, 55,0.12)" : "rgba(255,255,255,0.05)",
           border: `1px solid ${open ? "rgba(86, 168, 55,0.35)" : "rgba(255,255,255,0.09)"}`,
+          opacity: disabled ? 0.5 : 1,
+          cursor: disabled ? "not-allowed" : "pointer",
         }}
-        title="Switch active venture"
+        title={disabled ? "Venture switch unavailable while a batch write is in progress" : "Switch active venture"}
       >
         {/* Venture colour dot */}
         <span
