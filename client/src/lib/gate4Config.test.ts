@@ -4737,3 +4737,6 @@ describe("useGate4Reactivation — OFF-row badge reflects fresh server data afte
     expect(badgeForGroup(result.current.rows, VENTURE, GROUP_ID)).toBe("venture");
   });
 });
+
+// persist() null/global scope rollback tests are in
+// gate4Config.persistNullScope.test.ts (extracted to avoid OOM in this file).
