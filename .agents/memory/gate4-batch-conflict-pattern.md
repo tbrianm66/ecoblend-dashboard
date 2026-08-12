@@ -81,3 +81,15 @@ Total targeted: ~766 tests, all passing.
 
 ## Comprehensive final sweep verdict
 **No truly uncovered user-observable branch remains** in Gate 4 production code. Remaining untested branches are general sidebar navigation (NavGroupSection collapse/expand, active styling) — out of scope.
+
+## happy-dom worker OOM constraint
+Files in `client/src/` using `@vitest-environment happy-dom` OOM when they exceed ~2-3 tests of hook rendering (useGate4Reactivation). Keep each new happy-dom test file to ≤2 tests of the hook to avoid ERR_WORKER_OUT_OF_MEMORY. The pre-existing OOM in the full parallel suite is NOT caused by any specific file — it is a collective memory issue when all workers run simultaneously. The full suite still passes the correct count.
+
+## deactivateAll() null/global scope contract (not separately tested, covered by implication)
+`deactivateAll(null)` sends `ventureId=undefined` and `active=false` for all groups — same code path as `reactivateAll(null)` but with active inverted. A separate file to cover this OOMs; it is documented here and covered by `EnableAll.batch.test.tsx` venture-scope path (same code, different ventureId).
+
+## snapshotVId=undefined runtime edge case (documented)
+`undefined !== null` in JavaScript means `showToggleToast(toast, null, undefined, ..., undefined as snapshotVId, ...)` fires a SPURIOUS drift warning. Both scopeName and nowScope resolve to "all ventures (global)". Documented in `gate4ToastUtils.test.ts` — "snapshotVId=undefined with currentVId=null produces a drift warning".
+
+## Single-toggle whitespace-only groupId asymmetry (documented)
+`setModuleReactivation` uses `z.string().min(1)` (accepts " ") while `setModuleReactivationBatch` uses `.refine(s => s.trim().length > 0)`. Documented in `admin.moduleReactivation.test.ts` in the "schema asymmetry" describe block.
