@@ -3826,6 +3826,47 @@ describe("useGate4Reactivation — polling stops when panelOpen transitions true
     // The useEffect must have fired refetch() exactly once for this transition.
     expect(mockRefetch).toHaveBeenCalledOnce();
   });
+
+  // ── 6. Closing the panel does NOT trigger refetch() (#155) ──────────────────
+  //
+  // Task #155: "Confirm refetch() is NOT triggered when panelOpen goes true → false
+  // (only false → true should refetch)."
+  //
+  // The hook's useEffect guards refetch() with a prevPanelOpenRef check:
+  //   if (!prevOpen && panelOpen) { refetch(); }
+  //
+  // On the true → false transition prevOpen is true, so the condition is false
+  // and refetch() must NOT be called.  Without this test a regression that removed
+  // the directional guard would cause a spurious refetch on every panel close,
+  // increasing server load and resetting UI state unexpectedly.
+  it("#155: refetch() is NOT called when panelOpen transitions true → false (only false→true triggers refetch)", async () => {
+    const mockRefetch = vi.fn();
+
+    vi.mocked(trpc.admin.getModuleReactivations.useQuery).mockImplementation(
+      (_input: unknown, options?: { refetchInterval?: number | false; staleTime?: number }) => {
+        capturedOptions.push({ refetchInterval: options?.refetchInterval ?? false });
+        return { data: undefined, isLoading: false, isError: false, refetch: mockRefetch } as any;
+      },
+    );
+
+    // Mount with panelOpen=true — panel is open initially.
+    const { rerender } = renderHook(
+      ({ panelOpen }: { panelOpen: boolean }) => useGate4Reactivation("ven-alpha", panelOpen),
+      { initialProps: { panelOpen: true } },
+    );
+
+    // Reset the spy so we do not count any refetch from the initial mount.
+    mockRefetch.mockClear();
+
+    // Transition: true → false (admin closes the panel).
+    await act(async () => {
+      rerender({ panelOpen: false });
+    });
+
+    // refetch() must NOT have been triggered by the close transition.
+    // Only the false → true edge is allowed to call refetch().
+    expect(mockRefetch).not.toHaveBeenCalled();
+  });
 });
 
 // ── Task 112: per-row toggle badge rollback on server rejection ───────────────
