@@ -540,6 +540,8 @@ export interface ReactivationPanelProps {
   resetToGlobalDefaults: (
     onSuccess?: (snapshotVId: string | null) => void,
     onError?: (rawMessage: string) => void,
+    /** Called when the server succeeds but deleted zero rows (venture already uses global defaults). */
+    onZeroRows?: () => void,
   ) => void;
   /** True while the resetVentureModuleReactivations mutation is in-flight. */
   resetIsPending?: boolean;
