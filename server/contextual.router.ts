@@ -6,7 +6,7 @@
  */
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { router, protectedProcedure, publicProcedure } from "./_core/trpc";
+import { router, protectedProcedure, publicProcedure, adminProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import { sql, SQL } from "drizzle-orm";
 import {
@@ -130,8 +130,8 @@ export const contextualRouter = router({
       return rows as any[];
     }),
 
-  // 7. logUsageEvent — track playbook interactions (public — fires on mount for anonymous users too)
-  logUsageEvent: publicProcedure
+  // 7. logUsageEvent — track playbook interactions (auth required; task #210 hardening)
+  logUsageEvent: protectedProcedure
     .input(
       z.object({
         playbookId: z.string(),
@@ -777,7 +777,7 @@ export const contextualRouter = router({
     }),
 
   // A8. adminFullAnalytics — extended analytics for /admin/widget-analytics
-  adminFullAnalytics: publicProcedure
+  adminFullAnalytics: adminProcedure
     .input(
       z.object({
         days: z.number().optional().default(30),
@@ -875,7 +875,7 @@ export const contextualRouter = router({
     }),
 
   // A9. adminGetWidgetSettings — fetch global + threshold + module + role settings
-  adminGetWidgetSettings: publicProcedure.query(async () => {
+  adminGetWidgetSettings: adminProcedure.query(async () => {
     const toRows = (r: any): any[] => {
       if (!r) return [];
       if (Array.isArray(r)) return r;
@@ -1012,7 +1012,7 @@ export const contextualRouter = router({
     }),
 
   // A14. adminGetContextDiagnostics — explain why recommendations appear
-  adminGetContextDiagnostics: publicProcedure
+  adminGetContextDiagnostics: adminProcedure
     .input(z.object({
       ventureId: z.string().optional(),
       module: z.string(),
@@ -1021,16 +1021,16 @@ export const contextualRouter = router({
     }))
     .query(async ({ input }) => {
       const db = await getDb();
-      const [allRules] = await db.execute(sql`
+      const allRules = (await db.execute(sql`
         SELECT pcr.*, pl.title as playbook_title, pl.status as playbook_status
         FROM playbook_context_rules pcr
         LEFT JOIN playbook_library pl ON pcr.playbook_id = pl.id
         WHERE pcr.module = ${input.module} OR pcr.module IS NULL
         ORDER BY pcr.priority DESC
-      `).catch(() => [[]]);
+      `).catch(() => ({ rows: [] }))).rows;
       let ventureInfo: any = null;
       if (input.ventureId) {
-        const [vRows] = await db.execute(sql`SELECT id, name, vrl, trl, status FROM ventures WHERE id = ${input.ventureId} LIMIT 1`).catch(() => [[]]);
+        const vRows = (await db.execute(sql`SELECT id, name, vrl, trl, status FROM ventures WHERE id = ${input.ventureId} LIMIT 1`).catch(() => ({ rows: [] }))).rows;
         ventureInfo = (vRows as any[])[0] || null;
       }
       const rules = allRules as any[];
@@ -1068,7 +1068,7 @@ export const contextualRouter = router({
     }),
 
   // A15. adminExportAnalyticsCsv — export usage events as raw rows for CSV download
-  adminExportAnalyticsCsv: publicProcedure
+  adminExportAnalyticsCsv: adminProcedure
     .input(z.object({
       days: z.number().optional().default(30),
       module: z.string().optional(),
@@ -1079,13 +1079,13 @@ export const contextualRouter = router({
       const conditions: SQL[] = [sql`created_at >= ${cutoff}`];
       if (input.module) conditions.push(sql`module = ${input.module}`);
       const whereClause = sql.join(conditions, sql.raw(" AND "));
-      const [rows] = await db.execute(sql`
+      const rows = (await db.execute(sql`
         SELECT id, event_type, playbook_id, widget_type, user_id, venture_id, module, page,
                action_type, outcome, dismissed_reason, created_at
         FROM playbook_usage_events
         WHERE ${whereClause}
         ORDER BY created_at DESC LIMIT 5000
-      `).catch(() => [[]]);
+      `).catch(() => ({ rows: [] }))).rows;
       return { rows: rows as any[] };
     }),
 
