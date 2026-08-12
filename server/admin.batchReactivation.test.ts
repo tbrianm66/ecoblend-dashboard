@@ -2732,3 +2732,71 @@ describe("setModuleReactivationBatch — duplicate groupId in input items", () =
     expect(committed).toHaveLength(2);
   });
 });
+
+// ── ventureId: null in the batch endpoint ─────────────────────────────────────
+// The batch schema declares `ventureId: z.string().optional()`.  `optional()`
+// allows the field to be *absent* (undefined) but does NOT allow null — Zod
+// rejects null as not-a-string.  This test guards against future schema drift
+// (e.g. changing to z.string().nullable().optional()) that would silently coerce
+// null to "__global__" instead of returning BAD_REQUEST.
+describe("setModuleReactivationBatch — ventureId: null is rejected by Zod schema", () => {
+  it("rejects ventureId: null with BAD_REQUEST and writes zero rows", async () => {
+    const db = makeHarnessDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    let err: unknown;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+        ventureId: null, // explicit null — z.string().optional() rejects this
+        items: [{ groupId: "discovery", active: true }],
+      } as any);
+    } catch (e) {
+      err = e;
+    }
+
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("BAD_REQUEST");
+    // The transaction is never entered; no rows written.
+    expect(committedFor(db, "__global__")).toHaveLength(0);
+  });
+});
+
+// ── [anonymous admin] fallback in the batch endpoint ─────────────────────────
+// When all three identity fields (name, email, openId) are nullish, the batch
+// endpoint must store "[anonymous admin]" in `toggledBy` — never null or undefined.
+// This mirrors the single-toggle path tested in gate4.toggledByFallback.test.ts,
+// but applies specifically to the batch transaction path.
+describe("setModuleReactivationBatch — [anonymous admin] fallback in toggledBy", () => {
+  it("stores '[anonymous admin]' when all ctx.user identity fields are null/undefined", async () => {
+    const db = makeHarnessDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    // makeAdminCtx with all identity fields nullish.
+    const anonCtx = {
+      ...makeAdminCtx(),
+      user: { role: "admin", name: null, email: null, openId: null },
+    };
+
+    await appRouter.createCaller(anonCtx as any).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [{ groupId: "discovery", active: true }],
+    });
+
+    const committed = committedFor(db, "VENTURE-A");
+    expect(committed).toHaveLength(1);
+    expect(committed[0].toggledBy).toBe("[anonymous admin]");
+  });
+
+  it("stores the real name when ctx.user.name is present (batch path)", async () => {
+    const db = makeHarnessDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    await appRouter.createCaller(makeAdminCtx("Carol")).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [{ groupId: "scoring", active: true }],
+    });
+
+    const committed = committedFor(db, "VENTURE-A");
+    expect(committed[0].toggledBy).toBe("Carol");
+  });
+});
