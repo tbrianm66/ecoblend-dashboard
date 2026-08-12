@@ -930,6 +930,68 @@ describe("execVentureReset — production delete predicate (no per-writer filter
     expect(rows.length).toBe(2);
     expect(rows.every(r => r.ventureId === "__global__")).toBe(true);
   });
+
+  // ── D. Null / undefined .returning() guard ───────────────────────────────
+  //
+  // Without a guard, a DB driver or mock that returns null/undefined from
+  // .returning() causes an unhandled TypeError at `deleted.length`.  The
+  // production fix converts this into a controlled diagnostic Error.
+
+  it("throws a controlled Error (not a silent TypeError) when .returning() resolves to null", async () => {
+    const nullReturningDb = {
+      delete: (_t: unknown) => ({
+        where: (_p: unknown) => ({
+          returning: () => Promise.resolve(null as unknown),
+        }),
+      }),
+    };
+
+    await expect(
+      execVentureReset(nullReturningDb, mockTable, () => ({}), mockTable.ventureId, "BEBUS"),
+    ).rejects.toThrow(/execVentureReset.*null/i);
+  });
+
+  it("throws a controlled Error when .returning() resolves to undefined", async () => {
+    const undefinedReturningDb = {
+      delete: (_t: unknown) => ({
+        where: (_p: unknown) => ({
+          returning: () => Promise.resolve(undefined as unknown),
+        }),
+      }),
+    };
+
+    await expect(
+      execVentureReset(undefinedReturningDb, mockTable, () => ({}), mockTable.ventureId, "BEBUS"),
+    ).rejects.toThrow(/execVentureReset/i);
+  });
+
+  it("throws a controlled Error when .returning() resolves to a number (unexpected driver response)", async () => {
+    const badReturningDb = {
+      delete: (_t: unknown) => ({
+        where: (_p: unknown) => ({
+          returning: () => Promise.resolve(42 as unknown),
+        }),
+      }),
+    };
+
+    await expect(
+      execVentureReset(badReturningDb, mockTable, () => ({}), mockTable.ventureId, "BEBUS"),
+    ).rejects.toThrow(/execVentureReset/i);
+  });
+
+  it("does NOT throw and returns 0 when .returning() resolves to an empty array", async () => {
+    // Confirm the normal empty-array path still works after the guard was added.
+    const emptyDb = {
+      delete: (_t: unknown) => ({
+        where: (_p: unknown) => ({
+          returning: () => Promise.resolve([] as unknown[]),
+        }),
+      }),
+    };
+
+    const count = await execVentureReset(emptyDb, mockTable, () => ({}), mockTable.ventureId, "BEBUS");
+    expect(count).toBe(0);
+  });
 });
 
 // ── adminProcedure guard — standalone coverage ────────────────────────────────

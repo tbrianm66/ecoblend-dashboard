@@ -2651,3 +2651,84 @@ describe("resetVentureModuleReactivations — DB unavailable guard (!db path)", 
     expect(result.success).toBe(true);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Duplicate groupId in batch — the same groupId submitted twice
+//
+// The zod schema does not deduplicate or reject duplicate groupIds, so the
+// router processes them in iteration order.  The second write is an upsert
+// (same composite key), so it overwrites the first write's `active` value.
+// Per-row integrity still fires for each item (each gets exactly one
+// confirmed row), so no INTERNAL_SERVER_ERROR is thrown.
+// The final committed state reflects only the LAST write for that key.
+// ─────────────────────────────────────────────────────────────────────────────
+describe("setModuleReactivationBatch — duplicate groupId in input items", () => {
+  it("processes both items without throwing: second write overwrites the first (upsert semantics)", async () => {
+    const db = makeHarnessDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+    const caller = appRouter.createCaller(makeAdminCtx("alice"));
+
+    // Submit the same groupId twice with opposite active values.
+    // The second write (active: false) should win.
+    const result = await caller.admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [
+        { groupId: "discovery", active: true  },
+        { groupId: "discovery", active: false }, // duplicate — overwrites the first
+      ],
+    });
+
+    expect(result.success).toBe(true);
+    // Both items are counted — the handler does not deduplicate inputs.
+    expect(result.count).toBe(2);
+    expect(result.upserted).toHaveLength(2);
+    expect(result.upserted).toEqual(["discovery", "discovery"]);
+
+    // The committed state reflects the LAST write (active: false).
+    const committed = committedFor(db, "VENTURE-A");
+    const row = committed.find(r => r.groupId === "discovery");
+    expect(row?.active).toBe(false);
+  });
+
+  it("does not create two distinct DB rows when the same groupId is submitted twice", async () => {
+    const db = makeHarnessDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+    const caller = appRouter.createCaller(makeAdminCtx("alice"));
+
+    await caller.admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [
+        { groupId: "discovery", active: true  },
+        { groupId: "discovery", active: false },
+      ],
+    });
+
+    // Only one row must exist for (discovery, VENTURE-A) — no phantom duplicate.
+    const committed = committedFor(db, "VENTURE-A");
+    expect(committed).toHaveLength(1);
+    expect(committed.some(r => r.groupId === "discovery")).toBe(true);
+  });
+
+  it("other groups in the same batch are unaffected when a duplicate groupId is present", async () => {
+    const db = makeHarnessDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+    const caller = appRouter.createCaller(makeAdminCtx("alice"));
+
+    await caller.admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [
+        { groupId: "discovery",  active: true  },
+        { groupId: "discovery",  active: false }, // duplicate
+        { groupId: "validation", active: true  }, // unique — must commit correctly
+      ],
+    });
+
+    const committed = committedFor(db, "VENTURE-A");
+    // validation row must be written correctly.
+    expect(committed.find(r => r.groupId === "validation")?.active).toBe(true);
+    // discovery row reflects the last write.
+    expect(committed.find(r => r.groupId === "discovery")?.active).toBe(false);
+    // Total: 2 unique keys (discovery, validation) — not 3.
+    expect(committed).toHaveLength(2);
+  });
+});

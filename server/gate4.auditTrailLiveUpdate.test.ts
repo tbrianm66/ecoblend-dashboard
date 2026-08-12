@@ -192,6 +192,44 @@ describe("formatToggleAudit — pure unit tests", () => {
     expect(sentinelResult).toMatch(/^\[anonymous admin\]/);
     expect(realResult).toMatch(new RegExp(`^${ADMIN_1}`));
   });
+
+  // ── invalid / unparseable toggledAt ──────────────────────────────────────
+  // When the DB or JSON layer supplies a non-date string (e.g. a corrupted
+  // row or a misconfigured migration), new Date("not-a-date") produces an
+  // Invalid Date object.  The function must not throw — it should surface
+  // "Invalid Date" text so the admin can see a row exists even if the
+  // timestamp is unreadable, rather than crashing the whole UI.
+
+  it("does NOT throw when toggledAt is an unparseable string (invalid date)", () => {
+    expect(() => formatToggleAudit(ADMIN_1, "not-a-date")).not.toThrow();
+  });
+
+  it("returns a non-null string when toggledAt is an unparseable string and toggledBy is present", () => {
+    // Since toggledAt is truthy (non-empty string), the early-return guard
+    // does not trigger — the function reaches the date-formatting branch.
+    const result = formatToggleAudit(ADMIN_1, "not-a-date");
+    expect(result).not.toBeNull();
+    expect(typeof result).toBe("string");
+  });
+
+  it("includes the admin name before the separator when toggledAt is invalid", () => {
+    const result = formatToggleAudit(ADMIN_1, "not-a-date");
+    // The name must still appear at the start of the string even if the
+    // date portion is garbled — the separator " · " is always inserted when
+    // the date branch is reached, regardless of whether Date parsing succeeded.
+    expect(result).toMatch(new RegExp(`^${ADMIN_1} · `));
+  });
+
+  it("does NOT throw when both toggledBy is null and toggledAt is unparseable", () => {
+    // Combines the two edge-case inputs — null identity + bad date — to
+    // confirm the function is robust to both simultaneously.
+    expect(() => formatToggleAudit(null, "not-a-date")).not.toThrow();
+    const result = formatToggleAudit(null, "not-a-date");
+    // toggledAt is truthy → date branch fires → result is non-null.
+    expect(result).not.toBeNull();
+    // toggledBy is null → falls back to "Unknown".
+    expect(result).toMatch(/^Unknown · /);
+  });
 });
 
 // ══════════════════════════════════════════════════════════════════════════════

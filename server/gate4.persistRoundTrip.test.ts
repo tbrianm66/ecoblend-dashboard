@@ -366,4 +366,41 @@ describe("Gate 4 per-venture module toggle persist round-trip", () => {
 
     expect([...first].sort()).toEqual([...second].sort());
   });
+
+  // ── Empty-string ventureId boundary ─────────────────────────────────────────
+  // The selector always normalises empty → null before handing the value to the
+  // hook, so `""` should never appear in practice.  These tests document the
+  // existing behaviour: `rowsToActivatedSet` treats `""` as a non-null venture
+  // scope and therefore applies the venture-fallback logic, while
+  // `buildRowByGroup` treats `""` as falsy and falls back to global-only lookup.
+  // Both functions return the global default set for `""` because there are no
+  // rows stored under that sentinel, but the resolution paths diverge — a fact
+  // worth preserving as a regression guard.
+
+  it("rowsToActivatedSet returns only global-active groups when ventureId is an empty string (no rows match '')", async () => {
+    // Write a global row and a BEBUS row.
+    await dbUpsert(db, { groupId: "discovery", ventureId: "__global__", active: true });
+    await dbUpsert(db, { groupId: "scoring",   ventureId: "BEBUS",      active: true });
+
+    const rows = await dbGetAll(db);
+    // "" enters the venture-fallback branch; no rows have ventureId="" so
+    // ventureActive is empty; globalActive seeds the result.
+    const emptyScope = rowsToActivatedSet(rows, "");
+
+    // Only the global row contributes (discovery), not the BEBUS row (scoring).
+    expect(emptyScope.has("discovery")).toBe(true);
+    expect(emptyScope.has("scoring")).toBe(false);
+  });
+
+  it("rowsToActivatedSet with '' includes groups active in global scope, same as null scope", async () => {
+    await dbUpsert(db, { groupId: "discovery", ventureId: "__global__", active: true });
+    await dbUpsert(db, { groupId: "scoring",   ventureId: "__global__", active: false });
+
+    const rows = await dbGetAll(db);
+    const nullScope  = rowsToActivatedSet(rows, null); // null → global-only branch
+    const emptyScope = rowsToActivatedSet(rows, "");   // "" → venture-fallback branch (no venture rows)
+
+    // Both resolve to the same activated set when no venture rows exist.
+    expect([...nullScope].sort()).toEqual([...emptyScope].sort());
+  });
 });

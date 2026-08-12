@@ -138,9 +138,19 @@ export async function execVentureReset(
   // the array is empty and we return 0 — the caller can surface this rather
   // than silently reporting success with no audit trace.
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-  const deleted: unknown[] = await db
+  const deleted: unknown = await db
     .delete(table)
     .where(eqFn(ventureIdColumn, vid))
     .returning();
-  return deleted.length;
+  // Guard: the DB driver must return an array.  A null/undefined result means the
+  // driver behaved unexpectedly (or a test mock is misconfigured); throw a
+  // controlled diagnostic error rather than a silent TypeError on `.length`.
+  if (!Array.isArray(deleted)) {
+    throw new Error(
+      `execVentureReset: expected an array from .returning() but got ${
+        deleted === null ? "null" : typeof deleted
+      } — possible driver or mock misconfiguration.`,
+    );
+  }
+  return (deleted as unknown[]).length;
 }

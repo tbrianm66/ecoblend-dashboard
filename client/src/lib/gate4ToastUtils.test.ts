@@ -788,6 +788,22 @@ describe("showConcurrentModificationToast", () => {
     expect(toast.calls.warning).toHaveLength(1);
     expect(toast.calls.warning[0]).toContain("not applied");
   });
+
+  it("falls back to generic detail when count is 0 (zero is falsy — no specific count message)", () => {
+    // "0 group(s)" matches the regex and parseInt gives 0, which is falsy.
+    // The production code uses `if (count)` so 0 falls through to the generic fallback.
+    // This test documents the current behaviour so any future change is deliberate.
+    const toast = makeToast();
+    showConcurrentModificationToast(
+      toast,
+      "Concurrent modification detected: 0 group(s) were modified by another admin.",
+    );
+
+    expect(toast.calls.warning).toHaveLength(1);
+    // count=0 is falsy → generic message, NOT "0 module settings were changed"
+    expect(toast.calls.warning[0]).toContain("Another admin changed module settings");
+    expect(toast.calls.warning[0]).not.toContain("0 module settings");
+  });
 });
 
 // ── showResetZeroRowsToast ────────────────────────────────────────────────────
