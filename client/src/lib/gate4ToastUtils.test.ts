@@ -279,6 +279,27 @@ describe("showToggleToast", () => {
     // The snapshot name still appears (it is defined).
     expect(toast.calls.warning[0]).toContain("Venture Alpha");
   });
+
+  // ── snapshotVId=undefined: runtime edge case ──────────────────────────────
+  // TypeScript declares snapshotVId as `string | null` (not `| undefined`).
+  // At runtime, `undefined` CAN be passed (e.g. before a ref is first set).
+  // Because `undefined !== null`, the `drifted` check fires: a call with
+  // snapshotVId=undefined and currentVId=null produces a SPURIOUS drift warning
+  // even though both sides represent the global scope (both falsy).
+  //
+  // This test documents that existing runtime behaviour.  If the function is
+  // ever updated to treat undefined the same as null, this test will signal
+  // the contract change.
+  it("snapshotVId=undefined with currentVId=null produces a drift warning (null !== undefined runtime edge case)", () => {
+    // Both sides are global-scope falsy, but `undefined !== null` → drifted=true.
+    const toast = makeToast();
+    showToggleToast(toast, null, undefined, "Coaching", true, undefined as any, undefined);
+
+    // A drift warning fires because `undefined !== null`.
+    expect(toast.calls.warning).toHaveLength(1);
+    // Both scopeName and nowScope resolve to "all ventures (global)" (both falsy).
+    expect(toast.calls.warning[0]).toContain("all ventures (global)");
+  });
 });
 
 // ── showBatchToast ────────────────────────────────────────────────────────────

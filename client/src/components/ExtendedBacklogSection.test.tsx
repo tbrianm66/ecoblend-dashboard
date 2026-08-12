@@ -30,7 +30,7 @@
  */
 
 import React, { useState, useCallback } from "react";
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 import { render, screen, cleanup, fireEvent, act } from "@testing-library/react";
 import { Router } from "wouter";
 
@@ -1505,5 +1505,74 @@ describe("toggle in ReactivationPanel → header badge in ExtendedBacklogSection
       );
       expect(sectionHeader).toBeDefined();
     });
+  });
+});
+
+// ── deactivateAll — "Disable All" path ───────────────────────────────────────
+//
+// The Enable All button in ReactivationPanel has a sibling "Disable All" button
+// (data-testid="disable-all-btn") that calls deactivateAll when clicked.
+// ExtendedBacklogSection.test.tsx previously provided `deactivateAll: noop` in
+// every harness and never fired the button.
+//
+// This test confirms the click path is wired: the disable-all-btn is present
+// when the panel is rendered with at least one activated group, and clicking it
+// invokes the deactivateAll prop.
+
+describe("deactivateAll — Disable All button click path", () => {
+  const VENTURE = "ven-deactivate";
+  const ACTIVATED_GROUP = "discovery";
+
+  function makeDeactivateHarness(deactivateAll: () => void) {
+    return function DeactivateHarness() {
+      const rows: ReactivationRow[] = React.useMemo(() => [
+        {
+          groupId: ACTIVATED_GROUP,
+          ventureId: VENTURE,
+          active:    true,
+          toggledBy: null,
+          toggledAt: new Date(),
+        },
+      ], []);
+
+      const isActivated = React.useCallback(
+        (gid: string) => gid === ACTIVATED_GROUP,
+        [],
+      );
+
+      const noop = React.useCallback(() => {}, []);
+
+      return React.createElement(ReactivationPanel, {
+        onClose:               noop,
+        ventureId:             VENTURE,
+        ventureName:           "Deactivate Test Venture",
+        ventureColor:          undefined,
+        venturesLoading:       false,
+        rows,
+        isLoading:             false,
+        isError:               false,
+        isActivated,
+        reactivate:            noop as any,
+        deactivate:            noop as any,
+        reactivateAll:         noop,
+        deactivateAll,
+        resetToGlobalDefaults: noop,
+      });
+    };
+  }
+
+  it("disable-all-btn is present when at least one group is activated", () => {
+    const deactivateAll = vi.fn();
+    renderInRouter(React.createElement(makeDeactivateHarness(deactivateAll)));
+    expect(screen.getByTestId("disable-all-btn")).toBeDefined();
+  });
+
+  it("clicking disable-all-btn calls deactivateAll exactly once", () => {
+    const deactivateAll = vi.fn();
+    renderInRouter(React.createElement(makeDeactivateHarness(deactivateAll)));
+
+    fireEvent.click(screen.getByTestId("disable-all-btn"));
+
+    expect(deactivateAll).toHaveBeenCalledOnce();
   });
 });
