@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import QueryErrorBanner from "@/components/QueryErrorBanner";
 import {
   Users,
   Brain,
@@ -111,6 +112,7 @@ function AssessmentTab({ ventureId }: { ventureId: string }) {
 
   const questionsData = trpc.crl.getQuestions.useQuery();
   const founders = trpc.crl.getVentureFounders.useQuery({ ventureId });
+  if (questionsData.isError || founders.isError) return <QueryErrorBanner errors={[questionsData.error, founders.error]} message="Unable to load CRL assessment data. Please refresh." />;
   const createAssessment = trpc.crl.createAssessment.useMutation();
   const submitResponses = trpc.crl.submitFounderResponses.useMutation();
   const computeScore = trpc.crl.computeScore.useMutation();
@@ -488,6 +490,7 @@ function ResultsTab({ ventureId }: { ventureId: string }) {
   const [reviewResult, setReviewResult] = useState<Record<string, unknown> | null>(null);
 
   const assessments = trpc.crl.listAssessments.useQuery({ ventureId });
+  if (assessments.isError) return <QueryErrorBanner errors={[assessments.error]} message="Unable to load assessments. Please refresh." />;
   const getAssessment = trpc.crl.getAssessment.useQuery(
     { assessmentId: selectedId! },
     { enabled: !!selectedId }
@@ -998,6 +1001,7 @@ function MonitoringTab({ ventureId }: { ventureId: string }) {
   const [healthReport, setHealthReport] = useState<Record<string, unknown> | null>(null);
 
   const records = trpc.crl.listMonitoringRecords.useQuery({ ventureId });
+  if (records.isError) return <QueryErrorBanner errors={[records.error]} message="Unable to load monitoring records. Please refresh." />;
   const createRecord = trpc.crl.createMonitoringRecord.useMutation();
   const generateReport = trpc.crl.generateCulturalHealthReport.useMutation();
   const vrlWeights = trpc.crl.getVrlDynamicWeights.useQuery({ ventureId });

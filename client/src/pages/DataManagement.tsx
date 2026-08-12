@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import QueryErrorBanner from "@/components/QueryErrorBanner";
 import {
   Database, BarChart2, Cpu, Search, Layers, MessageSquare,
   Plus, Pencil, Trash2, RefreshCw, Zap, CheckCircle, XCircle,
@@ -78,7 +79,8 @@ function QualityGauge({ score }: { score: number }) {
 
 // ── Overview Tab ───────────────────────────────────────────────────────────────
 function OverviewTab() {
-  const { data: overview } = trpc.dmSummary.overview.useQuery({});
+  const { data: overview, error: overviewError } = trpc.dmSummary.overview.useQuery({});
+  if (overviewError) return <QueryErrorBanner errors={[overviewError]} message="Unable to load data management overview. Please refresh." />;
 
   const assetTypeData = Object.entries(overview?.assetsByType ?? {});
   const assetStatusData = Object.entries(overview?.assetsByStatus ?? {});
@@ -163,7 +165,8 @@ function OverviewTab() {
 // ── Data Assets Tab ────────────────────────────────────────────────────────────
 function DataAssetsTab() {
   const utils = trpc.useUtils();
-  const { data: assets = [] } = trpc.dmAssets.list.useQuery({});
+  const { data: assets = [], error: assetsError } = trpc.dmAssets.list.useQuery({});
+  if (assetsError) return <QueryErrorBanner errors={[assetsError]} message="Unable to load data assets. Please refresh." />;
   const upsert = trpc.dmAssets.upsert.useMutation({ onSuccess: () => { utils.dmAssets.list.invalidate(); utils.dmSummary.overview.invalidate(); toast.success("Asset saved"); setOpen(false); } });
   const del = trpc.dmAssets.delete.useMutation({ onSuccess: () => { utils.dmAssets.list.invalidate(); utils.dmSummary.overview.invalidate(); toast.success("Asset deleted"); } });
   const aiAssess = trpc.dmAssets.aiAssess.useMutation();
@@ -801,8 +804,9 @@ function RagPipelinesTab() {
 // ── Fine-Tuning Tab ────────────────────────────────────────────────────────────
 function FineTuningTab() {
   const utils = trpc.useUtils();
-  const { data: datasets = [] } = trpc.dmFineTuning.listDatasets.useQuery({});
-  const { data: jobs = [] } = trpc.dmFineTuning.listJobs.useQuery({});
+  const { data: datasets = [], error: datasetsError } = trpc.dmFineTuning.listDatasets.useQuery({});
+  const { data: jobs = [], error: jobsError } = trpc.dmFineTuning.listJobs.useQuery({});
+  if (datasetsError || jobsError) return <QueryErrorBanner errors={[datasetsError, jobsError]} message="Unable to load fine-tuning data. Please refresh." />;
   const upsertDataset = trpc.dmFineTuning.upsertDataset.useMutation({ onSuccess: () => { utils.dmFineTuning.listDatasets.invalidate(); toast.success("Dataset saved"); setDsOpen(false); } });
   const deleteDataset = trpc.dmFineTuning.deleteDataset.useMutation({ onSuccess: () => utils.dmFineTuning.listDatasets.invalidate() });
   const upsertJob = trpc.dmFineTuning.upsertJob.useMutation({ onSuccess: () => { utils.dmFineTuning.listJobs.invalidate(); utils.dmSummary.overview.invalidate(); toast.success("Job saved"); setJobOpen(false); } });
@@ -978,7 +982,8 @@ function FineTuningTab() {
 // ── Feedback Loops Tab ─────────────────────────────────────────────────────────
 function FeedbackLoopsTab() {
   const utils = trpc.useUtils();
-  const { data: feedback = [] } = trpc.dmFeedback.list.useQuery({});
+  const { data: feedback = [], error: feedbackError } = trpc.dmFeedback.list.useQuery({});
+  if (feedbackError) return <QueryErrorBanner errors={[feedbackError]} message="Unable to load feedback data. Please refresh." />;
   const { data: pipelines = [] } = trpc.dmPipelines.list.useQuery({});
   const submit = trpc.dmFeedback.submit.useMutation({ onSuccess: () => { utils.dmFeedback.list.invalidate(); utils.dmSummary.overview.invalidate(); toast.success("Feedback submitted"); setOpen(false); } });
   const review = trpc.dmFeedback.review.useMutation({ onSuccess: () => { utils.dmFeedback.list.invalidate(); toast.success("Feedback reviewed"); setReviewOpen(false); } });

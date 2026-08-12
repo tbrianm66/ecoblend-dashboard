@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import QueryErrorBanner from "@/components/QueryErrorBanner";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine,
 } from "recharts";
@@ -116,8 +117,8 @@ function StatusBadge({ status }: { status: string }) {
 
 // ── Overview Tab ───────────────────────────────────────────────────────────────
 function OverviewTab({ ventureId, onSelectProject }: { ventureId: string; onSelectProject: (id: number) => void }) {
-  const { data: summary } = trpc.mfgPlaybook.getPlaybookSummary.useQuery({ ventureId });
-  const { data: projects } = trpc.mfgPlaybook.listProjects.useQuery({ ventureId });
+  const { data: summary, error: summaryError } = trpc.mfgPlaybook.getPlaybookSummary.useQuery({ ventureId });
+  const { data: projects, error: projectsError } = trpc.mfgPlaybook.listProjects.useQuery({ ventureId });
   const advanceMutation = trpc.mfgPlaybook.advancePhase.useMutation({
     onSuccess: () => { utils.mfgPlaybook.listProjects.invalidate(); utils.mfgPlaybook.getPlaybookSummary.invalidate(); toast.success("Phase advanced"); },
     onError: (e) => toast.error(e.message),
@@ -126,6 +127,7 @@ function OverviewTab({ ventureId, onSelectProject }: { ventureId: string; onSele
 
   return (
     <div className="space-y-6">
+      <QueryErrorBanner errors={[summaryError, projectsError]} message="Unable to load playbook data. Please refresh." />
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
