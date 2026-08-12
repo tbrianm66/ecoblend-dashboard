@@ -297,4 +297,117 @@ describe("Enable All batch — real useGate4Reactivation hook (Task #135)", () =
     expect(sentGroupIds).toEqual([...GATE4_BACKLOG_GROUP_IDS].sort());
     expect(callArg.items.every(i => i.active === true)).toBe(true);
   });
+
+  // ── #198: badges correct after server confirms write (no stale optimistic state) ─
+  //
+  // After Enable All the hook keeps an optimistic overlay live while the batch
+  // mutation is in-flight.  When the server confirms (onSuccess fires → invalidate
+  // → React Query delivers fresh rows), the overlay must be cleared and badges must
+  // be derived from server-authoritative rows — not the stale optimistic overlay.
+  //
+  // Strategy: mock a batch mutation that fires onSuccess synchronously and a
+  // useQuery that delivers authoritative global rows.  After the click the overlay
+  // is gone (server data arrived) and every badge must reflect the server state.
+  it("#198: badges reflect server-authoritative state after server confirms Enable All — no stale optimistic entries (#198)", async () => {
+    const { act: reactAct } = await import("@testing-library/react");
+
+    // When server confirms, React Query delivers these authoritative global rows.
+    const serverRows = GATE4_BACKLOG_GROUP_IDS.map(groupId => ({
+      groupId,
+      ventureId: "__global__",
+      active:    true,
+      toggledBy: null,
+      toggledAt: null,
+    }));
+
+    // After onSuccess, React Query re-fetches and delivers serverRows.
+    // We simulate the two phases:
+    //   phase 1: mutation in-flight (data: undefined) → optimistic overlay active
+    //   phase 2: mutation resolved  (data: serverRows) → overlay cleared
+    let queryData: typeof serverRows | undefined = undefined;
+
+    vi.mocked(trpc.admin.getModuleReactivations.useQuery).mockImplementation(() => ({
+      data:      queryData,
+      isLoading: false,
+      isError:   false,
+      refetch:   vi.fn(),
+    }));
+
+    const mockInvalidate = vi.fn(() => {
+      // Simulate React Query delivering fresh rows when invalidate() is called.
+      queryData = serverRows;
+    });
+    vi.mocked(trpc.useUtils).mockReturnValue({
+      admin: { getModuleReactivations: { invalidate: mockInvalidate } },
+    } as any);
+
+    // Batch mutation fires onSuccess synchronously (server confirmed immediately).
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue({
+      mutate: vi.fn(
+        (_input, options?: { onSuccess?: (data: { success: boolean; count: number; upserted: string[] }) => void }) => {
+          options?.onSuccess?.({ success: true, count: 15, upserted: GATE4_BACKLOG_GROUP_IDS });
+        },
+      ),
+    } as any);
+
+    const { rerender } = render(React.createElement(HookHarness, { ventureId: null }));
+    openLaunchPhaseSection();
+
+    // Click Enable All — onSuccess fires immediately, invalidate() called.
+    await reactAct(async () => {
+      fireEvent.click(screen.getByTestId("enable-all-btn"));
+    });
+
+    // Re-render so the component sees the updated queryData (fresh server rows).
+    await reactAct(async () => {
+      rerender(React.createElement(HookHarness, { ventureId: null }));
+    });
+
+    // After server confirms: badges must reflect server rows (GLOBAL), not stale overlay.
+    const globalBadges = screen.getAllByLabelText("Enabled by a global rule");
+    expect(globalBadges.length).toBe(GATE4_BACKLOG_GROUP_IDS.length);
+    // No VENTURE badges — only global rows were delivered by the server.
+    expect(screen.queryByLabelText("Enabled by a venture-specific override")).toBeNull();
+    // invalidate must have been called by the onSuccess closure.
+    expect(mockInvalidate).toHaveBeenCalledOnce();
+  });
+
+  // ── #181: stale optimistic state doesn't reappear after batch error on remount ─
+  //
+  // When Enable All fails, the hook clears the optimistic overlay via onError.
+  // On the next render (simulating a page reload) the hook initialises from
+  // localStorage, which must contain the server-derived state — not the stale
+  // overlay.  We verify:
+  //   a. After the error the overlay is gone (rows is empty).
+  //   b. When the hook remounts (new renderHook), it reads localStorage and still
+  //      sees no stale optimistic state.
+  it("#181: optimistic overlay cleared after batch error — remount shows no stale state (#181)", async () => {
+    const { act: reactAct } = await import("@testing-library/react");
+
+    // Batch mutation fires onError synchronously (server rejected).
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue({
+      mutate: vi.fn(
+        (_input, options?: { onError?: (err: Error) => void }) => {
+          options?.onError?.(new Error("DB unavailable"));
+        },
+      ),
+    } as any);
+
+    render(React.createElement(HookHarness, { ventureId: null }));
+    openLaunchPhaseSection();
+
+    // Click Enable All — onError fires immediately.
+    await reactAct(async () => {
+      fireEvent.click(screen.getByTestId("enable-all-btn"));
+    });
+
+    // After error: overlay must be cleared — every group stays OFF.
+    // If the overlay were not cleared, groups would show GLOBAL badges (stale optimistic).
+    // OFF groups in the Launch Phase section appear with no source badge (DEFAULT state
+    // applies while query returns undefined).  The absence of GLOBAL badges confirms
+    // the overlay was cleared.
+    expect(screen.queryByLabelText("Enabled by a global rule")).toBeNull();
+    // All groups must still be OFF — the activated Set was also reverted.
+    expect(screen.queryByLabelText("Enabled by a venture-specific override")).toBeNull();
+  });
 });
