@@ -248,6 +248,53 @@ describe("ReactivationPanel — rapid overlapping toggle error toast closure iso
     expect(vi.mocked(toast.error).mock.calls[1][0]).not.toContain(messageA);
   });
 
+  // #166: error toast still fires after the venture selector has changed
+  // The onError closure is built inside the onClick handler (per-click, not per-render),
+  // so even when the component re-renders with a new venture between click and server
+  // response, the captured group.label remains the one from the original click — and
+  // the toast fires normally.
+  it("error toast fires for GROUP_A even after the component re-renders with a different venture (#166)", () => {
+    const capturedCalls: CapturedCall[] = [];
+
+    const reactivate: ReactivationPanelProps["reactivate"] = (groupId, onSuccess, onError) => {
+      capturedCalls.push({ groupId, onSuccess, onError });
+    };
+
+    const { rerender } = render(
+      React.createElement(
+        ReactivationPanel,
+        makeProps({ reactivate, deactivate: vi.fn() }),
+      ),
+    );
+
+    // Click toggle on GROUP_A — onError closure captures GROUP_A.label at this moment.
+    fireEvent.click(screen.getByTestId(`toggle-${GROUP_A.id}`));
+    expect(capturedCalls).toHaveLength(1);
+
+    // Simulate the venture selector changing before the server responds.
+    rerender(
+      React.createElement(
+        ReactivationPanel,
+        makeProps({
+          reactivate,
+          deactivate: vi.fn(),
+          ventureId:    "ven-beta",
+          ventureName:  "Venture Beta",
+        }),
+      ),
+    );
+
+    // Server rejects the mutation for the original (ven-alpha) toggle.
+    act(() => {
+      capturedCalls[0].onError?.(GROUP_A.id, "Write rejected: venture mismatch");
+    });
+
+    // The error toast must still fire — the closure should not be silently dropped.
+    expect(vi.mocked(toast.error)).toHaveBeenCalledTimes(1);
+    // The toast must name the group from the original click (GROUP_A), not a stale label.
+    expect(vi.mocked(toast.error).mock.calls[0][0]).toContain(GROUP_A.label);
+  });
+
   it("does not fire success or warning toasts when onError is invoked", () => {
     const capturedCalls: CapturedCall[] = [];
 

@@ -236,6 +236,38 @@ describe("ReactivationPanel — reset zero-row result toast routing (#148 client
     expect(vi.mocked(toast.error)).not.toHaveBeenCalled();
   });
 
+  // #174: Reset button must NOT appear before venture data is fully loaded
+  // The guard {ventureId && ventureName && !venturesLoading && ...} ensures the
+  // button is absent while loading so the admin cannot click reset prematurely.
+  it("reset button is absent when venturesLoading=true (#174)", () => {
+    render(
+      React.createElement(
+        ReactivationPanel,
+        makeBaseProps({ ventureId: "ven-test", ventureName: "Test Venture", venturesLoading: true }),
+      ),
+    );
+    // The mocked ReactivationResetButton with data-testid="reset-btn" must not render.
+    expect(screen.queryByTestId("reset-btn")).toBeNull();
+  });
+
+  it("reset button appears once venturesLoading transitions to false (#174 positive baseline)", () => {
+    const { rerender } = render(
+      React.createElement(
+        ReactivationPanel,
+        makeBaseProps({ venturesLoading: true }),
+      ),
+    );
+    expect(screen.queryByTestId("reset-btn")).toBeNull();
+
+    rerender(
+      React.createElement(
+        ReactivationPanel,
+        makeBaseProps({ venturesLoading: false }),
+      ),
+    );
+    expect(screen.getByTestId("reset-btn")).toBeDefined();
+  });
+
   it("does NOT call toast.warning when resetToGlobalDefaults succeeds normally", async () => {
     // onSuccess path: no warning should be shown — the success toast fires from onSuccess.
     let capturedOnSuccess: ((svid: string | null) => void) | undefined;
