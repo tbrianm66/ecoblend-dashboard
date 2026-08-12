@@ -780,6 +780,32 @@ describe("useGate4Reactivation — live source-badge update after toggle", () =>
       // be present, making rows.length === 15.
       expect(result.current.rows).toHaveLength(0);
     });
+
+    it("deactivateAll() clears optimisticRows on error so rows reverts to the server snapshot without a refetch", async () => {
+      // Start: all 15 groups active in the server snapshot.
+      currentRows = GATE4_BACKLOG_GROUP_IDS.map(id => globalRow(id, true));
+
+      vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue(
+        { mutate: makeBatchMutateError("DB unavailable") } as any,
+      );
+
+      const { result } = renderHook(() => useGate4Reactivation(VENTURE));
+
+      // Before the batch: rows reflects the server snapshot (15 rows).
+      expect(result.current.rows).toHaveLength(15);
+
+      await act(async () => {
+        result.current.deactivateAll();
+      });
+
+      // After error: optimisticRows must be cleared so `rows` reverts to the
+      // server data (15 active rows) without requiring a server refetch.
+      // If optimisticRows were NOT cleared the synthetic batch rows (active=false)
+      // would overshadow the server rows, making rows appear deactivated.
+      expect(result.current.rows).toHaveLength(15);
+      // All rows must still report active=true (server state, not optimistic state).
+      expect(result.current.rows.every(r => r.active === true)).toBe(true);
+    });
   });
 
   // ── Batch success toast — no venture drift (Task #131) ──────────────────────
