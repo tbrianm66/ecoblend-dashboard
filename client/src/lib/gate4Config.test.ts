@@ -3982,6 +3982,65 @@ describe("useGate4Reactivation — polling stops when panelOpen transitions true
   });
 });
 
+// ── serverRows early-return guard (gate4Config.ts:275-285) ───────────────────
+//
+// When `serverRows` is undefined (query has not yet resolved or returned
+// nothing), the serverRows useEffect returns early:
+//   if (!serverRows) return;
+// This prevents setActivated / writeLsCache / setOptimisticRows from firing,
+// so the hook does not clobber any pre-existing localStorage cache or optimistic
+// overlay while the query is still loading.
+//
+// Observable guards:
+//   1. localStorage is not written (writeLsCache spy on setItem).
+//   2. activatedGroups remains an empty Set (initial state, not overwritten).
+//   3. rows remains [] (no optimistic overlay, no server data).
+describe("useGate4Reactivation — !serverRows early-return guard", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    // All mutations needed for the hook to render without errors.
+    vi.mocked(trpc.admin.setModuleReactivation.useMutation).mockReturnValue({ mutate: vi.fn(), isPending: false } as any);
+    vi.mocked(trpc.admin.setModuleReactivationBatch.useMutation).mockReturnValue({ mutate: vi.fn(), isPending: false } as any);
+    vi.mocked(trpc.admin.resetVentureModuleReactivations.useMutation).mockReturnValue({ mutate: vi.fn(), isPending: false } as any);
+    vi.mocked(trpc.useUtils).mockReturnValue({ admin: { getModuleReactivations: { invalidate: vi.fn() } } } as any);
+  });
+
+  it("does not write to localStorage when serverRows is undefined (query not yet resolved)", () => {
+    vi.mocked(trpc.admin.getModuleReactivations.useQuery).mockReturnValue({
+      data: undefined, isLoading: true, isError: false, refetch: vi.fn(),
+    } as any);
+
+    const setItem = vi.spyOn(Storage.prototype, "setItem");
+    renderHook(() => useGate4Reactivation("ven-alpha", false));
+
+    // writeLsCache must NOT have been called — the early-return fires before it.
+    expect(setItem).not.toHaveBeenCalled();
+    setItem.mockRestore();
+  });
+
+  it("activatedGroups remains an empty Set when serverRows is undefined", () => {
+    vi.mocked(trpc.admin.getModuleReactivations.useQuery).mockReturnValue({
+      data: undefined, isLoading: true, isError: false, refetch: vi.fn(),
+    } as any);
+
+    const { result } = renderHook(() => useGate4Reactivation("ven-alpha", false));
+
+    // setActivated must not be called — activated stays as the initial empty Set.
+    expect(result.current.activatedGroups.size).toBe(0);
+  });
+
+  it("rows is [] when serverRows is undefined (no optimistic overlay, no server data)", () => {
+    vi.mocked(trpc.admin.getModuleReactivations.useQuery).mockReturnValue({
+      data: undefined, isLoading: true, isError: false, refetch: vi.fn(),
+    } as any);
+
+    const { result } = renderHook(() => useGate4Reactivation("ven-alpha", false));
+
+    // The merged rows array is empty: no serverRows base, no optimisticRows overlay.
+    expect(result.current.rows).toEqual([]);
+  });
+});
+
 // ── Task 112: per-row toggle badge rollback on server rejection ───────────────
 //
 // persist() in useGate4Reactivation performs two optimistic writes when the
