@@ -2060,6 +2060,51 @@ describe("setModuleReactivationBatch — lastKnownMaxToggledAt conflict detectio
   });
 });
 
+describe("setModuleReactivationBatch — CONFLICT message 'unknown' fallback when all modifiedBy are null", () => {
+  // Line in admin.router.ts: `editors || "unknown"` — when filter(Boolean) removes all
+  // null values the resulting string is empty, so the message falls back to "unknown".
+  const pastCutoff = new Date(Date.now() - 60_000).toISOString();
+
+  it("uses 'unknown' when every conflict row has a null modifiedBy", async () => {
+    const db = makeConflictOnlyMock([
+      { groupId: "discovery",  modifiedBy: null },
+      { groupId: "validation", modifiedBy: null },
+    ]);
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+    const caller = appRouter.createCaller(makeAdminCtx("alice"));
+    const err = await caller.admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [
+        { groupId: "discovery",  active: true },
+        { groupId: "validation", active: false },
+      ],
+      lastKnownMaxToggledAt: pastCutoff,
+    }).catch(e => e as TRPCError);
+    expect((err as TRPCError).code).toBe("CONFLICT");
+    expect((err as TRPCError).message).toContain("unknown");
+  });
+
+  it("uses the admin's name when at least one modifiedBy is non-null", async () => {
+    const db = makeConflictOnlyMock([
+      { groupId: "discovery",  modifiedBy: null },
+      { groupId: "validation", modifiedBy: "bob" }, // only one non-null
+    ]);
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+    const caller = appRouter.createCaller(makeAdminCtx("alice"));
+    const err = await caller.admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [
+        { groupId: "discovery",  active: true },
+        { groupId: "validation", active: false },
+      ],
+      lastKnownMaxToggledAt: pastCutoff,
+    }).catch(e => e as TRPCError);
+    expect((err as TRPCError).code).toBe("CONFLICT");
+    expect((err as TRPCError).message).toContain("bob");
+    expect((err as TRPCError).message).not.toContain("unknown");
+  });
+});
+
 describe("setModuleReactivationBatch — same-admin write does NOT trigger CONFLICT (ne(toggledBy) guard)", () => {
   // The conflict query uses ne(toggledBy, callingAdmin) to exclude the calling
   // admin's own writes.  This verifies that the `ne` exclusion is honoured:
