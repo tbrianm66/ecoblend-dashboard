@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import QueryErrorBanner from "@/components/QueryErrorBanner";
 import {
   Shield,
   ClipboardList,
@@ -69,7 +70,8 @@ function KpiCard({ label, value, sub, accent, icon }: { label: string; value: st
 
 // ── Overview Tab ──────────────────────────────────────────────────────────────
 function OverviewTab() {
-  const { data: summary } = trpc.governance.summary.get.useQuery();
+  const { data: summary, isError: summaryError } = trpc.governance.summary.get.useQuery();
+  if (summaryError) return <QueryErrorBanner errors={[summaryError]} message="Unable to load governance overview. Please refresh." />;
   if (!summary) return <div className="p-8 text-center text-gray-400">Loading…</div>;
   return (
     <div className="space-y-6">
@@ -117,15 +119,16 @@ function OverviewTab() {
 function AuditLogTab() {
   const [moduleFilter, setModuleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const { data: logs } = trpc.governance.auditLog.list.useQuery({
+  const { data: logs, error: logsError } = trpc.governance.auditLog.list.useQuery({
     module: moduleFilter || undefined,
     status: statusFilter !== "all" ? statusFilter : undefined,
     limit: 200,
   });
-  const { data: stats } = trpc.governance.auditLog.getStats.useQuery();
+  const { data: stats, error: statsError } = trpc.governance.auditLog.getStats.useQuery();
 
   return (
     <div className="space-y-4">
+      <QueryErrorBanner errors={[logsError, statsError]} message="Unable to load audit log. Please refresh." />
       <div className="grid grid-cols-3 gap-4">
         <KpiCard label="Total Events" value={stats?.total ?? 0} accent="#1a2332" />
         <KpiCard label="Failed" value={stats?.failed ?? 0} accent="#ef4444" />
@@ -200,7 +203,7 @@ function AuditLogTab() {
 // ── Permissions Tab ───────────────────────────────────────────────────────────
 function PermissionsTab() {
   const utils = trpc.useUtils();
-  const { data: permissions } = trpc.governance.permissions.list.useQuery({});
+  const { data: permissions, error: permissionsError } = trpc.governance.permissions.list.useQuery({});
   const upsert = trpc.governance.permissions.upsert.useMutation({
     onSuccess: () => { utils.governance.permissions.list.invalidate(); toast.success("Permission saved"); setOpen(false); },
   });
@@ -219,6 +222,7 @@ function PermissionsTab() {
 
   return (
     <div className="space-y-4">
+      <QueryErrorBanner errors={[permissionsError]} message="Unable to load permissions. Please refresh." />
       <div className="flex justify-between items-center">
         <h3 className="text-sm font-bold text-gray-700">Venture Access Permissions</h3>
         <Button size="sm" onClick={openNew} className="gap-1.5 text-xs" style={{ background: "#1a2332" }}>
@@ -317,8 +321,8 @@ function PermissionsTab() {
 // ── Compliance Tab ────────────────────────────────────────────────────────────
 function ComplianceTab() {
   const utils = trpc.useUtils();
-  const { data: checks } = trpc.governance.compliance.list.useQuery({});
-  const { data: stats } = trpc.governance.compliance.getStats.useQuery();
+  const { data: checks, error: checksError } = trpc.governance.compliance.list.useQuery({});
+  const { data: stats, error: compStatsError } = trpc.governance.compliance.getStats.useQuery();
   const upsert = trpc.governance.compliance.upsert.useMutation({
     onSuccess: () => { utils.governance.compliance.list.invalidate(); utils.governance.compliance.getStats.invalidate(); toast.success("Compliance check saved"); setOpen(false); },
   });
@@ -337,6 +341,7 @@ function ComplianceTab() {
 
   return (
     <div className="space-y-4">
+      <QueryErrorBanner errors={[checksError, compStatsError]} message="Unable to load compliance data. Please refresh." />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard label="Total Checks" value={stats?.total ?? 0} accent="#1a2332" />
         <KpiCard label="Compliant" value={stats?.compliant ?? 0} accent="#22c55e" />
@@ -462,8 +467,8 @@ function ComplianceTab() {
 // ── Risk Register Tab ─────────────────────────────────────────────────────────
 function RiskRegisterTab() {
   const utils = trpc.useUtils();
-  const { data: risks } = trpc.governance.riskRegister.list.useQuery({});
-  const { data: stats } = trpc.governance.riskRegister.getStats.useQuery();
+  const { data: risks, error: risksError } = trpc.governance.riskRegister.list.useQuery({});
+  const { data: stats, error: riskStatsError } = trpc.governance.riskRegister.getStats.useQuery();
   const upsert = trpc.governance.riskRegister.upsert.useMutation({
     onSuccess: () => { utils.governance.riskRegister.list.invalidate(); utils.governance.riskRegister.getStats.invalidate(); toast.success("Risk saved"); setOpen(false); },
   });
@@ -482,6 +487,7 @@ function RiskRegisterTab() {
 
   return (
     <div className="space-y-4">
+      <QueryErrorBanner errors={[risksError, riskStatsError]} message="Unable to load risk register. Please refresh." />
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <KpiCard label="Total Risks" value={stats?.total ?? 0} accent="#1a2332" />
         <KpiCard label="Open" value={stats?.open ?? 0} accent="#ef4444" />

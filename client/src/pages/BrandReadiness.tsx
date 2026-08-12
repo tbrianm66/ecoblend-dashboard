@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { CheckCircle2, Circle, Edit2, Save, X, Briefcase, ArrowRight, Rocket } from "lucide-react";
 import MissionIntegrityBadge from "@/components/MissionIntegrityBadge";
+import QueryErrorBanner from "@/components/QueryErrorBanner";
 
 
 interface BrandDimension {
@@ -147,8 +148,8 @@ export default function BrandReadiness() {
   });
 
   // Load DB scores for selected venture (merge with local state for display)
-  const { data: dbScores = [] } = trpc.marketingBrand.brandReadiness.getScores.useQuery({ ventureId: selected });
-  const { data: dbChecklist = [] } = trpc.marketingBrand.brandReadiness.getChecklist.useQuery({ ventureId: selected });
+  const { data: dbScores = [], error: scoresError } = trpc.marketingBrand.brandReadiness.getScores.useQuery({ ventureId: selected });
+  const { data: dbChecklist = [], error: checklistError } = trpc.marketingBrand.brandReadiness.getChecklist.useQuery({ ventureId: selected });
 
   const brand = brands.find(b => b.id === selected)!;
 
@@ -240,6 +241,7 @@ export default function BrandReadiness() {
 
   return (
     <div className="flex-1 overflow-y-auto bg-gray-50">
+      <QueryErrorBanner errors={[scoresError, checklistError]} message="Unable to load brand readiness data. Please refresh." />
       {/* Header */}
       <div className="vos-page-header">
         <div className="flex items-center gap-2 mb-1">
