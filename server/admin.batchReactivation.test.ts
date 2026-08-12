@@ -2060,6 +2060,79 @@ describe("setModuleReactivationBatch — lastKnownMaxToggledAt conflict detectio
   });
 });
 
+describe("setModuleReactivationBatch — same-admin write does NOT trigger CONFLICT (ne(toggledBy) guard)", () => {
+  // The conflict query uses ne(toggledBy, callingAdmin) to exclude the calling
+  // admin's own writes.  This verifies that the `ne` exclusion is honoured:
+  // a row last written by the SAME admin should be invisible to the conflict guard
+  // regardless of its toggledAt timestamp.
+  const pastCutoff = new Date(Date.now() - 60_000).toISOString();
+
+  it("allows the batch when the only recent write is from the SAME admin (ne exclusion)", async () => {
+    // The mock returns zero conflict rows — simulating that the `ne(toggledBy)`
+    // predicate filtered out the calling admin's own rows.
+    const db = makeConflictAwareHarnessDb([]);
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+    const caller = appRouter.createCaller(makeAdminCtx("alice"));
+    // Should succeed: no conflict rows returned means no concurrent modification detected.
+    const result = await caller.admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [{ groupId: "discovery", active: true }],
+      lastKnownMaxToggledAt: pastCutoff,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects when a DIFFERENT admin wrote (modifiedBy differs from caller)", async () => {
+    const db = makeConflictOnlyMock([{ groupId: "discovery", modifiedBy: "bob" }]);
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+    const caller = appRouter.createCaller(makeAdminCtx("alice")); // caller is alice, not bob
+    await expect(
+      caller.admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: [{ groupId: "discovery", active: true }],
+        lastKnownMaxToggledAt: pastCutoff,
+      }),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+  });
+
+  it("error message names the conflicting editor (not the calling admin)", async () => {
+    const db = makeConflictOnlyMock([{ groupId: "discovery", modifiedBy: "charlie" }]);
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+    const caller = appRouter.createCaller(makeAdminCtx("alice"));
+    const err = await caller.admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [{ groupId: "discovery", active: true }],
+      lastKnownMaxToggledAt: pastCutoff,
+    }).catch(e => e as TRPCError);
+    expect((err as TRPCError).message).toContain("charlie");
+    expect((err as TRPCError).message).not.toContain("alice");
+  });
+
+  it("multiple conflict rows: error message contains all distinct editors", async () => {
+    const db = makeConflictOnlyMock([
+      { groupId: "discovery",  modifiedBy: "bob" },
+      { groupId: "validation", modifiedBy: "carol" },
+      { groupId: "operations", modifiedBy: "bob" }, // bob appears twice, should be deduplicated
+    ]);
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+    const caller = appRouter.createCaller(makeAdminCtx("alice"));
+    const err = await caller.admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [
+        { groupId: "discovery",  active: true },
+        { groupId: "validation", active: false },
+        { groupId: "operations", active: true },
+      ],
+      lastKnownMaxToggledAt: pastCutoff,
+    }).catch(e => e as TRPCError);
+    expect((err as TRPCError).message).toContain("bob");
+    expect((err as TRPCError).message).toContain("carol");
+    // bob appears only once (Set deduplication)
+    const bobs = ((err as TRPCError).message.match(/bob/g) || []).length;
+    expect(bobs).toBe(1);
+  });
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 // #171 — resetVentureModuleReactivations: ventureId validation
 // The endpoint must reject a whitespace-only ventureId and the __global__

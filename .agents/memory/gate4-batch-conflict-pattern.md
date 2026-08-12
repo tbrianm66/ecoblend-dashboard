@@ -1,34 +1,31 @@
 ---
-name: Gate 4 batch conflict detection and test harness pattern
-description: Optimistic locking guard in setModuleReactivationBatch; how the in-process DB harness is structured for conflict + reset tests
+name: Gate 4 batch conflict detection and test harness
+description: Optimistic locking, DB-unavailable guards, and test helpers for the Gate 4 module reactivation procedures.
 ---
 
-## Optimistic locking in setModuleReactivationBatch
-`lastKnownMaxToggledAt` (ISO datetime, optional) is sent by the client with every Enable All / Disable All batch call. The server checks for rows modified by a **different** admin (`ne(toggledBy, currentAdmin)`) after that cutoff (`gt(toggledAt, cutoff)`) before entering the transaction. Throws `TRPCError({ code: "CONFLICT" })` with the affected group IDs and editor names so the client can surface a targeted toast.
+## Conflict detection
+`setModuleReactivationBatch` accepts an optional `lastKnownMaxToggledAt` timestamp.  
+If any row for that venture has a `toggledAt` newer than the cutoff, the procedure throws `CONFLICT` with the offending `groupId`s and `modifiedBy` names.  
+Client reads this and shows `showConcurrentModificationToast`.
 
-**Why:** Silent overwrite of concurrent edits was the risk; the guard is opt-in so older clients continue to work without it.
+## DB-unavailable guards
+All four procedures (`getModuleReactivations`, `setModuleReactivation`, `setModuleReactivationBatch`, `resetVentureModuleReactivations`) call `getDb()` and check for null/undefined.  
+- `getModuleReactivations` returns `[]` gracefully (no throw).  
+- All three mutations throw `INTERNAL_SERVER_ERROR` with message containing "DB unavailable".  
+These guard paths are now explicitly covered by tests in `admin.batchReactivation.test.ts` (four `describe` blocks at the bottom of the file).
 
-**How to apply:** Client computes `max(row.toggledAt)` across `serverRows` before calling `reactivateAll`/`deactivateAll`, sends as `lastKnownMaxToggledAt`. The `onError` handler in `gate4Config.ts` detects `"Concurrent modification detected"` prefix and routes to `onError([], rawMessage)` rather than the skipped-groups path.
+## Test helpers in admin.batchReactivation.test.ts
+- `makeConflictOnlyMock(conflictRows)` — DB stub that returns conflict rows on the guard query, prevents any writes.
+- `makeConflictAwareHarnessDb(conflictRows)` — full transaction harness with conflict detection; supports `.insert`, `.onConflictDoUpdate`, `.set`, `.returning`, `.select`, `.from`, `.where`, `.orderBy`.  Has no `.delete` method.
+- `makeResetDb(deletedRows)` — minimal DB stub that satisfies `execVentureReset` (has `.delete`). Use this for positive-control reset tests, NOT `makeConflictAwareHarnessDb`.
+- `committedFor(db, ventureId)` — reads committed rows from the harness.
+- `activateAllItems(db, ventureId)` — pre-loads all 15 backlog groups as active.
+- `makeHarnessDb(opts)` — basic harness without conflict detection.
 
-## Test harness helpers (admin.batchReactivation.test.ts)
-- `makeHarnessDb(opts?)` — builds an in-process DB mock for the batch transaction; tracks committed rows via `committedFor(db, ventureId)`.
-- `makeConflictOnlyMock(conflictRows)` — satisfies only the SELECT chain for the pre-transaction conflict check; for tests that expect CONFLICT thrown before the transaction.
-- `makeConflictAwareHarnessDb(conflictRows, harnessOpts?)` — wraps `makeHarnessDb` with an additional `select` chain; for tests where conflict check passes and batch proceeds.
-- `makeResetDb(deletedRows?)` — satisfies the DELETE chain for `resetVentureModuleReactivations` tests.
-- `activateAllItems(active?)` — returns all 15 backlog group items for full-batch tests.
+**Why:** `makeConflictAwareHarnessDb` does not have `.delete`; attempting to use it for reset positive-control tests throws "db.delete is not a function".
 
-## Gate4 client hook return values
-`useGate4Reactivation` returns `isBatchPending` (from `setBatchMutation.isPending`) alongside `resetIsPending`. Both are exposed so the venue selector can be disabled during in-flight mutations.
+## Pre-existing failing test files (do not touch)
+`server/contextual.phase3c.test.ts`, `server/contextual.phase3d.test.ts`, `server/discoveryMarket.router.test.ts`, `server/financialModel.test.ts`, `server/investmentModule.test.ts`, `server/mrl.canonical.test.ts`, `server/sse.test.ts`
 
-## normaliseResetVentureId guards
-In `moduleReactivationUtils.ts`: whitespace-only is rejected BEFORE the `__global__` sentinel check so `"   "` throws BAD_REQUEST ("must not be blank") rather than being silently normalised. Both whitespace-only and `__global__` throw before any DB write.
-
-## Toast functions added
-- `showConcurrentModificationToast(toast, rawMessage)` — parses count from server message, warns with singular/plural phrasing + reload instruction.
-- `showResetZeroRowsToast(toast)` — warns "Nothing to reset — already uses global defaults" for zero-row delete result.
-
-## Pre-existing test failures (not introduced by gate4 work)
-- `server/contextual.phase3c.test.ts`, `server/contextual.phase3d.test.ts`
-- `server/discoveryMarket.router.test.ts`, `server/financialModel.test.ts`
-- `server/investmentModule.test.ts`, `server/mrl.canonical.test.ts`, `server/sse.test.ts`
-All fail on main before any gate4 changes. Do not try to fix them as part of gate4 work.
+## Explicit task numbers confirmed covered
+#40, #53, #62, #74, #75, #78, #90, #98, #99, #101, #106, #121, #131, #133, #134, #135, #137, #138, #140, #142, #146, #147, #148, #150, #151, #152, #153, #155, #156, #162, #165, #166, #171, #174, #181, #188, #191, #193, #195, #198, #200
