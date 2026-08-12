@@ -45,13 +45,19 @@ Production code guards against null/undefined/non-array from `.returning()` with
 - `normaliseSetVentureId("__global__")`: passes through unchanged (truthy, non-blank).
 - `showToggleToast`/`showBatchToast`/`showResetToast` drift with `currentVName=undefined`: nowScope falls back to raw `currentVId`.
 - `!serverRows` early-return (gate4Config.ts:275): no localStorage write, activatedGroups stays empty, rows stays [].
+- `formatToggleAudit` whitespace-only `toggledBy`: treated as identity (truthy, passed verbatim — NOT replaced by "Unknown").
+- `rowsToActivatedSet` duplicate global rows: OR semantics (filter+add, not Map); group active if ANY duplicate is active.
+- `rowsToActivatedSet` duplicate venture rows: Map last-wins semantics; second row overwrites first.
+- `setModuleReactivation` uses `z.string().min(1)` (no whitespace refine), batch uses `.refine(trim().length > 0)` — documented asymmetry.
+- `getModuleReactivations` has no try/catch around `db.select()`; DB query errors propagate to tRPC (no silent fallback to []).
+- Task refs #133/#134/#135/#137/#140/#152 are covered implicitly (no comment markers needed; tests exist in ExtendedBacklogSection.test.tsx, EnableAll.batch.test.tsx, admin.batchReactivation.test.ts).
 
-## All targeted test suites — final pass counts (3143 total passing)
+## All targeted test suites — final pass counts (3153 total passing)
 - `admin.batchReactivation.test.ts`: 101 tests
-- `admin.moduleReactivation.test.ts`: 78 tests
-- `gate4.auditTrailLiveUpdate.test.ts`: 47 tests
+- `admin.moduleReactivation.test.ts`: 83 tests (+5: Zod schema asymmetry, DB propagation contract)
+- `gate4.auditTrailLiveUpdate.test.ts`: 49 tests (+2: whitespace-only toggledBy passes through verbatim)
 - `gate4.moduleBadge.test.ts`: 16 tests
-- `gate4.persistRoundTrip.test.ts`: 23 tests (+ ordering + empty-string ventureId)
+- `gate4.persistRoundTrip.test.ts`: 26 tests (+ ordering + empty-string ventureId + duplicate row resolution)
 - `gate4ReactivationSync.test.ts`: 20 tests
 - `gate4.singleToggleConflict.test.ts`: 11 tests
 - `gate4.sourceBadgeLiveUpdate.test.ts`: 31 tests
@@ -59,8 +65,8 @@ Production code guards against null/undefined/non-array from `.returning()` with
 - `gate4.toggledByFallback.test.ts`: 32 tests
 - `gate4.ventureSwitch.test.ts`: 8 tests
 - `schema.export.integrity.test.ts`: 8 tests
-- `gate4Config.test.ts` (client): 146 tests
-- `gate4ToastUtils.test.ts` (client): 67 tests
+- `gate4Config.test.ts` (client): 146 tests (+3: !serverRows early-return guard)
+- `gate4ToastUtils.test.ts` (client): 67 tests (+4: currentVName=undefined nowScope fallback in all 3 toast fns)
 - `ExtendedBacklogSection.test.tsx` (client): 61 tests
 - `EnableAll.batch.test.tsx` (client): 6 tests
 - `Sidebar.rapidToggle.test.tsx` (client): 6 tests
