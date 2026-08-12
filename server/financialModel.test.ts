@@ -4,7 +4,7 @@
 //         Unit Economics, Summary
 // ============================================================
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
   finPlRouter,
   finRunwayRouter,
@@ -13,6 +13,21 @@ import {
   finUnitEconRouter,
   finSummaryRouter,
 } from "./financialModel.router";
+
+// Mock the LLM so generate() tests don't need a real API key
+vi.mock("./_core/llm", () => ({
+  invokeLLM: vi.fn().mockResolvedValue({
+    choices: [{
+      message: {
+        content: JSON.stringify({
+          highlights: "• Revenue grew 15%\n• 3 new enterprise customers",
+          challenges: "• Supply chain delays\n• Hiring market tight",
+          nextSteps: "• Close Series A by Q2\n• Launch EU market",
+        }),
+      },
+    }],
+  }),
+}));
 
 // ── Minimal mock context ───────────────────────────────────────────────────────
 const ctx = { user: { id: "test-user", role: "admin" as const, name: "Test", email: "test@test.com", openId: "oid" } };

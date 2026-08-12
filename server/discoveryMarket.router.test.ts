@@ -73,7 +73,7 @@ describe("assertVentureAccess", () => {
       [], // no membership for this user
       [], // venture has no members at all -> unclaimed
     ]);
-    await expect(assertVentureAccess(d, member, "v1")).resolves.toBeUndefined();
+    await expect(assertVentureAccess(d, member, "v1", { allowClaim: true })).resolves.toBeUndefined();
     expect(d.__inserts).toEqual([
       { ventureId: "v1", userId: member.id, role: "owner" },
     ]);

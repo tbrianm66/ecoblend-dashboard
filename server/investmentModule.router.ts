@@ -139,7 +139,7 @@ const readinessRouter = router({
         await db.update(invReadinessScores).set(scoreData).where(eq(invReadinessScores.id, existing[0].id));
         return { id: existing[0].id, ...scores, strengths, weaknesses, gaps };
       } else {
-        const [result] = await db.insert(invReadinessScores).values({ ...scoreData, createdAt: new Date() }).$returningId();
+        const [result] = await db.insert(invReadinessScores).values({ ...scoreData, createdAt: new Date() }).returning({ id: invReadinessScores.id });
         return { id: result.id, ...scores, strengths, weaknesses, gaps };
       }
     }),
@@ -292,7 +292,7 @@ const outputsRouter = router({
         financialsSection: content.financials, askSection: content.ask,
         contentJson: JSON.stringify(content), generatedAt: new Date(),
         createdAt: new Date(), updatedAt: new Date(),
-      }).$returningId();
+      }).returning({ id: invOutputs.id });
       return { id: result.id, content, title: input.title ?? `${venture.name} — Pitch Deck` };
     }),
 
@@ -354,7 +354,7 @@ const outputsRouter = router({
         financialProjectionsSection: content.financialProjections, riskAnalysisSection: content.riskAnalysis,
         contentJson: JSON.stringify(content), generatedAt: new Date(),
         createdAt: new Date(), updatedAt: new Date(),
-      }).$returningId();
+      }).returning({ id: invOutputs.id });
       return { id: result.id, content, title: input.title ?? `${venture.name} — Business Plan` };
     }),
 
@@ -413,7 +413,7 @@ const outputsRouter = router({
         budgetSection: content.budget, milestonesSection: content.milestones,
         contentJson: JSON.stringify(content), generatedAt: new Date(),
         createdAt: new Date(), updatedAt: new Date(),
-      }).$returningId();
+      }).returning({ id: invOutputs.id });
       return { id: result.id, content, title: input.title ?? `${venture.name} — 90-Day Execution Plan` };
     }),
 
@@ -465,7 +465,7 @@ const outputsRouter = router({
         status: "draft", aiNarrative: JSON.stringify(content),
         contentJson: JSON.stringify(content), generatedAt: new Date(),
         createdAt: new Date(), updatedAt: new Date(),
-      }).$returningId();
+      }).returning({ id: invOutputs.id });
       return { id: result.id, content };
     }),
 });
@@ -515,7 +515,7 @@ const targetsRouter = router({
         await db.update(invTargets).set({ ...input, updatedAt: new Date() }).where(eq(invTargets.id, input.id));
         return { id: input.id };
       }
-      const [result] = await db.insert(invTargets).values({ ...input, createdAt: new Date(), updatedAt: new Date() }).$returningId();
+      const [result] = await db.insert(invTargets).values({ ...input, createdAt: new Date(), updatedAt: new Date() }).returning({ id: invTargets.id });
       return { id: result.id };
     }),
 
@@ -594,7 +594,7 @@ const targetsRouter = router({
           sectorFocus: inv.sectorFocus, stageFocus: inv.stageFocus,
           impactFocused: inv.impactFocused, outreachStatus: "identified",
           createdAt: new Date(), updatedAt: new Date(),
-        }).$returningId();
+        }).returning({ id: invTargets.id });
         inserted.push({ id: result.id, ...inv });
       }
       return { investors: inserted };
@@ -648,7 +648,7 @@ const kpisRouter = router({
         await db.update(invKpis).set({ ...input, updatedAt: new Date() }).where(eq(invKpis.id, input.id));
         return { id: input.id };
       }
-      const [result] = await db.insert(invKpis).values({ ...input, createdAt: new Date(), updatedAt: new Date() }).$returningId();
+      const [result] = await db.insert(invKpis).values({ ...input, createdAt: new Date(), updatedAt: new Date() }).returning({ id: invKpis.id });
       return { id: result.id };
     }),
 });
@@ -689,7 +689,7 @@ const fundraisingRouter = router({
         await db.update(invFundraisingRounds).set({ ...input, updatedAt: new Date() }).where(eq(invFundraisingRounds.id, input.id));
         return { id: input.id };
       }
-      const [result] = await db.insert(invFundraisingRounds).values({ ...input, createdAt: new Date(), updatedAt: new Date() }).$returningId();
+      const [result] = await db.insert(invFundraisingRounds).values({ ...input, createdAt: new Date(), updatedAt: new Date() }).returning({ id: invFundraisingRounds.id });
       return { id: result.id };
     }),
 

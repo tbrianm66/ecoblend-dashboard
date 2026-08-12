@@ -49,8 +49,8 @@ export const finPlRouter = router({
         await db.update(finPlLines).set({ ...fields, updatedAt: new Date() }).where(eq(finPlLines.id, id));
         return { id };
       }
-      const [result] = await db.insert(finPlLines).values({ ...fields });
-      return { id: (result as any).insertId };
+      const [result] = await db.insert(finPlLines).values({ ...fields }).returning({ id: finPlLines.id });
+      return { id: result.id };
     }),
 
   delete: protectedProcedure
@@ -136,8 +136,8 @@ export const finRunwayRouter = router({
         await db.update(finRunwayScenarios).set({ ...payload, updatedAt: new Date() }).where(eq(finRunwayScenarios.id, id));
         return { id };
       }
-      const [result] = await db.insert(finRunwayScenarios).values(payload);
-      return { id: (result as any).insertId };
+      const [result] = await db.insert(finRunwayScenarios).values(payload).returning({ id: finRunwayScenarios.id });
+      return { id: result.id };
     }),
 
   delete: protectedProcedure
@@ -181,8 +181,8 @@ export const finWaterfallRouter = router({
         await db.update(finExitWaterfall).set({ ...fields, updatedAt: new Date() }).where(eq(finExitWaterfall.id, id));
         return { id };
       }
-      const [result] = await db.insert(finExitWaterfall).values(fields);
-      return { id: (result as any).insertId };
+      const [result] = await db.insert(finExitWaterfall).values(fields).returning({ id: finExitWaterfall.id });
+      return { id: result.id };
     }),
 
   delete: protectedProcedure
@@ -224,8 +224,8 @@ export const finWaterfallRouter = router({
         await db.update(finWaterfallTranches).set(fields).where(eq(finWaterfallTranches.id, id));
         return { id };
       }
-      const [result] = await db.insert(finWaterfallTranches).values(fields);
-      return { id: (result as any).insertId };
+      const [result] = await db.insert(finWaterfallTranches).values(fields).returning({ id: finWaterfallTranches.id });
+      return { id: result.id };
     }),
 
   deleteTranche: protectedProcedure
@@ -316,8 +316,8 @@ export const finReportsRouter = router({
         await db.update(finInvestorReports).set({ ...fields, updatedAt: new Date() }).where(eq(finInvestorReports.id, id));
         return { id };
       }
-      const [result] = await db.insert(finInvestorReports).values(fields);
-      return { id: (result as any).insertId };
+      const [result] = await db.insert(finInvestorReports).values(fields).returning({ id: finInvestorReports.id });
+      return { id: result.id };
     }),
 
   delete: protectedProcedure
@@ -392,8 +392,8 @@ Return a JSON object with keys: highlights, challenges, nextSteps (each as a str
         nextSteps: parsed.nextSteps,
         kpiSnapshot: input.kpiData,
         generatedBy: "AI",
-      });
-      return { id: (result as any).insertId, ...parsed };
+      }).returning({ id: finInvestorReports.id });
+      return { id: result.id, ...parsed };
     }),
 
   markSent: protectedProcedure
@@ -438,14 +438,15 @@ export const finUnitEconRouter = router({
       const paybackMonths = fields.cac > 0 && fields.arpu > 0
         ? Math.ceil(fields.cac / (fields.arpu * fields.grossMargin / 100))
         : null;
-      const ltvCacRatio = fields.cac > 0 ? Math.round((fields.ltv / fields.cac) * 10) / 10 : null;
+      // ltvCacRatio stored as integer (schema: integer column) — round to nearest whole number
+      const ltvCacRatio = fields.cac > 0 ? Math.round(fields.ltv / fields.cac) : null;
       const payload = { ...fields, paybackMonths, ltvCacRatio };
       if (id) {
         await db.update(finUnitEconomics).set({ ...payload, updatedAt: new Date() }).where(eq(finUnitEconomics.id, id));
         return { id };
       }
-      const [result] = await db.insert(finUnitEconomics).values(payload);
-      return { id: (result as any).insertId };
+      const [result] = await db.insert(finUnitEconomics).values(payload).returning({ id: finUnitEconomics.id });
+      return { id: result.id };
     }),
 
   delete: protectedProcedure
