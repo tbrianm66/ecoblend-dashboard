@@ -629,6 +629,36 @@ describe("normaliseResetVentureId — production trim + sentinel guard", () => {
     expect(normaliseResetVentureId("__global__-extra")).toBe("__global__-extra");
   });
 
+  // ── Blank / whitespace-only input: first guard path ──────────────────────
+  // The function trims the input FIRST, then checks `if (!vid)` for the
+  // blank/whitespace-only case BEFORE checking for __global__.  These tests
+  // directly exercise that first guard branch, which is distinct from the
+  // sentinel rejection path.
+
+  it("rejects an empty-string ventureId with BAD_REQUEST (blank guard, not sentinel guard)", () => {
+    let err: TRPCError | undefined;
+    try { normaliseResetVentureId(""); } catch (e) { err = e as TRPCError; }
+    expect(err).toBeInstanceOf(TRPCError);
+    expect(err?.code).toBe("BAD_REQUEST");
+    expect(err?.message).toMatch(/blank or whitespace-only/i);
+  });
+
+  it("rejects a whitespace-only ventureId with BAD_REQUEST", () => {
+    let err: TRPCError | undefined;
+    try { normaliseResetVentureId("   "); } catch (e) { err = e as TRPCError; }
+    expect(err).toBeInstanceOf(TRPCError);
+    expect(err?.code).toBe("BAD_REQUEST");
+    expect(err?.message).toMatch(/blank or whitespace-only/i);
+  });
+
+  it("rejects a tab-only ventureId with BAD_REQUEST", () => {
+    let err: TRPCError | undefined;
+    try { normaliseResetVentureId("\t\t"); } catch (e) { err = e as TRPCError; }
+    expect(err).toBeInstanceOf(TRPCError);
+    expect(err?.code).toBe("BAD_REQUEST");
+    expect(err?.message).toMatch(/blank or whitespace-only/i);
+  });
+
   // ── Regression guard: rows stored with exact ID ───────────────────────────
   // Confirms that the value returned by normaliseResetVentureId matches the
   // exact string that was stored in the DB (which always uses the trimmed form).
@@ -723,6 +753,25 @@ describe("normaliseSetVentureId — production write-path trim + sentinel normal
     const stored   = "BEBUS";
     const fromInput = normaliseSetVentureId("  BEBUS  ");
     expect(fromInput).toBe(stored);
+  });
+
+  // ── Explicit __global__ sentinel passthrough ──────────────────────────────
+  // When the caller already has the "__global__" sentinel (e.g. from a previous
+  // normalisation or from the DB), normaliseSetVentureId must pass it through
+  // unchanged.  The function's `if (!raw || !raw.trim())` guard is falsy for
+  // "__global__" (it is a truthy, non-blank string), so it falls through to
+  // `return raw.trim()` — which returns "__global__" unchanged.
+
+  it("passes through an already-normalised __global__ sentinel unchanged", () => {
+    // The sentinel is a valid truthy, non-blank string → the function returns it
+    // via the `return raw.trim()` branch, not the guard branch.
+    expect(normaliseSetVentureId("__global__")).toBe("__global__");
+  });
+
+  it("passes through __global__ with whitespace padding by trimming to the exact sentinel", () => {
+    // "  __global__  ".trim() === "__global__" — the guard is false (truthy after trim)
+    // so the function returns the trimmed value, which is the sentinel itself.
+    expect(normaliseSetVentureId("  __global__  ")).toBe("__global__");
   });
 });
 
