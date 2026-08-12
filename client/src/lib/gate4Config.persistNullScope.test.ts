@@ -12,6 +12,11 @@
  * reverts.  The existing rollback tests in gate4Config.test.ts cover the non-null
  * venture path; this file covers the null/global path to ensure the
  * `?? "__global__"` branch of the key computation is exercised.
+ *
+ * NOTE: This file is deliberately kept to 2 tests.  happy-dom workers have a
+ * fixed memory budget; adding more tests to this file causes ERR_WORKER_OUT_OF_MEMORY.
+ * Additional null/global scope tests live in gate4Config.test.ts where the
+ * memory budget is not a constraint.
  */
 
 import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
@@ -21,9 +26,9 @@ import { renderHook, act } from "@testing-library/react";
 vi.mock("../../../client/src/lib/trpc", () => ({
   trpc: {
     admin: {
-      getModuleReactivations:       { useQuery: vi.fn() },
-      setModuleReactivation:        { useMutation: vi.fn() },
-      setModuleReactivationBatch:   { useMutation: vi.fn() },
+      getModuleReactivations:          { useQuery: vi.fn() },
+      setModuleReactivation:           { useMutation: vi.fn() },
+      setModuleReactivationBatch:      { useMutation: vi.fn() },
       resetVentureModuleReactivations: { useMutation: vi.fn() },
     },
     useUtils: vi.fn(),
