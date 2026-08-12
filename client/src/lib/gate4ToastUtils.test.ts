@@ -265,6 +265,20 @@ describe("showToggleToast", () => {
     expect(toast.calls.warning[0]).toContain("all ventures (global)");
     expect(toast.calls.warning[0]).toContain("Venture Beta");
   });
+
+  it("falls back to currentVId when currentVName is undefined in the drift branch (nowScope fallback)", () => {
+    // drift: snapshotVId="ven-alpha", currentVId="ven-beta", currentVName=undefined
+    // nowScope = currentVId ? (currentVName ?? currentVId) : "all ventures (global)"
+    //          = "ven-beta" ? (undefined ?? "ven-beta") = "ven-beta"
+    const toast = makeToast();
+    showToggleToast(toast, "ven-beta", undefined, "Discovery", true, "ven-alpha", "Venture Alpha");
+
+    expect(toast.calls.warning).toHaveLength(1);
+    // The raw currentVId must appear since no currentVName was available.
+    expect(toast.calls.warning[0]).toContain("ven-beta");
+    // The snapshot name still appears (it is defined).
+    expect(toast.calls.warning[0]).toContain("Venture Alpha");
+  });
 });
 
 // ── showBatchToast ────────────────────────────────────────────────────────────
@@ -318,6 +332,26 @@ describe("showBatchToast", () => {
     expect(toast.calls.warning).toHaveLength(1);
     expect(toast.calls.warning[0]).toContain("Venture Alpha");
     expect(toast.calls.warning[0]).toContain("Venture Beta");
+  });
+
+  it("falls back to snapshotVId when snapshotVName is undefined (drift path)", () => {
+    const toast = makeToast();
+    showBatchToast(toast, "ven-beta", "Venture Beta", true, "ven-alpha", undefined);
+
+    // snapshotVName=undefined → scopeName = snapshotVId ?? snapshotVId = "ven-alpha"
+    expect(toast.calls.warning).toHaveLength(1);
+    expect(toast.calls.warning[0]).toContain("ven-alpha");
+  });
+
+  it("falls back to currentVId when currentVName is undefined in the drift branch (nowScope fallback)", () => {
+    // drift: snapshot="ven-alpha", current="ven-beta", currentVName=undefined
+    // nowScope = currentVId ? (currentVName ?? currentVId) : global = "ven-beta"
+    const toast = makeToast();
+    showBatchToast(toast, "ven-beta", undefined, true, "ven-alpha", "Venture Alpha");
+
+    expect(toast.calls.warning).toHaveLength(1);
+    expect(toast.calls.warning[0]).toContain("ven-beta");
+    expect(toast.calls.warning[0]).toContain("Venture Alpha");
   });
 });
 
@@ -408,6 +442,19 @@ describe("showResetToast", () => {
     const toastDrift = makeToast();
     showResetToast(toastDrift, "ven-beta", "Venture Beta", "ven-alpha", "Venture Alpha");
     expect(toastDrift.calls.error).toHaveLength(0);
+  });
+
+  it("falls back to currentVId when currentVName is undefined in the drift branch (nowScope fallback)", () => {
+    // drift: snapshot="ven-alpha", current="ven-beta", currentVName=undefined
+    // nowScope = currentVId ? (currentVName ?? currentVId) : global = "ven-beta"
+    const toast = makeToast();
+    showResetToast(toast, "ven-beta", undefined, "ven-alpha", "Venture Alpha");
+
+    expect(toast.calls.warning).toHaveLength(1);
+    // Raw currentVId appears since no currentVName was available.
+    expect(toast.calls.warning[0]).toContain("ven-beta");
+    // Snapshot name still appears (it is defined).
+    expect(toast.calls.warning[0]).toContain("Venture Alpha");
   });
 });
 
