@@ -73,7 +73,7 @@ export const propositionRouter = router({
       const d = await getDb(); if (!d) return [];
       return d.select().from(pmValuePropositions).where(eq(pmValuePropositions.ventureId, input.ventureId)).orderBy(desc(pmValuePropositions.updatedAt));
     }),
-    upsert: publicProcedure.input(z.object({
+    upsert: protectedProcedure.input(z.object({
       id: z.number().optional(), ventureId: z.string(),
       title: z.string().min(1), statement: z.string().min(1),
       customerJob: z.string().optional().nullable(), painsRelieved: z.string().optional().nullable(),
@@ -105,7 +105,7 @@ export const propositionRouter = router({
       const d = await getDb(); if (!d) return [];
       return d.select().from(pmJtbd).where(eq(pmJtbd.ventureId, input.ventureId)).orderBy(desc(pmJtbd.opportunityScore));
     }),
-    upsert: publicProcedure.input(z.object({
+    upsert: protectedProcedure.input(z.object({
       id: z.number().optional(), ventureId: z.string(),
       jobTitle: z.string().min(1), jobStatement: z.string().min(1),
       functionalJob: z.string().optional().nullable(), emotionalJob: z.string().optional().nullable(),
@@ -135,7 +135,7 @@ export const propositionRouter = router({
       const d = await getDb(); if (!d) return [];
       return d.select().from(pmBmHypotheses).where(eq(pmBmHypotheses.ventureId, input.ventureId)).orderBy(desc(pmBmHypotheses.updatedAt));
     }),
-    upsert: publicProcedure.input(z.object({
+    upsert: protectedProcedure.input(z.object({
       id: z.number().optional(), ventureId: z.string(), valuePropositionId: z.number().optional().nullable(),
       revenueModel: z.string().optional().nullable(), pricingAssumption: z.string().optional().nullable(),
       deliveryModel: z.string().optional().nullable(), salesChannel: z.string().optional().nullable(),
@@ -165,7 +165,7 @@ export const propositionRouter = router({
       const d = await getDb(); if (!d) return [];
       return d.select().from(pmRevenueTests).where(eq(pmRevenueTests.ventureId, input.ventureId)).orderBy(desc(pmRevenueTests.updatedAt));
     }),
-    upsert: publicProcedure.input(z.object({
+    upsert: protectedProcedure.input(z.object({
       id: z.number().optional(), ventureId: z.string(), bmHypothesisId: z.number().optional().nullable(),
       revenueModelTested: z.string().optional().nullable(), testMethod: z.string().optional().nullable(),
       targetSegment: z.string().optional().nullable(), pricePointTested: z.string().optional().nullable(),
@@ -194,7 +194,7 @@ export const propositionRouter = router({
       const d = await getDb(); if (!d) return [];
       return d.select().from(pmUnitEconomics).where(eq(pmUnitEconomics.ventureId, input.ventureId)).orderBy(desc(pmUnitEconomics.updatedAt));
     }),
-    upsert: publicProcedure.input(z.object({
+    upsert: protectedProcedure.input(z.object({
       id: z.number().optional(), ventureId: z.string(), bmHypothesisId: z.number().optional().nullable(),
       modelName: z.string().min(1),
       customerAcquisitionCost: z.number().optional().nullable(), lifetimeValue: z.number().optional().nullable(),
@@ -225,7 +225,7 @@ export const propositionRouter = router({
       const d = await getDb(); if (!d) return [];
       return d.select().from(pmRisks).where(eq(pmRisks.ventureId, input.ventureId)).orderBy(desc(pmRisks.riskScore));
     }),
-    upsert: publicProcedure.input(z.object({
+    upsert: protectedProcedure.input(z.object({
       id: z.number().optional(), ventureId: z.string(),
       riskTitle: z.string().min(1), riskCategory: z.string().optional().nullable(),
       riskDescription: z.string().optional().nullable(),
@@ -257,7 +257,7 @@ export const propositionRouter = router({
       const d = await getDb(); if (!d) return [];
       return d.select().from(pivotLog).where(eq(pivotLog.ventureId, input.ventureId)).orderBy(desc(pivotLog.createdAt));
     }),
-    create: publicProcedure.input(z.object({
+    create: protectedProcedure.input(z.object({
       ventureId: z.string(), pivotType: z.string(),
       previousHypothesis: z.string().optional().nullable(),
       newHypothesis: z.string().optional().nullable(),

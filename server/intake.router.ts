@@ -182,7 +182,7 @@ export const intakeRouter = router({
         .orderBy(desc(ccHypotheses.updatedAt));
     }),
 
-    upsert: publicProcedure.input(z.object({
+    upsert: protectedProcedure.input(z.object({
       id: z.number().optional(),
       ventureId: z.string(),
       hypothesisType: z.string(),

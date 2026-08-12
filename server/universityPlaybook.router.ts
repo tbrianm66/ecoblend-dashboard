@@ -4,7 +4,7 @@
 
 import { dispatchTrigger } from "./workflowEngine";
 import { z } from "zod";
-import { router, publicProcedure } from "./_core/trpc";
+import { router, publicProcedure, protectedProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import { eq as eqOp, and, desc } from "drizzle-orm";
 import {
@@ -55,7 +55,7 @@ export const uniPartnersRouter = router({
       return { id: result.insertId };
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = (await getDb())!;
@@ -111,7 +111,7 @@ export const uniResearchRouter = router({
       return { id: newId };
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = (await getDb())!;
@@ -119,7 +119,7 @@ export const uniResearchRouter = router({
       return { success: true };
     }),
 
-  generateSummary: publicProcedure
+  generateSummary: protectedProcedure
     .input(z.object({ title: z.string(), objective: z.string(), researchType: z.string() }))
     .mutation(async ({ input }) => {
       const response = await invokeLLM({
@@ -186,7 +186,7 @@ export const uniTalentRouter = router({
       return { id: result.insertId };
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = (await getDb())!;
@@ -231,7 +231,7 @@ export const uniWorkflowRouter = router({
       return { id: result.insertId };
     }),
 
-  advanceStage: publicProcedure
+  advanceStage: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = (await getDb())!;
@@ -246,7 +246,7 @@ export const uniWorkflowRouter = router({
       return { success: true };
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = (await getDb())!;
@@ -291,7 +291,7 @@ export const uniIndustryRouter = router({
       return { id: result.insertId };
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = (await getDb())!;
@@ -309,7 +309,7 @@ export const uniGovernanceRouter = router({
       return db.select().from(uniGovernanceDocs).where(eqOp(uniGovernanceDocs.ventureId, input.ventureId)).orderBy(desc(uniGovernanceDocs.createdAt));
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string(),
@@ -333,7 +333,7 @@ export const uniGovernanceRouter = router({
       return { id: result.insertId };
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = (await getDb())!;
@@ -378,7 +378,7 @@ export const uniDataRouter = router({
       return { id: result.insertId };
     }),
 
-  analyseWithAI: publicProcedure
+  analyseWithAI: protectedProcedure
     .input(z.object({ id: z.number(), title: z.string(), description: z.string(), sourceType: z.string(), keyInsights: z.string().optional() }))
     .mutation(async ({ input }) => {
       const response = await invokeLLM({
@@ -410,7 +410,7 @@ export const uniDataRouter = router({
       return parsed;
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = (await getDb())!;
@@ -428,7 +428,7 @@ export const uniRoadmapRouter = router({
       return db.select().from(uniRoadmapMilestones).where(eqOp(uniRoadmapMilestones.ventureId, input.ventureId)).orderBy(uniRoadmapMilestones.targetDate);
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string(),
@@ -453,7 +453,7 @@ export const uniRoadmapRouter = router({
       return { id: result.insertId };
     }),
 
-  complete: publicProcedure
+  complete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = (await getDb())!;
@@ -461,7 +461,7 @@ export const uniRoadmapRouter = router({
       return { success: true };
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = (await getDb())!;

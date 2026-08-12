@@ -4,7 +4,7 @@
 //            Succession Planning, Stakeholder Alignment
 // ============================================================
 
-import { router, publicProcedure } from "./_core/trpc";
+import { router, publicProcedure, protectedProcedure } from "./_core/trpc";
 import { z } from "zod";
 import { getDb } from "./db";
 import {
@@ -146,7 +146,7 @@ export const missionIntegrityRouter = router({
    * Calculate and save a Mission Integrity Index score for a venture.
    * Runs the calculation engine and auto-generates drift alerts.
    */
-  calculate: publicProcedure
+  calculate: protectedProcedure
     .input(z.object({
       ventureId: z.string(),
       financialVsMissionDrift: z.number().min(0).max(100),
@@ -276,7 +276,7 @@ export const missionIntegrityRouter = router({
   /**
    * Acknowledge a drift alert.
    */
-  acknowledgeAlert: publicProcedure
+  acknowledgeAlert: protectedProcedure
     .input(z.object({ alertId: z.string() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -290,7 +290,7 @@ export const missionIntegrityRouter = router({
   /**
    * Resolve (close) a drift alert.
    */
-  resolveAlert: publicProcedure
+  resolveAlert: protectedProcedure
     .input(z.object({ alertId: z.string() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -322,7 +322,7 @@ export const missionIntegrityRouter = router({
   /**
    * Bulk acknowledge all active alerts for a venture.
    */
-  acknowledgeAllForVenture: publicProcedure
+  acknowledgeAllForVenture: protectedProcedure
     .input(z.object({ ventureId: z.string() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -852,7 +852,7 @@ export const stakeholderAlignmentRouter = router({
   /**
    * Create or update a stakeholder profile.
    */
-  upsertProfile: publicProcedure
+  upsertProfile: protectedProcedure
     .input(z.object({
       id: z.string().optional(),
       ventureId: z.string(),
@@ -902,7 +902,7 @@ export const stakeholderAlignmentRouter = router({
   /**
    * Delete a stakeholder profile.
    */
-  deleteProfile: publicProcedure
+  deleteProfile: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -1179,7 +1179,7 @@ export const boardDecisionsRouter = router({
   /**
    * Delete a board decision by ID.
    */
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -1228,7 +1228,7 @@ export const acquisitionReadinessRouter = router({
   /**
    * Record an acquisition readiness score and auto-generate alerts.
    */
-  recordScore: publicProcedure
+  recordScore: protectedProcedure
     .input(z.object({
       ventureId: z.string(),
       ventureName: z.string(),
@@ -1349,7 +1349,7 @@ export const acquisitionReadinessRouter = router({
   /**
    * Acknowledge an acquisition readiness alert.
    */
-  acknowledgeAlert: publicProcedure
+  acknowledgeAlert: protectedProcedure
     .input(z.object({ alertId: z.string() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -1365,7 +1365,7 @@ export const acquisitionReadinessRouter = router({
   /**
    * Resolve an acquisition readiness alert.
    */
-  resolveAlert: publicProcedure
+  resolveAlert: protectedProcedure
     .input(z.object({ alertId: z.string() }))
     .mutation(async ({ input }) => {
       const db = await getDb();

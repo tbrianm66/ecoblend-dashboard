@@ -1,5 +1,5 @@
 import { getDb } from "./db";
-import { router, publicProcedure } from "./_core/trpc";
+import { router, publicProcedure, protectedProcedure } from "./_core/trpc";
 import { z } from "zod";
 import { eq, desc, and } from "drizzle-orm";
 import { invokeLLM } from "./_core/llm";
@@ -53,7 +53,7 @@ export const finPlRouter = router({
       return { id: (result as any).insertId };
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -100,7 +100,7 @@ export const finRunwayRouter = router({
       return input.ventureId ? q.where(eq(finRunwayScenarios.ventureId, input.ventureId)) : q;
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string().optional(),
@@ -140,7 +140,7 @@ export const finRunwayRouter = router({
       return { id: (result as any).insertId };
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -161,7 +161,7 @@ export const finWaterfallRouter = router({
       return input.ventureId ? q.where(eq(finExitWaterfall.ventureId, input.ventureId)) : q;
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string().optional(),
@@ -185,7 +185,7 @@ export const finWaterfallRouter = router({
       return { id: (result as any).insertId };
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -204,7 +204,7 @@ export const finWaterfallRouter = router({
         .orderBy(finWaterfallTranches.sortOrder);
     }),
 
-  upsertTranche: publicProcedure
+  upsertTranche: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       waterfallId: z.number(),
@@ -228,7 +228,7 @@ export const finWaterfallRouter = router({
       return { id: (result as any).insertId };
     }),
 
-  deleteTranche: publicProcedure
+  deleteTranche: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -294,7 +294,7 @@ export const finReportsRouter = router({
       return input.ventureId ? q.where(eq(finInvestorReports.ventureId, input.ventureId)) : q;
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string().optional(),
@@ -320,7 +320,7 @@ export const finReportsRouter = router({
       return { id: (result as any).insertId };
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -329,7 +329,7 @@ export const finReportsRouter = router({
       return { success: true };
     }),
 
-  generate: publicProcedure
+  generate: protectedProcedure
     .input(z.object({
       ventureId: z.string().optional(),
       offeringId: z.string().optional(),
@@ -396,7 +396,7 @@ Return a JSON object with keys: highlights, challenges, nextSteps (each as a str
       return { id: (result as any).insertId, ...parsed };
     }),
 
-  markSent: publicProcedure
+  markSent: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -419,7 +419,7 @@ export const finUnitEconRouter = router({
       return input.ventureId ? q.where(eq(finUnitEconomics.ventureId, input.ventureId)) : q;
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string().optional(),
@@ -448,7 +448,7 @@ export const finUnitEconRouter = router({
       return { id: (result as any).insertId };
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = await getDb();

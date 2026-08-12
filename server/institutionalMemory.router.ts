@@ -3,7 +3,7 @@
  * Phase 5 Long-Term (Weeks 17+)
  */
 import { z } from "zod";
-import { publicProcedure, router } from "./_core/trpc";
+import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import { sql } from "drizzle-orm";
 
@@ -74,7 +74,7 @@ export const institutionalMemoryRouter = router({
       return data[0] ?? null;
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string().default("portfolio"),
@@ -101,7 +101,7 @@ export const institutionalMemoryRouter = router({
       }
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -292,7 +292,7 @@ export const advancedStakeholderRouter = router({
       return (rows as any).rows ?? rows ?? [];
     }),
 
-  addInteraction: publicProcedure
+  addInteraction: protectedProcedure
     .input(z.object({
       stakeholderId: z.number(),
       ventureId: z.string().default("portfolio"),

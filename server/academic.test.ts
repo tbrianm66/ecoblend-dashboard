@@ -6,9 +6,19 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { appRouter } from "./routers";
 import { db } from "./_core/context";
+import type { TrpcContext } from "./_core/context";
 
-// Create a caller with no auth (public procedures)
+// Read-only caller (no auth — for list queries)
 const caller = appRouter.createCaller({ db, user: null } as any);
+
+// Authenticated caller for write mutations (addPaper, deletePaper, etc.)
+const authCtx: TrpcContext = {
+  user: { id: 1, openId: "test-admin", email: "admin@test.ecoblend.io", name: "Test Admin",
+          loginMethod: "manus", role: "admin", createdAt: new Date(), updatedAt: new Date(), lastSignedIn: new Date() },
+  req: { protocol: "https", headers: {} } as TrpcContext["req"],
+  res: { clearCookie: () => {} } as unknown as TrpcContext["res"],
+};
+const callerAuth = appRouter.createCaller(authCtx);
 
 // ── Research Papers ───────────────────────────────────────────────────────────
 describe("academic.papers", () => {
@@ -18,8 +28,8 @@ describe("academic.papers", () => {
   });
 
   it("addPaper and deletePaper round-trip", async () => {
-    // Add
-    await caller.academic.addPaper({
+    // Add (auth required)
+    await callerAuth.academic.addPaper({
       title: "Test Paper on VRL Frameworks",
       authors: "Smith, J., Jones, A.",
       year: 2024,
@@ -35,8 +45,8 @@ describe("academic.papers", () => {
     expect(added?.authors).toBe("Smith, J., Jones, A.");
     expect(added?.relevanceScore).toBe(8);
 
-    // Delete
-    await caller.academic.deletePaper({ id: added!.id });
+    // Delete (auth required)
+    await callerAuth.academic.deletePaper({ id: added!.id });
     const after = await caller.academic.listPapers();
     expect(after.find(p => p.id === added!.id)).toBeUndefined();
   });
@@ -50,7 +60,7 @@ describe("academic.fellows", () => {
   });
 
   it("addFellow and deleteFellow round-trip", async () => {
-    await caller.academic.addFellow({
+    await callerAuth.academic.addFellow({
       name: "Dr. Test Researcher",
       institution: "University of Testing",
       collaborationType: "Academic Advisor",
@@ -63,7 +73,7 @@ describe("academic.fellows", () => {
     expect(added).toBeDefined();
     expect(added?.institution).toBe("University of Testing");
 
-    await caller.academic.deleteFellow({ id: added!.id });
+    await callerAuth.academic.deleteFellow({ id: added!.id });
     const after = await caller.academic.listFellows();
     expect(after.find(f => f.id === added!.id)).toBeUndefined();
   });
@@ -77,7 +87,7 @@ describe("academic.partnerships", () => {
   });
 
   it("addPartnership and deletePartnership round-trip", async () => {
-    await caller.academic.addPartnership({
+    await callerAuth.academic.addPartnership({
       universityName: "Test University",
       country: "UK",
       partnershipType: "Research Collaboration",
@@ -89,7 +99,7 @@ describe("academic.partnerships", () => {
     expect(added).toBeDefined();
     expect(added?.country).toBe("UK");
 
-    await caller.academic.deletePartnership({ id: added!.id });
+    await callerAuth.academic.deletePartnership({ id: added!.id });
     const after = await caller.academic.listPartnerships();
     expect(after.find(p => p.id === added!.id)).toBeUndefined();
   });
@@ -103,7 +113,7 @@ describe("academic.claims", () => {
   });
 
   it("addClaim and deleteClaim round-trip", async () => {
-    await caller.academic.addClaim({
+    await callerAuth.academic.addClaim({
       ventureId: "ecoblend",
       claimText: "Market research confirms demand for eco-friendly blending solutions.",
       claimType: "Market Validation",
@@ -118,7 +128,7 @@ describe("academic.claims", () => {
     expect(added?.strength).toBe("Strong");
     expect(added?.trlLevel).toBe(4);
 
-    await caller.academic.deleteClaim({ id: added!.id });
+    await callerAuth.academic.deleteClaim({ id: added!.id });
     const after = await caller.academic.listClaims();
     expect(after.find(c => c.id === added!.id)).toBeUndefined();
   });

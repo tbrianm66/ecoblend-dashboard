@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { publicProcedure, router } from "./_core/trpc";
+import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 
 export const collaborationRouter = router({
@@ -16,7 +16,7 @@ export const collaborationRouter = router({
         .orderBy(asc(collaborationTasks.createdAt));
     }),
 
-  createTeamTask: publicProcedure
+  createTeamTask: protectedProcedure
     .input(z.object({
       ventureId:      z.string(),
       taskTitle:      z.string().min(1),
@@ -57,7 +57,7 @@ export const collaborationRouter = router({
         .orderBy(desc(advisoryReviews.createdAt));
     }),
 
-  submitAdvisoryReview: publicProcedure
+  submitAdvisoryReview: protectedProcedure
     .input(z.object({
       ventureId:        z.string(),
       advisorName:      z.string().min(1),

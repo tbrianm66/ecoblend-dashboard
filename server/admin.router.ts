@@ -715,7 +715,7 @@ export const adminRouter = router({
       .orderBy(asc(systemModuleStatus.moduleNumber));
   }),
 
-  toggleModuleStatus: publicProcedure
+  toggleModuleStatus: adminProcedure
     .input(z.object({ moduleNumber: z.number(), isEnabled: z.boolean() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -742,7 +742,7 @@ export const adminRouter = router({
         : rows;
     }),
 
-  updateSystemConfig: publicProcedure
+  updateSystemConfig: adminProcedure
     .input(z.object({ configKey: z.string(), configValue: z.string() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -792,7 +792,7 @@ export const adminRouter = router({
         : rows;
     }),
 
-  toggleIntegrationStatus: publicProcedure
+  toggleIntegrationStatus: adminProcedure
     .input(z.object({ serviceSlug: z.string(), isConnected: z.boolean() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -818,7 +818,7 @@ export const adminRouter = router({
       .orderBy(desc(systemApiKeys.createdAt));
   }),
 
-  revokeApiKey: publicProcedure
+  revokeApiKey: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -830,7 +830,7 @@ export const adminRouter = router({
       return { success: true };
     }),
 
-  generateNewApiKey: publicProcedure
+  generateNewApiKey: adminProcedure
     .input(z.object({ keyName: z.string(), scopes: z.string().optional(), createdBy: z.string().optional() }))
     .mutation(async ({ input }) => {
       const db = await getDb();

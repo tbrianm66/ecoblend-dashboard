@@ -2,7 +2,7 @@
  * Sprint 57 — Specialist Services Router
  * Manages the specialist directory, service task assignments, and commissions.
  */
-import { router, publicProcedure } from "./_core/trpc";
+import { router, publicProcedure, protectedProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import { z } from "zod";
 import { eq, and, desc } from "drizzle-orm";
@@ -65,7 +65,7 @@ const specialistsRouter = router({
       return { id: (result as any)[0]?.insertId ?? null };
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -110,7 +110,7 @@ const serviceTasksRouter = router({
         .orderBy(desc(specialistServiceTasks.createdAt));
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string().min(1),
@@ -138,7 +138,7 @@ const serviceTasksRouter = router({
       return { id: (result as any)[0]?.insertId ?? null };
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -146,7 +146,7 @@ const serviceTasksRouter = router({
       return { success: true };
     }),
 
-  assign: publicProcedure
+  assign: protectedProcedure
     .input(z.object({ id: z.number(), specialistId: z.number() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -176,7 +176,7 @@ const commissionsRouter = router({
         .orderBy(desc(specialistCommissions.createdAt));
     }),
 
-  create: publicProcedure
+  create: protectedProcedure
     .input(z.object({
       ventureId: z.string().min(1),
       specialistId: z.number(),
@@ -200,7 +200,7 @@ const commissionsRouter = router({
       return { id: (result as any)[0]?.insertId ?? null };
     }),
 
-  updateStatus: publicProcedure
+  updateStatus: protectedProcedure
     .input(z.object({
       id: z.number(),
       status: z.enum(["Open", "Commissioned", "In Review", "Complete", "Cancelled"]),
@@ -214,7 +214,7 @@ const commissionsRouter = router({
       return { success: true };
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = await getDb();

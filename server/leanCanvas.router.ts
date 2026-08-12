@@ -7,7 +7,7 @@
  */
 import { z } from "zod";
 import { eq, desc, max, sql } from "drizzle-orm";
-import { router, publicProcedure } from "./_core/trpc";
+import { router, publicProcedure, protectedProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import {
   leanCanvases,
@@ -272,7 +272,7 @@ export const leanCanvasRouter = router({
           .where(eq(leanCanvasBlocks.canvasId, input.canvasId));
       }),
 
-    upsert: publicProcedure
+    upsert: protectedProcedure
       .input(z.object({
         canvasId:             z.number(),
         ventureId:            z.string(),
@@ -342,7 +342,7 @@ export const leanCanvasRouter = router({
           .where(eq(leanCanvasBlockEvidenceLinks.canvasBlockId, input.canvasBlockId));
       }),
 
-    upsert: publicProcedure
+    upsert: protectedProcedure
       .input(z.object({
         id:                    z.number().optional(),
         canvasBlockId:         z.number(),
@@ -388,7 +388,7 @@ export const leanCanvasRouter = router({
         return ins[0];
       }),
 
-    delete: publicProcedure
+    delete: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const db = await getDb();

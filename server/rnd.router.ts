@@ -5,7 +5,7 @@
  */
 import { z } from "zod";
 import { eq, and, desc } from "drizzle-orm";
-import { router, publicProcedure } from "./_core/trpc";
+import { router, publicProcedure, protectedProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import {
   ipAssets,       // existing table — uses camelCase column names (ventureId, ipType, etc.)
@@ -125,7 +125,7 @@ export const rndRouter = router({
           .orderBy(desc(ipAssets.createdAt));
       }),
 
-    upsert: publicProcedure
+    upsert: protectedProcedure
       .input(z.object({ id: z.number().int().optional(), ...ipAssetBody.shape }))
       .mutation(async ({ input }) => {
         const db = await getDb();
@@ -143,7 +143,7 @@ export const rndRouter = router({
         return inserted;
       }),
 
-    delete: publicProcedure
+    delete: protectedProcedure
       .input(z.object({ id: z.number().int() }))
       .mutation(async ({ input }) => {
         const db = await getDb();
@@ -165,7 +165,7 @@ export const rndRouter = router({
           .orderBy(desc(rndProjects.createdAt));
       }),
 
-    upsert: publicProcedure
+    upsert: protectedProcedure
       .input(z.object({ id: z.number().int().optional(), ...rndProjectBody.shape }))
       .mutation(async ({ input }) => {
         const db = await getDb();
@@ -183,7 +183,7 @@ export const rndRouter = router({
         return inserted;
       }),
 
-    advanceStage: publicProcedure
+    advanceStage: protectedProcedure
       .input(z.object({
         id:          z.number().int(),
         currentStage: z.enum(["concept", "simulation", "prototype", "integration"]),
@@ -210,7 +210,7 @@ export const rndRouter = router({
         return updated;
       }),
 
-    delete: publicProcedure
+    delete: protectedProcedure
       .input(z.object({ id: z.number().int() }))
       .mutation(async ({ input }) => {
         const db = await getDb();
@@ -236,7 +236,7 @@ export const rndRouter = router({
           .orderBy(desc(technicalKpis.createdAt));
       }),
 
-    upsert: publicProcedure
+    upsert: protectedProcedure
       .input(z.object({ id: z.number().int().optional(), ...technicalKpiBody.shape }))
       .mutation(async ({ input }) => {
         const db = await getDb();
@@ -254,7 +254,7 @@ export const rndRouter = router({
         return inserted;
       }),
 
-    delete: publicProcedure
+    delete: protectedProcedure
       .input(z.object({ id: z.number().int() }))
       .mutation(async ({ input }) => {
         const db = await getDb();
@@ -280,7 +280,7 @@ export const rndRouter = router({
           .orderBy(desc(prototypeTests.createdAt));
       }),
 
-    upsert: publicProcedure
+    upsert: protectedProcedure
       .input(z.object({ id: z.number().int().optional(), ...prototypeTestBody.shape }))
       .mutation(async ({ input }) => {
         const db = await getDb();
@@ -302,7 +302,7 @@ export const rndRouter = router({
         return inserted;
       }),
 
-    delete: publicProcedure
+    delete: protectedProcedure
       .input(z.object({ id: z.number().int() }))
       .mutation(async ({ input }) => {
         const db = await getDb();

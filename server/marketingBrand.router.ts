@@ -4,7 +4,7 @@
  *         press releases, newsletter campaigns, media coverage
  */
 import { z } from "zod";
-import { router, publicProcedure } from "./_core/trpc";
+import { router, publicProcedure, protectedProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import { eq, desc, and } from "drizzle-orm";
 import {
@@ -58,7 +58,7 @@ const campaignsRouter = router({
       return { id: (result as any).insertId };
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -97,7 +97,7 @@ const channelScoresRouter = router({
         .where(conditions.length ? and(...conditions) : undefined);
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string().min(1),
@@ -129,7 +129,7 @@ const brandReadinessRouter = router({
         .orderBy(desc(brandReadinessScores.assessedAt));
     }),
 
-  upsertScore: publicProcedure
+  upsertScore: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string().min(1),
@@ -157,7 +157,7 @@ const brandReadinessRouter = router({
         .orderBy(brandChecklistItems.category);
     }),
 
-  toggleChecklistItem: publicProcedure
+  toggleChecklistItem: protectedProcedure
     .input(z.object({ id: z.number(), completed: z.boolean() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -167,7 +167,7 @@ const brandReadinessRouter = router({
       return { success: true };
     }),
 
-  upsertChecklistItem: publicProcedure
+  upsertChecklistItem: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string().min(1),
@@ -188,7 +188,7 @@ const brandReadinessRouter = router({
       return { id: (result as any).insertId };
     }),
 
-  deleteChecklistItem: publicProcedure
+  deleteChecklistItem: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -228,7 +228,7 @@ const pressReleasesRouter = router({
         .orderBy(desc(pressReleases.createdAt));
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string().min(1),
@@ -253,7 +253,7 @@ const pressReleasesRouter = router({
       return { id: (result as any).insertId };
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -308,7 +308,7 @@ const newsletterRouter = router({
       return { id: (result as any).insertId };
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -350,7 +350,7 @@ const mediaCoverageRouter = router({
         .orderBy(desc(mediaCoverage.createdAt));
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string().min(1),
@@ -374,7 +374,7 @@ const mediaCoverageRouter = router({
       return { id: (result as any).insertId };
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = await getDb();

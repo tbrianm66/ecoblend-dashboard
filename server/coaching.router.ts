@@ -697,7 +697,7 @@ const sessionsRouter = router({
       return { success: true };
     }),
 
-  toggleActionItem: publicProcedure
+  toggleActionItem: protectedProcedure
     .input(z.object({ sessionId: z.string(), itemId: z.string() }))
     .mutation(async ({ input }) => {
       const db = await getDb();

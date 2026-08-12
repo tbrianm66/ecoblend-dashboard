@@ -238,7 +238,7 @@ describe("onboardingSubmissions.delete", () => {
     });
 
     const { appRouter } = await import("./routers");
-    const caller = appRouter.createCaller({} as any);
+    const caller = appRouter.createCaller({ user: { id: 1, role: "admin", openId: "test", email: "t@t.com", name: "T" } } as any);
     const result = await caller.onboardingSubmissions.delete({ id: 3 });
 
     expect(db.delete).toHaveBeenCalledOnce();
@@ -251,7 +251,7 @@ describe("onboardingSubmissions.delete", () => {
     db.delete.mockReturnValue({ where: whereMock });
 
     const { appRouter } = await import("./routers");
-    const caller = appRouter.createCaller({} as any);
+    const caller = appRouter.createCaller({ user: { id: 1, role: "admin", openId: "test", email: "t@t.com", name: "T" } } as any);
     await caller.onboardingSubmissions.delete({ id: 7 });
 
     expect(whereMock).toHaveBeenCalledOnce();

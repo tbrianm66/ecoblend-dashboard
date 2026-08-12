@@ -372,7 +372,7 @@ export const mrlRouter = router({
     }),
 
   /** Delete a supplier */
-  deleteSupplier: publicProcedure
+  deleteSupplier: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
       await (await getDb()).delete(mrlSuppliers).where(eq(mrlSuppliers.id, input.id));
@@ -462,7 +462,7 @@ export const mrlRouter = router({
     }),
 
   /** Update compliance status */
-  updateComplianceStatus: publicProcedure
+  updateComplianceStatus: protectedProcedure
     .input(z.object({
       id: z.string(),
       status: z.enum(["Not Started", "Gap Analysis", "In Progress", "Submitted", "Certified", "Expired"]),
@@ -532,7 +532,7 @@ export const mrlRouter = router({
     }),
 
   /** Update risk status */
-  updateRiskStatus: publicProcedure
+  updateRiskStatus: protectedProcedure
     .input(z.object({
       id: z.string(),
       status: z.enum(["Open", "In Progress", "Mitigated", "Accepted", "Closed"]),

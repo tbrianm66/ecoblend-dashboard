@@ -4,7 +4,7 @@
 
 import { z } from "zod";
 import { dispatchTrigger } from "./workflowEngine";
-import { router, publicProcedure } from "./_core/trpc";
+import { router, publicProcedure, protectedProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import { eq as eqOp } from "drizzle-orm";
 
@@ -74,7 +74,7 @@ export const mfgOnboardingRouter = router({
       return { id: newSupplierId };
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const { mfgSupplierOnboarding } = await import("../drizzle/schema");
@@ -145,7 +145,7 @@ export const mfgAuditRouter = router({
       return { id: newAuditId };
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const { mfgFactoryAudits } = await import("../drizzle/schema");
@@ -206,7 +206,7 @@ export const mfgRfqRouter = router({
       return { id: (result as any).insertId };
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const { mfgRfqTemplates } = await import("../drizzle/schema");
@@ -267,7 +267,7 @@ export const mfgAslRouter = router({
       return { id: (result as any).insertId };
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const { mfgApprovedSuppliers } = await import("../drizzle/schema");
@@ -453,7 +453,7 @@ export const mfgContractRouter = router({
       return { id: (result as any).insertId };
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const { mfgContractTemplates } = await import("../drizzle/schema");
@@ -462,7 +462,7 @@ export const mfgContractRouter = router({
       return { success: true };
     }),
 
-  generateDraft: publicProcedure
+  generateDraft: protectedProcedure
     .input(z.object({
       contractType: z.enum(["nnn", "manufacturing", "tooling_ownership", "quality", "logistics_supply"]),
       supplierName: z.string(),

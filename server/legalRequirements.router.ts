@@ -237,7 +237,7 @@ export const legalRequirementsRouter = router({
         return inserted[0];
       }),
 
-    delete: publicProcedure
+    delete: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const db = await getDb();
@@ -302,7 +302,7 @@ export const legalRequirementsRouter = router({
         return inserted[0];
       }),
 
-    delete: publicProcedure
+    delete: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const db = await getDb();

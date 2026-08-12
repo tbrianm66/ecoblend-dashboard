@@ -6,7 +6,7 @@
 // ============================================================
 
 import { z } from "zod";
-import { adminProcedure, publicProcedure, router } from "./_core/trpc";
+import { adminProcedure, publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import {
   operatingModels,
@@ -32,7 +32,7 @@ const operatingModelRouter = router({
         .orderBy(desc(operatingModels.createdAt));
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(
       z.object({
         id:                    z.number().optional(),
@@ -66,7 +66,7 @@ const operatingModelRouter = router({
       return inserted;
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = getDb();
@@ -129,7 +129,7 @@ const suppliersRouter = router({
       return inserted;
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = getDb();
@@ -168,7 +168,7 @@ const manufacturingRouter = router({
         .orderBy(desc(manufacturingPlans.createdAt));
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(
       z.object({
         id:                    z.number().optional(),
@@ -204,7 +204,7 @@ const manufacturingRouter = router({
       return inserted;
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = getDb();
@@ -248,7 +248,7 @@ const qualityRouter = router({
         .orderBy(desc(qualityCompliance.createdAt));
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(
       z.object({
         id:                  z.number().optional(),
@@ -282,7 +282,7 @@ const qualityRouter = router({
       return inserted;
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = getDb();
@@ -311,7 +311,7 @@ const mrlEvalRouter = router({
       }));
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(
       z.object({
         id:              z.number().optional(),
@@ -343,7 +343,7 @@ const mrlEvalRouter = router({
       return inserted;
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = getDb();

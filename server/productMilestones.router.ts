@@ -7,7 +7,7 @@
 import { z } from "zod";
 import { eq, desc } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
-import { router, publicProcedure } from "./_core/trpc";
+import { router, publicProcedure, protectedProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import { productMilestones } from "../drizzle/schema";
 
@@ -52,7 +52,7 @@ export const productMilestonesRouter = router({
         .orderBy(desc(productMilestones.createdAt));
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({ id: z.number().optional(), ...milestoneBody.shape }))
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -88,7 +88,7 @@ export const productMilestonesRouter = router({
       return inserted[0];
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = await getDb();

@@ -408,7 +408,7 @@ export const wtpAssessmentRouter = router({
       return { id: input.id, wtpScore };
     }),
 
-  deleteWTPTest: publicProcedure
+  deleteWTPTest: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
       await rawQuery(`DELETE FROM wtp_tests WHERE id = ?`, [input.id]);
@@ -483,7 +483,7 @@ export const wtpAssessmentRouter = router({
       return rawQuery(`SELECT * FROM wtp_commitments ORDER BY created_at DESC`);
     }),
 
-  createCommitment: publicProcedure
+  createCommitment: protectedProcedure
     .input(z.object({
       ventureId: z.string(),
       wtpTestId: z.string().optional(),
@@ -504,7 +504,7 @@ export const wtpAssessmentRouter = router({
       return { id };
     }),
 
-  updateCommitment: publicProcedure
+  updateCommitment: protectedProcedure
     .input(z.object({
       id: z.string(),
       status: z.enum(["weak", "moderate", "strong", "confirmed", "withdrawn"]).optional(),
@@ -524,7 +524,7 @@ export const wtpAssessmentRouter = router({
       return { success: true };
     }),
 
-  deleteCommitment: publicProcedure
+  deleteCommitment: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
       await rawQuery(`DELETE FROM wtp_commitments WHERE id = ?`, [input.id]);
@@ -589,7 +589,7 @@ export const wtpAssessmentRouter = router({
       return { id, conversionRate };
     }),
 
-  updatePricingExperiment: publicProcedure
+  updatePricingExperiment: protectedProcedure
     .input(z.object({
       id: z.string(),
       positiveResponses: z.number().optional(),
@@ -629,7 +629,7 @@ export const wtpAssessmentRouter = router({
       return { id: input.id, conversionRate };
     }),
 
-  deletePricingExperiment: publicProcedure
+  deletePricingExperiment: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
       await rawQuery(`DELETE FROM pricing_experiments WHERE id = ?`, [input.id]);
@@ -680,7 +680,7 @@ export const wtpAssessmentRouter = router({
       return { id };
     }),
 
-  updateBudgetValidation: publicProcedure
+  updateBudgetValidation: protectedProcedure
     .input(z.object({
       id: z.string(),
       budgetOwnerKnown: z.boolean().optional(),
@@ -708,7 +708,7 @@ export const wtpAssessmentRouter = router({
       return { success: true };
     }),
 
-  deleteBudgetValidation: publicProcedure
+  deleteBudgetValidation: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
       await rawQuery(`DELETE FROM budget_validations WHERE id = ?`, [input.id]);
@@ -775,7 +775,7 @@ export const wtpAssessmentRouter = router({
       return { id, frictionScore };
     }),
 
-  updateProcurementPathway: publicProcedure
+  updateProcurementPathway: protectedProcedure
     .input(z.object({
       id: z.string(),
       procurementRoute: z.string().optional(),
@@ -803,7 +803,7 @@ export const wtpAssessmentRouter = router({
       return { success: true };
     }),
 
-  deleteProcurementPathway: publicProcedure
+  deleteProcurementPathway: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
       await rawQuery(`DELETE FROM procurement_pathways WHERE id = ?`, [input.id]);

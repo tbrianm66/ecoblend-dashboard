@@ -408,7 +408,7 @@ export const appRouter = router({
       .input(z.object({ ventureId: z.string(), offeringId: z.string().optional() }))
       .query(async ({ input }) => getMilestonesForVenture(input.ventureId, input.offeringId)),
 
-    add: publicProcedure
+    add: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         offeringId: z.string().optional(),
@@ -421,7 +421,7 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    toggle: publicProcedure
+    toggle: protectedProcedure
       .input(z.object({ id: z.number(), completed: z.boolean() }))
       .mutation(async ({ input }) => {
         await updateMilestone(input.id, {
@@ -431,7 +431,7 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    delete: publicProcedure
+    delete: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await deleteMilestone(input.id);
@@ -445,7 +445,7 @@ export const appRouter = router({
       .input(z.object({ ventureId: z.string(), offeringId: z.string().optional() }))
       .query(async ({ input }) => getRisksForVenture(input.ventureId, input.offeringId)),
 
-    add: publicProcedure
+    add: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         offeringId: z.string().optional(),
@@ -458,7 +458,7 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    update: publicProcedure
+    update: protectedProcedure
       .input(z.object({
         id: z.number(),
         domain: z.string().optional(),
@@ -471,7 +471,7 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    delete: publicProcedure
+    delete: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await deleteRisk(input.id);
@@ -565,7 +565,7 @@ export const appRouter = router({
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => getOpportunityById(input.id)),
 
-    add: publicProcedure
+    add: protectedProcedure
       .input(z.object({
         title: z.string(),
         problemStatement: z.string().optional(),
@@ -584,7 +584,7 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    updateStatus: publicProcedure
+    updateStatus: protectedProcedure
       .input(z.object({
         id: z.number(),
         status: z.enum(["Identified", "Scoring", "Approved", "Rejected", "Converted"]),
@@ -597,7 +597,7 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    updateScores: publicProcedure
+    updateScores: protectedProcedure
       .input(z.object({
         id: z.number(),
         marketSizeScore: z.number().min(0).max(10),
@@ -725,7 +725,7 @@ export const appRouter = router({
         return { success: true, warning };
       }),
 
-    delete: publicProcedure
+    delete: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await deleteExperiment(input.id);
@@ -922,7 +922,7 @@ Return a JSON object with exactly these fields:
         return getContractDocuments(input.contractId);
       }),
 
-    uploadDocument: publicProcedure
+    uploadDocument: protectedProcedure
       .input(z.object({
         contractId: z.string(),
         contractTitle: z.string(),
@@ -951,7 +951,7 @@ Return a JSON object with exactly these fields:
         return { success: true, url, fileKey };
       }),
 
-    deleteDocument: publicProcedure
+    deleteDocument: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await deleteContractDocument(input.id);
@@ -975,7 +975,7 @@ Return a JSON object with exactly these fields:
         return rows;
       }),
 
-    updateContractStatus: publicProcedure
+    updateContractStatus: protectedProcedure
       .input(z.object({
         id: z.number(),
         status: z.enum(["Active", "Draft", "Pending", "Not Required", "Expired"]),
@@ -997,7 +997,7 @@ Return a JSON object with exactly these fields:
       return db.select().from(legalRiskItems).orderBy(legalRiskItems.riskZone, legalRiskItems.id);
     }),
 
-    updateRiskStatus: publicProcedure
+    updateRiskStatus: protectedProcedure
       .input(z.object({
         id: z.number(),
         status: z.enum(["Open", "Mitigated", "Monitoring", "Closed"]),
@@ -1030,7 +1030,7 @@ Return a JSON object with exactly these fields:
       }),
 
     // Marks a contract as Under Review (renew action)
-    renewContract: publicProcedure
+    renewContract: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const db = await getDb();
@@ -1042,7 +1042,7 @@ Return a JSON object with exactly these fields:
       }),
 
     // Updates expiry date and/or layer for a contract type
-    updateContractMeta: publicProcedure
+    updateContractMeta: protectedProcedure
       .input(z.object({
         id: z.number(),
         expiryDate: z.string().optional(),
@@ -1065,7 +1065,7 @@ Return a JSON object with exactly these fields:
       }),
 
     // Upload a contract document to S3 and link it to the contract type registry entry
-    uploadRegistryDocument: publicProcedure
+    uploadRegistryDocument: protectedProcedure
       .input(z.object({
         id: z.number(),
         fileName: z.string(),
@@ -1086,7 +1086,7 @@ Return a JSON object with exactly these fields:
       }),
 
     // Remove a contract document from a contract type registry entry
-    removeRegistryDocument: publicProcedure
+    removeRegistryDocument: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const db = await getDb();
@@ -1098,7 +1098,7 @@ Return a JSON object with exactly these fields:
       }),
 
     // Escalate a legal risk item: sets status to Escalated, inserts escalation row, notifies owner
-    escalateRisk: publicProcedure
+    escalateRisk: protectedProcedure
       .input(z.object({
         riskItemId: z.number(),
         escalatedBy: z.string(),
@@ -1223,7 +1223,7 @@ Return a JSON object with exactly these fields:
         return { success: true };
       }),
 
-    deletePaper: publicProcedure
+    deletePaper: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await deleteResearchPaper(input.id);
@@ -1283,7 +1283,7 @@ Return a JSON object with exactly these fields:
         return { success: true };
       }),
 
-    deleteFellow: publicProcedure
+    deleteFellow: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await deleteFellowResearcher(input.id);
@@ -1343,7 +1343,7 @@ Return a JSON object with exactly these fields:
         return { success: true };
       }),
 
-    deletePartnership: publicProcedure
+    deletePartnership: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await deleteUniversityPartnership(input.id);
@@ -1377,7 +1377,7 @@ Return a JSON object with exactly these fields:
         return { success: true };
       }),
 
-     deleteClaim: publicProcedure
+     deleteClaim: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await deleteEvidenceClaim(input.id);
@@ -1437,14 +1437,14 @@ Return a JSON object with exactly these fields:
         await updateMarketAnalysis(input.id, input.data);
         return { success: true };
       }),
-    delete: publicProcedure
+    delete: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await deleteMarketAnalysis(input.id);
         return { success: true };
       }),
     // AI-generate market analysis from a venture description
-    generateAI: publicProcedure
+    generateAI: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         offeringId: z.string().optional(),
@@ -1577,14 +1577,14 @@ Return ONLY valid JSON matching this schema exactly:
         await updateCompetitor(input.id, input.data);
         return { success: true };
       }),
-    delete: publicProcedure
+    delete: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await deleteCompetitor(input.id);
         return { success: true };
       }),
     // AI-generate competitor analysis
-    generateAI: publicProcedure
+    generateAI: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         offeringId: z.string().optional(),
@@ -1639,14 +1639,14 @@ Return ONLY a valid JSON array of competitor objects matching this schema exactl
     listForOpportunity: publicProcedure
       .input(z.object({ opportunityId: z.number() }))
       .query(async ({ input }) => getReportsForOpportunity(input.opportunityId)),
-    delete: publicProcedure
+    delete: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await deleteOpportunityReport(input.id);
         return { success: true };
       }),
     // Core AI research report generation from problem statement
-    generate: publicProcedure
+    generate: protectedProcedure
       .input(z.object({
         opportunityId: z.number(),
         title: z.string(),
@@ -1751,7 +1751,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       }),
 
     // Add a new engineering risk
-    addRisk: publicProcedure
+    addRisk: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         relatedTrlStage: z.number().min(1).max(9).optional(),
@@ -1770,7 +1770,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       }),
 
     // Update an engineering risk
-    updateRisk: publicProcedure
+    updateRisk: protectedProcedure
       .input(z.object({
         id: z.number(),
         relatedTrlStage: z.number().min(1).max(9).optional().nullable(),
@@ -1789,7 +1789,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       }),
 
     // Delete an engineering risk (cascades to mitigations)
-    deleteRisk: publicProcedure
+    deleteRisk: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await deleteEngineeringRisk(input.id);
@@ -1797,7 +1797,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       }),
 
     // Add a mitigation action to a risk
-    addMitigation: publicProcedure
+    addMitigation: protectedProcedure
       .input(z.object({
         riskId: z.number(),
         actionDescription: z.string().min(1),
@@ -1816,7 +1816,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       }),
 
     // Update a mitigation action
-    updateMitigation: publicProcedure
+    updateMitigation: protectedProcedure
       .input(z.object({
         id: z.number(),
         actionDescription: z.string().min(1).optional(),
@@ -1833,7 +1833,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       }),
 
     // Delete a mitigation action
-    deleteMitigation: publicProcedure
+    deleteMitigation: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await deleteMitigationAction(input.id);
@@ -1861,7 +1861,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       }),
 
     // Attach a paper to a task (upsert paper, create link)
-    attachPaper: publicProcedure
+    attachPaper: protectedProcedure
       .input(z.object({
         taskId: z.number(),
         ventureId: z.string(),
@@ -1910,7 +1910,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       }),
 
     // Detach a paper from a task (delete the link, not the paper)
-    detachPaper: publicProcedure
+    detachPaper: protectedProcedure
       .input(z.object({ linkId: z.number() }))
       .mutation(async ({ input }) => {
         await unlinkPaperFromTask(input.linkId);
@@ -1934,7 +1934,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       .query(async ({ input }) => listVentureRisks(input.ventureId)),
 
     // Add a new risk — auto-calculates riskScore and riskLevel
-    add: publicProcedure
+    add: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         riskCategory: z.enum(["Technical", "Market", "Commercial", "Financial", "Operational", "Strategic"]),
@@ -1961,7 +1961,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       }),
 
     // Update an existing risk — recalculates riskScore and riskLevel
-    update: publicProcedure
+    update: protectedProcedure
       .input(z.object({
         id: z.number(),
         riskCategory: z.enum(["Technical", "Market", "Commercial", "Financial", "Operational", "Strategic"]).optional(),
@@ -1996,7 +1996,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       }),
 
     // Delete a risk
-    delete: publicProcedure
+    delete: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await deleteVentureRisk(input.id);
@@ -2042,7 +2042,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       .query(async ({ input }) => getBrlCompletionsForVenture(input.ventureId)),
 
     // Toggle a task completion for a venture
-    toggleTask: publicProcedure
+    toggleTask: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         taskId: z.number(),
@@ -2091,7 +2091,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       .query(async ({ input }) => getVrlScoringParams(input.ventureId)),
 
     // Update scoring parameters (weights, confidence)
-    updateParams: publicProcedure
+    updateParams: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         alphaWeight: z.number().min(0).max(1).optional(),
@@ -2158,7 +2158,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         return { success: true };
       }),
 
-    delete: publicProcedure
+    delete: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const db = (await getDb())!;
@@ -2180,7 +2180,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         return row ?? null;
       }),
 
-    upsertTriggerConfig: publicProcedure
+    upsertTriggerConfig: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         minExperimentPassRatePct: z.number().min(0).max(100).optional(),
@@ -2210,7 +2210,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         return row ?? null;
       }),
 
-    upsertRunwayInputs: publicProcedure
+    upsertRunwayInputs: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         currentCashBalance: z.number().min(0),
@@ -2290,7 +2290,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
   // ── Literature Audit: Strategic Classification + Innovation Accounting (Rec. 3, 5, 7, 8) ──
   leanMetrics: router({
     // Update venture's strategic classification, engine of growth, PMF signal
-    updateClassification: publicProcedure
+    updateClassification: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         strategicClassification: z.enum(["Sustaining","Disruptive-NewMarket","Disruptive-LowEnd"]).optional(),
@@ -2307,7 +2307,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       }),
 
     // Recompute and cache innovation accounting metrics for a venture (Rec. 3)
-    recomputeMetrics: publicProcedure
+    recomputeMetrics: protectedProcedure
       .input(z.object({ ventureId: z.string() }))
       .mutation(async ({ input }) => {
         const db = (await getDb())!;
@@ -2373,7 +2373,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
           .orderBy(asc(onboardingHypotheses.onboardingStep));
       }),
 
-    upsert: publicProcedure
+    upsert: protectedProcedure
       .input(z.object({
         id: z.number().optional(),
         ventureId: z.string(),
@@ -2403,7 +2403,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         return { success: true };
       }),
 
-    delete: publicProcedure
+    delete: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const db = (await getDb())!;
@@ -2475,7 +2475,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
           .where(eqOp(founderOnboardingSubmissions.id, input.id));
         return row ?? null;
       }),
-    delete: publicProcedure
+    delete: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const db = (await getDb())!;
@@ -2499,7 +2499,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         return row ?? null;
       }),
 
-    upsert: publicProcedure
+    upsert: protectedProcedure
       .input(z.object({
         opportunityId: z.number(),
         initialMarketSmallness: z.number().min(0).max(10).optional(),
@@ -2607,7 +2607,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
           .orderBy(desc(technologyTrajectories.snapshotDate));
       }),
 
-    addSnapshot: publicProcedure
+    addSnapshot: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         currentTrl: z.number().min(1).max(9),
@@ -2655,7 +2655,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
           .orderBy(asc(cohortSnapshots.foundingCohort), asc(cohortSnapshots.quartersElapsed));
       }),
 
-    addSnapshot: publicProcedure
+    addSnapshot: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         foundingCohort: z.string(),
@@ -2842,7 +2842,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         return rows[0] ?? null;
       }),
 
-    upsertCsr: publicProcedure
+    upsertCsr: protectedProcedure
       .input(z.object({
         ventureId:                  z.string(),
         philanthropyScore:          z.number().min(0).max(10).optional(),
@@ -2923,7 +2923,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         return { success: true, certificationScore };
       }),
 
-    deleteCertification: publicProcedure
+    deleteCertification: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const db = (await getDb())!;
@@ -2934,7 +2934,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       }),
 
     // IRL Score: compute and cache
-    computeIrl: publicProcedure
+    computeIrl: protectedProcedure
       .input(z.object({ ventureId: z.string() }))
       .mutation(async ({ input }) => {
         const db = (await getDb())!;
@@ -3010,7 +3010,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       }),
 
     // Create a document record (returns new ID for subsequent upload)
-    createDocument: publicProcedure
+    createDocument: protectedProcedure
       .input(z.object({
         title: z.string().min(1),
         sourceType: z.enum(["pdf", "transcript", "url", "text"]),
@@ -3038,7 +3038,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       }),
 
     // Upload PDF (base64) or plain text, extract text, chunk, and index
-    uploadAndIngest: publicProcedure
+    uploadAndIngest: protectedProcedure
       .input(z.object({
         documentId: z.number().int(),
         text: z.string().optional(),
@@ -3081,7 +3081,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       }),
 
     // Delete a document and all its chunks
-    deleteDocument: publicProcedure
+    deleteDocument: protectedProcedure
       .input(z.object({ id: z.number().int() }))
       .mutation(async ({ input }) => {
         const { deleteKnowledgeDocument } = await import("./knowledgeBase");
@@ -3186,7 +3186,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         }
       }),
 
-    deleteTalent: publicProcedure
+    deleteTalent: protectedProcedure
       .input(z.object({ id: z.number().int() }))
       .mutation(async ({ input }) => {
         const db = (await getDb())!;
@@ -3237,7 +3237,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         }
       }),
 
-    deleteRoleRequirement: publicProcedure
+    deleteRoleRequirement: protectedProcedure
       .input(z.object({ id: z.number().int() }))
       .mutation(async ({ input }) => {
         const db = (await getDb())!;
@@ -3248,7 +3248,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       }),
 
     // ── PVF Scoring Engine ───────────────────────────────────────────────────────
-    computePVF: publicProcedure
+    computePVF: protectedProcedure
       .input(z.object({
         talentProfileId:   z.number().int(),
         ventureId:         z.string(),
@@ -3363,7 +3363,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
           .orderBy(teamCompositions.assignedRole);
       }),
 
-    upsertTeamMember: publicProcedure
+    upsertTeamMember: protectedProcedure
       .input(z.object({
         id:               z.number().int().optional(),
         ventureId:        z.string(),
@@ -3391,7 +3391,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         }
       }),
 
-    removeTeamMember: publicProcedure
+    removeTeamMember: protectedProcedure
       .input(z.object({ id: z.number().int() }))
       .mutation(async ({ input }) => {
         const db = (await getDb())!;
@@ -3402,7 +3402,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       }),
 
     // ── Team Gap Analysis ────────────────────────────────────────────────────────
-    computeTeamGaps: publicProcedure
+    computeTeamGaps: protectedProcedure
       .input(z.object({ ventureId: z.string() }))
       .mutation(async ({ input }) => {
         const db = (await getDb())!;
@@ -3553,7 +3553,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         };
       }),
 
-    upsertEquityRules: publicProcedure
+    upsertEquityRules: protectedProcedure
       .input(z.object({
         ventureId:          z.string(),
         vrlWeight:          z.number().min(0).max(1).optional(),
@@ -3628,7 +3628,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         }
       }),
 
-    deleteAllocation: publicProcedure
+    deleteAllocation: protectedProcedure
       .input(z.object({ id: z.number().int() }))
       .mutation(async ({ input }) => {
         const db = (await getDb())!;
@@ -3640,7 +3640,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
 
     // ── Compute Equity Score (core formula) ────────────────────────────────────────
     // Formula: Score = (0.4×VRL) + (0.3×Contribution) + (0.2×Capital) + (0.1×Performance)
-    computeEquityScore: publicProcedure
+    computeEquityScore: protectedProcedure
       .input(z.object({ allocationId: z.number().int() }))
       .mutation(async ({ input }) => {
         const db = (await getDb())!;
@@ -3682,7 +3682,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
           .orderBy(desc(contributionLogs.loggedAt));
       }),
 
-    logContribution: publicProcedure
+    logContribution: protectedProcedure
       .input(z.object({
         ventureId:        z.string(),
         allocationId:     z.number().int(),
@@ -3733,7 +3733,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         return db.select().from(equityMilestones).where(eq(equityMilestones.ventureId, input.ventureId));
       }),
 
-    upsertMilestone: publicProcedure
+    upsertMilestone: protectedProcedure
       .input(z.object({
         id:                z.number().int().optional(),
         ventureId:         z.string(),
@@ -3760,7 +3760,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         }
       }),
 
-    triggerLegalConversion: publicProcedure
+    triggerLegalConversion: protectedProcedure
       .input(z.object({ milestoneId: z.number().int(), ventureId: z.string(), notes: z.string().optional() }))
       .mutation(async ({ input }) => {
         const db = (await getDb())!;
@@ -3786,7 +3786,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         return db.select().from(ventureCapTableSnapshots).where(eq(ventureCapTableSnapshots.ventureId, input.ventureId)).orderBy(desc(ventureCapTableSnapshots.snapshotDate));
       }),
 
-    takeCapTableSnapshot: publicProcedure
+    takeCapTableSnapshot: protectedProcedure
       .input(z.object({ ventureId: z.string(), triggerEvent: z.string().optional(), notes: z.string().optional() }))
       .mutation(async ({ input }) => {
         const db = (await getDb())!;
@@ -3826,7 +3826,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
     // Categories
     listCategories: publicProcedure.query(async () => getAllProductCategories()),
 
-    addCategory: publicProcedure
+    addCategory: protectedProcedure
       .input(z.object({
         name: z.string().min(1),
         sector: z.string().optional(),
@@ -3848,7 +3848,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => getFullOpportunityDetail(input.id)),
 
-    addOpportunity: publicProcedure
+    addOpportunity: protectedProcedure
       .input(z.object({
         name: z.string().min(1),
         description: z.string().optional(),
@@ -3864,7 +3864,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         return { success: true, id };
       }),
 
-    updateOpportunity: publicProcedure
+    updateOpportunity: protectedProcedure
       .input(z.object({
         id: z.number(),
         name: z.string().optional(),
@@ -3881,7 +3881,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         return { success: true };
       }),
 
-    deleteOpportunity: publicProcedure
+    deleteOpportunity: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await deleteProductOpportunity(input.id);
@@ -3920,7 +3920,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       .input(z.object({ opportunityId: z.number() }))
       .query(async ({ input }) => getCostAssessment(input.opportunityId)),
 
-    upsertCostAssessment: publicProcedure
+    upsertCostAssessment: protectedProcedure
       .input(z.object({
         productOpportunityId: z.number(),
         manufacturingCostScore: z.number().min(1).max(5),
@@ -3942,7 +3942,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       .input(z.object({ opportunityId: z.number() }))
       .query(async ({ input }) => getPerformanceAssessment(input.opportunityId)),
 
-    upsertPerformanceAssessment: publicProcedure
+    upsertPerformanceAssessment: protectedProcedure
       .input(z.object({
         productOpportunityId: z.number(),
         technicalCapabilityScore: z.number().min(1).max(5),
@@ -3963,7 +3963,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       .input(z.object({ opportunityId: z.number() }))
       .query(async ({ input }) => getQualityAssessment(input.opportunityId)),
 
-    upsertQualityAssessment: publicProcedure
+    upsertQualityAssessment: protectedProcedure
       .input(z.object({
         productOpportunityId: z.number(),
         reliabilityScore: z.number().min(1).max(5),
@@ -3984,7 +3984,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       .input(z.object({ opportunityId: z.number() }))
       .query(async ({ input }) => getSustainabilityAssessment(input.opportunityId)),
 
-    upsertSustainabilityAssessment: publicProcedure
+    upsertSustainabilityAssessment: protectedProcedure
       .input(z.object({
         productOpportunityId: z.number(),
         carbonFootprintScore: z.number().min(1).max(5),
@@ -4010,7 +4010,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       .input(z.object({ opportunityId: z.number() }))
       .query(async ({ input }) => getReviewsForOpportunity(input.opportunityId)),
 
-    addReview: publicProcedure
+    addReview: protectedProcedure
       .input(z.object({
         productOpportunityId: z.number(),
         reviewerName: z.string().min(1),
@@ -4029,7 +4029,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       }),
 
     // Convert an approved opportunity into a new venture and return the venture ID
-    approveForVrl: publicProcedure
+    approveForVrl: protectedProcedure
       .input(z.object({
         opportunityId: z.number(),
         reviewerName: z.string().min(1),
@@ -4628,15 +4628,15 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
   // ── Matching Engine & Spin-Off OS ─────────────────────────────────────────
   matching: router({
     // Founder ↔ Opportunity scoring
-    computeMatchScore: publicProcedure
+    computeMatchScore: protectedProcedure
       .input(z.object({ talentProfileId: z.number(), productOpportunityId: z.number() }))
       .mutation(({ input }) => computeAndSaveMatchScore(input.talentProfileId, input.productOpportunityId)),
 
-    computeAllForOpportunity: publicProcedure
+    computeAllForOpportunity: protectedProcedure
       .input(z.object({ productOpportunityId: z.number() }))
       .mutation(({ input }) => computeAllMatchesForOpportunity(input.productOpportunityId)),
 
-    computeAllForFounder: publicProcedure
+    computeAllForFounder: protectedProcedure
       .input(z.object({ talentProfileId: z.number() }))
       .mutation(({ input }) => computeAllMatchesForFounder(input.talentProfileId)),
 
@@ -4648,7 +4648,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       .input(z.object({ talentProfileId: z.number(), limit: z.number().optional() }))
       .query(({ input }) => getTopMatchesForFounder(input.talentProfileId, input.limit)),
 
-    computeCoFounderCompatibility: publicProcedure
+    computeCoFounderCompatibility: protectedProcedure
       .input(z.object({ profileIdA: z.number(), profileIdB: z.number(), opportunityId: z.number().optional() }))
       .mutation(({ input }) => computeCoFounderCompatibility(input.profileIdA, input.profileIdB, input.opportunityId)),
 
@@ -4705,7 +4705,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       .mutation(({ input }) => { const { id, ...rest } = input; return updateSpinoffConfig(id, rest); }),
 
     // Execution Plan (LLM-generated)
-    generateExecutionPlan: publicProcedure
+    generateExecutionPlan: protectedProcedure
       .input(z.object({ spinoffConfigId: z.number() }))
       .mutation(async ({ input }) => {
         const config = await getSpinoffConfig(input.spinoffConfigId);
@@ -4805,7 +4805,7 @@ Be specific, actionable, and grounded in the Lean Startup methodology. Use the E
       .input(z.object({ spinoffConfigId: z.number() }))
       .query(({ input }) => getExecutionPlan(input.spinoffConfigId)),
 
-    updateExecutionPlanStatus: publicProcedure
+    updateExecutionPlanStatus: protectedProcedure
       .input(z.object({
         id: z.number(),
         status: z.enum(["Draft", "Under Review", "Approved", "Superseded"]),
@@ -4814,7 +4814,7 @@ Be specific, actionable, and grounded in the Lean Startup methodology. Use the E
       .mutation(({ input }) => updateExecutionPlanStatus(input.id, input.status, input.reviewedBy)),
 
     // ── Auto-trigger: compute all matches for a newly onboarded founder ───────
-    autoTriggerMatchingForFounder: publicProcedure
+    autoTriggerMatchingForFounder: protectedProcedure
       .input(z.object({ talentProfileId: z.number() }))
       .mutation(async ({ input }) => {
         const count = await computeAllMatchesForFounder(input.talentProfileId);
@@ -4826,7 +4826,7 @@ Be specific, actionable, and grounded in the Lean Startup methodology. Use the E
       }),
 
     // ── Spin-Off status workflow ──────────────────────────────────────────────
-    advanceSpinoffStatus: publicProcedure
+    advanceSpinoffStatus: protectedProcedure
       .input(z.object({
         id: z.number(),
         newStatus: z.enum(["Draft", "Under Review", "Approved", "Rejected", "Launched"]),
@@ -4973,7 +4973,7 @@ Be specific, actionable, and grounded in the Lean Startup methodology. Use the E
       }),
 
     // ── Batch matching: re-score all talent profiles vs all open opportunities ───
-    batchComputeAllMatches: publicProcedure
+    batchComputeAllMatches: protectedProcedure
       .mutation(async () => {
         const profiles = await getAllTalentProfiles();
         let totalScored = 0;
@@ -4985,7 +4985,7 @@ Be specific, actionable, and grounded in the Lean Startup methodology. Use the E
       }),
 
     // ── Co-founder matrix PDF: generate and upload to S3, return URL ────────────
-    getCoFounderMatrixPdf: publicProcedure
+    getCoFounderMatrixPdf: protectedProcedure
       .input(z.object({ profileIdA: z.number(), profileIdB: z.number() }))
       .mutation(async ({ input }) => {
         const profiles = await getAllTalentProfiles();
@@ -5224,7 +5224,7 @@ Be specific, actionable, and grounded in the Lean Startup methodology. Use the E
         }
       }),
 
-    deleteAsset: publicProcedure
+    deleteAsset: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const db = (await getDb())!;
@@ -5277,7 +5277,7 @@ Be specific, actionable, and grounded in the Lean Startup methodology. Use the E
         }
       }),
 
-    deleteLicense: publicProcedure
+    deleteLicense: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const db = (await getDb())!;
@@ -5298,7 +5298,7 @@ Be specific, actionable, and grounded in the Lean Startup methodology. Use the E
         return rows;
       }),
 
-    createPatentProject: publicProcedure
+    createPatentProject: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         title: z.string(),
@@ -5313,7 +5313,7 @@ Be specific, actionable, and grounded in the Lean Startup methodology. Use the E
         return { id: (result as any).insertId };
       }),
 
-    updatePatentProject: publicProcedure
+    updatePatentProject: protectedProcedure
       .input(z.object({
         id: z.number(),
         phase: z.string().optional(),
@@ -5335,7 +5335,7 @@ Be specific, actionable, and grounded in the Lean Startup methodology. Use the E
         return { ok: true };
       }),
 
-    deletePatentProject: publicProcedure
+    deletePatentProject: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const db = (await getDb())!;
@@ -5358,7 +5358,7 @@ Be specific, actionable, and grounded in the Lean Startup methodology. Use the E
           .orderBy(patentHypotheses.sortOrder);
       }),
 
-    toggleHypothesis: publicProcedure
+    toggleHypothesis: protectedProcedure
       .input(z.object({ id: z.number(), included: z.boolean() }))
       .mutation(async ({ input }) => {
         const db = (await getDb())!;
@@ -5371,7 +5371,7 @@ Be specific, actionable, and grounded in the Lean Startup methodology. Use the E
       }),
 
     // ── AI: Patent Strategist — generate hypotheses ─────────────────────────
-    hypothesize: publicProcedure
+    hypothesize: protectedProcedure
       .input(z.object({
         projectId: z.number(),
         coreInventionNotes: z.string(),
@@ -5475,7 +5475,7 @@ Output Format: Return the response strictly as a JSON object with a "hypotheses"
       }),
 
     // ── AI: Patent Attorney — draft one section at a time ──────────────────
-    draftSection: publicProcedure
+    draftSection: protectedProcedure
       .input(z.object({
         projectId: z.number(),
         section: z.enum(["Abstract", "Background", "Summary", "DetailedDescription", "Claims"]),
@@ -5577,7 +5577,7 @@ Output: Output ONLY the drafted text for the requested section, formatted in cle
       }),
 
     // ── Notify owner of renewal alerts ────────────────────────────────────
-    notifyRenewalAlerts: publicProcedure
+    notifyRenewalAlerts: protectedProcedure
       .mutation(async () => {
         const db = (await getDb())!;
         const { ipAssets } = await import("../drizzle/schema");
@@ -5965,7 +5965,7 @@ Output: Output ONLY the drafted text for the requested section, formatted in cle
           .orderBy(desc(lcssaDecisionLog.createdAt));
       }),
 
-    addDecision: publicProcedure
+    addDecision: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         decisionTitle: z.string().min(1),
@@ -5996,7 +5996,7 @@ Output: Output ONLY the drafted text for the requested section, formatted in cle
         return { success: true };
       }),
 
-    updateDecisionStatus: publicProcedure
+    updateDecisionStatus: protectedProcedure
       .input(z.object({
         id: z.number().int(),
         status: z.enum(["Proposed", "Approved", "Implemented", "Reviewed"]),
@@ -6011,7 +6011,7 @@ Output: Output ONLY the drafted text for the requested section, formatted in cle
         return { success: true };
       }),
 
-    deleteDecision: publicProcedure
+    deleteDecision: protectedProcedure
       .input(z.object({ id: z.number().int() }))
       .mutation(async ({ input }) => {
         const db = (await getDb())!;
@@ -6056,7 +6056,7 @@ Output: Output ONLY the drafted text for the requested section, formatted in cle
       }),
 
     // ── LCSSA Snapshot (for trend chart) ────────────────────────────────────────
-    takeSnapshot: publicProcedure
+    takeSnapshot: protectedProcedure
       .input(z.object({ ventureId: z.string(), label: z.string().optional() }))
       .mutation(async ({ input }) => {
         const db = (await getDb())!;
@@ -6097,7 +6097,7 @@ Output: Output ONLY the drafted text for the requested section, formatted in cle
           .orderBy(lcssaSnapshot.snapshotDate);
       }),
 
-    deleteSnapshot: publicProcedure
+    deleteSnapshot: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const db = (await getDb())!;
@@ -6108,7 +6108,7 @@ Output: Output ONLY the drafted text for the requested section, formatted in cle
       }),
 
     // ── SDG Heatmap ──────────────────────────────────────────────────────────────
-    updateSdgHeatmap: publicProcedure
+    updateSdgHeatmap: protectedProcedure
       .input(z.object({ ventureId: z.string(), sdgHeatmap: z.array(z.boolean()).length(17) }))
       .mutation(async ({ input }) => {
         const db = (await getDb())!;
@@ -6128,7 +6128,7 @@ Output: Output ONLY the drafted text for the requested section, formatted in cle
       }),
 
     // ── LCSSA PDF Report ─────────────────────────────────────────────────────────
-    exportReport: publicProcedure
+    exportReport: protectedProcedure
       .input(z.object({ ventureId: z.string(), ventureName: z.string().optional() }))
       .mutation(async ({ input }) => {
         const db = (await getDb())!;
@@ -6405,7 +6405,7 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
       }),
 
     // ── VRL Engine: compute dual-risk-adjusted VRL score ─────────────────────
-    computeVrl: publicProcedure
+    computeVrl: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         trlScore: z.number().min(0).max(9),
@@ -6481,7 +6481,7 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
         return db.select().from(dualRiskDecisions).where(eq(dualRiskDecisions.ventureId, input.ventureId)).orderBy(desc(dualRiskDecisions.createdAt));
       }),
 
-    updateFeedback: publicProcedure
+    updateFeedback: protectedProcedure
       .input(z.object({
         id: z.number(),
         marketFeedback: z.string().optional(),
@@ -6496,7 +6496,7 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
         return { success: true };
       }),
 
-    deleteDecision: publicProcedure
+    deleteDecision: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const db = (await getDb())!;
@@ -7014,7 +7014,7 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
         return { id: (result as any).insertId as number };
       }),
 
-    deleteProject: publicProcedure
+    deleteProject: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const db = (await getDb())!;
@@ -7024,7 +7024,7 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
         return { success: true };
       }),
 
-    advancePhase: publicProcedure
+    advancePhase: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const db = (await getDb())!;
@@ -7095,7 +7095,7 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
         return { id: (result as any).insertId as number };
       }),
 
-    deleteSupplier: publicProcedure
+    deleteSupplier: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const db = (await getDb())!;
@@ -7152,7 +7152,7 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
         return { id: (result as any).insertId as number };
       }),
 
-    deleteQcReport: publicProcedure
+    deleteQcReport: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const db = (await getDb())!;
@@ -7211,7 +7211,7 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
         return { id: (result as any).insertId as number };
       }),
 
-    deleteShipment: publicProcedure
+    deleteShipment: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const db = (await getDb())!;
