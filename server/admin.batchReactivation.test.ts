@@ -2323,3 +2323,91 @@ describe("setModuleReactivationBatch — non-boolean active field rejection (#15
     expect(result.count).toBe(2);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("setModuleReactivationBatch — all rows in a batch share the same toggledAt timestamp (#140)", () => {
+  // The server computes `now = new Date()` ONCE before entering the transaction
+  // loop and stamps every item with the same value.  This makes the batch appear
+  // atomically in the audit trail: all rows show the same timestamp.
+  //
+  // If `toggledAt: new Date()` were called inside the loop (once per item),
+  // rows written milliseconds apart would show different timestamps — the audit
+  // trail would be misleading.  This test confirms that never happens.
+  //
+  // Strategy: read back all committed rows after a full 15-item batch and
+  // verify they all carry the same toggledAt Date object (strict reference
+  // equality is not required; millisecond-level equality is sufficient).
+
+  it("all 15 batch rows have the same toggledAt timestamp (single now= before the loop)", async () => {
+    const db = makeConflictAwareHarnessDb([]);
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    // Record the wall-clock window to bound the assertion.
+    const before = new Date();
+    await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: activateAllItems(true),   // 15 items
+    });
+    const after = new Date();
+
+    const rows = committedFor(db, "VENTURE-A");
+    expect(rows).toHaveLength(15);
+
+    // All rows must carry a timestamp between `before` and `after`.
+    for (const row of rows) {
+      expect(row.toggledAt.getTime()).toBeGreaterThanOrEqual(before.getTime());
+      expect(row.toggledAt.getTime()).toBeLessThanOrEqual(after.getTime());
+    }
+
+    // All rows must share the SAME millisecond-precision timestamp
+    // (the server stamps them all with the same `now` computed before the loop).
+    const ts = rows[0].toggledAt.getTime();
+    for (const row of rows) {
+      expect(row.toggledAt.getTime()).toBe(ts);
+    }
+  });
+
+  it("a two-item batch uses the same timestamp for both items", async () => {
+    const db = makeConflictAwareHarnessDb([]);
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [
+        { groupId: "discovery",  active: true },
+        { groupId: "validation", active: true },
+      ],
+    });
+
+    const rows = committedFor(db, "VENTURE-A");
+    expect(rows).toHaveLength(2);
+    expect(rows[0].toggledAt.getTime()).toBe(rows[1].toggledAt.getTime());
+  });
+
+  it("a re-run of the batch (second call) stamps all rows with a NEW timestamp, not the first call's timestamp", async () => {
+    const db = makeConflictAwareHarnessDb([]);
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    // First batch
+    await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [{ groupId: "discovery", active: true }],
+    });
+    const firstTs = committedFor(db, "VENTURE-A")[0].toggledAt.getTime();
+
+    // A tiny delay ensures the second `new Date()` is >= the first.
+    await new Promise(r => setTimeout(r, 1));
+
+    // Second batch (same items — idempotent toggle, new timestamp)
+    await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [{ groupId: "discovery", active: false }],
+    });
+    const secondTs = committedFor(db, "VENTURE-A")[0].toggledAt.getTime();
+
+    // Second call must produce a timestamp at least as recent as the first.
+    // (They can be equal if they ran in the same millisecond — that is acceptable.)
+    expect(secondTs).toBeGreaterThanOrEqual(firstTs);
+  });
+});

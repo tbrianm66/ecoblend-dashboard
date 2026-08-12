@@ -2313,6 +2313,46 @@ describe("useGate4Reactivation — reset button disables within 10 s after anoth
     );
   });
 
+  // ── 2a. staleTime=10_000 is always set — even when the panel is closed (#150) ─
+  //
+  // staleTime must equal the polling interval (10_000 ms) so that when a
+  // background refetch fires it is not skipped by React Query treating the
+  // cached data as still fresh.  Crucially, this must hold both when the
+  // panel is open AND when it is closed (window-focus refetches would be
+  // skipped with a shorter staleTime).
+  it("useQuery receives staleTime=10_000 even when panelOpen=false (#150)", () => {
+    renderHook(() => useGate4Reactivation(VENTURE, /* panelOpen */ false));
+
+    expect(vi.mocked(trpc.admin.getModuleReactivations.useQuery)).toHaveBeenCalledWith(
+      undefined,
+      expect.objectContaining({ staleTime: 10_000 }),
+    );
+  });
+
+  // ── 2b. refetchOnWindowFocus=true is always set (#151) ──────────────────────
+  //
+  // When the panel is closed, the hook relies on window-focus refetches instead
+  // of the polling interval.  refetchOnWindowFocus must be true regardless of
+  // panelOpen so that switching back to the admin tab after another admin edits
+  // rows delivers an immediate fresh read, not a stale cache hit.
+  it("useQuery receives refetchOnWindowFocus=true when panelOpen=false (#151)", () => {
+    renderHook(() => useGate4Reactivation(VENTURE, /* panelOpen */ false));
+
+    expect(vi.mocked(trpc.admin.getModuleReactivations.useQuery)).toHaveBeenCalledWith(
+      undefined,
+      expect.objectContaining({ refetchOnWindowFocus: true }),
+    );
+  });
+
+  it("useQuery receives refetchOnWindowFocus=true when panelOpen=true (#151 positive)", () => {
+    renderHook(() => useGate4Reactivation(VENTURE, /* panelOpen */ true));
+
+    expect(vi.mocked(trpc.admin.getModuleReactivations.useQuery)).toHaveBeenCalledWith(
+      undefined,
+      expect.objectContaining({ refetchOnWindowFocus: true }),
+    );
+  });
+
   // ── 3. Button flips enabled → disabled after 10-second polling cycle ────────
   //
   // Scenario: Admin A has the panel open.  Admin B (in another browser window)
