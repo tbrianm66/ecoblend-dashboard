@@ -4,7 +4,7 @@
 // ============================================================
 
 import { z } from "zod";
-import { publicProcedure, router } from "./_core/trpc";
+import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { getDb } from "./db";
 import {
   mrlAssessments,
@@ -215,7 +215,7 @@ export const mrlRouter = router({
     }),
 
   /** Create a new MRL assessment */
-  createAssessment: publicProcedure
+  createAssessment: protectedProcedure
     .input(CreateAssessmentSchema)
     .mutation(async ({ input }) => {
       const compositeScore = computeCompositeMrlScore(input.scores);
@@ -339,7 +339,7 @@ export const mrlRouter = router({
     }),
 
   /** Create a supplier */
-  createSupplier: publicProcedure
+  createSupplier: protectedProcedure
     .input(CreateSupplierSchema)
     .mutation(async ({ input }) => {
       // Compute risk score
@@ -394,7 +394,7 @@ export const mrlRouter = router({
     }),
 
   /** Create a cost model */
-  createCostModel: publicProcedure
+  createCostModel: protectedProcedure
     .input(CreateCostModelSchema)
     .mutation(async ({ input }) => {
       const grossMarginPct = input.unitPriceGbp && input.unitCostGbp
@@ -439,7 +439,7 @@ export const mrlRouter = router({
     }),
 
   /** Create a compliance record */
-  createCompliance: publicProcedure
+  createCompliance: protectedProcedure
     .input(CreateComplianceSchema)
     .mutation(async ({ input }) => {
       const id = randomUUID();
@@ -506,7 +506,7 @@ export const mrlRouter = router({
     }),
 
   /** Create a risk item */
-  createRisk: publicProcedure
+  createRisk: protectedProcedure
     .input(CreateRiskSchema)
     .mutation(async ({ input }) => {
       const riskScore = computeRiskScore(input.rag, input.probability, input.impact);

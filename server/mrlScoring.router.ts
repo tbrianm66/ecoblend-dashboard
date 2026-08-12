@@ -11,7 +11,7 @@
  */
 
 import { z } from "zod";
-import { publicProcedure, router } from "./_core/trpc";
+import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { getDb } from "./db";
 import { scoringSessions, scoringCategoryResults, scoringDatasets, ccAlerts } from "../drizzle/schema";
 import { eq, desc, and } from "drizzle-orm";
@@ -88,7 +88,7 @@ export const mrlScoringRouter = router({
    * Compute MRL score AND persist to scoring_sessions + scoring_category_results.
    * Returns the full result plus the sessionId for audit trail.
    */
-  computeAndSave: publicProcedure
+  computeAndSave: protectedProcedure
     .input(ScoringInputSchema)
     .mutation(async ({ input }) => {
       const db = await getDb();

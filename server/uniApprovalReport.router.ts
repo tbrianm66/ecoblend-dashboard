@@ -7,7 +7,7 @@
  *   - Business Risk: managed by university (market, strategy, commercialisation)
  */
 import { z } from "zod";
-import { publicProcedure, router } from "./_core/trpc";
+import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { getDb } from "./db";
 import {
   uniApprovalReports,
@@ -154,7 +154,7 @@ export const uniApprovalReportRouter = router({
     }),
 
   // Create or update a report
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(upsertInput)
     .mutation(async ({ input }) => {
       const db = (await getDb())!;
@@ -171,7 +171,7 @@ export const uniApprovalReportRouter = router({
     }),
 
   // Update status (submit for review, approve, reject, etc.)
-  updateStatus: publicProcedure
+  updateStatus: protectedProcedure
     .input(z.object({
       id: z.number(),
       status: statusEnum,
@@ -201,7 +201,7 @@ export const uniApprovalReportRouter = router({
     }),
 
   // Delete a report
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       const db = (await getDb())!;
@@ -210,7 +210,7 @@ export const uniApprovalReportRouter = router({
     }),
 
   // AI-generate a full approval report using offering context, research, and validation data
-  generateAI: publicProcedure
+  generateAI: protectedProcedure
     .input(z.object({
       ventureId: z.string(),
       offeringId: z.string().optional(),
