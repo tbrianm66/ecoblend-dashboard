@@ -138,6 +138,7 @@ const FULL_SCORES = {
   trlScore: 100, mrlScore: 100, brlScore: 100,
   ecoScore: 100, prlScore: 100, ipScore:  100,
   frlScore: 100, regScore: 100, srlScore: 100,
+  mvlScore: 100, // Gate 2 — required by VrlInputs (Gate 2 / Market Validation Level)
 };
 
 describe("VRL veto gate — mrlScore boundary", () => {
