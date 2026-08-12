@@ -27,5 +27,30 @@ These guard paths are now explicitly covered by tests in `admin.batchReactivatio
 ## Pre-existing failing test files (do not touch)
 `server/contextual.phase3c.test.ts`, `server/contextual.phase3d.test.ts`, `server/discoveryMarket.router.test.ts`, `server/financialModel.test.ts`, `server/investmentModule.test.ts`, `server/mrl.canonical.test.ts`, `server/sse.test.ts`
 
+## Single-toggle integrity checks (admin.batchReactivation.test.ts)
+- `setModuleReactivation` — `written.length !== 1` (silent skip), `groupId` mismatch, `ventureId` mismatch, global scope confirmed under different ventureId, 2-row return — all throw `INTERNAL_SERVER_ERROR` and confirmed covered at lines 1665–1930.
+
+## All targeted test suites — final pass counts (all clean)
+- `admin.batchReactivation.test.ts`: 95 tests
+- `admin.moduleReactivation.test.ts`: 69 tests
+- `gate4.auditTrailLiveUpdate.test.ts`: 43 tests
+- `gate4.moduleBadge.test.ts`: 16 tests
+- `gate4.persistRoundTrip.test.ts`: 19 tests
+- `gate4ReactivationSync.test.ts`: 20 tests
+- `gate4.singleToggleConflict.test.ts`: 11 tests
+- `gate4.sourceBadgeLiveUpdate.test.ts`: 31 tests
+- `gate4.toastMismatch.test.ts`: 52 tests
+- `gate4.toggledByFallback.test.ts`: 32 tests
+- `gate4.ventureSwitch.test.ts`: 8 tests
+- `schema.export.integrity.test.ts`: 8 tests
+- `gate4Config.test.ts` (client): 143 tests
+- `gate4ToastUtils.test.ts` (client): 62 tests
+- `ExtendedBacklogSection.test.tsx` (client): 61 tests
+- `EnableAll.batch.test.tsx` (client): 6 tests
+- `Sidebar.rapidToggle.test.tsx` (client): 6 tests
+- `Sidebar.gearButton.test.tsx` (client): 6 tests
+- `GlobalVentureSelector.disabled.test.tsx` (client): 9 tests
+Total: 683 targeted tests, all passing.
+
 ## Explicit task numbers confirmed covered
 #40, #53, #62, #74, #75, #78, #90, #98, #99, #101, #106, #121, #131, #133, #134, #135, #137, #138, #140, #142, #146, #147, #148, #150, #151, #152, #153, #155, #156, #162, #165, #166, #171, #174, #181, #188, #191, #193, #195, #198, #200
