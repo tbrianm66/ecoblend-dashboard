@@ -2411,3 +2411,123 @@ describe("setModuleReactivationBatch — all rows in a batch share the same togg
     expect(secondTs).toBeGreaterThanOrEqual(firstTs);
   });
 });
+
+// ── DB-unavailable guard — !db fallback paths for all four procedures ────────
+//
+// Each mutation that calls getDb() protects against the case where the
+// connection pool is not yet initialised (getDb() resolves to null / undefined).
+// These tests verify that the guard is wired correctly at the router level so
+// the procedure throws INTERNAL_SERVER_ERROR rather than attempting to use an
+// undefined DB reference.
+//
+describe("getModuleReactivations — DB unavailable guard (!db path)", () => {
+  it("returns [] when getDb() resolves to null (no throw, graceful empty response)", async () => {
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    const caller = appRouter.createCaller(makeAdminCtx("alice"));
+    const rows = await caller.admin.getModuleReactivations();
+    expect(rows).toEqual([]);
+  });
+
+  it("returns [] when getDb() resolves to undefined", async () => {
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    const caller = appRouter.createCaller(makeAdminCtx("alice"));
+    const rows = await caller.admin.getModuleReactivations();
+    expect(rows).toEqual([]);
+  });
+});
+
+describe("setModuleReactivation — DB unavailable guard (!db path)", () => {
+  it("throws INTERNAL_SERVER_ERROR when getDb() resolves to null", async () => {
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    const caller = appRouter.createCaller(makeAdminCtx("alice"));
+    await expect(
+      caller.admin.setModuleReactivation({ groupId: "discovery", active: true }),
+    ).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
+  });
+
+  it("throws INTERNAL_SERVER_ERROR when getDb() resolves to undefined", async () => {
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    const caller = appRouter.createCaller(makeAdminCtx("alice"));
+    await expect(
+      caller.admin.setModuleReactivation({ groupId: "discovery", active: true }),
+    ).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
+  });
+
+  it("error message mentions 'DB unavailable'", async () => {
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    const caller = appRouter.createCaller(makeAdminCtx("alice"));
+    await expect(
+      caller.admin.setModuleReactivation({ groupId: "discovery", active: true }),
+    ).rejects.toMatchObject({ message: expect.stringContaining("DB unavailable") });
+  });
+});
+
+describe("setModuleReactivationBatch — DB unavailable guard (!db path)", () => {
+  it("throws INTERNAL_SERVER_ERROR when getDb() resolves to null", async () => {
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    const caller = appRouter.createCaller(makeAdminCtx("alice"));
+    await expect(
+      caller.admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: [{ groupId: "discovery", active: true }],
+      }),
+    ).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
+  });
+
+  it("throws INTERNAL_SERVER_ERROR when getDb() resolves to undefined", async () => {
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    const caller = appRouter.createCaller(makeAdminCtx("alice"));
+    await expect(
+      caller.admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: [{ groupId: "discovery", active: true }],
+      }),
+    ).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
+  });
+
+  it("error message mentions 'DB unavailable'", async () => {
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    const caller = appRouter.createCaller(makeAdminCtx("alice"));
+    await expect(
+      caller.admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: [{ groupId: "discovery", active: true }],
+      }),
+    ).rejects.toMatchObject({ message: expect.stringContaining("DB unavailable") });
+  });
+});
+
+describe("resetVentureModuleReactivations — DB unavailable guard (!db path)", () => {
+  it("throws INTERNAL_SERVER_ERROR when getDb() resolves to null", async () => {
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    const caller = appRouter.createCaller(makeAdminCtx("alice"));
+    await expect(
+      caller.admin.resetVentureModuleReactivations({ ventureId: "VENTURE-A" }),
+    ).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
+  });
+
+  it("throws INTERNAL_SERVER_ERROR when getDb() resolves to undefined", async () => {
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    const caller = appRouter.createCaller(makeAdminCtx("alice"));
+    await expect(
+      caller.admin.resetVentureModuleReactivations({ ventureId: "VENTURE-A" }),
+    ).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
+  });
+
+  it("error message mentions 'DB unavailable'", async () => {
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    const caller = appRouter.createCaller(makeAdminCtx("alice"));
+    await expect(
+      caller.admin.resetVentureModuleReactivations({ ventureId: "VENTURE-A" }),
+    ).rejects.toMatchObject({ message: expect.stringContaining("DB unavailable") });
+  });
+
+  it("does NOT throw for the db-guard when a valid DB is provided (positive control)", async () => {
+    // makeResetDb returns a minimal DB stub that satisfies execVentureReset (has .delete)
+    const db = makeResetDb([]); // no rows deleted — deletedCount: 0
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+    const caller = appRouter.createCaller(makeAdminCtx("alice"));
+    const result = await caller.admin.resetVentureModuleReactivations({ ventureId: "VENTURE-X" });
+    expect(result.success).toBe(true);
+  });
+});
