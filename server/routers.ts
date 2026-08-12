@@ -620,7 +620,7 @@ export const appRouter = router({
       .input(z.object({ ventureId: z.string(), offeringId: z.string().optional() }))
       .query(async ({ input }) => getExperimentsForVenture(input.ventureId, input.offeringId)),
 
-    add: publicProcedure
+    add: protectedProcedure
       .input(z.object({
         ventureId:          z.string(),
         offeringId:         z.string().optional(),
@@ -675,7 +675,7 @@ export const appRouter = router({
         return { success: true, warning };
       }),
 
-    update: publicProcedure
+    update: protectedProcedure
       .input(z.object({
         id:                 z.number(),
         title:              z.string().optional(),
@@ -1160,7 +1160,7 @@ Return a JSON object with exactly these fields:
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => getResearchPaperById(input.id)),
 
-    addPaper: publicProcedure
+    addPaper: protectedProcedure
       .input(z.object({
         title: z.string().min(1),
         authors: z.string().min(1),
@@ -1191,7 +1191,7 @@ Return a JSON object with exactly these fields:
         return { success: true };
       }),
 
-    updatePaper: publicProcedure
+    updatePaper: protectedProcedure
       .input(z.object({
         id: z.number(),
         title: z.string().optional(),
@@ -1233,7 +1233,7 @@ Return a JSON object with exactly these fields:
     // Fellow Researchers
     listFellows: publicProcedure.query(async () => getAllFellowResearchers()),
 
-    addFellow: publicProcedure
+    addFellow: protectedProcedure
       .input(z.object({
         name: z.string().min(1),
         title: z.string().optional(),
@@ -1257,7 +1257,7 @@ Return a JSON object with exactly these fields:
         return { success: true };
       }),
 
-    updateFellow: publicProcedure
+    updateFellow: protectedProcedure
       .input(z.object({
         id: z.number(),
         name: z.string().optional(),
@@ -1293,7 +1293,7 @@ Return a JSON object with exactly these fields:
     // University Partnerships
     listPartnerships: publicProcedure.query(async () => getAllUniversityPartnerships()),
 
-    addPartnership: publicProcedure
+    addPartnership: protectedProcedure
       .input(z.object({
         universityName: z.string().min(1),
         country: z.string().optional(),
@@ -1317,7 +1317,7 @@ Return a JSON object with exactly these fields:
         return { success: true };
       }),
 
-    updatePartnership: publicProcedure
+    updatePartnership: protectedProcedure
       .input(z.object({
         id: z.number(),
         universityName: z.string().optional(),
@@ -1357,7 +1357,7 @@ Return a JSON object with exactly these fields:
       .input(z.object({ ventureId: z.string() }))
       .query(async ({ input }) => getEvidenceClaimsForVenture(input.ventureId)),
 
-    addClaim: publicProcedure
+    addClaim: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         paperId: z.number().optional(),
@@ -1391,7 +1391,7 @@ Return a JSON object with exactly these fields:
     listForVenture: publicProcedure
       .input(z.object({ ventureId: z.string() }))
       .query(async ({ input }) => getMarketAnalysisForVenture(input.ventureId)),
-    add: publicProcedure
+    add: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         marketName: z.string().min(1),
@@ -1414,7 +1414,7 @@ Return a JSON object with exactly these fields:
         await insertMarketAnalysis(input as any);
         return { success: true };
       }),
-    update: publicProcedure
+    update: protectedProcedure
       .input(z.object({
         id: z.number(),
         data: z.object({
@@ -1531,7 +1531,7 @@ Return ONLY valid JSON matching this schema exactly:
     listForVenture: publicProcedure
       .input(z.object({ ventureId: z.string() }))
       .query(async ({ input }) => getCompetitorsForVenture(input.ventureId)),
-    add: publicProcedure
+    add: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         name: z.string().min(1),
@@ -1554,7 +1554,7 @@ Return ONLY valid JSON matching this schema exactly:
         await insertCompetitor(input as any);
         return { success: true };
       }),
-    update: publicProcedure
+    update: protectedProcedure
       .input(z.object({
         id: z.number(),
         data: z.object({
@@ -2135,7 +2135,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
           .orderBy(desc(pivotDecisions.decisionDate));
       }),
 
-    add: publicProcedure
+    add: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         decisionDate: z.date().or(z.string().transform(s => new Date(s))),
@@ -2257,7 +2257,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         return row ?? null;
       }),
 
-    upsert: publicProcedure
+    upsert: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         primaryCustomerSegment: z.string().optional(),
@@ -2416,7 +2416,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
 
   // ── Sprint 60: Founder Onboarding Submissions ─────────────────────────────
   onboardingSubmissions: router({
-    submit: publicProcedure
+    submit: protectedProcedure
       .input(z.object({
         ventureName:      z.string().min(2),
         tagline:          z.string().optional(),
@@ -2564,7 +2564,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
           .orderBy(desc(autonomyHealthChecks.assessmentDate));
       }),
 
-    add: publicProcedure
+    add: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         assessmentDate: z.date().or(z.string().transform(s => new Date(s))),
@@ -2691,7 +2691,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         return rows[0] ?? null;
       }),
 
-    upsertEsg: publicProcedure
+    upsertEsg: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         carbonEmissionsScore:       z.number().min(0).max(10).optional(),
@@ -2747,7 +2747,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         return db.select().from(lcaAssessments).where(eq(lcaAssessments.ventureId, input.ventureId));
       }),
 
-    upsertLcaStage: publicProcedure
+    upsertLcaStage: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         stage: z.enum(["Raw Material Extraction", "Manufacturing", "Distribution & Logistics", "Use Phase", "End of Life"]),
@@ -2790,7 +2790,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         return rows[0] ?? null;
       }),
 
-    upsertPcf: publicProcedure
+    upsertPcf: protectedProcedure
       .input(z.object({
         ventureId:              z.string(),
         scope1Emissions:        z.number().min(0).optional(),
@@ -2884,7 +2884,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         return db.select().from(certificationTracking).where(eq(certificationTracking.ventureId, input.ventureId));
       }),
 
-    upsertCertification: publicProcedure
+    upsertCertification: protectedProcedure
       .input(z.object({
         id:                      z.number().optional(),
         ventureId:               z.string(),
@@ -3130,7 +3130,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         return rows[0] ?? null;
       }),
 
-    upsertTalent: publicProcedure
+    upsertTalent: protectedProcedure
       .input(z.object({
         id:                       z.number().int().optional(),
         name:                     z.string().min(1),
@@ -3206,7 +3206,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         return db.select().from(ventureRoleRequirements).where(eq(ventureRoleRequirements.ventureId, input.ventureId));
       }),
 
-    upsertRoleRequirement: publicProcedure
+    upsertRoleRequirement: protectedProcedure
       .input(z.object({
         id:                 z.number().int().optional(),
         ventureId:          z.string(),
@@ -3466,7 +3466,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       }),
 
     // ── Founder Suitability Assessment ──────────────────────────────────────────
-    upsertFounderSuitability: publicProcedure
+    upsertFounderSuitability: protectedProcedure
       .input(z.object({
         id:                  z.number().int().optional(),
         talentProfileId:     z.number().int(),
@@ -3591,7 +3591,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
         return db.select().from(equityAllocations).orderBy(equityAllocations.ventureId, equityAllocations.memberName);
       }),
 
-    upsertAllocation: publicProcedure
+    upsertAllocation: protectedProcedure
       .input(z.object({
         id:                 z.number().int().optional(),
         ventureId:          z.string(),
@@ -3893,7 +3893,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       .input(z.object({ opportunityId: z.number() }))
       .query(async ({ input }) => getBaselineForOpportunity(input.opportunityId)),
 
-    upsertBaseline: publicProcedure
+    upsertBaseline: protectedProcedure
       .input(z.object({
         productOpportunityId: z.number(),
         manufacturingCost: z.number().optional(),
@@ -4656,7 +4656,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
       .query(() => getAllTalentProfiles()),
 
     // Spin-Off OS
-    createSpinoffConfig: publicProcedure
+    createSpinoffConfig: protectedProcedure
       .input(z.object({
         productOpportunityId: z.number(),
         founderProfileIds: z.array(z.number()),
@@ -4683,7 +4683,7 @@ Be specific with numbers. Cite real market data where possible. Use British Engl
     listSpinoffConfigs: publicProcedure
       .query(() => listSpinoffConfigs()),
 
-    updateSpinoffConfig: publicProcedure
+    updateSpinoffConfig: protectedProcedure
       .input(z.object({
         id: z.number(),
         proposedVentureName: z.string().optional(),
@@ -5178,7 +5178,7 @@ Be specific, actionable, and grounded in the Lean Startup methodology. Use the E
         return filtered;
       }),
 
-    upsertAsset: publicProcedure
+    upsertAsset: protectedProcedure
       .input(z.object({
         id: z.number().optional(),
         ventureId: z.string(),
@@ -5246,7 +5246,7 @@ Be specific, actionable, and grounded in the Lean Startup methodology. Use the E
         return rows;
       }),
 
-    upsertLicense: publicProcedure
+    upsertLicense: protectedProcedure
       .input(z.object({
         id: z.number().optional(),
         ipAssetId: z.number(),
@@ -5728,7 +5728,7 @@ Output: Output ONLY the drafted text for the requested section, formatted in cle
         return row ?? null;
       }),
 
-    upsertEnvironmental: publicProcedure
+    upsertEnvironmental: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         carbonFootprintKg: z.number().optional(),
@@ -5786,7 +5786,7 @@ Output: Output ONLY the drafted text for the requested section, formatted in cle
         return row ?? null;
       }),
 
-    upsertSocial: publicProcedure
+    upsertSocial: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         livingWageCompliance: z.boolean().optional(),
@@ -5846,7 +5846,7 @@ Output: Output ONLY the drafted text for the requested section, formatted in cle
         return row ?? null;
       }),
 
-    upsertLcc: publicProcedure
+    upsertLcc: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         rawMaterialCostGbp: z.number().optional(),
@@ -5906,7 +5906,7 @@ Output: Output ONLY the drafted text for the requested section, formatted in cle
         return row ?? null;
       }),
 
-    upsertOversight: publicProcedure
+    upsertOversight: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         iso14001Certified: z.boolean().optional(),
@@ -6293,7 +6293,7 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
         return row ?? null;
       }),
 
-    upsertBusinessRisk: publicProcedure
+    upsertBusinessRisk: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         sourceType: z.enum(["research_paper", "market_report", "ip_document", "academic_model", "manual"]).optional(),
@@ -6355,7 +6355,7 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
         return row ?? null;
       }),
 
-    upsertProductRisk: publicProcedure
+    upsertProductRisk: protectedProcedure
       .input(z.object({
         ventureId: z.string(),
         sourceType: z.enum(["problem_statement", "industry_pain_point", "product_idea", "performance_gap", "manual"]).optional(),
@@ -6969,7 +6969,7 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
         return rows[0] ?? null;
       }),
 
-    upsertProject: publicProcedure
+    upsertProject: protectedProcedure
       .input(z.object({
         id: z.number().optional(),
         ventureId: z.string(),
@@ -7059,7 +7059,7 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
           .orderBy(mfgSupplierTiers.tier);
       }),
 
-    upsertSupplier: publicProcedure
+    upsertSupplier: protectedProcedure
       .input(z.object({
         id: z.number().optional(),
         projectId: z.number(),
@@ -7117,7 +7117,7 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
           .orderBy(mfgQcReports.createdAt);
       }),
 
-    upsertQcReport: publicProcedure
+    upsertQcReport: protectedProcedure
       .input(z.object({
         id: z.number().optional(),
         projectId: z.number(),
@@ -7174,7 +7174,7 @@ This weighting reflects the primacy of planetary boundaries (35%), followed by s
           .orderBy(mfgLogisticsShipments.createdAt);
       }),
 
-    upsertShipment: publicProcedure
+    upsertShipment: protectedProcedure
       .input(z.object({
         id: z.number().optional(),
         projectId: z.number(),

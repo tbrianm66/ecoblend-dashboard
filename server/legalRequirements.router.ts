@@ -188,7 +188,7 @@ export const legalRequirementsRouter = router({
         });
       }),
 
-    upsert: publicProcedure
+    upsert: protectedProcedure
       .input(z.object({
         id:                    z.number().optional(),
         requirementId:         z.number(),
@@ -261,7 +261,7 @@ export const legalRequirementsRouter = router({
         return rows;
       }),
 
-    upsert: publicProcedure
+    upsert: protectedProcedure
       .input(z.object({
         id:                        z.number().optional(),
         ventureId:                 z.string().optional(),

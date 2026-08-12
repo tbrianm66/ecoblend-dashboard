@@ -35,7 +35,7 @@ const specialistsRouter = router({
       return rows[0] ?? null;
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       name: z.string().min(1),

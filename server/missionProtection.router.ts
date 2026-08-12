@@ -377,7 +377,7 @@ export const constitutionalGovernanceRouter = router({
   /**
    * Save or update governance structure for a venture.
    */
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       ventureId: z.string(),
       founderVetoRights: z.boolean().optional(),
@@ -551,7 +551,7 @@ export const successionPlanningRouter = router({
   /**
    * Save or update succession plan for a venture.
    */
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       ventureId: z.string(),
       currentCeo: z.string().optional(),
@@ -1099,7 +1099,7 @@ export const boardDecisionsRouter = router({
   /**
    * Create or update a board decision.
    */
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       id: z.string().optional(),
       ventureId: z.string(),

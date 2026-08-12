@@ -199,7 +199,7 @@ export const governanceComplianceRouter = router({
       return (rows as any).rows ?? rows ?? [];
     }),
 
-  upsertRequirement: publicProcedure
+  upsertRequirement: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       frameworkId: z.number(),

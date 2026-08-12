@@ -31,7 +31,7 @@ const campaignsRouter = router({
         .orderBy(desc(marketingCampaigns.createdAt));
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string().min(1),
@@ -276,7 +276,7 @@ const newsletterRouter = router({
         .orderBy(desc(newsletterCampaigns.createdAt));
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string().min(1),

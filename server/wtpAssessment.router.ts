@@ -241,7 +241,7 @@ export const wtpAssessmentRouter = router({
       return rows[0] ?? null;
     }),
 
-  createWTPTest: publicProcedure
+  createWTPTest: protectedProcedure
     .input(z.object({
       ventureId: z.string(),
       hypothesisId: z.string().optional(),
@@ -319,7 +319,7 @@ export const wtpAssessmentRouter = router({
       return { id, wtpScore };
     }),
 
-  updateWTPTest: publicProcedure
+  updateWTPTest: protectedProcedure
     .input(z.object({
       id: z.string(),
       ventureId: z.string(),
@@ -540,7 +540,7 @@ export const wtpAssessmentRouter = router({
       return rawQuery(`SELECT * FROM pricing_experiments ${where} ORDER BY created_at DESC`, params);
     }),
 
-  createPricingExperiment: publicProcedure
+  createPricingExperiment: protectedProcedure
     .input(z.object({
       ventureId: z.string(),
       hypothesisId: z.string().optional(),
@@ -645,7 +645,7 @@ export const wtpAssessmentRouter = router({
       return rawQuery(`SELECT * FROM budget_validations ${where} ORDER BY created_at DESC`, params);
     }),
 
-  createBudgetValidation: publicProcedure
+  createBudgetValidation: protectedProcedure
     .input(z.object({
       ventureId: z.string(),
       wtpTestId: z.string().optional(),
@@ -724,7 +724,7 @@ export const wtpAssessmentRouter = router({
       return rawQuery(`SELECT * FROM procurement_pathways ${where} ORDER BY created_at DESC`, params);
     }),
 
-  createProcurementPathway: publicProcedure
+  createProcurementPathway: protectedProcedure
     .input(z.object({
       ventureId: z.string(),
       wtpTestId: z.string().optional(),

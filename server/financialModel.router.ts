@@ -26,7 +26,7 @@ export const finPlRouter = router({
       return q;
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string().optional(),

@@ -404,7 +404,7 @@ export const wtpRouter = router({
 
   // ── Customer Commitment Log ──────────────────────────────────────────────────
   commitments: router({
-    list: publicProcedure.input(ventureInput).query(async ({ input }) => {
+    list: protectedProcedure.input(ventureInput).query(async ({ input }) => {
       const d = await db();
       return d
         .select()
@@ -455,7 +455,7 @@ export const wtpRouter = router({
 
   // ── Pricing Experiments ──────────────────────────────────────────────────────
   pricingExperiments: router({
-    list: publicProcedure.input(ventureInput).query(async ({ input }) => {
+    list: protectedProcedure.input(ventureInput).query(async ({ input }) => {
       const d = await db();
       return d
         .select()
@@ -521,7 +521,7 @@ export const wtpRouter = router({
 
   // ── Budget Owner Validation ──────────────────────────────────────────────────
   budgetValidations: router({
-    list: publicProcedure.input(ventureInput).query(async ({ input }) => {
+    list: protectedProcedure.input(ventureInput).query(async ({ input }) => {
       const d = await db();
       return d
         .select()
@@ -577,7 +577,7 @@ export const wtpRouter = router({
 
   // ── Procurement Pathways ─────────────────────────────────────────────────────
   procurementPathways: router({
-    list: publicProcedure.input(ventureInput).query(async ({ input }) => {
+    list: protectedProcedure.input(ventureInput).query(async ({ input }) => {
       const d = await db();
       const rows = await d
         .select()

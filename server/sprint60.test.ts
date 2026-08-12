@@ -41,6 +41,9 @@ const VALID_INPUT = {
   totalTasks:   26,
 };
 
+// Authenticated context for mutations that now require protectedProcedure
+const AUTH_CTX = { user: { id: 1, role: "admin" as const, openId: "test-admin", email: "t@test.io", name: "T" } };
+
 // ── Tests ─────────────────────────────────────────────────────────────────────
 describe("onboardingSubmissions.submit", () => {
   beforeEach(() => vi.clearAllMocks());
@@ -51,7 +54,7 @@ describe("onboardingSubmissions.submit", () => {
     db.insert.mockReturnValue({ values: valuesChain.values });
 
     const { appRouter } = await import("./routers");
-    const caller = appRouter.createCaller({} as any);
+    const caller = appRouter.createCaller(AUTH_CTX as any);
     const result = await caller.onboardingSubmissions.submit(VALID_INPUT);
 
     expect(db.insert).toHaveBeenCalledOnce();
@@ -69,7 +72,7 @@ describe("onboardingSubmissions.submit", () => {
     });
 
     const { appRouter } = await import("./routers");
-    const caller = appRouter.createCaller({} as any);
+    const caller = appRouter.createCaller(AUTH_CTX as any);
     await caller.onboardingSubmissions.submit({
       ...VALID_INPUT,
       checkedTasks: { task_1: true, task_2: false },
@@ -92,7 +95,7 @@ describe("onboardingSubmissions.submit", () => {
     });
 
     const { appRouter } = await import("./routers");
-    const caller = appRouter.createCaller({} as any);
+    const caller = appRouter.createCaller(AUTH_CTX as any);
     await caller.onboardingSubmissions.submit(VALID_INPUT);
 
     expect(capturedValues.status).toBe("Completed");
@@ -109,7 +112,7 @@ describe("onboardingSubmissions.submit", () => {
     });
 
     const { appRouter } = await import("./routers");
-    const caller = appRouter.createCaller({} as any);
+    const caller = appRouter.createCaller(AUTH_CTX as any);
     await caller.onboardingSubmissions.submit({
       ...VALID_INPUT,
       tagline:          "Clean future",

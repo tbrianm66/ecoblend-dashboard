@@ -83,7 +83,7 @@ function deriveRiskLevel(importance: number, uncertainty: number): string {
 export const intakeRouter = router({
   // ── Ideas ──────────────────────────────────────────────────────────────────
   ideas: router({
-    list: publicProcedure.input(vid).query(async ({ input }) => {
+    list: protectedProcedure.input(vid).query(async ({ input }) => {
       const d = await getDb();
       if (!d) return [];
       return d.select().from(viIdeas).where(eq(viIdeas.ventureId, input.ventureId)).orderBy(desc(viIdeas.updatedAt));
@@ -111,7 +111,7 @@ export const intakeRouter = router({
 
   // ── Assumptions ────────────────────────────────────────────────────────────
   assumptions: router({
-    list: publicProcedure.input(vid).query(async ({ input }) => {
+    list: protectedProcedure.input(vid).query(async ({ input }) => {
       const d = await getDb();
       if (!d) return [];
       return d.select().from(viAssumptions).where(eq(viAssumptions.ventureId, input.ventureId)).orderBy(desc(viAssumptions.updatedAt));
@@ -212,7 +212,7 @@ export const intakeRouter = router({
 
   // ── Riskiest Assumptions ────────────────────────────────────────────────────
   riskiest: router({
-    list: publicProcedure.input(vid).query(async ({ input }) => {
+    list: protectedProcedure.input(vid).query(async ({ input }) => {
       const d = await getDb();
       if (!d) return [];
       return d.select().from(viRiskiest).where(eq(viRiskiest.ventureId, input.ventureId)).orderBy(desc(viRiskiest.testPriorityScore));
@@ -258,7 +258,7 @@ export const intakeRouter = router({
 
   // ── Intake Decisions ────────────────────────────────────────────────────────
   decisions: router({
-    get: publicProcedure.input(vid).query(async ({ input }) => {
+    get: protectedProcedure.input(vid).query(async ({ input }) => {
       const d = await getDb();
       if (!d) return null;
       const rows = await d.select().from(viDecisions).where(eq(viDecisions.ventureId, input.ventureId)).orderBy(desc(viDecisions.updatedAt)).limit(1);

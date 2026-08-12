@@ -218,7 +218,7 @@ const ventureInput = z.object({ ventureId: z.string() });
 export const discoveryMarketRouter = router({
   // ── Customer Segments ───────────────────────────────────────────────────────
   segments: router({
-    list: publicProcedure.input(ventureInput).query(async ({ input }) => {
+    list: protectedProcedure.input(ventureInput).query(async ({ input }) => {
       const d = await db();
       return d.select().from(customerSegments).where(eq(customerSegments.ventureId, input.ventureId)).orderBy(desc(customerSegments.createdAt));
     }),
@@ -258,7 +258,7 @@ export const discoveryMarketRouter = router({
 
   // ── Problem Hypotheses ──────────────────────────────────────────────────────
   hypotheses: router({
-    list: publicProcedure.input(ventureInput).query(async ({ input }) => {
+    list: protectedProcedure.input(ventureInput).query(async ({ input }) => {
       const d = await db();
       return d.select().from(problemHypotheses).where(eq(problemHypotheses.ventureId, input.ventureId)).orderBy(desc(problemHypotheses.createdAt));
     }),
@@ -560,7 +560,7 @@ export const discoveryMarketRouter = router({
 
   // ── Market Risks ────────────────────────────────────────────────────────────
   risks: router({
-    list: publicProcedure.input(ventureInput).query(async ({ input }) => {
+    list: protectedProcedure.input(ventureInput).query(async ({ input }) => {
       const d = await db();
       return d.select().from(marketRisks).where(eq(marketRisks.ventureId, input.ventureId)).orderBy(desc(marketRisks.marketRiskScore));
     }),
@@ -611,7 +611,7 @@ export const discoveryMarketRouter = router({
 
   // ── Lean Experiments ────────────────────────────────────────────────────────
   experiments: router({
-    list: publicProcedure.input(ventureInput).query(async ({ input }) => {
+    list: protectedProcedure.input(ventureInput).query(async ({ input }) => {
       const d = await db();
       return d.select().from(leanExperiments).where(eq(leanExperiments.ventureId, input.ventureId)).orderBy(desc(leanExperiments.createdAt));
     }),

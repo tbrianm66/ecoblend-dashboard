@@ -88,7 +88,7 @@ export const leanCanvasRouter = router({
     }),
 
   /** Append-only save — always creates a new version row */
-  save: publicProcedure
+  save: protectedProcedure
     .input(z.object({
       ventureId: z.string(),
 

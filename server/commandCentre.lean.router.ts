@@ -467,7 +467,7 @@ const alertFields = {
 export const commandCentreLeanRouter = router({
   // ── Hypotheses ──────────────────────────────────────────────────────────────
   hypotheses: router({
-    list: publicProcedure.input(ventureInput).query(async ({ input }) => {
+    list: protectedProcedure.input(ventureInput).query(async ({ input }) => {
       const d = await db();
       return d.select().from(ccHypotheses).where(eq(ccHypotheses.ventureId, input.ventureId)).orderBy(desc(ccHypotheses.updatedAt));
     }),
@@ -496,7 +496,7 @@ export const commandCentreLeanRouter = router({
 
   // ── Experiments ─────────────────────────────────────────────────────────────
   experiments: router({
-    list: publicProcedure.input(ventureInput).query(async ({ input }) => {
+    list: protectedProcedure.input(ventureInput).query(async ({ input }) => {
       const d = await db();
       return d.select().from(ccExperiments).where(eq(ccExperiments.ventureId, input.ventureId)).orderBy(desc(ccExperiments.updatedAt));
     }),
@@ -531,7 +531,7 @@ export const commandCentreLeanRouter = router({
 
   // ── Evidence ────────────────────────────────────────────────────────────────
   evidence: router({
-    list: publicProcedure.input(ventureInput).query(async ({ input }) => {
+    list: protectedProcedure.input(ventureInput).query(async ({ input }) => {
       const d = await db();
       return d.select().from(ccEvidence).where(eq(ccEvidence.ventureId, input.ventureId)).orderBy(desc(ccEvidence.updatedAt));
     }),
@@ -564,7 +564,7 @@ export const commandCentreLeanRouter = router({
 
   // ── Decisions ───────────────────────────────────────────────────────────────
   decisions: router({
-    list: publicProcedure.input(ventureInput).query(async ({ input }) => {
+    list: protectedProcedure.input(ventureInput).query(async ({ input }) => {
       const d = await db();
       return d.select().from(ccDecisions).where(eq(ccDecisions.ventureId, input.ventureId)).orderBy(desc(ccDecisions.updatedAt));
     }),
@@ -602,7 +602,7 @@ export const commandCentreLeanRouter = router({
 
   // ── Pivot logs ──────────────────────────────────────────────────────────────
   pivots: router({
-    list: publicProcedure.input(ventureInput).query(async ({ input }) => {
+    list: protectedProcedure.input(ventureInput).query(async ({ input }) => {
       const d = await db();
       return d.select().from(ccPivotLogs).where(eq(ccPivotLogs.ventureId, input.ventureId)).orderBy(desc(ccPivotLogs.createdAt));
     }),
@@ -625,7 +625,7 @@ export const commandCentreLeanRouter = router({
 
   // ── Stage-gate reviews ──────────────────────────────────────────────────────
   reviews: router({
-    list: publicProcedure.input(ventureInput).query(async ({ input }) => {
+    list: protectedProcedure.input(ventureInput).query(async ({ input }) => {
       const d = await db();
       return d.select().from(ccStageGateReviews).where(eq(ccStageGateReviews.ventureId, input.ventureId)).orderBy(desc(ccStageGateReviews.updatedAt));
     }),
@@ -653,7 +653,7 @@ export const commandCentreLeanRouter = router({
 
   // ── Alerts ──────────────────────────────────────────────────────────────────
   alerts: router({
-    list: publicProcedure.input(z.object({ ventureId: z.string().optional() }).optional()).query(async ({ input }) => {
+    list: protectedProcedure.input(z.object({ ventureId: z.string().optional() }).optional()).query(async ({ input }) => {
       const d = await db();
       const rows = input?.ventureId
         ? await d.select().from(ccAlerts).where(eq(ccAlerts.ventureId, input.ventureId)).orderBy(desc(ccAlerts.createdAt))

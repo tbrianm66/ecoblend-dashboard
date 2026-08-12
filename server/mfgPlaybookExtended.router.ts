@@ -20,7 +20,7 @@ export const mfgOnboardingRouter = router({
         .orderBy(mfgSupplierOnboarding.createdAt);
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string(),
@@ -96,7 +96,7 @@ export const mfgAuditRouter = router({
         .orderBy(mfgFactoryAudits.createdAt);
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string(),
@@ -167,7 +167,7 @@ export const mfgRfqRouter = router({
         .orderBy(mfgRfqTemplates.createdAt);
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string(),
@@ -228,7 +228,7 @@ export const mfgAslRouter = router({
         .orderBy(mfgApprovedSuppliers.createdAt);
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string(),
@@ -411,7 +411,7 @@ export const mfgContractRouter = router({
       };
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string(),

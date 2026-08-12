@@ -89,7 +89,7 @@ const suppliersRouter = router({
         .orderBy(desc(suppliers.createdAt));
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(
       z.object({
         id:                z.number().optional(),

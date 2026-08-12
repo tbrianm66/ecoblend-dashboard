@@ -28,7 +28,7 @@ export const uniPartnersRouter = router({
       return db.select().from(uniPartners).where(eqOp(uniPartners.ventureId, input.ventureId)).orderBy(desc(uniPartners.createdAt));
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string(),
@@ -73,7 +73,7 @@ export const uniResearchRouter = router({
       return db.select().from(uniResearchProjects).where(eqOp(uniResearchProjects.ventureId, input.ventureId)).orderBy(desc(uniResearchProjects.createdAt));
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string(),
@@ -158,7 +158,7 @@ export const uniTalentRouter = router({
       return db.select().from(uniTalentRoles).where(eqOp(uniTalentRoles.ventureId, input.ventureId)).orderBy(desc(uniTalentRoles.createdAt));
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string(),
@@ -204,7 +204,7 @@ export const uniWorkflowRouter = router({
       return db.select().from(uniVentureWorkflows).where(eqOp(uniVentureWorkflows.ventureId, input.ventureId)).orderBy(desc(uniVentureWorkflows.createdAt));
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string(),
@@ -264,7 +264,7 @@ export const uniIndustryRouter = router({
       return db.select().from(uniIndustryEngagements).where(eqOp(uniIndustryEngagements.ventureId, input.ventureId)).orderBy(desc(uniIndustryEngagements.createdAt));
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string(),
@@ -351,7 +351,7 @@ export const uniDataRouter = router({
       return db.select().from(uniDataSources).where(eqOp(uniDataSources.ventureId, input.ventureId)).orderBy(desc(uniDataSources.createdAt));
     }),
 
-  upsert: publicProcedure
+  upsert: protectedProcedure
     .input(z.object({
       id: z.number().optional(),
       ventureId: z.string(),
