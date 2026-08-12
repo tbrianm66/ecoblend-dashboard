@@ -3046,3 +3046,256 @@ describe("setModuleReactivationBatch — [anonymous admin] fallback in toggledBy
     expect(committed[0].toggledBy).toBe("Carol");
   });
 });
+
+// ── ON CONFLICT DO UPDATE uses the batch's own `now` (#206) ──────────────────
+//
+// The server computes `now = new Date()` ONCE before the transaction loop.
+// It passes that value to BOTH the INSERT values and the ON CONFLICT DO UPDATE
+// SET clause.  These tests verify that pre-existing rows have their toggledAt
+// replaced by the current batch's `now`, not left at the old timestamp and not
+// reset to the DB column's defaultNow().
+//
+// This is the UPDATE (conflict) path complement to the #140 tests which cover
+// the INSERT (no-existing-row) path.  Together they prove that every batch
+// call — first-time write or overwrite — stamps all rows with the same `now`.
+describe("setModuleReactivationBatch — ON CONFLICT DO UPDATE uses the batch's own `now` (#206)", () => {
+  it("updates toggledAt on an existing row to the new batch's timestamp (ON CONFLICT path)", async () => {
+    const db = makeConflictAwareHarnessDb([]);
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    // Phase 1: write a row so the next call hits the ON CONFLICT path.
+    await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [{ groupId: "discovery", active: true }],
+    });
+    const firstTs = committedFor(db as HarnessDb, "VENTURE-A")[0].toggledAt.getTime();
+
+    // Guarantee the second call's `new Date()` is measurably later.
+    await new Promise(r => setTimeout(r, 2));
+
+    // Phase 2: re-write the same row → ON CONFLICT DO UPDATE fires.
+    const before2 = new Date();
+    await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [{ groupId: "discovery", active: false }],
+    });
+    const after2 = new Date();
+
+    const rows = committedFor(db as HarnessDb, "VENTURE-A");
+    expect(rows).toHaveLength(1);
+    const storedTs = rows[0].toggledAt.getTime();
+
+    // Updated timestamp must be strictly newer than the first batch's.
+    expect(storedTs).toBeGreaterThan(firstTs);
+    // And it must fall within the second batch's execution window.
+    expect(storedTs).toBeGreaterThanOrEqual(before2.getTime());
+    expect(storedTs).toBeLessThanOrEqual(after2.getTime());
+  });
+
+  it("all pre-existing rows receive the same new timestamp (ON CONFLICT path, multiple items)", async () => {
+    const db = makeConflictAwareHarnessDb([]);
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    // Seed two rows via first batch.
+    await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [
+        { groupId: "discovery",  active: true },
+        { groupId: "validation", active: true },
+      ],
+    });
+
+    await new Promise(r => setTimeout(r, 2));
+
+    // Update both rows — ON CONFLICT DO UPDATE fires for each.
+    await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [
+        { groupId: "discovery",  active: false },
+        { groupId: "validation", active: false },
+      ],
+    });
+
+    const rows = committedFor(db as HarnessDb, "VENTURE-A");
+    expect(rows).toHaveLength(2);
+
+    // Both rows must share the exact same millisecond timestamp — the shared `now`
+    // from the second batch, not two independently re-evaluated `new Date()` calls.
+    expect(rows[0].toggledAt.getTime()).toBe(rows[1].toggledAt.getTime());
+  });
+
+  it("a mixed batch (some INSERT, some ON CONFLICT) stamps all rows with the same `now`", async () => {
+    const db = makeConflictAwareHarnessDb([]);
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    // Seed only one of the three groups.
+    await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [{ groupId: "discovery", active: true }],
+    });
+
+    await new Promise(r => setTimeout(r, 2));
+
+    // Batch with 3 items: discovery (conflict/UPDATE) + validation + gtm (INSERT).
+    await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [
+        { groupId: "discovery",  active: false },  // ON CONFLICT path
+        { groupId: "validation", active: true  },  // INSERT path
+        { groupId: "gtm",        active: true  },  // INSERT path
+      ],
+    });
+
+    const rows = committedFor(db as HarnessDb, "VENTURE-A");
+    expect(rows).toHaveLength(3);
+
+    // All three — regardless of whether they hit INSERT or UPDATE — share one `now`.
+    const ts = rows[0].toggledAt.getTime();
+    for (const row of rows) {
+      expect(row.toggledAt.getTime()).toBe(ts);
+    }
+  });
+});
+
+// ── Batch writes a single audit log entry naming all toggled groups (#207) ────
+//
+// After a successful batch commit, the endpoint inserts ONE row into
+// system_audit_logs so admins can see which groups were changed together in
+// the chronological audit trail.  The write is outside the transaction and
+// wrapped in try/catch so that an audit-log failure never rolls back the
+// committed batch.
+//
+// Test harness: we extend makeConflictAwareHarnessDb with a top-level `insert`
+// method that captures audit log rows.  Existing tests are unaffected because
+// the endpoint's audit write is wrapped in try/catch — when the harness lacks
+// `insert`, the error is silently swallowed and the batch result is unchanged.
+
+interface AuditCapturingDb extends HarnessDb {
+  auditEntries: Array<Record<string, unknown>>;
+}
+
+function makeAuditCapturingDb(
+  conflictRows: Array<{ groupId: string; modifiedBy: string | null }> = [],
+): AuditCapturingDb {
+  const base = makeConflictAwareHarnessDb(conflictRows);
+  const auditEntries: Array<Record<string, unknown>> = [];
+  return Object.assign(base, {
+    auditEntries,
+    insert: (_table: unknown) => ({
+      values: (row: Record<string, unknown>) => {
+        auditEntries.push({ ...row });
+        return Promise.resolve([row]);
+      },
+    }),
+  }) as AuditCapturingDb;
+}
+
+describe("setModuleReactivationBatch — writes audit log entry naming all toggled groups (#207)", () => {
+  it("writes exactly one audit entry after a successful 3-group activation batch", async () => {
+    const db = makeAuditCapturingDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    await appRouter.createCaller(makeAdminCtx("alice")).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [
+        { groupId: "discovery",  active: true },
+        { groupId: "scoring",    active: true },
+        { groupId: "gtm",        active: true },
+      ],
+    });
+
+    expect(db.auditEntries).toHaveLength(1);
+    const entry = db.auditEntries[0];
+    expect(entry.actorName).toBe("alice");
+    expect(entry.actorRole).toBe("admin");
+    expect(entry.targetModule).toBe("module-reactivation");
+    expect(entry.actionCategory).toBe("update");
+    expect(entry.targetVentureId).toBe("VENTURE-A");
+  });
+
+  it("audit entry actionPerformed names every group in the batch", async () => {
+    const db = makeAuditCapturingDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    await appRouter.createCaller(makeAdminCtx("alice")).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [
+        { groupId: "discovery",   active: true },
+        { groupId: "validation",  active: true },
+        { groupId: "coaching",    active: true },
+      ],
+    });
+
+    const action = String(db.auditEntries[0].actionPerformed);
+    expect(action).toContain("discovery");
+    expect(action).toContain("validation");
+    expect(action).toContain("coaching");
+    expect(action).toContain("3");       // group count
+    expect(action).toContain("activated");
+  });
+
+  it("audit entry says 'deactivated' when all items are active=false", async () => {
+    const db = makeAuditCapturingDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    await appRouter.createCaller(makeAdminCtx("bob")).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-B",
+      items: [
+        { groupId: "discovery",  active: false },
+        { groupId: "scoring",    active: false },
+      ],
+    });
+
+    const action = String(db.auditEntries[0].actionPerformed);
+    expect(action).toContain("deactivated");
+    expect(action).toContain("discovery");
+    expect(action).toContain("scoring");
+  });
+
+  it("audit targetVentureId is null when ventureId normalises to __global__", async () => {
+    const db = makeAuditCapturingDb();
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    // Empty string normalises to __global__ via normaliseSetVentureId.
+    await appRouter.createCaller(makeAdminCtx("admin")).admin.setModuleReactivationBatch({
+      ventureId: "",
+      items: [{ groupId: "discovery", active: true }],
+    });
+
+    const entry = db.auditEntries[0];
+    expect(entry.targetVentureId).toBeNull();
+  });
+
+  it("a failed batch (DB fault mid-transaction) writes NO audit entry", async () => {
+    const db = makeAuditCapturingDb();
+    // Inject a DB fault after the 0th insert (i.e. the first item fails).
+    const faultingDb = Object.assign(
+      makeHarnessDb({ faultAfter: 0 }),
+      {
+        auditEntries: db.auditEntries,  // share the same capture array
+        insert: db.insert,              // capture audit writes from the faulting db too
+        select: (_s: unknown) => ({
+          from: (_t: unknown) => ({
+            where: (_c: unknown) => Promise.resolve([]),
+          }),
+        }),
+      }
+    );
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(faultingDb);
+
+    let threw = false;
+    try {
+      await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+        ventureId: "VENTURE-A",
+        items: [{ groupId: "discovery", active: true }],
+      });
+    } catch {
+      threw = true;
+    }
+
+    expect(threw).toBe(true);
+    // Because the transaction threw, the endpoint exits via the catch path
+    // before reaching the audit write code.
+    expect(db.auditEntries).toHaveLength(0);
+  });
+});

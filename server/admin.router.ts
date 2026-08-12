@@ -1064,6 +1064,31 @@ export const adminRouter = router({
         // reached, making a separate aggregate guard permanently unreachable dead code.
       });
 
+      // ── #207: Audit log — one entry names all groups toggled together ────────
+      // Written OUTSIDE the transaction so that an audit-log failure never rolls
+      // back the committed batch.  The reactivation state is the source of truth;
+      // the audit entry is advisory and failure-tolerant.
+      const activatedCount   = input.items.filter(i =>  i.active).length;
+      const deactivatedCount = input.items.filter(i => !i.active).length;
+      const actionDesc =
+        activatedCount > 0 && deactivatedCount === 0
+          ? `activated ${upserted.length} group(s)`
+          : deactivatedCount > 0 && activatedCount === 0
+          ? `deactivated ${upserted.length} group(s)`
+          : `toggled ${upserted.length} group(s) (${activatedCount} ON, ${deactivatedCount} OFF)`;
+      try {
+        await db.insert(systemAuditLogs).values({
+          actorName:       toggledBy,
+          actorRole:       "admin",
+          actionPerformed: `Batch module reactivation: ${actionDesc} — ${upserted.join(", ")}`,
+          targetModule:    "module-reactivation",
+          targetVentureId: ventureId === "__global__" ? null : ventureId,
+          actionCategory:  "update",
+        });
+      } catch {
+        // Audit log write failures must not affect the already-committed batch.
+      }
+
       return { success: true, count: upserted.length, upserted };
     }),
 

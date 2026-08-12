@@ -105,39 +105,46 @@ async function startServer() {
   });
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
-  // SSE endpoint for real-time event streaming (public — unauthenticated gets anonymous context)
+  // SSE endpoint for real-time event streaming — requires a valid authenticated session.
+  // Unauthenticated requests are rejected with 401 to prevent:
+  //   (a) leaking operational events to the open internet, and
+  //   (b) resource exhaustion from unlimited anonymous long-lived connections.
   app.get("/api/events", async (req, res, _next) => {
     let user: Awaited<ReturnType<typeof sdk.authenticateRequest>> | null = null;
     try {
       user = await sdk.authenticateRequest(req);
     } catch {
-      // No valid session — allow connection as anonymous observer
+      // Authentication failed — session missing or invalid.
+    }
+
+    if (!user) {
+      res.status(401).json({ error: "Authentication required" });
+      return;
     }
 
     let isAdmin = false;
     let authorizedVentureIds: Set<string> | null = null;
 
-    if (user) {
-      isAdmin = user.role === "admin";
-      if (!isAdmin) {
-        try {
-          const db = (await getDb())!;
-          const memberships = await db
-            .select({ ventureId: ventureMembers.ventureId })
-            .from(ventureMembers)
-            .where(eq(ventureMembers.userId, user.id));
-          authorizedVentureIds = new Set(memberships.map((m) => m.ventureId));
-        } catch {
-          authorizedVentureIds = new Set(); // deny-safe fallback
-        }
+    isAdmin = user.role === "admin";
+    if (!isAdmin) {
+      try {
+        const db = (await getDb())!;
+        const memberships = await db
+          .select({ ventureId: ventureMembers.ventureId })
+          .from(ventureMembers)
+          .where(eq(ventureMembers.userId, user.id));
+        authorizedVentureIds = new Set(memberships.map((m) => m.ventureId));
+      } catch {
+        authorizedVentureIds = new Set(); // deny-safe fallback: deny all events on DB error
       }
     }
+    // Admins: authorizedVentureIds stays null → broadcastSSEEvent sends them everything.
+    // Non-admins: authorizedVentureIds is the Set of their ventures → scoped broadcast only.
 
     const userCtx: SSEUserContext = {
-      userId: user ? String(user.id) : "anonymous",
+      userId: String(user.id),
       isAdmin,
-      // null = broadcast all events (anonymous observers see portfolio-wide stream)
-      authorizedVentureIds: user ? authorizedVentureIds : null,
+      authorizedVentureIds,
     };
     handleSSEConnection(req, res, userCtx);
   });
