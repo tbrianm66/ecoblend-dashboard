@@ -47,10 +47,19 @@ const callerAuth = appRouter.createCaller({
 });
 ```
 
-## Files Protected (this session)
-- 5 procedures in previous session (commandCentre.lean, intake, proposition, legalRequirements, fedsilkGovernance)
-- contextual.router.ts: 5 procedures (adminGetWidgetSettings, adminGetContextDiagnostics, adminExportAnalyticsCsv, adminFullAnalytics, logUsageEvent)
-- mrl.router.ts: 8 procedures (createAssessment, createSupplier, createCostModel, createCompliance, createRisk, deleteSupplier, updateComplianceStatus, updateRiskStatus)
-- mrlScoring.router.ts: 1 procedure (computeAndSave)
-- uniApprovalReport.router.ts: 4 procedures (upsert, updateStatus, delete, generateAI)
-- Bulk fix across 20 files: 234 additional procedures
+## Completed — All Mutations Protected
+Two-pass scan (15-line + 60-line lookahead) + 2000-char comprehensive scan all return CLEAN.
+Total procedures protected: 321+ across all server/*.router.ts and server/routers.ts.
+
+## Test Fixes Required Pattern
+When protecting mutations, tests with `createCaller({} as any)` or `createCaller({ user: null })` need auth ctx.
+Pattern to add at top of test file:
+```ts
+const AUTH_CTX = { user: { id: 1, role: "admin" as const, openId: "test-admin", email: "t@test.io", name: "T" } };
+const callerAuth = appRouter.createCaller(AUTH_CTX as any);
+```
+
+## pg Driver Pattern (always use for pg, never MySQL patterns)
+- Insert returning ID: `const [result] = await db.insert(table).values({...}).returning({ id: table.id })`
+- Do NOT use: `.$returningId()` (MySQL only) or `const [result] = await db.insert(...)` without `.returning()`
+- Do NOT use: `const [rows] = db.execute()` — pg returns `{ rows: [] }` not `[[rows], fields]`

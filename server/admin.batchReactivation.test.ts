@@ -246,8 +246,14 @@ function makeHarnessDb(opts?: {
               }
               insertsDone++;
 
-              const writtenGroupId = row.groupId as string;
-              const resolved       = Promise.resolve([{ groupId: writtenGroupId }]);
+              const writtenGroupId  = row.groupId as string;
+              // #206: harness returns toggledAt so the router can surface the
+              // DB-confirmed timestamp in its response without trusting client `now`.
+              const writtenToggledAt = (set.toggledAt ?? row.toggledAt) as Date;
+              const resolved         = Promise.resolve([{
+                groupId:   writtenGroupId,
+                toggledAt: writtenToggledAt,
+              }]);
               const voidResolved   = Promise.resolve(undefined);
               return {
                 returning: (_shape: Record<string, unknown>) => resolved,
@@ -3154,6 +3160,59 @@ describe("setModuleReactivationBatch — ON CONFLICT DO UPDATE uses the batch's 
     for (const row of rows) {
       expect(row.toggledAt.getTime()).toBe(ts);
     }
+  });
+
+  // ── #206 response contract: persistedAt reflects DB-confirmed timestamp ─────
+  //
+  // The response must include `persistedAt` — the toggledAt value that the DB
+  // actually stored and returned via .returning().  This lets callers confirm
+  // the persisted timestamp matches their expectation rather than trusting a
+  // client-side `now` that could drift from the DB value.
+  it("response includes persistedAt matching the DB-stored toggledAt (INSERT path)", async () => {
+    const db = makeConflictAwareHarnessDb([]);
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    const before = new Date();
+    const response = await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [{ groupId: "discovery", active: true }],
+    });
+    const after = new Date();
+
+    // Response must include persistedAt as an ISO string.
+    expect(typeof response.persistedAt).toBe("string");
+    const persistedMs = new Date(response.persistedAt).getTime();
+
+    // The persisted timestamp must fall within the batch's execution window.
+    expect(persistedMs).toBeGreaterThanOrEqual(before.getTime());
+    expect(persistedMs).toBeLessThanOrEqual(after.getTime());
+
+    // The response timestamp must match what the DB actually stored.
+    const stored = committedFor(db as HarnessDb, "VENTURE-A")[0].toggledAt.getTime();
+    expect(persistedMs).toBe(stored);
+  });
+
+  it("response persistedAt still matches DB on the ON CONFLICT (UPDATE) path", async () => {
+    const db = makeConflictAwareHarnessDb([]);
+    (getDb as ReturnType<typeof vi.fn>).mockResolvedValue(db);
+
+    // Seed row first.
+    await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [{ groupId: "discovery", active: true }],
+    });
+
+    await new Promise(r => setTimeout(r, 2));
+
+    // Second call hits ON CONFLICT path.
+    const response = await appRouter.createCaller(makeAdminCtx()).admin.setModuleReactivationBatch({
+      ventureId: "VENTURE-A",
+      items: [{ groupId: "discovery", active: false }],
+    });
+
+    const persistedMs = new Date(response.persistedAt).getTime();
+    const stored = committedFor(db as HarnessDb, "VENTURE-A")[0].toggledAt.getTime();
+    expect(persistedMs).toBe(stored);
   });
 });
 

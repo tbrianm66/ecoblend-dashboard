@@ -1017,12 +1017,18 @@ export const adminRouter = router({
       // skips an item (e.g. a conditional guard, a violated partial-index
       // that suppresses the upsert without aborting the transaction), the
       // returned array will be shorter than input.items and we surface it.
-      // Collect the groupId of every row the DB confirms it wrote via .returning().
+      // Collect the groupId and DB-confirmed toggledAt for every row via .returning().
       // This check runs INSIDE the transaction so that detecting fewer confirmed
       // rows than requested causes the transaction to roll back — no partial state
       // is committed and the admin UI will see a thrown error rather than a
       // misleadingly successful response with a low count.
+      //
+      // #206: We also return toggledAt from the DB so callers can confirm the
+      // persisted timestamp matches what they expect — preventing silent drift
+      // where the response carries `now` (client-side) but the DB stored something
+      // different (e.g. due to a trigger or clock skew).
       const upserted: string[] = [];
+      let persistedAt: Date = now; // overwritten by the first DB-confirmed row
 
       await db.transaction(async tx => {
         for (const item of input.items) {
@@ -1043,7 +1049,10 @@ export const adminRouter = router({
                 toggledAt: now,
               },
             })
-            .returning({ groupId: moduleReactivations.groupId });
+            .returning({
+              groupId:   moduleReactivations.groupId,
+              toggledAt: moduleReactivations.toggledAt,
+            });
 
           // Per-row integrity: assertBatchRowResult throws INTERNAL_SERVER_ERROR
           // when .returning() yields zero rows (silent skip) or more than one
@@ -1053,6 +1062,10 @@ export const adminRouter = router({
           assertBatchRowResult(written, item.groupId);
 
           upserted.push(written[0].groupId);
+          // All rows share the same `now`; capture from the first DB-confirmed row.
+          if (upserted.length === 1 && written[0].toggledAt instanceof Date) {
+            persistedAt = written[0].toggledAt;
+          }
         }
 
         // NOTE: An aggregate count check (upserted.length !== input.items.length)
@@ -1089,7 +1102,14 @@ export const adminRouter = router({
         // Audit log write failures must not affect the already-committed batch.
       }
 
-      return { success: true, count: upserted.length, upserted };
+      // #206: Include the DB-confirmed timestamp so clients can verify the
+      // persisted value matches their expectation — not just a client-side `now`.
+      return {
+        success:     true,
+        count:       upserted.length,
+        upserted,
+        persistedAt: persistedAt.toISOString(),
+      };
     }),
 
   // Delete all venture-specific module_reactivations rows for a given venture,
