@@ -125,7 +125,10 @@ export function handleSSEConnection(
   // Send connected event (no sensitive data)
   const connectedEvent: SSEEvent = {
     type: "connected",
-    data: { message: "Connected to EcoBlend Venture OS live event stream" },
+    data: {
+      message: "Connected to EcoBlend Venture OS live event stream",
+      clientId,                // lets the client correlate its own connection
+    },
     timestamp: new Date().toISOString(),
     id: String(++eventIdCounter),
   };
@@ -232,5 +235,11 @@ export function getSSEStats() {
   return {
     connectedClients: clients.size,
     totalEventsEmitted: eventIdCounter,
+    clients: Array.from(clients.values()).map(c => ({
+      id:          c.id,
+      userId:      c.userId,
+      isAdmin:     c.isAdmin,
+      connectedAt: c.connectedAt,
+    })),
   };
 }
