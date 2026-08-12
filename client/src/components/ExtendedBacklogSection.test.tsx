@@ -864,6 +864,86 @@ describe("ExtendedBacklogSection — header source badge", () => {
         expect(allWithSeparator).toHaveLength(1);
         expect(allWithSeparator[0].textContent).toContain("admin@example.com");
       });
+
+      // ── #200: audit hint updates immediately after a toggle, without a page reload ─
+      //
+      // When the admin toggles a group and the server refetch delivers new rows,
+      // the audit hint on the locked OFF row must reflect the new author
+      // IMMEDIATELY on the next render — no page reload required.
+      //
+      // Strategy: mount with no audit data, then rerender with fresh rows that
+      // carry audit data.  The hint must appear after rerender without any
+      // navigation or page reload.
+      it("audit hint appears immediately when fresh rows arrive after a toggle — no page reload required (#200)", () => {
+        const { rerender } = renderInRouter(
+          React.createElement(ExtendedBacklogSection, {
+            location:    TARGET_LOCATION,
+            isActivated: allExceptLocked,
+            // Initially no audit data: toggledBy and toggledAt are null.
+            rows:        [{ groupId: LOCKED_GROUP, ventureId: "__global__", active: false, toggledBy: null, toggledAt: null }],
+            isLoading:   false,
+            isError:     false,
+            ventureId:   null,
+          }),
+        );
+
+        // Before re-render: no audit hint because toggledBy is null.
+        expect(getHintSpan()).toBeNull();
+
+        // Simulate a server refetch delivering a new row with audit data
+        // (the admin toggled the group and the server responded).
+        rerender(
+          React.createElement(Router, { base: "" },
+            React.createElement(ExtendedBacklogSection, {
+              location:    TARGET_LOCATION,
+              isActivated: allExceptLocked,
+              rows:        [globalRowWithAudit(LOCKED_GROUP, "alice@example.com")],
+              isLoading:   false,
+              isError:     false,
+              ventureId:   null,
+            }),
+          ),
+        );
+
+        // After re-render: hint must appear immediately — no reload needed.
+        const hint = getHintSpan();
+        expect(hint).not.toBeNull();
+        expect(hint!.textContent).toContain("alice@example.com");
+      });
+
+      it("audit hint disappears immediately when a reset removes the OFF row data — no page reload (#200 negative)", () => {
+        // Start: audit data present.
+        const { rerender } = renderInRouter(
+          React.createElement(ExtendedBacklogSection, {
+            location:    TARGET_LOCATION,
+            isActivated: allExceptLocked,
+            rows:        [globalRowWithAudit(LOCKED_GROUP)],
+            isLoading:   false,
+            isError:     false,
+            ventureId:   null,
+          }),
+        );
+
+        // Initially: hint is visible.
+        expect(getHintSpan()).not.toBeNull();
+
+        // Simulate a reset: server delivers no row for LOCKED_GROUP.
+        rerender(
+          React.createElement(Router, { base: "" },
+            React.createElement(ExtendedBacklogSection, {
+              location:    TARGET_LOCATION,
+              isActivated: allExceptLocked,
+              rows:        [],  // no rows — DEFAULT state
+              isLoading:   false,
+              isError:     false,
+              ventureId:   null,
+            }),
+          ),
+        );
+
+        // Hint must disappear immediately (DEFAULT state has no audit row).
+        expect(getHintSpan()).toBeNull();
+      });
     });
   });
 
