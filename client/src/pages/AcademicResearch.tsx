@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import QueryErrorBanner from "@/components/QueryErrorBanner";
 import {
   BookOpen, Users, Building2, BarChart2,
   Plus, Search, ExternalLink, Trash2,
@@ -219,7 +220,8 @@ function VentureTags({ ventureIds }: { ventureIds: string | null | undefined }) 
 
 // ── SECTION: Research Papers ──────────────────────────────────────────────────
 function PapersSection() {
-  const { data: papers = [], refetch } = trpc.academic.listPapers.useQuery();
+  const { data: papers = [], refetch, error: papersError } = trpc.academic.listPapers.useQuery();
+  if (papersError) return <QueryErrorBanner errors={[papersError]} message="Unable to load research papers. Please refresh." />;
   const addPaper = trpc.academic.addPaper.useMutation({
     onSuccess: () => { refetch(); toast.success("Paper added to library"); setShowAdd(false); resetForm(); }
   });
@@ -503,7 +505,8 @@ function PapersSection() {
 
 // ── SECTION: Fellow Researchers ───────────────────────────────────────────────
 function FellowsSection() {
-  const { data: fellows = [], refetch } = trpc.academic.listFellows.useQuery();
+  const { data: fellows = [], refetch, error: fellowsError } = trpc.academic.listFellows.useQuery();
+  if (fellowsError) return <QueryErrorBanner errors={[fellowsError]} message="Unable to load fellows. Please refresh." />;
   const addFellow = trpc.academic.addFellow.useMutation({
     onSuccess: () => { refetch(); toast.success("Fellow researcher added"); setShowAdd(false); resetForm(); }
   });
@@ -728,7 +731,8 @@ function FellowsSection() {
 
 // ── SECTION: University Partnerships ─────────────────────────────────────────
 function PartnershipsSection() {
-  const { data: partnerships = [], refetch } = trpc.academic.listPartnerships.useQuery();
+  const { data: partnerships = [], refetch, error: partnershipsError } = trpc.academic.listPartnerships.useQuery();
+  if (partnershipsError) return <QueryErrorBanner errors={[partnershipsError]} message="Unable to load partnerships. Please refresh." />;
   const addPartnership = trpc.academic.addPartnership.useMutation({
     onSuccess: () => { refetch(); toast.success("Partnership added"); setShowAdd(false); resetForm(); }
   });
@@ -941,7 +945,8 @@ function PartnershipsSection() {
 
 // ── SECTION: Evidence Claims ──────────────────────────────────────────────────
 function EvidenceClaimsSection({ papers }: { papers: ResearchPaper[] }) {
-  const { data: claims = [], refetch } = trpc.academic.listClaims.useQuery();
+  const { data: claims = [], refetch, error: claimsError } = trpc.academic.listClaims.useQuery();
+  if (claimsError) return <QueryErrorBanner errors={[claimsError]} message="Unable to load IP claims. Please refresh." />;
   const addClaim = trpc.academic.addClaim.useMutation({
     onSuccess: () => { refetch(); toast.success("Evidence claim added"); setShowAdd(false); resetForm(); }
   });

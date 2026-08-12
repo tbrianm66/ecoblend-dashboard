@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import QueryErrorBanner from "@/components/QueryErrorBanner";
 import { Rocket, CheckCircle, Clock, AlertTriangle, FolderOpen, FileText, Users, Database, ArrowRight } from "lucide-react";
 
 const STEP_LABELS = ["Trigger Spin-Off", "Create Drive", "Migrate Assets", "Generate Handover Pack", "Setup Data Room", "Complete"];
@@ -42,6 +43,7 @@ export default function SpinoffSequenceOS() {
   const sequences = trpc.spinoffSequence.listSequences.useQuery();
   const sequence  = trpc.spinoffSequence.getSequence.useQuery({ id: activeSequenceId! }, { enabled: !!activeSequenceId });
   const assetPlan = trpc.spinoffSequence.getAssetMigrationPlan.useQuery();
+  if (sequences.isError) return <QueryErrorBanner errors={[sequences.error]} message="Unable to load spin-off sequences. Please refresh." />;
 
   const triggerMutation = trpc.spinoffSequence.triggerSpinoff.useMutation({
     onSuccess: (data) => { toast.success(data.message); sequences.refetch(); setShowTriggerForm(false); setActiveSequenceId(data.sequenceId); },

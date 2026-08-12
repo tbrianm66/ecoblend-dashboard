@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import QueryErrorBanner from "@/components/QueryErrorBanner";
 import { CheckCircle, Clock, AlertCircle, XCircle, Link2, RefreshCw, Sparkles } from "lucide-react";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -42,11 +43,12 @@ export default function BrandPipeline() {
   const [generatingHeader, setGeneratingHeader] = useState(false);
   const [generatedHeader, setGeneratedHeader] = useState("");
 
-  const register = trpc.brandPipeline.getAssetRegister.useQuery({ ventureId }, { enabled: !!ventureId });
-  const panel    = trpc.brandPipeline.getBrandPanel.useQuery({ ventureId }, { enabled: !!ventureId });
-  const log      = trpc.brandPipeline.getUpdateLog.useQuery({ ventureId, limit: 20 }, { enabled: !!ventureId });
-  const assetTypes = trpc.brandPipeline.getBrandAssetTypes.useQuery();
+  const register   = trpc.brandPipeline.getAssetRegister.useQuery({ ventureId }, { enabled: !!ventureId });
+  const panel      = trpc.brandPipeline.getBrandPanel.useQuery({ ventureId }, { enabled: !!ventureId });
+  const log        = trpc.brandPipeline.getUpdateLog.useQuery({ ventureId, limit: 20 }, { enabled: !!ventureId });
+  const assetTypes  = trpc.brandPipeline.getBrandAssetTypes.useQuery();
   const linkTargets = trpc.brandPipeline.getModuleLinkTargets.useQuery();
+  if (register.isError || panel.isError) return <QueryErrorBanner errors={[register.error, panel.error]} message="Unable to load brand pipeline. Please refresh." />;
 
   const upsertAsset = trpc.brandPipeline.upsertAsset.useMutation({
     onSuccess: () => { toast.success("Asset updated"); register.refetch(); panel.refetch(); log.refetch(); setEditAsset(null); },

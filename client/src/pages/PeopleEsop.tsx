@@ -7,6 +7,7 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import QueryErrorBanner from "@/components/QueryErrorBanner";
 import {
   Users, Award, TrendingUp, DollarSign, Plus, RefreshCw,
   ChevronDown, ChevronUp, BarChart2, BookOpen, Scale,
@@ -147,10 +148,11 @@ export default function PeopleEsop() {
   const [expandedMember, setExpandedMember] = useState<number | null>(null);
 
   // ── tRPC queries ─────────────────────────────────────────────────────────────
-  const { data: allAllocations = [], refetch: refetchAllocations } = trpc.equity.listAllocations.useQuery({ ventureId: undefined });
-  const { data: portfolioSummary = [] } = trpc.equity.getPortfolioEquitySummary.useQuery();
+  const { data: allAllocations = [], refetch: refetchAllocations, error: allocErr } = trpc.equity.listAllocations.useQuery({ ventureId: undefined });
+  const { data: portfolioSummary = [], error: portfolioErr } = trpc.equity.getPortfolioEquitySummary.useQuery();
   const { data: leaderboard = [] } = trpc.equity.getLeaderboard.useQuery({ ventureId: undefined });
   const { data: contributions = [], refetch: refetchContributions } = trpc.equity.listContributions.useQuery({ ventureId: undefined });
+  if (allocErr || portfolioErr) return <QueryErrorBanner errors={[allocErr, portfolioErr]} message="Unable to load equity data. Please refresh." />;
 
   // ── Mutations ─────────────────────────────────────────────────────────────────
   const upsertAllocation = trpc.equity.upsertAllocation.useMutation({
