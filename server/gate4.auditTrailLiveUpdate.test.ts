@@ -823,6 +823,210 @@ describe("audit trail — concurrent toggle scenarios (last write wins, fake-DB 
     expect(badge).toBe("venture");
   });
 
+  // ── makeRaceableStore ────────────────────────────────────────────────────────
+  // A shared in-memory store where each write is gated behind its own Promise
+  // resolver.  Unlike makeFakeDb (synchronous Map.set) or makeDeferredFakeDb
+  // (single global gate), this helper gives every individual write its own
+  // suspension point so tests can release writes in any order, forcing the two
+  // orderings of a concurrent race explicitly.
+  //
+  // The single-toggle path (admin.router.ts ~890–910) calls `new Date()` inline
+  // inside onConflictDoUpdate — so its timestamp is captured at write time.
+  // The batch path (~977–1003) computes `const now = new Date()` once before
+  // the loop — so all items share the same pre-computed timestamp.
+  // Both paths atomically update (active, toggledBy, toggledAt) on conflict.
+  // makeRaceableStore models this: each gatedWrite captures a fully-formed row
+  // at construction time and commits it atomically when released.
+  //
+  // Usage:
+  //   const store = makeRaceableStore();
+  //   const w1 = store.gatedWrite({ … });   // write constructed, NOT committed
+  //   const w2 = store.gatedWrite({ … });   // same
+  //   const p1 = w1.dispatch();              // pending async write
+  //   const p2 = w2.dispatch();              // pending async write
+  //   w1.release(); await p1;               // write 1 commits first
+  //   w2.release(); await p2;               // write 2 commits second (overrides)
+  //   store.read();                         // observe final state
+  //
+  function makeRaceableStore() {
+    const store = new Map<string, StoredRow>();
+    const storeKey = (g: string, v: string) => `${g}::${v}`;
+
+    function gatedWrite(row: StoredRow): { dispatch: () => Promise<void>; release: () => void } {
+      let _release!: () => void;
+      const gate = new Promise<void>(resolve => { _release = resolve; });
+
+      return {
+        dispatch: async () => {
+          await gate;
+          const k        = storeKey(row.groupId, row.ventureId);
+          const existing = store.get(k);
+          store.set(
+            k,
+            existing
+              ? { ...existing, active: row.active, toggledBy: row.toggledBy, toggledAt: row.toggledAt }
+              : { ...row },
+          );
+        },
+        release: () => _release(),
+      };
+    }
+
+    return {
+      read: async (): Promise<ReactivationRow[]> =>
+        [...store.values()].sort((a, b) => a.groupId.localeCompare(b.groupId)),
+      gatedWrite,
+    };
+  }
+
+  // ── R1: single-toggle commits first, batch-toggle commits second ────────────
+  //
+  // Ordering: single-toggle write is released and commits first; the batch
+  // write then commits and overwrites the row.  The batch path uses a
+  // pre-computed `now` (computed once before the loop in the real server).
+  // The single-toggle path uses its own inline `new Date()`.
+  //
+  // After the batch commits (last write), the settled row must have all three
+  // mutable fields (active, toggledBy, toggledAt) entirely from the batch
+  // write — no fields from the single-toggle write must remain.
+  it("R1: single-toggle commits first then batch-toggle commits second — final audit reflects the batch write with no mixed fields", async () => {
+    const rs = makeRaceableStore();
+
+    // Single-toggle path: inline `new Date()` captured at construction —
+    // modelling admin.router.ts setModuleReactivation's `toggledAt: new Date()`.
+    const singleDate = new Date("2026-09-01T08:00:00.000Z");
+    const singleWrite = rs.gatedWrite({
+      groupId:   GROUP,
+      ventureId: VENTURE_A,
+      active:    true,
+      toggledBy: ADMIN_1,
+      toggledAt: singleDate,
+    });
+
+    // Batch path: pre-computed `now` shared across all items —
+    // modelling setModuleReactivationBatch's `const now = new Date()`.
+    const batchNow   = new Date("2026-09-01T08:00:00.080Z");
+    const batchWrite = rs.gatedWrite({
+      groupId:   GROUP,
+      ventureId: VENTURE_A,
+      active:    false,
+      toggledBy: ADMIN_2,
+      toggledAt: batchNow,
+    });
+
+    // Both writes dispatched — neither committed yet (both gated)
+    const singleP = singleWrite.dispatch();
+    const batchP  = batchWrite.dispatch();
+
+    // — Phase 1: release single-toggle first; batch is still pending ——————————
+    singleWrite.release();
+    await singleP;
+
+    const rowsMid = await rs.read();
+    const midRow  = buildRowByGroup(rowsMid, VENTURE_A).get(GROUP)!;
+    expect(midRow).toBeDefined();
+    // Only single-toggle data committed so far — no mixing possible yet
+    expect(midRow.toggledBy).toBe(ADMIN_1);
+    expect(midRow.toggledAt).toEqual(singleDate);
+    expect(midRow.active).toBe(true);
+
+    // — Phase 2: release batch; batch overwrites the row ——————————————————————
+    batchWrite.release();
+    await batchP;
+
+    const rowsFinal = await rs.read();
+
+    // Upsert semantics: still exactly one row
+    expect(rowsFinal.filter(r => r.groupId === GROUP && r.ventureId === VENTURE_A).length).toBe(1);
+
+    const finalRow = buildRowByGroup(rowsFinal, VENTURE_A).get(GROUP)!;
+    expect(finalRow).toBeDefined();
+
+    // All three mutable fields must come from the batch write — no ADMIN_1 data
+    expect(finalRow.toggledBy).toBe(ADMIN_2);
+    expect(finalRow.toggledAt).toEqual(batchNow);
+    expect(finalRow.active).toBe(false);
+
+    // Audit string is entirely from the batch write — no single-toggle leakage
+    const audit = formatToggleAudit(finalRow.toggledBy, finalRow.toggledAt)!;
+    expect(audit).toMatch(new RegExp(`^${ADMIN_2}`));
+    expect(audit).not.toContain(ADMIN_1);
+
+    const { badge } = auditAndBadgeFor(rowsFinal, VENTURE_A, GROUP);
+    expect(badge).toBe("venture");
+  });
+
+  // ── R2: batch-toggle commits first, single-toggle commits second ────────────
+  //
+  // Inverse ordering: the batch write commits first (with its pre-computed
+  // `now` that is earlier), then the single-toggle write commits second (with
+  // its own inline `new Date()`, which is later).  After the single-toggle
+  // commits (last write), its three fields must fully replace the batch data —
+  // no batch fields must survive in the settled row.
+  it("R2: batch-toggle commits first then single-toggle commits second — final audit reflects the single-toggle write with no mixed fields", async () => {
+    const rs = makeRaceableStore();
+
+    // Batch path: pre-computed `now` is earlier (batch started first)
+    const batchNow   = new Date("2026-09-02T14:00:00.000Z");
+    const batchWrite = rs.gatedWrite({
+      groupId:   GROUP,
+      ventureId: VENTURE_A,
+      active:    false,
+      toggledBy: ADMIN_2,
+      toggledAt: batchNow,
+    });
+
+    // Single-toggle path: inline timestamp is later (single arrived after batch)
+    const singleDate = new Date("2026-09-02T14:00:00.090Z");
+    const singleWrite = rs.gatedWrite({
+      groupId:   GROUP,
+      ventureId: VENTURE_A,
+      active:    true,
+      toggledBy: ADMIN_1,
+      toggledAt: singleDate,
+    });
+
+    const batchP  = batchWrite.dispatch();
+    const singleP = singleWrite.dispatch();
+
+    // — Phase 1: release batch first; single is still pending ——————————————————
+    batchWrite.release();
+    await batchP;
+
+    const rowsMid = await rs.read();
+    const midRow  = buildRowByGroup(rowsMid, VENTURE_A).get(GROUP)!;
+    expect(midRow).toBeDefined();
+    // Only batch data committed so far
+    expect(midRow.toggledBy).toBe(ADMIN_2);
+    expect(midRow.toggledAt).toEqual(batchNow);
+    expect(midRow.active).toBe(false);
+
+    // — Phase 2: release single-toggle; single overwrites the row —————————————
+    singleWrite.release();
+    await singleP;
+
+    const rowsFinal = await rs.read();
+
+    // Still exactly one row
+    expect(rowsFinal.filter(r => r.groupId === GROUP && r.ventureId === VENTURE_A).length).toBe(1);
+
+    const finalRow = buildRowByGroup(rowsFinal, VENTURE_A).get(GROUP)!;
+    expect(finalRow).toBeDefined();
+
+    // All three mutable fields must come from the single-toggle write — no ADMIN_2 data
+    expect(finalRow.toggledBy).toBe(ADMIN_1);
+    expect(finalRow.toggledAt).toEqual(singleDate);
+    expect(finalRow.active).toBe(true);
+
+    // Audit string is entirely from the single-toggle write — no batch leakage
+    const audit = formatToggleAudit(finalRow.toggledBy, finalRow.toggledAt)!;
+    expect(audit).toMatch(new RegExp(`^${ADMIN_1}`));
+    expect(audit).not.toContain(ADMIN_2);
+
+    const { badge } = auditAndBadgeFor(rowsFinal, VENTURE_A, GROUP);
+    expect(badge).toBe("venture");
+  });
+
   // ── O: three concurrent writes — DB-reported winner's audit is consistent ──
   it("O: after three concurrent writes the DB-reported row's audit is entirely from whichever write won", async () => {
     const ADMIN_3 = "carol@example.com";
