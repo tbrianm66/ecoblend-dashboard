@@ -264,3 +264,76 @@ describe("Sidebar — ReactivationPanel prop wiring", () => {
     expect(screen.getByTestId("global-venture-selector")).toBeDefined();
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. X (close) button inside the ReactivationPanel — onClose invoked (#701)
+// ─────────────────────────────────────────────────────────────────────────────
+describe("Sidebar — ReactivationPanel X close button (#701)", () => {
+  it("clicking the X button inside the open panel closes it (onClose wired)", () => {
+    render(React.createElement(Sidebar));
+    // Open the panel via gear.
+    fireEvent.click(screen.getByTestId("gear-button"));
+    expect(screen.getByTestId("reactivation-panel")).toBeDefined();
+
+    // The panel header contains an X button as the last button before any
+    // row buttons.  Find all buttons inside the panel container.
+    const panelEl = screen.getByTestId("reactivation-panel");
+    // The X button is the first button inside the panel header (the gear button
+    // is outside the panel overlay).
+    const panelButtons = panelEl.querySelectorAll("button");
+    // The X close button is always the first button in the panel header.
+    const xButton = panelButtons[0] as HTMLButtonElement;
+    expect(xButton).toBeDefined();
+    fireEvent.click(xButton);
+
+    // Panel should now be closed.
+    expect(screen.queryByTestId("reactivation-panel")).toBeNull();
+  });
+
+  it("panel can be reopened after X close (gear button still works)", () => {
+    render(React.createElement(Sidebar));
+    fireEvent.click(screen.getByTestId("gear-button"));
+    const panelEl = screen.getByTestId("reactivation-panel");
+    const xButton = panelEl.querySelectorAll("button")[0] as HTMLButtonElement;
+    fireEvent.click(xButton);
+    expect(screen.queryByTestId("reactivation-panel")).toBeNull();
+
+    // Gear click must reopen.
+    fireEvent.click(screen.getByTestId("gear-button"));
+    expect(screen.getByTestId("reactivation-panel")).toBeDefined();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. Global scope — actionsDisabled=false when ventureId=null and loading=false
+// ─────────────────────────────────────────────────────────────────────────────
+describe("Sidebar — global scope actionsDisabled=false (#563)", () => {
+  beforeEach(() => {
+    // Global scope: no selected venture, not loading.
+    mockSelectedVenture = null;
+    mockLoading = false;
+  });
+
+  it("renders the ReactivationPanel header without throwing in global scope", () => {
+    render(React.createElement(Sidebar));
+    fireEvent.click(screen.getByTestId("gear-button"));
+    // The panel header description text for global scope must render.
+    expect(screen.getByText(/all ventures/i)).toBeTruthy();
+  });
+
+  it("global scope panel header shows 'global defaults' copy (not the venture name copy)", () => {
+    render(React.createElement(Sidebar));
+    fireEvent.click(screen.getByTestId("gear-button"));
+    // The global description explicitly mentions global defaults.
+    expect(screen.getByText(/global defaults/i)).toBeTruthy();
+    // The venture-specific description mentions "Editing module settings for" — must NOT appear.
+    expect(screen.queryByText(/Editing module settings for/i)).toBeNull();
+  });
+
+  it("panel still renders in global scope when isBatchPending is false", () => {
+    mockIsBatchPending = false;
+    render(React.createElement(Sidebar));
+    fireEvent.click(screen.getByTestId("gear-button"));
+    expect(screen.getByTestId("reactivation-panel")).toBeDefined();
+  });
+});
