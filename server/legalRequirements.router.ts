@@ -5,7 +5,7 @@
  */
 import { z } from "zod";
 import { eq, desc, and, sql } from "drizzle-orm";
-import { router, publicProcedure } from "./_core/trpc";
+import { router, publicProcedure, protectedProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import {
   legalContractRequirements,
@@ -147,7 +147,7 @@ export const legalRequirementsRouter = router({
         });
       }),
 
-    seed: publicProcedure.mutation(async () => {
+    seed: protectedProcedure.mutation(async () => {
       const db = await getDb();
       const existing = await db.select().from(legalContractRequirements).limit(1);
       if (existing.length > 0) return { seeded: false, count: existing.length };
@@ -155,7 +155,7 @@ export const legalRequirementsRouter = router({
       return { seeded: true, count: SEED_REQUIREMENTS.length };
     }),
 
-    reseed: publicProcedure.mutation(async () => {
+    reseed: protectedProcedure.mutation(async () => {
       const db = await getDb();
       await db.delete(legalContractRequirements);
       await db.insert(legalContractRequirements).values(SEED_REQUIREMENTS);

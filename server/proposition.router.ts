@@ -6,7 +6,7 @@
 // ============================================================================
 import { z } from "zod";
 import { eq, desc, and, avg, sql } from "drizzle-orm";
-import { router, publicProcedure } from "./_core/trpc";
+import { router, publicProcedure, protectedProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import {
   pmValuePropositions, pmJtbd, pmBmHypotheses, pmRevenueTests,
@@ -93,7 +93,7 @@ export const propositionRouter = router({
       const [row] = await d.insert(pmValuePropositions).values({ ventureId, ...fields, confidenceScore, createdAt: now, updatedAt: now }).returning({ id: pmValuePropositions.id });
       return row;
     }),
-    delete: publicProcedure.input(idInput).mutation(async ({ input }) => {
+    delete: protectedProcedure.input(idInput).mutation(async ({ input }) => {
       const d = await getDb(); if (!d) throw new Error("DB unavailable");
       await d.delete(pmValuePropositions).where(eq(pmValuePropositions.id, input.id));
     }),
@@ -123,7 +123,7 @@ export const propositionRouter = router({
       const [row] = await d.insert(pmJtbd).values({ ventureId, ...fields, importanceScore, satisfactionScore, opportunityScore, createdAt: now, updatedAt: now }).returning({ id: pmJtbd.id });
       return row;
     }),
-    delete: publicProcedure.input(idInput).mutation(async ({ input }) => {
+    delete: protectedProcedure.input(idInput).mutation(async ({ input }) => {
       const d = await getDb(); if (!d) throw new Error("DB unavailable");
       await d.delete(pmJtbd).where(eq(pmJtbd.id, input.id));
     }),
@@ -153,7 +153,7 @@ export const propositionRouter = router({
       const [row] = await d.insert(pmBmHypotheses).values({ ventureId, ...fields, confidenceScore, createdAt: now, updatedAt: now }).returning({ id: pmBmHypotheses.id });
       return row;
     }),
-    delete: publicProcedure.input(idInput).mutation(async ({ input }) => {
+    delete: protectedProcedure.input(idInput).mutation(async ({ input }) => {
       const d = await getDb(); if (!d) throw new Error("DB unavailable");
       await d.delete(pmBmHypotheses).where(eq(pmBmHypotheses.id, input.id));
     }),
@@ -182,7 +182,7 @@ export const propositionRouter = router({
       const [row] = await d.insert(pmRevenueTests).values({ ventureId, ...fields, createdAt: now, updatedAt: now }).returning({ id: pmRevenueTests.id });
       return row;
     }),
-    delete: publicProcedure.input(idInput).mutation(async ({ input }) => {
+    delete: protectedProcedure.input(idInput).mutation(async ({ input }) => {
       const d = await getDb(); if (!d) throw new Error("DB unavailable");
       await d.delete(pmRevenueTests).where(eq(pmRevenueTests.id, input.id));
     }),
@@ -213,7 +213,7 @@ export const propositionRouter = router({
       const [row] = await d.insert(pmUnitEconomics).values({ ventureId, ...fields, createdAt: now, updatedAt: now }).returning({ id: pmUnitEconomics.id });
       return row;
     }),
-    delete: publicProcedure.input(idInput).mutation(async ({ input }) => {
+    delete: protectedProcedure.input(idInput).mutation(async ({ input }) => {
       const d = await getDb(); if (!d) throw new Error("DB unavailable");
       await d.delete(pmUnitEconomics).where(eq(pmUnitEconomics.id, input.id));
     }),
@@ -245,7 +245,7 @@ export const propositionRouter = router({
       const [row] = await d.insert(pmRisks).values({ ventureId, ...fields, probabilityScore, severityScore, evidenceConfidenceScore, riskScore: rs, createdAt: now, updatedAt: now }).returning({ id: pmRisks.id });
       return row;
     }),
-    delete: publicProcedure.input(idInput).mutation(async ({ input }) => {
+    delete: protectedProcedure.input(idInput).mutation(async ({ input }) => {
       const d = await getDb(); if (!d) throw new Error("DB unavailable");
       await d.delete(pmRisks).where(eq(pmRisks.id, input.id));
     }),

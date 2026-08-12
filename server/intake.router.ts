@@ -5,7 +5,7 @@
 // ============================================================================
 import { z } from "zod";
 import { eq, desc, and } from "drizzle-orm";
-import { router, publicProcedure } from "./_core/trpc";
+import { router, publicProcedure, protectedProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import {
   viIdeas, viAssumptions, viRiskiest, viDecisions,
@@ -89,7 +89,7 @@ export const intakeRouter = router({
       return d.select().from(viIdeas).where(eq(viIdeas.ventureId, input.ventureId)).orderBy(desc(viIdeas.updatedAt));
     }),
 
-    upsert: publicProcedure.input(z.object({ id: z.number().optional(), ventureId: z.string(), ...ideaFields })).mutation(async ({ input }) => {
+    upsert: protectedProcedure.input(z.object({ id: z.number().optional(), ventureId: z.string(), ...ideaFields })).mutation(async ({ input }) => {
       const d = await getDb();
       if (!d) throw new Error("DB unavailable");
       const { id, ventureId, ...fields } = input;
@@ -102,7 +102,7 @@ export const intakeRouter = router({
       return row;
     }),
 
-    delete: publicProcedure.input(idInput).mutation(async ({ input }) => {
+    delete: protectedProcedure.input(idInput).mutation(async ({ input }) => {
       const d = await getDb();
       if (!d) throw new Error("DB unavailable");
       await d.delete(viIdeas).where(eq(viIdeas.id, input.id));
@@ -117,7 +117,7 @@ export const intakeRouter = router({
       return d.select().from(viAssumptions).where(eq(viAssumptions.ventureId, input.ventureId)).orderBy(desc(viAssumptions.updatedAt));
     }),
 
-    upsert: publicProcedure.input(z.object({ id: z.number().optional(), ventureId: z.string(), ...assumptionFields })).mutation(async ({ input }) => {
+    upsert: protectedProcedure.input(z.object({ id: z.number().optional(), ventureId: z.string(), ...assumptionFields })).mutation(async ({ input }) => {
       const d = await getDb();
       if (!d) throw new Error("DB unavailable");
       const { id, ventureId, importanceScore = 3, uncertaintyScore = 3, ...rest } = input;
@@ -131,13 +131,13 @@ export const intakeRouter = router({
       return row;
     }),
 
-    delete: publicProcedure.input(idInput).mutation(async ({ input }) => {
+    delete: protectedProcedure.input(idInput).mutation(async ({ input }) => {
       const d = await getDb();
       if (!d) throw new Error("DB unavailable");
       await d.delete(viAssumptions).where(eq(viAssumptions.id, input.id));
     }),
 
-    convertToHypothesis: publicProcedure.input(idInput).mutation(async ({ input }) => {
+    convertToHypothesis: protectedProcedure.input(idInput).mutation(async ({ input }) => {
       const d = await getDb();
       if (!d) throw new Error("DB unavailable");
       const [a] = await d.select().from(viAssumptions).where(eq(viAssumptions.id, input.id));
@@ -203,7 +203,7 @@ export const intakeRouter = router({
       return row;
     }),
 
-    delete: publicProcedure.input(idInput).mutation(async ({ input }) => {
+    delete: protectedProcedure.input(idInput).mutation(async ({ input }) => {
       const d = await getDb();
       if (!d) throw new Error("DB unavailable");
       await d.delete(ccHypotheses).where(eq(ccHypotheses.id, input.id));
@@ -218,7 +218,7 @@ export const intakeRouter = router({
       return d.select().from(viRiskiest).where(eq(viRiskiest.ventureId, input.ventureId)).orderBy(desc(viRiskiest.testPriorityScore));
     }),
 
-    upsert: publicProcedure.input(z.object({ id: z.number().optional(), ventureId: z.string(), ...riskiestFields })).mutation(async ({ input }) => {
+    upsert: protectedProcedure.input(z.object({ id: z.number().optional(), ventureId: z.string(), ...riskiestFields })).mutation(async ({ input }) => {
       const d = await getDb();
       if (!d) throw new Error("DB unavailable");
       const { id, ventureId, ...fields } = input;
@@ -231,13 +231,13 @@ export const intakeRouter = router({
       return row;
     }),
 
-    delete: publicProcedure.input(idInput).mutation(async ({ input }) => {
+    delete: protectedProcedure.input(idInput).mutation(async ({ input }) => {
       const d = await getDb();
       if (!d) throw new Error("DB unavailable");
       await d.delete(viRiskiest).where(eq(viRiskiest.id, input.id));
     }),
 
-    createExperiment: publicProcedure.input(idInput).mutation(async ({ input }) => {
+    createExperiment: protectedProcedure.input(idInput).mutation(async ({ input }) => {
       const d = await getDb();
       if (!d) throw new Error("DB unavailable");
       const [r] = await d.select().from(viRiskiest).where(eq(viRiskiest.id, input.id));
@@ -265,7 +265,7 @@ export const intakeRouter = router({
       return rows[0] ?? null;
     }),
 
-    upsert: publicProcedure.input(z.object({ id: z.number().optional(), ventureId: z.string(), ...decisionFields })).mutation(async ({ input }) => {
+    upsert: protectedProcedure.input(z.object({ id: z.number().optional(), ventureId: z.string(), ...decisionFields })).mutation(async ({ input }) => {
       const d = await getDb();
       if (!d) throw new Error("DB unavailable");
       const { id, ventureId, ...fields } = input;
@@ -278,7 +278,7 @@ export const intakeRouter = router({
       return row;
     }),
 
-    approve: publicProcedure.input(z.object({ id: z.number(), ventureId: z.string(), decisionType: z.string() })).mutation(async ({ input }) => {
+    approve: protectedProcedure.input(z.object({ id: z.number(), ventureId: z.string(), decisionType: z.string() })).mutation(async ({ input }) => {
       const d = await getDb();
       if (!d) throw new Error("DB unavailable");
       const stageMap: Record<string, { stage: string; status: string }> = {

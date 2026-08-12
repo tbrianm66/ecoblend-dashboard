@@ -5,7 +5,7 @@
  * idempotent auto-alert generation. Pure scoring lives in shared/commandCentre.
  */
 import { z } from "zod";
-import { router, publicProcedure } from "./_core/trpc";
+import { router, publicProcedure, protectedProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import { and, eq, desc, inArray } from "drizzle-orm";
 import {
@@ -471,7 +471,7 @@ export const commandCentreLeanRouter = router({
       const d = await db();
       return d.select().from(ccHypotheses).where(eq(ccHypotheses.ventureId, input.ventureId)).orderBy(desc(ccHypotheses.updatedAt));
     }),
-    upsert: publicProcedure.input(z.object({ id: z.number().optional(), ...hypothesisFields })).mutation(async ({ input }) => {
+    upsert: protectedProcedure.input(z.object({ id: z.number().optional(), ...hypothesisFields })).mutation(async ({ input }) => {
       const d = await db();
       const { id, ...vals } = input;
       let hid = id;
@@ -485,7 +485,7 @@ export const commandCentreLeanRouter = router({
       await resyncVentureAlerts(d, vals.ventureId);
       return { id: hid };
     }),
-    delete: publicProcedure.input(idInput).mutation(async ({ input }) => {
+    delete: protectedProcedure.input(idInput).mutation(async ({ input }) => {
       const d = await db();
       const [row] = await d.select().from(ccHypotheses).where(eq(ccHypotheses.id, input.id));
       await d.delete(ccHypotheses).where(eq(ccHypotheses.id, input.id));
@@ -500,7 +500,7 @@ export const commandCentreLeanRouter = router({
       const d = await db();
       return d.select().from(ccExperiments).where(eq(ccExperiments.ventureId, input.ventureId)).orderBy(desc(ccExperiments.updatedAt));
     }),
-    upsert: publicProcedure.input(z.object({ id: z.number().optional(), ...experimentFields })).mutation(async ({ input }) => {
+    upsert: protectedProcedure.input(z.object({ id: z.number().optional(), ...experimentFields })).mutation(async ({ input }) => {
       const d = await db();
       const { id, ...vals } = input;
       let eid = id;
@@ -513,14 +513,14 @@ export const commandCentreLeanRouter = router({
       await resyncVentureAlerts(d, vals.ventureId);
       return { id: eid };
     }),
-    setStatus: publicProcedure.input(z.object({ id: z.number(), experimentStatus: z.enum(EXPERIMENT_STATUSES) })).mutation(async ({ input }) => {
+    setStatus: protectedProcedure.input(z.object({ id: z.number(), experimentStatus: z.enum(EXPERIMENT_STATUSES) })).mutation(async ({ input }) => {
       const d = await db();
       await d.update(ccExperiments).set({ experimentStatus: input.experimentStatus, updatedAt: new Date() }).where(eq(ccExperiments.id, input.id));
       const [row] = await d.select().from(ccExperiments).where(eq(ccExperiments.id, input.id));
       if (row) await resyncVentureAlerts(d, row.ventureId);
       return { success: true };
     }),
-    delete: publicProcedure.input(idInput).mutation(async ({ input }) => {
+    delete: protectedProcedure.input(idInput).mutation(async ({ input }) => {
       const d = await db();
       const [row] = await d.select().from(ccExperiments).where(eq(ccExperiments.id, input.id));
       await d.delete(ccExperiments).where(eq(ccExperiments.id, input.id));
@@ -535,7 +535,7 @@ export const commandCentreLeanRouter = router({
       const d = await db();
       return d.select().from(ccEvidence).where(eq(ccEvidence.ventureId, input.ventureId)).orderBy(desc(ccEvidence.updatedAt));
     }),
-    upsert: publicProcedure.input(z.object({ id: z.number().optional(), ...evidenceFields })).mutation(async ({ input }) => {
+    upsert: protectedProcedure.input(z.object({ id: z.number().optional(), ...evidenceFields })).mutation(async ({ input }) => {
       const d = await db();
       const { id, ...vals } = input;
       const evidenceConfidenceScore = calculateEvidenceConfidenceScore({
@@ -553,7 +553,7 @@ export const commandCentreLeanRouter = router({
       await resyncVentureAlerts(d, vals.ventureId);
       return { id: evid, evidenceConfidenceScore };
     }),
-    delete: publicProcedure.input(idInput).mutation(async ({ input }) => {
+    delete: protectedProcedure.input(idInput).mutation(async ({ input }) => {
       const d = await db();
       const [row] = await d.select().from(ccEvidence).where(eq(ccEvidence.id, input.id));
       await d.delete(ccEvidence).where(eq(ccEvidence.id, input.id));
@@ -568,7 +568,7 @@ export const commandCentreLeanRouter = router({
       const d = await db();
       return d.select().from(ccDecisions).where(eq(ccDecisions.ventureId, input.ventureId)).orderBy(desc(ccDecisions.updatedAt));
     }),
-    upsert: publicProcedure.input(z.object({ id: z.number().optional(), ...decisionFields })).mutation(async ({ input }) => {
+    upsert: protectedProcedure.input(z.object({ id: z.number().optional(), ...decisionFields })).mutation(async ({ input }) => {
       const d = await db();
       const { id, ...vals } = input;
       let did = id;
@@ -582,7 +582,7 @@ export const commandCentreLeanRouter = router({
       await resyncVentureAlerts(d, vals.ventureId);
       return { id: did };
     }),
-    setStatus: publicProcedure.input(z.object({ id: z.number(), decisionStatus: z.enum(DECISION_STATUSES), reviewerNotes: z.string().nullable().optional(), approvedBy: z.string().nullable().optional() })).mutation(async ({ input }) => {
+    setStatus: protectedProcedure.input(z.object({ id: z.number(), decisionStatus: z.enum(DECISION_STATUSES), reviewerNotes: z.string().nullable().optional(), approvedBy: z.string().nullable().optional() })).mutation(async ({ input }) => {
       const d = await db();
       const { id, ...vals } = input;
       await d.update(ccDecisions).set({ ...vals, updatedAt: new Date() }).where(eq(ccDecisions.id, id));
@@ -591,7 +591,7 @@ export const commandCentreLeanRouter = router({
       if (row) await resyncVentureAlerts(d, row.ventureId);
       return { success: true };
     }),
-    delete: publicProcedure.input(idInput).mutation(async ({ input }) => {
+    delete: protectedProcedure.input(idInput).mutation(async ({ input }) => {
       const d = await db();
       const [row] = await d.select().from(ccDecisions).where(eq(ccDecisions.id, input.id));
       await d.delete(ccDecisions).where(eq(ccDecisions.id, input.id));
@@ -606,7 +606,7 @@ export const commandCentreLeanRouter = router({
       const d = await db();
       return d.select().from(ccPivotLogs).where(eq(ccPivotLogs.ventureId, input.ventureId)).orderBy(desc(ccPivotLogs.createdAt));
     }),
-    upsert: publicProcedure.input(z.object({ id: z.number().optional(), ...pivotFields })).mutation(async ({ input }) => {
+    upsert: protectedProcedure.input(z.object({ id: z.number().optional(), ...pivotFields })).mutation(async ({ input }) => {
       const d = await db();
       const { id, ...vals } = input;
       if (id) {
@@ -616,7 +616,7 @@ export const commandCentreLeanRouter = router({
       const [row] = await d.insert(ccPivotLogs).values({ ...vals, dateLogged: vals.dateLogged ?? new Date().toISOString().slice(0, 10) }).returning();
       return { id: row.id };
     }),
-    delete: publicProcedure.input(idInput).mutation(async ({ input }) => {
+    delete: protectedProcedure.input(idInput).mutation(async ({ input }) => {
       const d = await db();
       await d.delete(ccPivotLogs).where(eq(ccPivotLogs.id, input.id));
       return { success: true };
@@ -629,7 +629,7 @@ export const commandCentreLeanRouter = router({
       const d = await db();
       return d.select().from(ccStageGateReviews).where(eq(ccStageGateReviews.ventureId, input.ventureId)).orderBy(desc(ccStageGateReviews.updatedAt));
     }),
-    upsert: publicProcedure.input(z.object({ id: z.number().optional(), ...reviewFields })).mutation(async ({ input }) => {
+    upsert: protectedProcedure.input(z.object({ id: z.number().optional(), ...reviewFields })).mutation(async ({ input }) => {
       const d = await db();
       const { id, ...vals } = input;
       let rid = id;
@@ -642,7 +642,7 @@ export const commandCentreLeanRouter = router({
       await resyncVentureAlerts(d, vals.ventureId);
       return { id: rid };
     }),
-    delete: publicProcedure.input(idInput).mutation(async ({ input }) => {
+    delete: protectedProcedure.input(idInput).mutation(async ({ input }) => {
       const d = await db();
       const [row] = await d.select().from(ccStageGateReviews).where(eq(ccStageGateReviews.id, input.id));
       await d.delete(ccStageGateReviews).where(eq(ccStageGateReviews.id, input.id));
@@ -660,7 +660,7 @@ export const commandCentreLeanRouter = router({
         : await d.select().from(ccAlerts).orderBy(desc(ccAlerts.createdAt));
       return rows;
     }),
-    upsert: publicProcedure.input(z.object({ id: z.number().optional(), ...alertFields })).mutation(async ({ input }) => {
+    upsert: protectedProcedure.input(z.object({ id: z.number().optional(), ...alertFields })).mutation(async ({ input }) => {
       const d = await db();
       const { id, ...vals } = input;
       if (id) {
@@ -670,19 +670,19 @@ export const commandCentreLeanRouter = router({
       const [row] = await d.insert(ccAlerts).values({ ...vals, autoGenerated: false }).returning();
       return { id: row.id };
     }),
-    setStatus: publicProcedure.input(z.object({ id: z.number(), status: z.enum(ALERT_STATUSES), owner: z.string().nullable().optional() })).mutation(async ({ input }) => {
+    setStatus: protectedProcedure.input(z.object({ id: z.number(), status: z.enum(ALERT_STATUSES), owner: z.string().nullable().optional() })).mutation(async ({ input }) => {
       const d = await db();
       const { id, ...vals } = input;
       await d.update(ccAlerts).set({ ...vals, updatedAt: new Date() }).where(eq(ccAlerts.id, id));
       return { success: true };
     }),
-    delete: publicProcedure.input(idInput).mutation(async ({ input }) => {
+    delete: protectedProcedure.input(idInput).mutation(async ({ input }) => {
       const d = await db();
       await d.delete(ccAlerts).where(eq(ccAlerts.id, input.id));
       return { success: true };
     }),
     /** Regenerate auto-alerts across the whole portfolio. */
-    regenerate: publicProcedure.mutation(async () => {
+    regenerate: protectedProcedure.mutation(async () => {
       const d = await db();
       const bundles = await loadAllBundles(d);
       for (const b of bundles) await syncAlerts(d, b, deriveVentureMetrics(b));

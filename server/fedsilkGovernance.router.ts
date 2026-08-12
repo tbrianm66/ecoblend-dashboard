@@ -183,7 +183,7 @@ async function seedIfEmpty(db: any) {
 
 export const fedsilkGovernanceRouter = router({
 
-  seed: publicProcedure.mutation(async () => {
+  seed: protectedProcedure.mutation(async () => {
     const db = await getDb();
     return seedIfEmpty(db!);
   }),
