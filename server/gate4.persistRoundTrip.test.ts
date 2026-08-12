@@ -437,4 +437,46 @@ describe("Gate 4 per-venture module toggle persist round-trip", () => {
     // Both resolve to the same activated set when no venture rows exist.
     expect([...nullScope].sort()).toEqual([...emptyScope].sort());
   });
+
+  // ── Duplicate same-scope rows: input-order resolution ─────────────────────
+  // The DB enforces a UNIQUE constraint on (groupId, ventureId), so duplicate
+  // same-scope rows should never arrive from the production query.  If they do
+  // (e.g. from a test fixture or a future bug), `rowsToActivatedSet` resolves
+  // by input order — last row wins — because the Map set() call overwrites the
+  // previous value.
+  //
+  // These tests document that behaviour so a future caller (e.g. a test using
+  // raw ReactivationRow arrays) can predict the outcome.
+
+  it("global scope: duplicate rows where EITHER is active → group IS in the set (OR semantics, not last-wins)", () => {
+    // The global scope branch uses `filter(r => r.ventureId === "__global__" && r.active).forEach(add)`.
+    // This means ANY active row for the group activates it — there is no Map/overwrite.
+    // So two rows [{active:true}, {active:false}] means the group IS active (the first row contributed).
+    const rows: ReactivationRow[] = [
+      { groupId: "discovery", ventureId: "__global__", active: true,  toggledBy: null, toggledAt: new Date() },
+      { groupId: "discovery", ventureId: "__global__", active: false, toggledBy: null, toggledAt: new Date() },
+    ];
+    // The first row is active → discovery IS in the set regardless of the second row.
+    expect(rowsToActivatedSet(rows, null).has("discovery")).toBe(true);
+  });
+
+  it("global scope: group absent when ALL duplicate rows are inactive", () => {
+    const rows: ReactivationRow[] = [
+      { groupId: "discovery", ventureId: "__global__", active: false, toggledBy: null, toggledAt: new Date() },
+      { groupId: "discovery", ventureId: "__global__", active: false, toggledBy: null, toggledAt: new Date() },
+    ];
+    // No active row → group is absent.
+    expect(rowsToActivatedSet(rows, null).has("discovery")).toBe(false);
+  });
+
+  it("venture scope: duplicate venture rows resolve via Map (last row's active flag wins)", () => {
+    // The venture scope branch uses `.forEach(r => ventureActive.set(r.groupId, r.active))`.
+    // Map.set() overwrites, so the LAST row for a groupId wins.
+    const rows: ReactivationRow[] = [
+      { groupId: "scoring", ventureId: "BEBUS", active: false, toggledBy: null, toggledAt: new Date() },
+      { groupId: "scoring", ventureId: "BEBUS", active: true,  toggledBy: null, toggledAt: new Date() }, // overwrites
+    ];
+    // Second row has active:true → group IS in the activated set.
+    expect(rowsToActivatedSet(rows, "BEBUS").has("scoring")).toBe(true);
+  });
 });

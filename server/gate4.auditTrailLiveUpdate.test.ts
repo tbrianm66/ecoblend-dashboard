@@ -230,6 +230,38 @@ describe("formatToggleAudit — pure unit tests", () => {
     // toggledBy is null → falls back to "Unknown".
     expect(result).toMatch(/^Unknown · /);
   });
+
+  // ── whitespace-only toggledBy ─────────────────────────────────────────────
+  // `formatToggleAudit` accepts `string | null | undefined` for toggledBy.
+  // A whitespace-only string is truthy in JavaScript, so `!toggledBy` is false
+  // and it does NOT fall through to the `return null` guard; it is also NOT
+  // replaced by "Unknown" (which only applies when toggledBy is null/undefined).
+  // The string is passed through as-is to `who`.
+  //
+  // This documents a current-behaviour contract: the function does not trim or
+  // validate toggledBy — whitespace is passed through verbatim to the audit
+  // string.  If a future change to trim/validate is desired, this test is the
+  // signal to update it deliberately.
+
+  it("treats a whitespace-only toggledBy as a valid identity string (not 'Unknown', not null)", () => {
+    // "   " is truthy → `who = "   "`, not "Unknown"
+    const result = formatToggleAudit("   ", FIXED_DATE);
+
+    expect(result).not.toBeNull();
+    // The result must NOT start with "Unknown" since toggledBy is not null/undefined.
+    expect(result).not.toMatch(/^Unknown/);
+    // The whitespace string appears verbatim in the result.
+    expect(result).toContain("   ");
+  });
+
+  it("whitespace-only toggledBy with null toggledAt returns 'by <whitespace>' not null (truthy guard)", () => {
+    // toggledBy="  " is truthy so `!toggledBy && !toggledAt` is false.
+    // toggledAt is null so the function returns `by ${who}` = "by   ".
+    const result = formatToggleAudit("  ", null);
+
+    expect(result).not.toBeNull();
+    expect(result).toBe("by   ");
+  });
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
