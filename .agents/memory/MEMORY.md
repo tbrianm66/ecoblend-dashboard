@@ -12,3 +12,4 @@
 - [Phase 2 — Domain Brand Architecture](phase2-domain-brand-architecture.md) — 14 new tables, migration 0015, router domainBrand.router.ts, all §48-56 spec tests passed; dead MySQL-dialect schema files deleted.
 - [Gate 4 batch conflict detection and test harness](gate4-batch-conflict-pattern.md) — optimistic locking in setModuleReactivationBatch; makeConflictOnlyMock/makeConflictAwareHarnessDb/makeResetDb helpers; pre-existing failing test files to ignore.
 - [Mutation security hardening](mutation-security-hardening.md) — all .mutation() procedures must use protectedProcedure/adminProcedure; Python scan for violations; logout is the only intentional publicProcedure mutation.
+- [Canonical validation spine](canonical-validation-spine.md) — reuse cc_* records under one lifecycle; separate recommendations from human decisions; never automate progression.

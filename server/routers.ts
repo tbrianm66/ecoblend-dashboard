@@ -249,6 +249,7 @@ import { wtpRouter } from "./wtp.router";
 import { leanCanvasRouter } from "./leanCanvas.router";
 import { productMilestonesRouter } from "./productMilestones.router";
 import { decisionGateRouter } from "./decisionGate.router";
+import { validationSpineRouter } from "./validationSpine.router";
 import { intakeRouter } from "./intake.router";
 import { propositionRouter } from "./proposition.router";
 import { sustainabilityRouter } from "./sustainability.router";
@@ -279,6 +280,7 @@ export const appRouter = router({
   leanCanvas: leanCanvasRouter,
   productMilestones: productMilestonesRouter,
   decisionGate: decisionGateRouter,
+  validationSpine: validationSpineRouter,
   intake: intakeRouter,
   proposition: propositionRouter,
   startupFailureRisk: startupFailureRiskRouter,

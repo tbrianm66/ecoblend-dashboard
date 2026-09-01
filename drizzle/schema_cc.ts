@@ -11,8 +11,30 @@ import {
   serial,
   text,
   timestamp,
+  unique,
   varchar,
 } from "drizzle-orm/pg-core";
+
+// -- Phase 1 Validation Lifecycles ---------------------------------------------
+// Additive owner for one venture validation journey. It does not replace or
+// mutate ventures.currentStage, ventures.validationStatus, or workflowStage.
+// EXECUTION_READY is reserved for a later phase and is intentionally rejected by
+// the Stage 1 API; no transition or handover behavior is implemented here.
+export const validationLifecycles = pgTable("validation_lifecycles", {
+  id:              serial("id").primaryKey(),
+  ventureId:       varchar("ventureId", { length: 64 }).notNull(),
+  version:         integer("version").notNull().default(1),
+  lifecycleState:  text("lifecycleState").notNull().default("DISCOVERY"),
+  status:          text("status").notNull().default("active"),
+  ownerUserId:     integer("ownerUserId").notNull(),
+  createdByUserId: integer("createdByUserId").notNull(),
+  createdAt:       timestamp("createdAt").defaultNow().notNull(),
+  updatedAt:       timestamp("updatedAt").defaultNow().notNull(),
+}, (t) => ({
+  ventureVersionUnique: unique("validation_lifecycles_venture_version_unique").on(t.ventureId, t.version),
+}));
+export type ValidationLifecycle = typeof validationLifecycles.$inferSelect;
+export type InsertValidationLifecycle = typeof validationLifecycles.$inferInsert;
 
 // -- Venture Hypotheses --------------------------------------------------------
 // One testable assumption per row. hypothesisType / status / assumptionRiskLevel
@@ -20,6 +42,10 @@ import {
 export const ccHypotheses = pgTable("cc_hypotheses", {
   id:                  serial("id").primaryKey(),
   ventureId:           varchar("ventureId", { length: 64 }).notNull(),
+  validationLifecycleId: integer("validationLifecycleId").references(() => validationLifecycles.id),
+  hypothesisVersion:   integer("hypothesisVersion").notNull().default(1),
+  previousHypothesisId: integer("previousHypothesisId"),
+  validationCriteria:  text("validationCriteria"),
   moduleSource:        varchar("moduleSource", { length: 64 }),
   hypothesisType:      text("hypothesisType").default("problem").notNull(),
   hypothesisStatement: text("hypothesisStatement").notNull(),
@@ -37,6 +63,7 @@ export type InsertCcHypothesis = typeof ccHypotheses.$inferInsert;
 export const ccExperiments = pgTable("cc_experiments", {
   id:                     serial("id").primaryKey(),
   ventureId:              varchar("ventureId", { length: 64 }).notNull(),
+  validationLifecycleId:  integer("validationLifecycleId").references(() => validationLifecycles.id),
   hypothesisId:           integer("hypothesisId"),
   experimentName:         varchar("experimentName", { length: 255 }).notNull(),
   experimentType:         text("experimentType").default("customer_interview"),
@@ -62,6 +89,7 @@ export type InsertCcExperiment = typeof ccExperiments.$inferInsert;
 export const ccEvidence = pgTable("cc_evidence", {
   id:                      serial("id").primaryKey(),
   ventureId:               varchar("ventureId", { length: 64 }).notNull(),
+  validationLifecycleId:   integer("validationLifecycleId").references(() => validationLifecycles.id),
   hypothesisId:            integer("hypothesisId"),
   experimentId:            integer("experimentId"),
   moduleSource:            varchar("moduleSource", { length: 64 }),
@@ -73,6 +101,12 @@ export const ccEvidence = pgTable("cc_evidence", {
   evidenceRecencyScore:    integer("evidenceRecencyScore").default(1),    // 1-5
   evidenceConfidenceScore: integer("evidenceConfidenceScore").default(0), // 0-100 computed
   contradictsHypothesis:   boolean("contradictsHypothesis").default(false),
+  evidenceRelationship:    text("evidenceRelationship"), // supports|contradicts|neutral
+  provenance:              text("provenance"),
+  collectorUserId:         integer("collectorUserId"),
+  collectedAt:             timestamp("collectedAt"),
+  reliability:             integer("reliability"), // 1-5, explicitly supplied; no scoring engine
+  independence:            text("independence"),   // independent|related|unknown
   sourceReference:         text("sourceReference"),
   createdAt:               timestamp("createdAt").defaultNow().notNull(),
   updatedAt:               timestamp("updatedAt").defaultNow().notNull(),
@@ -84,12 +118,20 @@ export type InsertCcEvidence = typeof ccEvidence.$inferInsert;
 export const ccDecisions = pgTable("cc_decisions", {
   id:                      serial("id").primaryKey(),
   ventureId:               varchar("ventureId", { length: 64 }).notNull(),
+  validationLifecycleId:   integer("validationLifecycleId").references(() => validationLifecycles.id),
+  hypothesisId:            integer("hypothesisId"),
   decisionType:            text("decisionType").default("persevere"),
   decisionTitle:           varchar("decisionTitle", { length: 255 }).notNull(),
   decisionSummary:         text("decisionSummary"),
   evidenceConfidenceScore: integer("evidenceConfidenceScore").default(0),
   riskScore:               integer("riskScore").default(0),
   recommendedAction:       text("recommendedAction"),
+  humanDecision:           text("humanDecision"), // PROCEED|ITERATE|HOLD|STOP|ESCALATE
+  decisionAuthorityUserId: integer("decisionAuthorityUserId"),
+  decisionRationale:       text("decisionRationale"),
+  evidenceReferences:      text("evidenceReferences"), // JSON array of canonical cc_evidence ids
+  overrideReason:          text("overrideReason"),
+  decidedAt:               timestamp("decidedAt"),
   decisionStatus:          text("decisionStatus").default("recommended").notNull(),
   reviewerNotes:           text("reviewerNotes"),
   approvedBy:              varchar("approvedBy", { length: 255 }),
