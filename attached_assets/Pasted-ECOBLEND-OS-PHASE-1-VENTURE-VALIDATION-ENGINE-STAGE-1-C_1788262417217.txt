@@ -1,0 +1,422 @@
+ECOBLEND OS — PHASE 1 VENTURE VALIDATION ENGINE
+STAGE 1 — CANONICAL VALIDATION SPINE
+POST-STAGE-0 CONTROLLED IMPLEMENTATION
+
+AUTHORITY
+
+Use the completed Stage 0 Architecture Gap Analysis as the authoritative description of the current ECOBLEND architecture.
+
+Stage 0 concluded:
+
+GO WITH CONDITIONS.
+
+This Stage 1 instruction supersedes the earlier generic Stage 1 prompt.
+
+IMPORTANT ARCHITECTURAL PRINCIPLE
+
+ECOBLEND already contains significant implementations for:
+
+- ventures
+- hypotheses/assumptions
+- evidence
+- customer interviews
+- experiments
+- WTP
+- risk
+- readiness scoring
+- governance
+- portfolio management
+- reporting
+
+DO NOT create duplicate replacements for existing working concepts merely because they appear in the target architecture.
+
+The purpose of Stage 1 is to create ONE CANONICAL VALIDATION SPINE connecting existing functionality.
+
+TARGET PHASE 1 LOOP
+
+IDEA
+→ HYPOTHESIS
+→ EVIDENCE
+→ EXPERIMENT
+→ RESULT
+→ UPDATED VENTURE STATE
+→ HUMAN DECISION
+
+Later stages will add:
+
+simulation
+→ adversarial stress testing
+→ next-best-experiment
+→ formal validation gates
+→ agents
+→ execution-ready handover.
+
+Do not implement those later-stage capabilities now.
+
+==================================================
+PART A — FIRST PRODUCE THE STAGE 1 IMPLEMENTATION PLAN
+==================================================
+
+Before making structural changes, inspect the existing implementation and identify which existing objects should become authoritative for:
+
+1. Venture identity
+2. Hypothesis / assumption
+3. Evidence
+4. Experiment
+5. Experiment result
+6. Human decision
+7. Audit/provenance
+
+For each target concept classify the existing implementation as:
+
+REUSE AS CANONICAL
+REUSE + EXTEND
+ADAPT THROUGH COMPATIBILITY LAYER
+DO NOT USE
+NEW OBJECT REQUIRED
+
+Explicitly identify duplicated or competing implementations.
+
+DO NOT automatically choose a duplicate implementation without explaining why.
+
+Particular caution is required around:
+
+- duplicate MRL engines
+- risk models
+- portfolio state
+- readiness outputs
+- permissions
+- reports
+- legacy versus V2 state.
+
+==================================================
+PART B — DEFINE THE VALIDATION LIFECYCLE OWNER
+==================================================
+
+Create or designate ONE authoritative Phase 1 lifecycle record.
+
+Its purpose is to represent one validation journey for one venture.
+
+It should connect:
+
+VENTURE
+→ VALIDATION LIFECYCLE
+→ HYPOTHESES
+→ EVIDENCE
+→ EXPERIMENTS
+→ RESULTS
+→ HUMAN DECISIONS
+
+Do not make the lifecycle record a replacement for the venture.
+
+A venture may eventually have multiple validation cycles or versions.
+
+The lifecycle must support at minimum:
+
+- unique identity
+- venture relationship
+- lifecycle/version number
+- current lifecycle state
+- created date
+- updated date
+- created by
+- ownership
+- status
+- auditability.
+
+Initial lifecycle states may include:
+
+DISCOVERY
+VALIDATION
+ITERATION
+REVIEW
+HOLD
+TERMINATED
+EXECUTION_READY
+
+Do NOT implement formal G0-G6 validation gates yet.
+
+==================================================
+PART C — CANONICAL HYPOTHESIS SEMANTICS
+==================================================
+
+Stage 0 found that hypotheses/assumptions already exist in multiple forms.
+
+Do not create another competing hypothesis system unless technically unavoidable.
+
+Establish a canonical hypothesis identity and versioning contract.
+
+Every canonical hypothesis should ultimately be capable of recording:
+
+- venture
+- validation lifecycle
+- statement
+- category
+- importance
+- confidence
+- status
+- version
+- previous version where applicable
+- assumptions/dependencies
+- supporting evidence
+- contradicting evidence
+- experiments
+- validation criteria
+- created by
+- timestamps.
+
+If the existing structure can support this through extension or adapters, prefer that approach.
+
+Historical records must remain valid.
+
+==================================================
+PART D — SHARED EVIDENCE CONTRACT
+==================================================
+
+Create a shared evidence contract that existing ECOBLEND modules can later consume.
+
+Evidence must support:
+
+- venture
+- lifecycle
+- linked hypothesis where appropriate
+- evidence category
+- source
+- source reference
+- collector/origin
+- collection date
+- provenance
+- reliability
+- confidence
+- independence
+- supports / contradicts / neutral.
+
+Prepare the schema for the future E0-E6 evidence hierarchy but do not rewrite all historical evidence during Stage 1.
+
+The future evidence hierarchy will distinguish:
+
+E0 agent inference
+E1 simulation
+E2 secondary evidence
+E3 primary qualitative evidence
+E4 behavioural evidence
+E5 commercial evidence
+E6 operating evidence.
+
+Do not assign high evidence classes to existing records unless provenance supports the classification.
+
+==================================================
+PART E — EXPERIMENT CONNECTION
+==================================================
+
+Reuse or adapt the existing experiment capability.
+
+A canonical experiment must be capable of connecting:
+
+HYPOTHESIS
+→ EXPERIMENT
+→ RESULT
+→ EVIDENCE
+→ UPDATED HYPOTHESIS STATE.
+
+Do not build the Next Best Experiment engine yet.
+
+Do not automatically contact customers, spend money, initiate external actions or launch experiments.
+
+==================================================
+PART F — HUMAN DECISION RECORD
+==================================================
+
+Stage 0 identified that ECOBLEND does not yet have one universal human decision record.
+
+Implement or designate a canonical Decision Record supporting:
+
+SYSTEM RECOMMENDATION
+
+and separately:
+
+HUMAN DECISION.
+
+Initial decision vocabulary:
+
+PROCEED
+ITERATE
+HOLD
+STOP
+ESCALATE.
+
+The system recommendation must never overwrite the human decision.
+
+Record:
+
+- venture
+- lifecycle
+- recommendation
+- human decision
+- decision authority
+- rationale
+- supporting evidence references
+- date
+- overrides/exceptions.
+
+Do NOT implement automatic gate progression.
+
+==================================================
+PART G — ONE VERTICAL SLICE ONLY
+==================================================
+
+Demonstrate Stage 1 using ONE controlled end-to-end validation flow:
+
+VENTURE
+→ VALIDATION LIFECYCLE
+→ ONE HYPOTHESIS
+→ EVIDENCE
+→ EXPERIMENT
+→ EXPERIMENT RESULT
+→ HUMAN DECISION.
+
+The purpose is to prove the architecture.
+
+Do not attempt to convert every ECOBLEND module during this stage.
+
+Do not migrate the entire historical database.
+
+Do not refactor the whole Command Centre.
+
+Do not implement agents.
+
+Do not implement formal validation gates.
+
+Do not implement portfolio learning.
+
+Do not implement Phase 2 execution capability.
+
+==================================================
+PART H — SECURITY AND DATA SAFETY
+==================================================
+
+All new Stage 1 functionality must be venture-scoped.
+
+Review object-level authorisation for every new read/write path.
+
+Do not rely solely on numeric IDs supplied by the client.
+
+Preserve existing authentication.
+
+Do not expose previously private venture information.
+
+Database changes must be:
+
+ADDITIVE
+NON-DESTRUCTIVE
+BACKWARDS COMPATIBLE.
+
+No table deletions.
+
+No table renames unless separately authorised.
+
+No destructive data conversions.
+
+No production-data migration without explicit approval.
+
+Confirm development and production database separation before performing structural migration.
+
+If environment isolation cannot be verified:
+
+STOP and report the issue rather than continuing.
+
+==================================================
+PART I — EXISTING TECHNICAL DEBT
+==================================================
+
+Stage 0 recorded substantial pre-existing TypeScript and test debt.
+
+Do NOT attempt a broad cleanup during Stage 1.
+
+Do not modify unrelated failing tests simply to produce a green global status.
+
+Maintain a baseline distinction between:
+
+PRE-EXISTING FAILURE
+
+and
+
+STAGE 1 REGRESSION.
+
+Create focused tests specifically covering the new validation spine.
+
+At minimum test:
+
+1. lifecycle creation for an authorised venture;
+2. unauthorised venture access rejection;
+3. hypothesis linkage;
+4. supporting evidence;
+5. contradictory evidence;
+6. experiment linkage;
+7. result converted into evidence;
+8. human decision separated from system recommendation;
+9. historical venture compatibility;
+10. audit/provenance persistence.
+
+==================================================
+PART J — EXCLUDED ARCHITECTURE
+==================================================
+
+Do not rely on unresolved competing scoring engines as authoritative validation inputs.
+
+In particular:
+
+Do not make MRL a gate condition during Stage 1.
+
+Do not treat current static/mock portfolio or readiness report values as validated evidence.
+
+Do not replace the legacy application with the V2 prototype.
+
+Do not redesign the UI.
+
+Do not remove existing modules.
+
+Do not create a new parallel readiness methodology.
+
+==================================================
+STAGE 1 ACCEPTANCE CRITERIA
+==================================================
+
+Stage 1 is complete only when:
+
+1. One canonical validation lifecycle exists.
+2. Existing venture records remain functional.
+3. A canonical hypothesis contract has been established.
+4. A shared evidence contract exists.
+5. Experiments can return results into evidence.
+6. Human decisions are explicitly separated from system recommendations.
+7. One end-to-end vertical validation slice works.
+8. All new access is venture-scoped.
+9. Provenance/audit history is retained.
+10. No destructive migration has occurred.
+11. Focused Stage 1 tests pass.
+12. Existing baseline failures have not materially worsened.
+13. Application still starts and principal existing routes remain usable.
+14. A rollback/checkpoint exists.
+15. A Stage 1 completion report is produced.
+
+At completion report:
+
+A. canonical objects selected;
+B. existing objects reused;
+C. new objects added;
+D. compatibility adapters introduced;
+E. database migrations;
+F. authorisation controls;
+G. tests and results;
+H. known pre-existing failures;
+I. new risks discovered;
+J. explicit recommendation:
+
+GO
+GO WITH CONDITIONS
+NO-GO
+
+for Stage 2.
+
+DO NOT PROCEED TO STAGE 2 AUTOMATICALLY.
