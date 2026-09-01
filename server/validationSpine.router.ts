@@ -21,6 +21,15 @@ const STAGE1_LIFECYCLE_STATES = [
   "HOLD",
   "TERMINATED",
 ] as const;
+type LifecycleState = (typeof STAGE1_LIFECYCLE_STATES)[number];
+const ALLOWED_HUMAN_TRANSITIONS: Record<LifecycleState, readonly LifecycleState[]> = {
+  DISCOVERY: ["VALIDATION", "HOLD", "TERMINATED"],
+  VALIDATION: ["ITERATION", "REVIEW", "HOLD", "TERMINATED"],
+  ITERATION: ["VALIDATION", "REVIEW", "HOLD", "TERMINATED"],
+  REVIEW: ["VALIDATION", "ITERATION", "HOLD", "TERMINATED"],
+  HOLD: ["DISCOVERY", "VALIDATION", "ITERATION", "TERMINATED"],
+  TERMINATED: [],
+};
 const EVIDENCE_RELATIONSHIPS = ["supports", "contradicts", "neutral"] as const;
 const HUMAN_DECISIONS = ["PROCEED", "ITERATE", "HOLD", "STOP", "ESCALATE"] as const;
 const HYPOTHESIS_STATUSES = ["untested", "testing", "validated", "invalidated", "inconclusive"] as const;
@@ -212,6 +221,62 @@ export const validationSpineRouter = router({
           after: lifecycle,
         });
         return lifecycle;
+      });
+    }),
+
+  transitionLifecycle: stage1Procedure
+    .input(lifecycleInput.extend({
+      priorState: z.enum(STAGE1_LIFECYCLE_STATES),
+      newState: z.enum(STAGE1_LIFECYCLE_STATES),
+      rationale: z.string().trim().min(10).max(4000),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await database();
+      const existing = await requireLifecycle(db, input.ventureId, input.lifecycleId);
+      if (existing.lifecycleState !== input.priorState) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: `Lifecycle state changed from ${input.priorState} to ${existing.lifecycleState}`,
+        });
+      }
+      if (!ALLOWED_HUMAN_TRANSITIONS[input.priorState].includes(input.newState)) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: `Transition ${input.priorState} → ${input.newState} is not allowed`,
+        });
+      }
+
+      return db.transaction(async (tx) => {
+        const [updated] = await tx
+          .update(validationLifecycles)
+          .set({ lifecycleState: input.newState, updatedAt: new Date() })
+          .where(and(
+            eq(validationLifecycles.id, input.lifecycleId),
+            eq(validationLifecycles.ventureId, input.ventureId),
+            eq(validationLifecycles.lifecycleState, input.priorState),
+          ))
+          .returning();
+        if (!updated) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "Lifecycle changed concurrently; refresh before retrying",
+          });
+        }
+        await writeAudit(tx, ctx.user, {
+          ventureId: input.ventureId,
+          action: "validation.lifecycle.transitioned_by_human",
+          resourceType: "validation_lifecycle",
+          resourceId: String(input.lifecycleId),
+          before: { lifecycleState: input.priorState },
+          after: {
+            lifecycleState: input.newState,
+            rationale: input.rationale,
+            actorUserId: ctx.user.id,
+            transitionedAt: new Date().toISOString(),
+            trigger: "explicit_human_action",
+          },
+        });
+        return updated;
       });
     }),
 

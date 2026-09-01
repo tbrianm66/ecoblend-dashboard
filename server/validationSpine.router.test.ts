@@ -74,6 +74,33 @@ describe.sequential("Stage 1 canonical validation spine", () => {
     expect(after.workflowStage).toBe(before.workflowStage);
   });
 
+  it("allows only explicit allowlisted human lifecycle transitions and audits them", async () => {
+    const transitioned = await caller.transitionLifecycle({
+      ventureId,
+      lifecycleId,
+      priorState: "DISCOVERY",
+      newState: "VALIDATION",
+      rationale: "The operator has approved the start of controlled validation",
+    });
+    expect(transitioned.lifecycleState).toBe("VALIDATION");
+
+    await expect(caller.transitionLifecycle({
+      ventureId,
+      lifecycleId,
+      priorState: "DISCOVERY",
+      newState: "REVIEW",
+      rationale: "A stale client must not overwrite the current lifecycle state",
+    })).rejects.toMatchObject({ code: "CONFLICT" });
+
+    const db = (await getDb())!;
+    const rows = await db.select().from(auditLog).where(and(
+      eq(auditLog.ventureId, ventureId),
+      eq(auditLog.action, "validation.lifecycle.transitioned_by_human"),
+    ));
+    expect(rows).toHaveLength(1);
+    expect(rows[0].after).toContain("explicit_human_action");
+  });
+
   it("links a canonical hypothesis to the lifecycle", async () => {
     const hypothesis = await caller.createHypothesis({
       ventureId,

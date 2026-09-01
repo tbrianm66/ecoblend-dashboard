@@ -6,6 +6,7 @@
 import { useMemo, useState, useEffect } from "react";
 import LiveEventFeed from "@/components/LiveEventFeed";
 import SpinoutPipelineWidget from "@/components/SpinoutPipelineWidget";
+import ValidationSpinePilot from "@/pages/command/ValidationSpinePilot";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -528,6 +529,8 @@ export default function CommandCentre() {
             </div>
           </div>
         </div>
+
+        <ValidationSpinePilot />
 
         {/* ── Row 2: Financial — per-venture sparkline cards + ESG KPIs ── */}
         <div className="space-y-3">

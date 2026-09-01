@@ -5,7 +5,7 @@
  * idempotent auto-alert generation. Pure scoring lives in shared/commandCentre.
  */
 import { z } from "zod";
-import { router, publicProcedure, protectedProcedure } from "./_core/trpc";
+import { router, protectedProcedure, adminProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import { and, eq, desc, inArray } from "drizzle-orm";
 import {
@@ -691,7 +691,7 @@ export const commandCentreLeanRouter = router({
   }),
 
   // ── Aggregate: Portfolio overview ─────────────────────────────────────────────
-  portfolioSummary: publicProcedure.query(async () => {
+  portfolioSummary: adminProcedure.query(async () => {
     const d = await db();
     const bundles = await loadAllBundles(d);
     const rows = bundles.map((b) => {
@@ -734,7 +734,7 @@ export const commandCentreLeanRouter = router({
   }),
 
   // ── Aggregate: Decision board (grouped by recommendation column) ──────────────
-  decisionBoard: publicProcedure.query(async () => {
+  decisionBoard: adminProcedure.query(async () => {
     const d = await db();
     const bundles = await loadAllBundles(d);
     return bundles.map((b) => {
@@ -759,7 +759,7 @@ export const commandCentreLeanRouter = router({
   }),
 
   // ── Aggregate: Experiment queue (whole portfolio) ─────────────────────────────
-  experimentQueue: publicProcedure.query(async () => {
+  experimentQueue: adminProcedure.query(async () => {
     const d = await db();
     const bundles = await loadAllBundles(d);
     const out: Array<Record<string, unknown>> = [];
@@ -779,7 +779,7 @@ export const commandCentreLeanRouter = router({
   }),
 
   // ── Aggregate: Evidence dashboard ─────────────────────────────────────────────
-  evidenceDashboard: publicProcedure.input(z.object({ ventureId: z.string().optional() }).optional()).query(async ({ input }) => {
+  evidenceDashboard: adminProcedure.input(z.object({ ventureId: z.string().optional() }).optional()).query(async ({ input }) => {
     const d = await db();
     const bundles = await loadAllBundles(d);
     const filtered = input?.ventureId ? bundles.filter((b) => b.venture.id === input.ventureId) : bundles;
@@ -802,7 +802,7 @@ export const commandCentreLeanRouter = router({
   }),
 
   // ── Aggregate: Stage-gate board ───────────────────────────────────────────────
-  stageGateBoard: publicProcedure.query(async () => {
+  stageGateBoard: adminProcedure.query(async () => {
     const d = await db();
     const bundles = await loadAllBundles(d);
     return bundles.map((b) => {
@@ -825,7 +825,7 @@ export const commandCentreLeanRouter = router({
   }),
 
   // ── Single venture status (stage-gate readiness detail) ───────────────────────
-  ventureStatus: publicProcedure.input(z.object({ ventureId: z.string().optional() }).optional()).query(async ({ input }) => {
+  ventureStatus: adminProcedure.input(z.object({ ventureId: z.string().optional() }).optional()).query(async ({ input }) => {
     const d = await db();
     const bundles = await loadAllBundles(d);
     const filtered = input?.ventureId ? bundles.filter((b) => b.venture.id === input.ventureId) : bundles;

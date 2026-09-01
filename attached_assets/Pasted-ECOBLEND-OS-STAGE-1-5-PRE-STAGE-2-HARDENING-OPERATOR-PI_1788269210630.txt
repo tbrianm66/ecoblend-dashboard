@@ -1,0 +1,119 @@
+ECOBLEND OS — STAGE 1.5: PRE-STAGE-2 HARDENING & OPERATOR PILOT
+
+Stage 1 Canonical Validation Spine is complete and must be preserved.
+
+The implemented canonical chain is:
+
+Venture → Validation Lifecycle → Hypothesis → Evidence → Experiment → Result → Human Decision
+
+This Stage 1.5 work package must remain narrowly bounded. Do not implement Stage 2 functionality.
+
+A — LEGACY READ SECURITY
+
+Identify legacy public or insufficiently venture-authorised read paths that expose validation, decision, or related venture-scoped data.
+
+Apply venture-membership or authorised-admin access controls only where required.
+
+Add regression tests for:
+
+unauthenticated access;
+cross-venture access;
+authorised same-venture access.
+
+Do not broadly redesign the application's security architecture.
+
+Record any remaining legacy risks separately.
+
+B — MIGRATION CONSISTENCY
+
+Reconcile repository migration files, migration journal/history, and the development database migration state.
+
+Establish a reproducible future migration process.
+
+Do not replay unrelated historical migrations.
+
+Do not manually execute production DDL.
+
+Preserve the verified separation between the development and production databases.
+
+If migration reconciliation cannot be achieved safely, STOP and report rather than forcing migration state.
+
+C — MINIMAL OPERATOR PILOT
+
+Integrate the Stage 1 validation spine into one existing Command Centre surface.
+
+Do not create a new dashboard.
+
+Do not redesign navigation.
+
+The minimum authorised interface should allow an authenticated, venture-authorised operator to:
+
+inspect a validation lifecycle;
+inspect linked hypotheses;
+inspect supporting and contradicting evidence;
+inspect experiments and results;
+inspect system recommendations;
+record an explicit human decision.
+
+Use existing ECOBLEND components and design conventions where practical.
+
+Do not add scoring displays unless they are already authoritative and traceable.
+
+D — HUMAN-CONTROLLED LIFECYCLE TRANSITION
+
+Implement a narrowly scoped lifecycle transition capability.
+
+Requirements:
+
+authenticated user;
+venture authorisation;
+explicit human action;
+allowlisted lifecycle transitions;
+no automatic transitions;
+no score-driven transitions;
+audit actor;
+prior state;
+new state;
+rationale;
+timestamp.
+
+EXECUTION_READY must remain unavailable and reserved.
+
+Do not implement execution handover.
+
+Do not infer lifecycle transition from evidence, scores, experiments, AI output, or system recommendations.
+
+EXPLICIT EXCLUSIONS
+
+Do not implement:
+
+formal G0–G6 gates;
+EXECUTION_READY;
+handover automation;
+agents;
+simulation;
+Red Team automation;
+next-best-experiment logic;
+portfolio learning;
+Phase 2 execution modules;
+scoring methodology changes;
+broad Command Centre redesign;
+production migration.
+
+VALIDATION
+
+At completion:
+
+run focused authorisation tests;
+run lifecycle-transition tests;
+verify migration consistency;
+verify the existing dashboard still renders;
+browser-test the minimal operator pilot;
+distinguish pre-existing failures from new regressions;
+confirm no production data or production migration was changed.
+
+Produce a Stage 1.5 Completion Report and finish with:
+
+GO / GO WITH CONDITIONS / NO-GO FOR STAGE 2
+
+Do not proceed to Stage 2 automatically.

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { and, desc, eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
-import { router, publicProcedure, protectedProcedure } from "./_core/trpc";
+import { router, protectedProcedure } from "./_core/trpc";
 import { workflowStateService } from "./workflowStateService";
 import { LEAN_STAGES } from "../shared/workflowStages";
 import { assertVentureAccess } from "./discoveryMarket.router";
@@ -23,20 +23,26 @@ const decisionEnum = z.enum(["advance", "hold_pending_evidence", "kill"]);
 
 export const workflowStateRouter = router({
   // ── getStage ──────────────────────────────────────────────────────────────
-  getStage: publicProcedure
+  getStage: protectedProcedure
     .input(z.object({ ventureId: z.string() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      await assertVentureAccess(db, ctx.user, input.ventureId, { allowClaim: false });
       const stage = await workflowStateService.getVentureStage(input.ventureId);
       return { ventureId: input.ventureId, workflowStage: stage };
     }),
 
   // ── canAdvance ────────────────────────────────────────────────────────────
-  canAdvance: publicProcedure
+  canAdvance: protectedProcedure
     .input(z.object({
       ventureId:   z.string(),
       targetStage: leanStageEnum,
     }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      await assertVentureAccess(db, ctx.user, input.ventureId, { allowClaim: false });
       return workflowStateService.canAdvanceStage(
         input.ventureId,
         input.targetStage as any,

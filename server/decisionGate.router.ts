@@ -11,7 +11,7 @@
 import { z } from "zod";
 import { eq, desc, and } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
-import { router, publicProcedure, protectedProcedure } from "./_core/trpc";
+import { router, protectedProcedure, adminProcedure } from "./_core/trpc";
 import { assertVentureAccess } from "./discoveryMarket.router";
 import { getDb } from "./db";
 import { ccDecisions, ventureArchive, ventures } from "../drizzle/schema";
@@ -19,10 +19,11 @@ import { ccDecisions, ventureArchive, ventures } from "../drizzle/schema";
 export const decisionGateRouter = router({
   // ── decisions.list ────────────────────────────────────────────────────────
   // All cc_decisions for a venture, newest first
-  listDecisions: publicProcedure
+  listDecisions: protectedProcedure
     .input(z.object({ ventureId: z.string() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const db = await getDb();
+      await assertVentureAccess(db, ctx.user, input.ventureId, { allowClaim: false });
       return db
         .select()
         .from(ccDecisions)
@@ -32,10 +33,11 @@ export const decisionGateRouter = router({
 
   // ── decisions.checkGate ───────────────────────────────────────────────────
   // Returns whether a prior advance decision exists (gate check for UI)
-  checkGate: publicProcedure
+  checkGate: protectedProcedure
     .input(z.object({ ventureId: z.string() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const db = await getDb();
+      await assertVentureAccess(db, ctx.user, input.ventureId, { allowClaim: false });
 
       // Fetch the venture's current stage
       const ventureRow = await db
@@ -82,10 +84,11 @@ export const decisionGateRouter = router({
 
   // ── archive.get ───────────────────────────────────────────────────────────
   // Get the archive record for a specific venture (most recent)
-  getArchive: publicProcedure
+  getArchive: protectedProcedure
     .input(z.object({ ventureId: z.string() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const db = await getDb();
+      await assertVentureAccess(db, ctx.user, input.ventureId, { allowClaim: false });
       const rows = await db
         .select()
         .from(ventureArchive)
@@ -97,7 +100,7 @@ export const decisionGateRouter = router({
 
   // ── archive.listAll ───────────────────────────────────────────────────────
   // All archived ventures (for the global /ventures/archive view)
-  listAllArchived: publicProcedure
+  listAllArchived: adminProcedure
     .query(async () => {
       const db = await getDb();
       return db
